@@ -31,7 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:user|a)/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class ImagesHackCom extends PluginForDecrypt {
@@ -72,8 +73,8 @@ public class ImagesHackCom extends PluginForDecrypt {
              * corresponding album names (if existant) and set the correct packagenames.
              */
             this.br.getPage("https://api.imageshack.com/v2/user/" + id_main + "/usage?hide_empty=false&show_private=true&show_hidden=false");
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            images_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(json, "result/images_count"), 0);
+            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            images_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "result/images_count"), 0);
             get_URL = "/v2/user/" + id_main + "/images?hide_folder_images=false&hide_empty=false&show_private=true&show_hidden=false&limit=%d&offset=%d&password=%s";
         } else {
             this.br.setAllowedResponseCodes(401);
@@ -106,10 +107,10 @@ public class ImagesHackCom extends PluginForDecrypt {
                     break;
                 }
             }
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            images_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(json, "result/total"), 0);
+            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            images_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "result/total"), 0);
             get_URL = "/v2/albums/" + id_main + "?limit=%d&offset=%d&password=%s";
-            final String album_owner = (String) DummyScriptEnginePlugin.walkJson(json, "result/owner/username");
+            final String album_owner = (String) JavaScriptEngineFactory.walkJson(json, "result/owner/username");
         }
 
         if (images_total == 0) {
@@ -134,8 +135,8 @@ public class ImagesHackCom extends PluginForDecrypt {
             // }
 
             this.br.getPage(String.format(get_URL, api_max_entries_per_offset, offset, Encoding.urlEncode(password)));
-            json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(json, "result/images");
+            json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(json, "result/images");
             for (final Object resource : ressourcelist) {
                 json = (LinkedHashMap<String, Object>) resource;
                 final String id = jd.plugins.hoster.ImagesHackCom.api_json_get_id(json);
@@ -144,7 +145,7 @@ public class ImagesHackCom extends PluginForDecrypt {
                 final String url_content = "https://imageshack.com/i/" + id;
                 final DownloadLink dl = createDownloadlink(url_content);
                 final FilePackage fp = FilePackage.getInstance();
-                dl.setAvailableStatus(jd.plugins.hoster.ImagesHackCom.apiImageGetAvailablestatus(dl, json));
+                dl.setAvailableStatus(jd.plugins.hoster.ImagesHackCom.apiImageGetAvailablestatus(this, dl, json));
                 dl.setContentUrl(url_content);
                 if (!inValidate(album) && !inValidate(owner)) {
                     fp.setName(owner + " - " + album);

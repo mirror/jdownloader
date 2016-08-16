@@ -32,10 +32,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!p/)[^/]+" }, flags = { 0 })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -77,17 +77,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (json == null) {
             return null;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final boolean isPrivate = ((Boolean) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final boolean isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
 
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username_url);
 
         final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
-        String nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
-        final String maxid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
-        ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
-        final long count = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/count"), -1);
+        String nextid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
+        final String maxid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
+        ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
+        final long count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/count"), -1);
         if (isPrivate && !logged_in && count != -1 && resource_data_list == null) {
             logger.info("Cannot parse url as profile is private");
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -162,9 +162,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     logger.info("Seems like user is using an unverified account - cannot grab more items");
                     break;
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "media/nodes");
-                nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "media/page_info/end_cursor");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "media/nodes");
+                nextid = (String) JavaScriptEngineFactory.walkJson(entries, "media/page_info/end_cursor");
             }
             if (resource_data_list.size() == 0) {
                 logger.info("Found no new links on page " + page + " --> Stopping decryption");

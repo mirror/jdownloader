@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -95,8 +96,8 @@ public class UploadujNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             this.br.postPage("/script/download/genKey.php", "url=" + Encoding.urlEncode(this.br.getURL()));
-            final String name = getJson("name");
-            final String v = getJson("v");
+            final String name = PluginJSonUtils.getJsonValue(br, "name");
+            final String v = PluginJSonUtils.getJsonValue(br, "v");
             if (name == null || v == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -147,16 +148,6 @@ public class UploadujNet extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

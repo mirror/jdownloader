@@ -50,6 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "filecloud.io", "ezfile.ch" }, urls = { "https?://(?:www\\.)?(?:filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
 public class FilecloudIo extends PluginForHost {
@@ -128,7 +129,7 @@ public class FilecloudIo extends PluginForHost {
         if (useFilecheckAPI) {
             br.getPage(MAINPAGE + "/?m=api&a=check_file&fkey=" + downloadLink.getLinkID());
             if (!this.br.containsHTML("HTTP 404 > no such module or action<") && this.br.getHttpConnection().getResponseCode() != 404) {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final Object filesizeo = entries.get("fsize");
                 final String status = (String) entries.get("status");
                 final String message = (String) entries.get("message");
@@ -145,7 +146,7 @@ public class FilecloudIo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 downloadLink.setFinalFileName(filename);
-                downloadLink.setDownloadSize(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(filesizeo, -1));
+                downloadLink.setDownloadSize(JavaScriptEngineFactory.toLong(filesizeo, -1));
                 /* 0=normal, 2=directdownload */
                 // not always shown, we assume when null it equals 2.
                 if ("2".equals(ftype) || ftype == null) {

@@ -49,6 +49,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -279,7 +280,7 @@ public class TvnowDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() != 200) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         format = (LinkedHashMap<String, Object>) entries.get("format");
         if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
             downloadLink.getLinkStatus().setStatusText("Download nicht möglich (muss gekauft werden)");
@@ -288,8 +289,8 @@ public class TvnowDe extends PluginForHost {
         final String tv_station = (String) format.get("station");
         final String date = (String) entries.get("broadcastStartDate");
         final String episode_str = new Regex(addedlink, "folge\\-(\\d+)").getMatch(0);
-        final long season = DummyScriptEnginePlugin.toLong(entries.get("season"), -1);
-        long episode = DummyScriptEnginePlugin.toLong(entries.get("episode"), -1);
+        final long season = JavaScriptEngineFactory.toLong(entries.get("season"), -1);
+        long episode = JavaScriptEngineFactory.toLong(entries.get("episode"), -1);
         if (episode == -1 && episode_str != null) {
             episode = Long.parseLong(episode_str);
         }
@@ -339,10 +340,10 @@ public class TvnowDe extends PluginForHost {
         String url_hls = null;
         String url_rtmp_highest = null;
         String url_rtmp_highest_valid = null;
-        boolean isHDS = (DummyScriptEnginePlugin.toLong(format.get("flashHds"), -1) == 1);
+        boolean isHDS = (JavaScriptEngineFactory.toLong(format.get("flashHds"), -1) == 1);
         long bitrate_max = 0;
         long bitrate_temp = 0;
-        final String movieID = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
+        final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
         boolean hls_version_available = false;
 
         if (movieID.equals("-1")) {
@@ -381,8 +382,8 @@ public class TvnowDe extends PluginForHost {
             /* check if rtmp is possible */
             final String apiurl = "https://api." + CURRENT_DOMAIN + "/v3/movies/" + getURLPart(downloadLink) + "?fields=files";
             br.getPage(apiurl);
-            LinkedHashMap<String, Object> entries_rtmp = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries_rtmp, "files/items");
+            LinkedHashMap<String, Object> entries_rtmp = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries_rtmp, "files/items");
             if (ressourcelist == null || ressourcelist.size() == 0) {
                 if (!isFree) {
                     /*
@@ -536,7 +537,7 @@ public class TvnowDe extends PluginForHost {
         LinkedHashMap<String, Object> entries_rtmp = null;
         for (final Object quality_o : ressourcelist) {
             entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
-            bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
+            bitrate_temp = JavaScriptEngineFactory.toLong(entries_rtmp.get("bitrate"), -1);
             if (bitrate_temp > bitrate_max) {
                 bitrate_max = bitrate_temp;
                 url_rtmp_highest = (String) entries_rtmp.get("path");
@@ -555,7 +556,7 @@ public class TvnowDe extends PluginForHost {
         LinkedHashMap<String, Object> entries_rtmp = null;
         for (final Object quality_o : ressourcelist) {
             entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
-            bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
+            bitrate_temp = JavaScriptEngineFactory.toLong(entries_rtmp.get("bitrate"), -1);
             url_rtmp_temp = (String) entries_rtmp.get("path");
             if (bitrate_temp > bitrate_max && this.isValidRTMPUrl(url_rtmp_temp)) {
                 bitrate_max = bitrate_temp;
@@ -660,12 +661,11 @@ public class TvnowDe extends PluginForHost {
                 // System.out.println(media);
 
             }
-            
+
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
 
-            
         }
         return null;
     }
@@ -722,22 +722,6 @@ public class TvnowDe extends PluginForHost {
         } catch (final Throwable e2) {
             return null;
         }
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /** Formats the existing date to the 'general' date used for german TV online services: yyyy-MM-dd */

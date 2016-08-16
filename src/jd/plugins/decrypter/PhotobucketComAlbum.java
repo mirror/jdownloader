@@ -28,7 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:www\\.)?s\\d+\\.photobucket\\.com/user/[^/]+/library.+" }, flags = { 0 })
 public class PhotobucketComAlbum extends PluginForDecrypt {
@@ -62,13 +63,13 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         if (albumdeds == null) {
             return null;
         }
-        json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(albumdeds);
+        json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(albumdeds);
         if (image_count_total == 0) {
-            image_count_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(json, "items/total"), 0);
+            image_count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "items/total"), 0);
         }
         /* Don't try more than 24 per page - it won't work - state 2015-10-28 */
         // final long max_entries_per_page = 24;
-        final long max_entries_per_page = DummyScriptEnginePlugin.toLong(json.get("pageSize"), 24);
+        final long max_entries_per_page = JavaScriptEngineFactory.toLong(json.get("pageSize"), 24);
 
         final String fpName = (String) json.get("albumName");
 
@@ -92,14 +93,14 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
                 br.getHeaders().put("application/json", "text/javascript, */*; q=0.01");
                 final String url = libraryUrl + "/component/Common-PageCollection-Album-AlbumPageCollection?filters[album]=" + currentAlbumPath + "&filters[album_content]=2&sort=3&limit=" + max_entries_per_page + "&page=" + page + "&linkerMode=&json=1&hash=" + token + "&_=" + System.currentTimeMillis();
                 br.getPage(url);
-                json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
-            final ArrayList<Object> ressourcelist = (ArrayList) (decryptedLinks.isEmpty() ? DummyScriptEnginePlugin.walkJson(json, "items/objects") : DummyScriptEnginePlugin.walkJson(json, "body/objects"));
+            final ArrayList<Object> ressourcelist = (ArrayList) (decryptedLinks.isEmpty() ? JavaScriptEngineFactory.walkJson(json, "items/objects") : JavaScriptEngineFactory.walkJson(json, "body/objects"));
             for (final Object pico : ressourcelist) {
                 json = (LinkedHashMap<String, Object>) pico;
                 final String fname = (String) json.get("name");
                 final String dlink = (String) json.get("linkUrl");
-                final String userid = Long.toString(DummyScriptEnginePlugin.toLong(json.get("userId"), -1));
+                final String userid = Long.toString(JavaScriptEngineFactory.toLong(json.get("userId"), -1));
                 if (fname == null || dlink == null || userid.equals("-1")) {
                     return null;
                 }

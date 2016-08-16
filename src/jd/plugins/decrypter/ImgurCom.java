@@ -370,22 +370,6 @@ public class ImgurCom extends PluginForDecrypt {
         }
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     private ArrayList<DownloadLink> createOfflineLink(final String link) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final DownloadLink offline = createDownloadlink("directhttp://" + link);

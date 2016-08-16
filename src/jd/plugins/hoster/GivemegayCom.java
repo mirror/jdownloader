@@ -32,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "givemegay.com" }, urls = { "http://(www\\.)?givemegay\\.com/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class GivemegayCom extends PluginForHost {
@@ -76,7 +77,7 @@ public class GivemegayCom extends PluginForHost {
         }
         /* This 'API' is usually only available for registered users in the form of a download button. */
         br.getPage("http://www.givemegay.com/?action=show_download_link&gallery_id=" + vid);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("data");
         final String filesize = (String) page_info.get("filesize");
         DLLINK = (String) page_info.get("download_url");

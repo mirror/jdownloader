@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -93,7 +94,7 @@ public class MultiShareCz extends antiDDoSForHost {
             account.setMaxSimultanDownloads(-1);
         } catch (final Throwable e) {
         }
-        final String trafficleft = getJson("credit");
+        final String trafficleft = PluginJSonUtils.getJsonValue(br, "credit");
         if (trafficleft != null) {
             // 1 credit = 1 MB
             long traffic = (long) Double.parseDouble(trafficleft) * (1024 * 1024l);
@@ -263,8 +264,8 @@ public class MultiShareCz extends antiDDoSForHost {
         if (br.containsHTML("ERR: Invalid password\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        final String dllink = getJson("link");
-        final String maxChunks = getJson("chunks");
+        final String dllink = PluginJSonUtils.getJsonValue(br, "link");
+        final String maxChunks = PluginJSonUtils.getJsonValue(br, "chunks");
         if (dllink == null) {
             handleUnknownErrors(this.currentAcc, link, "dllinknull", 10);
         }

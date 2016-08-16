@@ -34,8 +34,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dmax.de" }, urls = { "http://(www\\.)?(dmax|tlc|animalplanet|discovery)\\.de/.+" }, flags = { 0 })
 public class DmaxDeDecrypter extends PluginForDecrypt {
@@ -76,7 +77,7 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             if (entries.get("error") != null) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
@@ -102,13 +103,13 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 final Object oheight = vdata.get("frameHeight");
                 final Object odate = vdata.get("uploadTimestampMillis");
                 if (odate != null) {
-                    date_formatted = formatDate(DummyScriptEnginePlugin.toLong(odate, -1));
+                    date_formatted = formatDate(JavaScriptEngineFactory.toLong(odate, -1));
                 }
                 String width = null;
                 String height = null;
                 if (owidth != null && oheight != null) {
-                    width = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(owidth, -1));
-                    height = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(oheight, -1));
+                    width = Long.toString(JavaScriptEngineFactory.toLong(owidth, -1));
+                    height = Long.toString(JavaScriptEngineFactory.toLong(oheight, -1));
                 }
                 final boolean audioOnly = ((Boolean) vdata.get("audioOnly")).booleanValue();
                 if (audioOnly) {
@@ -127,7 +128,7 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 }
 
                 if (width != null && height != null && osize != null && formats.containsKey(width) && cfg.getBooleanProperty(width, true)) {
-                    final long filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(osize, -1);
+                    final long filesize = JavaScriptEngineFactory.toLong(osize, -1);
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     final String[] vidinfo = formats.get(width);
                     String filename = date_formatted + "_" + nicehost_nicer + "_" + title + "_" + getFormatString(vidinfo, width + "x" + height);
@@ -243,22 +244,6 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
             formatString = formatString.substring(0, formatString.lastIndexOf("_"));
         }
         return formatString;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private void initAPI(final String host) throws PluginException {

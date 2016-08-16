@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -39,6 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridLinkFr extends PluginForHost {
@@ -110,8 +110,8 @@ public class DebridLinkFr extends PluginForHost {
         final String[] hostitems = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "hosters"));
         for (final String hostitem : hostitems) {
             // final String name = getJson(hostitem, "name");
-            final boolean isFreeHost = Boolean.parseBoolean(PluginJSonUtils.getJson(hostitem, "free_host"));
-            final String status = PluginJSonUtils.getJson(hostitem, "status");
+            final boolean isFreeHost = Boolean.parseBoolean(PluginJSonUtils.getJsonValue(hostitem, "free_host"));
+            final String status = PluginJSonUtils.getJsonValue(hostitem, "status");
             /* Don't add hosts if they are down or disabled, */
             if ("-1".equals(status) || "0".equals(status)) {
                 // logger.info("NOT adding host " + name + " to host array because it is down or disabled");
@@ -546,7 +546,7 @@ public class DebridLinkFr extends PluginForHost {
             final String[] hostinfo = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(plain_hostinfo, "hosters"));
             if (hostinfo != null) {
                 for (final String singlehostinfo : hostinfo) {
-                    final boolean free_host = Boolean.parseBoolean(PluginJSonUtils.getJson(singlehostinfo, "free_host"));
+                    final boolean free_host = Boolean.parseBoolean(PluginJSonUtils.getJsonValue(singlehostinfo, "free_host"));
                     if (singlehostinfo.contains(currenthost) && !free_host) {
                         return false;
                     }

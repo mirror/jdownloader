@@ -30,7 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+)" }, flags = { 0 })
 public class VscoCo extends PluginForDecrypt {
@@ -66,9 +67,9 @@ public class VscoCo extends PluginForDecrypt {
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             ajax.getPage("/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(ajax.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             if (page == 1) {
-                amount_total = DummyScriptEnginePlugin.toLong(entries.get("total"), 0);
+                amount_total = JavaScriptEngineFactory.toLong(entries.get("total"), 0);
                 if (amount_total == 0) {
                     logger.info("User has zero content!");
                     decryptedLinks.add(this.createOfflinelink(parameter));

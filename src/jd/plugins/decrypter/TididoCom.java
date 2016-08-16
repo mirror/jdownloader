@@ -29,7 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/.+" }, flags = { 0 })
 public class TididoCom extends PluginForDecrypt {
@@ -98,11 +99,11 @@ public class TididoCom extends PluginForDecrypt {
         if (parameter.matches(TYPE_PLAYLIST)) {
             if (parameter.matches(TYPE_PLAYLIST_MOOD)) {
                 this.br.getPage("http://tidido.com/api/music/mood/" + playlist_mood + "?areaname=" + playlist_areaname + "&playlists=true");
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "playlists_data/playlists");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "playlists_data/playlists");
             } else {
                 this.br.getPage("http://tidido.com/api/music/playlist?action=userPlaylists&u=" + user_id);
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 ressourcelist = (ArrayList) entries.get("playlists");
             }
             /* Find song_ids of our playlist ... */
@@ -125,7 +126,7 @@ public class TididoCom extends PluginForDecrypt {
                 song_ids_url += (String) songido + "_";
             }
             this.br.getPage(song_ids_url);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             song_array = (ArrayList) entries.get("songs");
             ressourcelist = (ArrayList) entries.get("artists");
             /* Set packagename */
@@ -138,10 +139,10 @@ public class TididoCom extends PluginForDecrypt {
         } else {
             if (album_id != null) {
                 this.br.getPage("http://tidido.com/api/music/album/" + album_id);
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-                song_array = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "songs/songs");
-                name_album = (String) DummyScriptEnginePlugin.walkJson(entries, "songs/albums/{0}/name");
-                ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "songs/artists");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                song_array = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "songs/songs");
+                name_album = (String) JavaScriptEngineFactory.walkJson(entries, "songs/albums/{0}/name");
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "songs/artists");
                 addSongs(song_array, ressourcelist);
             } else {
                 final int max_entries = 100;
@@ -153,7 +154,7 @@ public class TididoCom extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                     this.br.getPage("http://tidido.com/api/gene/artist/" + artist_id + "?section=topSongs&limit=" + max_entries + "&offset=" + offset);
-                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                     song_array = (ArrayList) entries.get("songs");
                     ressourcelist = (ArrayList) entries.get("artists");
                     addSongs(song_array, ressourcelist);
@@ -195,11 +196,11 @@ public class TididoCom extends PluginForDecrypt {
         for (final Object songo : song_array) {
             entries2 = (LinkedHashMap<String, Object>) songo;
             String artist = null;
-            final long artistid = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries2, "artistIds/{0}"), 0);
+            final long artistid = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries2, "artistIds/{0}"), 0);
             final String songid = (String) entries2.get("id");
             final String songname = (String) entries2.get("name");
             final String directlink = (String) entries2.get("url");
-            final long bitrate = DummyScriptEnginePlugin.toLong(entries2.get("bitrate"), 0);
+            final long bitrate = JavaScriptEngineFactory.toLong(entries2.get("bitrate"), 0);
             String albumID_this_song = (String) entries2.get("albumId");
             if (albumID_this_song == null) {
                 /* Small fallback attempt */
@@ -255,22 +256,6 @@ public class TididoCom extends PluginForDecrypt {
             }
 
         }
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
 }

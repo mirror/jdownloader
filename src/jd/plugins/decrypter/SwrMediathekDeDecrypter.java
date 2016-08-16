@@ -37,6 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://(www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" }, flags = { 0 })
 public class SwrMediathekDeDecrypter extends PluginForDecrypt {
@@ -108,7 +109,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final LinkedHashMap<String, Object> attr_main = (LinkedHashMap<String, Object>) entries.get("attr");
             final String description = (String) attr_main.get("entry_descl");
             final boolean rtmpExists = br.containsHTML("rtmp://");
@@ -285,22 +286,6 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         }
         dl.setAvailable(true);
         return dl;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private String formatDate(final String input) {

@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -90,10 +91,8 @@ public class WrzutaPl extends PluginForHost {
                         // http://www.wrzuta.pl/npp/embed/vengodelmar007/0psjP9Mz9Vz?login=vengodelmar007&key=0psjP9Mz9Vz
                         final String userName = new Regex(downloadLink.getDownloadURL(), "https?://([^<>\"]+)\\.wrzuta\\.pl").getMatch(0);
                         final String embedURL = "http://www.wrzuta.pl/npp/embed/" + userName + "/" + fileId + "?login=" + userName + "&key=" + fileId;
-                        final String jsonReponse = br.getPage(embedURL);
-                        if (jsonReponse != null) {
-                            linkUrl = getJson(jsonReponse, "url");
-                        }
+                        br.getPage(embedURL);
+                        linkUrl = PluginJSonUtils.getJsonValue(br, "url");
                     }
 
                     logger.info(linkUrl);
@@ -250,7 +249,4 @@ public class WrzutaPl extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
 }

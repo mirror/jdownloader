@@ -66,8 +66,8 @@ public class BxNt extends antiDDoSForDecrypt {
         }
         String fpName = null;
         if (br.getURL().matches(TYPE_APP)) {
-            final String cp = getJson("current_page");
-            final String pc = getJson("page_count");
+            final String cp = PluginJSonUtils.getJsonValue(br, "current_page");
+            final String pc = PluginJSonUtils.getJsonValue(br, "page_count");
             final int currentPage = cp != null ? Integer.parseInt(cp) : 1;
             final int pageCount = pc != null ? Integer.parseInt(pc) : 1;
             String parent = null;
@@ -125,7 +125,7 @@ public class BxNt extends antiDDoSForDecrypt {
 
                     json_Text = br.getRegex("(\"shared_folder_info\".*?),\"db\"").getMatch(0);
                     // fix packagename
-                    final String parentName = getJson(json_Text, "name");
+                    final String parentName = PluginJSonUtils.getJsonValue(json_Text, "name");
                     if (fpName == null || parentName != null && !fpName.equals(parentName)) {
                         fpName = parentName;
                     }
@@ -135,13 +135,13 @@ public class BxNt extends antiDDoSForDecrypt {
                 for (final String singleflinkinfo : filelinkinfo) {
                     // each json object has parent and parent name info. We can use this to set correct packagename!
                     if (parent == null) {
-                        parent = getJson(singleflinkinfo, "parent");
+                        parent = PluginJSonUtils.getJsonValue(singleflinkinfo, "parent");
                     }
-                    final String parentName = getJson(singleflinkinfo, "parent_name");
+                    final String parentName = PluginJSonUtils.getJsonValue(singleflinkinfo, "parent_name");
                     if (fpName == null || parentName != null && !fpName.equals(parentName)) {
                         fpName = parentName;
                     }
-                    final String type = getJson(singleflinkinfo, "type");
+                    final String type = PluginJSonUtils.getJsonValue(singleflinkinfo, "type");
                     /* Check for invalid entry */
                     if (type == null) {
                         continue;
@@ -151,15 +151,17 @@ public class BxNt extends antiDDoSForDecrypt {
                         final DownloadLink fina = createDownloadlink("https://app.box.com/s/" + main_folderid + "/1/" + id);
                         decryptedLinks.add(fina);
                     } else {
-                        final String filename = getJson(singleflinkinfo, "name");
-                        final String filesize = getJson(singleflinkinfo, "raw_size");
-                        final String sha1 = getJson(singleflinkinfo, "sha1");
+                        final String filename = PluginJSonUtils.getJsonValue(singleflinkinfo, "name");
+                        final String filesize = PluginJSonUtils.getJsonValue(singleflinkinfo, "raw_size");
+                        final String sha1 = PluginJSonUtils.getJsonValue(singleflinkinfo, "sha1");
                         if (id != null && filename != null && filesize != null) {
                             final String finallink = "https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid;
                             final DownloadLink fina = createDownloadlink(finallink);
                             fina.setName(filename);
                             fina.setDownloadSize(Long.parseLong(filesize));
-                            fina.setSha1Hash(sha1);
+                            if (sha1 != null) {
+                                fina.setSha1Hash(sha1);
+                            }
                             fina.setAvailable(true);
                             try {/* JD2 only */
                                 fina.setContentUrl(finallink);

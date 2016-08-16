@@ -29,7 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com", "qqmusic.qq.com" }, urls = { "http://(?:www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)", "http://y\\.qq\\.com/#type=(?:album|singer)\\&mid=[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class QqComDecrypter extends PluginForDecrypt {
@@ -114,13 +115,13 @@ public class QqComDecrypter extends PluginForDecrypt {
                 return null;
             }
             LinkedHashMap<String, Object> entries = null;
-            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
             for (final Object datao : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) datao;
                 final String albumname = encodeUnicode((String) entries.get("albumname"));
                 final String songname = encodeUnicode((String) entries.get("songname"));
-                final String songid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("songid"), -1));
-                final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size320"), -1);
+                final String songid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("songid"), -1));
+                final long filesize = JavaScriptEngineFactory.toLong(entries.get("size320"), -1);
                 if (albumname == null || songname == null || "-1".equals(songid)) {
                     return null;
                 }
@@ -149,22 +150,6 @@ public class QqComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /* NO OVERRIDE!! */

@@ -31,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class MyviRu extends PluginForHost {
 
@@ -98,13 +100,13 @@ public class MyviRu extends PluginForHost {
             this.br.getPage(html_embed_url);
             final String videojson = this.br.getRegex("sprutoData:(\\{.+\\}),").getMatch(0);
             try {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(videojson);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videojson);
                 /*
                  * This is a possible direct way to find our final downloadlink but lets prefer the API as formats of this json can differ
                  * (last time I got a .flv - API usually delivers .mp4).
                  */
-                // dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "playlist/{0}/video/{0}/url");
-                filename = (String) DummyScriptEnginePlugin.walkJson(entries, "playlist/{0}/title");
+                // dllink = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/video/{0}/url");
+                filename = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/title");
             } catch (final Throwable e) {
             }
             if (filename == null) {
@@ -116,8 +118,8 @@ public class MyviRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage(api_url);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        dllink = (String) DummyScriptEnginePlugin.walkJson(entries, "sprutoData/playlist/{0}/video/{0}/url");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        dllink = (String) JavaScriptEngineFactory.walkJson(entries, "sprutoData/playlist/{0}/video/{0}/url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -176,22 +178,6 @@ public class MyviRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

@@ -27,8 +27,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" }, flags = { 0, 0 })
 public class ImagesHackCom extends PluginForHost {
@@ -103,9 +106,9 @@ public class ImagesHackCom extends PluginForHost {
                 /* Typically response 500 for offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             json = (LinkedHashMap<String, Object>) json.get("result");
-            final AvailableStatus status = apiImageGetAvailablestatus(link, json);
+            final AvailableStatus status = apiImageGetAvailablestatus(this, link, json);
             DLLINK = (String) json.get("direct_link");
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -144,7 +147,7 @@ public class ImagesHackCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static AvailableStatus apiImageGetAvailablestatus(final DownloadLink dl, LinkedHashMap<String, Object> json) {
+    public static AvailableStatus apiImageGetAvailablestatus(final Plugin plugin, final DownloadLink dl, LinkedHashMap<String, Object> json) {
         final Object error = json.get("error");
         if (error != null) {
             /* Whatever it is - our picture is probably offline! */
@@ -152,7 +155,7 @@ public class ImagesHackCom extends PluginForHost {
             return AvailableStatus.FALSE;
         }
         final String id = api_json_get_id(json);
-        final long filesize = DummyScriptEnginePlugin.toLong(json.get("filesize"), -1);
+        final long filesize = JavaScriptEngineFactory.toLong(json.get("filesize"), -1);
         final String username = api_json_get_username(json);
         final String album = api_json_get_album(json);
         final Object isDeleted_o = json.get("hidden");
@@ -183,7 +186,7 @@ public class ImagesHackCom extends PluginForHost {
                 filename = album + "_" + filename;
             }
         }
-        filename = encodeUnicode(filename);
+        filename = plugin.encodeUnicode(filename);
         dl.setFinalFileName(filename);
         if (filesize > 0) {
             /* Happens e.g. when crawling all images of a user - API sometimes randomly returns 0 for filesize. */
@@ -194,7 +197,7 @@ public class ImagesHackCom extends PluginForHost {
     }
 
     public static String api_json_get_album(final LinkedHashMap<String, Object> json) {
-        return (String) DummyScriptEnginePlugin.walkJson(json, "album/title");
+        return (String) JavaScriptEngineFactory.walkJson(json, "album/title");
     }
 
     public static String api_json_get_id(final LinkedHashMap<String, Object> json) {
@@ -202,7 +205,7 @@ public class ImagesHackCom extends PluginForHost {
     }
 
     public static String api_json_get_username(final LinkedHashMap<String, Object> json) {
-        return (String) DummyScriptEnginePlugin.walkJson(json, "owner/username");
+        return (String) JavaScriptEngineFactory.walkJson(json, "owner/username");
     }
 
     /**
@@ -266,22 +269,6 @@ public class ImagesHackCom extends PluginForHost {
         /* Offline content */
         br.setAllowedResponseCodes(500);
         return br;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    public static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

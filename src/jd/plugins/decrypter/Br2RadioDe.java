@@ -116,23 +116,4 @@ public class Br2RadioDe extends PluginForDecrypt {
         }
     }
 
-    private static String encodeUnicode(final String input) {
-        if (input == null) {
-            return null;
-        } else {
-            String output = input;
-            output = output.replace(":", ";");
-            output = output.replace("|", "¦");
-            output = output.replace("<", "[");
-            output = output.replace(">", "]");
-            output = output.replace("/", "⁄");
-            output = output.replace("\\", "∖");
-            output = output.replace("*", "#");
-            output = output.replace("?", "¿");
-            output = output.replace("!", "¡");
-            output = output.replace("\"", "'");
-            return output;
-        }
-    }
-
 }

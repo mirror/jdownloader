@@ -187,7 +187,7 @@ public class VevoCom extends PluginForHost {
 
     /*
      * 2nd way to get http streams: http://smilstream.vevo.com/HDFlash/v1/smil/<videoid>/<videoid>.smil
-     * 
+     *
      * Examplecode: http://bluecop-xbmc-repo.googlecode.com/svn-history/r383/trunk/plugin.video.vevo/default.py
      */
     private void downloadHTTP(final DownloadLink downloadLink) throws Exception {
@@ -245,22 +245,6 @@ public class VevoCom extends PluginForHost {
 
     private String getMainlink(final DownloadLink dl) {
         return dl.getStringProperty("mainlink", null);
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @SuppressWarnings("deprecation")

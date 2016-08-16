@@ -53,12 +53,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.ThrowingRunnable;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 2 })
 public class DataFileCom extends antiDDoSForHost {
@@ -235,14 +237,14 @@ public class DataFileCom extends antiDDoSForHost {
         try {
             String js = br.getRegex("<script language=\"JavaScript\">(.*)</script>").getMatch(0);
             if (js != null) {
-                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(plugin);
+                ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(plugin);
                 final ScriptEngine engine = mgr.getEngineByName("JavaScript");
                 // history.length<1){document.body.innerHTML=''
                 engine.eval("document={};document.body={};");
                 engine.eval("window={};window.location={};");
                 engine.eval("history=[];");
                 // load java environment trusted
-                DummyScriptEnginePlugin.runTrusted(new ThrowingRunnable<ScriptException>() {
+                JavaScriptEngineFactory.runTrusted(new ThrowingRunnable<ScriptException>() {
 
                     @Override
                     public void run() throws ScriptException {
@@ -780,15 +782,17 @@ public class DataFileCom extends antiDDoSForHost {
             ibr.getPage(url);
         }
         // error handling for generic errors which could occur at any point in time!
-        if (("718".equalsIgnoreCase(getJson(ibr, "code")))) {
+        if (("718".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ibr, "code")))) {
             // 718 ERR_API_IP_SUSPENDED The IP Address initiating the request has been suspended
             throw new PluginException(LinkStatus.ERROR_FATAL, "\r\n" + errorMsg(ibr));
         }
     }
 
     private String errorMsg(final Browser ibr) {
-        final String message = getJson(ibr, "message");
-        logger.warning(message);
+        final String message = PluginJSonUtils.getJsonValue(ibr, "message");
+        if (message != null) {
+            logger.warning(message);
+        }
         return message;
     }
 
@@ -801,7 +805,7 @@ public class DataFileCom extends antiDDoSForHost {
     }
 
     private boolean sessionTokenInValid(final Account account, final Browser ibr) {
-        final String code = getJson(ibr, "code");
+        final String code = PluginJSonUtils.getJsonValue(ibr, "code");
         if (("909".equalsIgnoreCase(code) || "910".equalsIgnoreCase(code))) {
             // 909 Token not valid
             // 910 Token Expired
@@ -826,9 +830,9 @@ public class DataFileCom extends antiDDoSForHost {
     private void handlePremium_API(final DownloadLink downloadLink, final Account account) throws Exception {
         // No API method for linkchecking, but can done based on this request response!
         getPage(br, apiURL + "/files/download?file=" + Encoding.urlEncode(downloadLink.getDownloadURL()), account);
-        final String ddlink = getJson("download_url");
+        final String ddlink = PluginJSonUtils.getJsonValue(br, "download_url");
         if (ddlink == null) {
-            final String code = getJson("code");
+            final String code = PluginJSonUtils.getJsonValue(br, "code");
             if ("500".equalsIgnoreCase(code)) {
                 // 500 MySQL server has gone away
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
@@ -895,15 +899,15 @@ public class DataFileCom extends antiDDoSForHost {
         final Browser nbr = new Browser();
         prepApiBrowser(nbr);
         nbr.getPage(apiURL + "/users/auth?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&accesskey=" + accessKey);
-        final String apiToken = getJson(nbr, "token");
-        final String code = getJson(nbr, "code");
+        final String apiToken = PluginJSonUtils.getJsonValue(nbr, "token");
+        final String code = PluginJSonUtils.getJsonValue(nbr, "code");
         if (apiToken != null) {
             account.setProperty("apiToken", apiToken);
             // all is good! lets update account info whilst we are at it. It's all here!
             AccountInfo ai = new AccountInfo();
-            final String traffic_left = getJson(nbr, "traffic_left");
-            final String primium_till = getJson(nbr, "premium_till");
-            final String space_left = getJson(nbr, "space_left");
+            final String traffic_left = PluginJSonUtils.getJsonValue(nbr, "traffic_left");
+            final String primium_till = PluginJSonUtils.getJsonValue(nbr, "premium_till");
+            final String space_left = PluginJSonUtils.getJsonValue(nbr, "space_left");
             if (primium_till != null) {
                 // premium_till - time when user premium had expired, unix_timestamp, int (0 -no premium access)
                 ai.setValidUntil(Long.parseLong(primium_till + "000"));

@@ -30,7 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/(?:artist|artwork)/[^/]+" }, flags = { 0 })
 public class ArtstationCom extends PluginForDecrypt {
@@ -57,16 +58,16 @@ public class ArtstationCom extends PluginForDecrypt {
             final String username = parameter.substring(parameter.lastIndexOf("/"));
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             this.br.getPage("https://www.artstation.com/users/" + username + ".json");
-            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final String full_name = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
             final short entries_per_page = 50;
-            int entries_total = (int) DummyScriptEnginePlugin.toLong(json.get("projects_count"), 0);
+            int entries_total = (int) JavaScriptEngineFactory.toLong(json.get("projects_count"), 0);
             int offset = 0;
             int page = 1;
             do {
                 this.br.getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
-                final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList) pageJson.get("data");
                 for (final Object resource : ressourcelist) {
                     final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) resource;
@@ -122,14 +123,14 @@ public class ArtstationCom extends PluginForDecrypt {
             }
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             this.br.getPage("https://www.artstation.com/projects/" + project_id + ".json");
-            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> resource_data_list = (ArrayList<Object>) json.get("assets");
-            final String full_name = (String) DummyScriptEnginePlugin.walkJson(json, "user/full_name");
+            final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
             final String projectTitle = (String) json.get("title");
             for (final Object jsono : resource_data_list) {
                 final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) jsono;
                 final String url = (String) imageJson.get("image_url");
-                final String fid = Long.toString(DummyScriptEnginePlugin.toLong(imageJson.get("id"), -1));
+                final String fid = Long.toString(JavaScriptEngineFactory.toLong(imageJson.get("id"), -1));
                 final String imageTitle = (String) imageJson.get("title");
                 final Boolean hasImage = (Boolean) imageJson.get("has_image");
                 final String playerEmbedded = (String) imageJson.get("player_embedded");
@@ -194,7 +195,7 @@ public class ArtstationCom extends PluginForDecrypt {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -208,19 +209,4 @@ public class ArtstationCom extends PluginForDecrypt {
         }
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
 }

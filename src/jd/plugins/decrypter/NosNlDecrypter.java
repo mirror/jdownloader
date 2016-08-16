@@ -193,7 +193,7 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 dl.setBrowserUrl(PARAMETER);
                 dl.setProperty("LINKDUPEID", linkdupeid);
             }
-            dl.setName(jd.plugins.hoster.NosNl.getFormattedFilename(dl));
+            dl.setName(jd.plugins.hoster.NosNl.getFormattedFilename(this, dl));
             if (SubConfiguration.getConfig(DOMAIN).getBooleanProperty(FASTLINKCHECK, false)) {
                 dl.setAvailable(true);
             }

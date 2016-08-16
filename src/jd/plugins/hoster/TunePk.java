@@ -31,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tune.pk" }, urls = { "https?://(?:www\\.)?tune\\.pk/player/embed_player\\.php\\?vid=\\d+|https?://embed\\.tune\\.pk/play/\\d+|https?(?:www\\.)?://tune\\.pk/video/\\d+" }, flags = { 0 })
 public class TunePk extends PluginForHost {
 
@@ -75,14 +77,14 @@ public class TunePk extends PluginForHost {
         /* Find highest quality */
         final String json_sources = this.br.getRegex("_details\\.player\\.sources[\t\n\r ]*?=[\t\n\r ]*?(\\[\\{.*?\\}\\])").getMatch(0);
         LinkedHashMap<String, Object> entries = null;
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json_sources);
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json_sources);
         String dllinktemp = null;
         long bitratetemp = 0;
         long bitratemax = 0;
         for (final Object qualityo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) qualityo;
             dllinktemp = (String) entries.get("file");
-            bitratetemp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), 0);
+            bitratetemp = JavaScriptEngineFactory.toLong(entries.get("bitrate"), 0);
             if (bitratetemp > bitratemax && dllinktemp != null && !dllinktemp.equals("")) {
                 bitratemax = bitratetemp;
                 dllink = dllinktemp;
@@ -170,22 +172,6 @@ public class TunePk extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

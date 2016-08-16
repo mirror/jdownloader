@@ -41,6 +41,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(programs?|topic)/.+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
@@ -119,7 +121,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 HashMap<String, String> mediaEntry = null;
                 String quality = null, key = null, title = null;
                 /* jsonData --> HashMap */
-                ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
                 entries = (LinkedHashMap<String, Object>) entries.get("values");
                 ressourcelist = (ArrayList) entries.get("segments");
@@ -196,9 +198,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             /* [0] = .srt, [1] = WEBVTT .vtt */
                             subtitle_list = (ArrayList) sources_subtitle_o;
                             if (subtitle_list.size() > 0) {
-                                subtitle = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(subtitle_list.get(1), "src");
+                                subtitle = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
                             } else {
-                                subtitle = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(subtitle_list.get(0), "src");
+                                subtitle = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(0), "src");
                             }
                         }
                         long filesize = 0;

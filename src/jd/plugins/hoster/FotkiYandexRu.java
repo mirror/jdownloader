@@ -32,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotki.yandex.ru" }, urls = { "https?://fotki\\.yandex\\.ru/next/users/[A-Za-z0-9\\-_]+/album/\\d+/view/\\d+" }, flags = { 0 })
 public class FotkiYandexRu extends PluginForHost {
 
@@ -86,7 +88,7 @@ public class FotkiYandexRu extends PluginForHost {
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final LinkedHashMap<String, Object> sizes = (LinkedHashMap<String, Object>) entries.get("sizes");
         for (final String size : allowed_sizes) {
             final Object sizeo = sizes.get(size);
@@ -184,22 +186,6 @@ public class FotkiYandexRu extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

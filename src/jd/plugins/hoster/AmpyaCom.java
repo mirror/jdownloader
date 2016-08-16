@@ -29,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ampya.com" }, urls = { "http://ampyadecrypted\\.com/\\d+" }, flags = { 0 })
 public class AmpyaCom extends PluginForHost {
 
@@ -63,11 +65,11 @@ public class AmpyaCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("clips");
         for (final Object clipo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) clipo;
-            final String video_id_temp = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("video_id"), 0));
+            final String video_id_temp = Long.toString(JavaScriptEngineFactory.toLong(entries.get("video_id"), 0));
             if ("0".equals(video_id_temp)) {
                 continue;
             }
@@ -94,8 +96,8 @@ public class AmpyaCom extends PluginForHost {
         /* Chose highest quality available */
         String rtmpurl = null;
         final String[] qualities = { "fullhd", "hd", "medium", "low", "preview" };
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "streaming/qualities");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "streaming/qualities");
         for (final String quality : qualities) {
             rtmpurl = (String) entries.get(quality);
             if (rtmpurl != null) {
@@ -137,9 +139,9 @@ public class AmpyaCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw("http://ampya.com/webservice/v1/putpat/init", "{\"app\":{\"token\":\"ampya_web\",\"version\":\"3.0.0\",\"partner_id\":1},\"viewer\":\"\"}");
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String session_id = (String) DummyScriptEnginePlugin.walkJson(entries, "session/session_id");
-        final String csrf_token = (String) DummyScriptEnginePlugin.walkJson(entries, "session/csrf_token");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final String session_id = (String) JavaScriptEngineFactory.walkJson(entries, "session/session_id");
+        final String csrf_token = (String) JavaScriptEngineFactory.walkJson(entries, "session/csrf_token");
         if (session_id == null || csrf_token == null) {
             return;
         }

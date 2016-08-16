@@ -30,7 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icloud.com" }, urls = { "https?://(?:www\\.)?icloud\\.com/sharedalbum/[A-Za-z\\-]+/#[A-Za-z0-9]+" }, flags = { 0 })
 public class IcloudCom extends PluginForDecrypt {
@@ -63,7 +64,7 @@ public class IcloudCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         LinkedHashMap<String, Object> entries_tmp = null;
         ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("photos");
         final String userFirstName = (String) entries.get("userFirstName");
@@ -101,7 +102,7 @@ public class IcloudCom extends PluginForDecrypt {
             while (it.hasNext()) {
                 entrytemp = it.next();
                 entries_tmp = (LinkedHashMap<String, Object>) entrytemp.getValue();
-                filesizeTemp = DummyScriptEnginePlugin.toLong(entries_tmp.get("fileSize"), 0);
+                filesizeTemp = JavaScriptEngineFactory.toLong(entries_tmp.get("fileSize"), 0);
                 if (filesizeTemp > filesizeMax) {
                     filesizeMax = filesizeTemp;
                     checksum = (String) entries_tmp.get("checksum");
@@ -144,7 +145,7 @@ public class IcloudCom extends PluginForDecrypt {
         if (extendedMode) {
             /* Try to find final 'nice' filenames right away! */
             this.br.postPageRaw("/" + folderid + "/sharedstreams/webasseturls", jsonAll);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("items");
 
             DownloadLink dl = null;

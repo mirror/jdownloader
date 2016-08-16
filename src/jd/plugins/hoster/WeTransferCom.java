@@ -31,6 +31,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {
@@ -101,10 +102,10 @@ public class WeTransferCom extends PluginForHost {
         dllink = PluginJSonUtils.getJson(br, "direct_link");
         if (dllink == null) {
             // 20160415-raztoki
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             final LinkedHashMap<String, Object> field = (LinkedHashMap<String, Object>) entries.get("fields");
-            final String action = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "formdata/action");
-            final String method = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "formdata/method");
+            final String action = (String) JavaScriptEngineFactory.walkJson(entries, "formdata/action");
+            final String method = (String) JavaScriptEngineFactory.walkJson(entries, "formdata/method");
             if (action == null || field == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

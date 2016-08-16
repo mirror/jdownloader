@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -59,9 +60,9 @@ public class GfyCatCom extends PluginForHost {
         if (br.containsHTML("\"error\"") || br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("json")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String username = getJson("userName");
-        final String filename = getJson("gfyName");
-        final String filesize = getJson("webmSize");
+        final String username = PluginJSonUtils.getJsonValue(br, "userName");
+        final String filename = PluginJSonUtils.getJsonValue(br, "gfyName");
+        final String filesize = PluginJSonUtils.getJsonValue(br, "webmSize");
         if (username == null || filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -75,7 +76,7 @@ public class GfyCatCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = getJson("webmUrl");
+            dllink = PluginJSonUtils.getJsonValue(br, "webmUrl");
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -129,16 +130,6 @@ public class GfyCatCom extends PluginForHost {
             /* Not available for 0.9.581 Stable */
         }
         return fid;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {

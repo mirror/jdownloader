@@ -41,10 +41,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
@@ -417,7 +417,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (gc != null) {
             FilePackage fp = null;
             final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
-            final Map<String, Object> json = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaMap(JSON);
+            final Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(JSON);
             final String articleBody = (String) json.get("articleBody");
             final String fpName = articleBody != null ? articleBody.replaceAll("[\r\n]+", "").trim() : fpname;
             if (fpName != null) {
@@ -427,7 +427,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             // single entry objects are not in 'list'
             ArrayList<Object> results = null;
             try {
-                results = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(json, "image/@list");
+                results = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(json, "image/@list");
             } catch (Throwable t) {
                 // single entry ?
                 final String[] a = new String[] { (String) json.get("image") };
@@ -593,7 +593,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 final String gc = getGoogleCarousel(br);
                 if (gc != null) {
                     final String JSON = new Regex(gc, "<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
-                    final Map<String, Object> json = jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaMap(JSON);
+                    final Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(JSON);
                     final ArrayList<Object> results = (ArrayList<Object>) json.get("itemListElement");
                     for (final Object result : results) {
                         final LinkedHashMap<String, Object> j = (LinkedHashMap<String, Object>) result;
@@ -705,8 +705,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             /* Not needed! */
             // br.getHeaders().put("X-tumblr-form-key", "blaTest");
             br.getPage("//www.tumblr.com/svc/indash_blog/posts?tumblelog_name_or_id=" + username + "&post_id=&limit=" + limit + "&offset=" + offset);
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            ressourcelist = (ArrayList<Object>) DummyScriptEnginePlugin.walkJson(entries, "response/posts");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "response/posts");
             for (final Object posto : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) posto;
                 final String type = (String) entries.get("type");
@@ -715,7 +715,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 String extension = null;
                 String extensionFallback = null;
                 if (type.equalsIgnoreCase("photo")) {
-                    directlink = (String) DummyScriptEnginePlugin.walkJson(entries, "photos/{0}/original_size/url");
+                    directlink = (String) JavaScriptEngineFactory.walkJson(entries, "photos/{0}/original_size/url");
                     extensionFallback = ".jpg";
                 } else if (type.equalsIgnoreCase("video")) {
                     directlink = (String) entries.get("video_url");

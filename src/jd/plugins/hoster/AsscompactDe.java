@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -62,7 +63,7 @@ public class AsscompactDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
-        String filename = getFilename(this.br, link.getDownloadURL());
+        String filename = getFilename(this, this.br, link.getDownloadURL());
         if (filename == null) {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
@@ -93,7 +94,7 @@ public class AsscompactDe extends PluginForHost {
         return false;
     }
 
-    public static String getFilename(final Browser br, final String url_source) {
+    public static String getFilename(final Plugin plugin, final Browser br, final String url_source) {
         String date = br.getRegex("class=\"showDate\">([^<>\"]*?)<").getMatch(0);
         String filename = br.getRegex("id=\"page\\-title\">([^<>]*?)<").getMatch(0);
         if (filename == null) {
@@ -104,7 +105,7 @@ public class AsscompactDe extends PluginForHost {
         }
         date = date.trim();
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
+        filename = plugin.encodeUnicode(filename);
 
         final String date_formatted = formatDate(date);
 
@@ -145,22 +146,6 @@ public class AsscompactDe extends PluginForHost {
         rtmp.setUrl(url_rtmp);
         rtmp.setResume(true);
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     public static String formatDate(final String input) {

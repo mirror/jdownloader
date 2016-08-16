@@ -51,6 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "https?://(?:www\\.)?fernsehkritik\\.tv/jdownloaderfolgeneu?\\d+", "https?://(?:www\\.)?massengeschmack\\.tv/(?:play|clip)/[a-z0-9\\-]+|https?://(?:www\\.)?massengeschmack\\.tv/live/[a-z0-9\\-]+|https?://massengeschmack\\.tv/dl/.+" }, flags = { 2, 2 })
 public class FernsehkritikTv extends PluginForHost {
@@ -218,15 +219,15 @@ public class FernsehkritikTv extends PluginForHost {
                 url_videoid_without_episodenumber = getVideoidWithoutEpisodenumber(url_videoid);
 
                 apiGetPage(this.br, String.format(API_BASE_URL + API_GET_CLIP, url_videoid));
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 final ArrayList<Object> files = (ArrayList) entries.get("files");
                 channel = (String) entries.get("pdesc");
                 episodename = (String) entries.get("title");
                 description = (String) entries.get("desc");
-                date = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("date"), -1));
+                date = Long.toString(JavaScriptEngineFactory.toLong(entries.get("date"), -1));
                 for (final Object fileo : files) {
                     entries = (LinkedHashMap<String, Object>) fileo;
-                    filesize_temp = DummyScriptEnginePlugin.toLong(entries.get("size"), -1);
+                    filesize_temp = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
                     dllink_temp = (String) entries.get("url");
                     if (inValidate(dllink_temp) && filesize_temp != -1) {
                         continue;
@@ -539,7 +540,7 @@ public class FernsehkritikTv extends PluginForHost {
             try {
                 String dllink_temp = null;
                 HashMap<String, Object> entries = null;
-                final ArrayList<Object> videoressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(stream_json);
+                final ArrayList<Object> videoressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(stream_json);
                 for (final Object videoo : videoressourcelist) {
                     entries = (HashMap<String, Object>) videoo;
                     dllink_temp = (String) entries.get("src");
@@ -1043,21 +1044,6 @@ public class FernsehkritikTv extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        // output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

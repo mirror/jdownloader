@@ -29,6 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younowdecrypted\\.com/[^/]+/\\d+" }, flags = { 0 })
 public class YounowCom extends PluginForHost {
@@ -69,9 +70,9 @@ public class YounowCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String name_url = fid + ".mp4";
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
-        final long errorcode = DummyScriptEnginePlugin.toLong(entries.get("errorCode"), 0);
+        final long errorcode = JavaScriptEngineFactory.toLong(entries.get("errorCode"), 0);
         if (errorcode == 247) {
             /* {"errorCode":247,"errorMsg":"Broadcast is private"} */
             link.setName(name_url);
@@ -152,22 +153,6 @@ public class YounowCom extends PluginForHost {
 
     public static String getbroadcastTitle(final LinkedHashMap<String, Object> entries) {
         return (String) entries.get("broadcastTitle");
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

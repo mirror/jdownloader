@@ -96,17 +96,18 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             }
         } else {
             // now comes the json
-            ajaxPostPageRaw("/v1/protected", ammendJson(null, "hash", uid));
-            if (StringUtils.containsIgnoreCase(getJson(ajax, "message"), "not found") || StringUtils.containsIgnoreCase(getJson(ajax, "messsage"), "not found")) {
+            ajaxPostPageRaw("/v1/protected", PluginJSonUtils.ammendJson(null, "hash", uid));
+            final String message = PluginJSonUtils.getJsonValue(ajax, "message");
+            if (StringUtils.containsIgnoreCase(message, "not found") || StringUtils.containsIgnoreCase(message, "not found")) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
             // we could also here check status?? maybe trust them that files are offline?? this way no captchas needed to find the links and
             // confirm ourselves.
-            final String security = getJsonNested(ajax, "security");
-            final String useCaptcha = getJson(security, "useCaptcha");
-            final String captchaType = getJson(security, "captchaType");
-            final String usePassword = getJson(security, "usePassword");
+            final String security = PluginJSonUtils.getJsonNested(ajax, "security");
+            final String useCaptcha = PluginJSonUtils.getJsonValue(security, "useCaptcha");
+            final String captchaType = PluginJSonUtils.getJsonValue(security, "captchaType");
+            final String usePassword = PluginJSonUtils.getJsonValue(security, "usePassword");
             if (!inValidate(security) && (PluginJSonUtils.parseBoolean(useCaptcha) || PluginJSonUtils.parseBoolean(usePassword))) {
                 int tries = 4;
                 for (int i = 0; i < tries; i++) {
@@ -124,14 +125,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                                 throw new DecrypterException(DecrypterException.PASSWORD);
                             }
                         }
-                        nextPost = ammendJson(nextPost, "password", psw);
+                        nextPost = PluginJSonUtils.ammendJson(nextPost, "password", psw);
                         if (!PluginJSonUtils.parseBoolean(useCaptcha)) {
-                            nextPost = ammendJson(nextPost, "hash", uid);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "hash", uid);
                             ajaxPostPageRaw("/v1/captcha", nextPost);
                             if (ajax.getHttpConnection().getResponseCode() == 200) {
                                 break;
                             } else if (ajax.getHttpConnection().getResponseCode() == 422) {
-                                if ("true".equalsIgnoreCase(getJson(ajax, "passwordFail"))) {
+                                if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "passwordFail"))) {
                                     if (i + 1 > tries) {
                                         throw new DecrypterException(DecrypterException.PASSWORD);
                                     }
@@ -173,38 +174,38 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                             String code = getCaptchaCode(cf, param);
                             String chid = sm.getChallenge(code);
-                            nextPost = ammendJson(nextPost, "answer", code);
-                            nextPost = ammendJson(nextPost, "challengeId", chid);
-                            nextPost = ammendJson(nextPost, "type", 0);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "answer", code);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "challengeId", chid);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 0);
                             break;
                         }
                         case 1: {
                             // recaptcha2 !!!
                             final String code = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk").getToken();
                             /* Sometimes that field already exists containing the value "manuel_challenge" */
-                            nextPost = ammendJson(nextPost, "answer", code);
-                            nextPost = ammendJson(nextPost, "challengeId", "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk");
-                            nextPost = ammendJson(nextPost, "type", 1);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "answer", code);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "challengeId", "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk");
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 1);
                             break;
                         }
                         case 2: {
                             final String url = "";
                             final String code = getCaptchaCode(url, param);
-                            nextPost = ammendJson(nextPost, "securimage_response_field", code);
-                            nextPost = ammendJson(nextPost, "type", 2);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "securimage_response_field", code);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 2);
                             break;
                         }
                         case 3: {
                             final String url = "";
                             final String code = getCaptchaCode(url, param);
-                            nextPost = ammendJson(nextPost, "3dcaptcha_response_field", code);
-                            nextPost = ammendJson(nextPost, "type", 3);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "3dcaptcha_response_field", code);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 3);
                             break;
                         }
                         case 4: {
                             getPage(captchaBr, "/includes/captcha_factory/fancycaptcha.php?hash=" + uid);
-                            nextPost = ammendJson(nextPost, "fancy-captcha", captchaBr.toString().trim());
-                            nextPost = ammendJson(nextPost, "type", 4);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "fancy-captcha", captchaBr.toString().trim());
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 4);
                             break;
                         }
                         case 5: {
@@ -214,8 +215,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                                 logger.warning("Decrypter broken for link: " + parameter + "\n");
 
                             }
-                            nextPost = ammendJson(nextPost, "iQapTcha", "");
-                            nextPost = ammendJson(nextPost, "type", 5);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "iQapTcha", "");
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 5);
                             break;
                         }
                         case 7:
@@ -232,24 +233,24 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         }
                         case 12: {
                             final String result = getCaptchaCode("/simplecaptcha/captcha.php", param);
-                            nextPost = ammendJson(nextPost, "captchatype", "Simple");
-                            nextPost = ammendJson(nextPost, "norobot", result);
-                            nextPost = ammendJson(nextPost, "type", 12);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "captchatype", "Simple");
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "norobot", result);
+                            nextPost = PluginJSonUtils.ammendJson(nextPost, "type", 12);
                             break;
                         }
                         }
-                        nextPost = ammendJson(nextPost, "hash", uid);
+                        nextPost = PluginJSonUtils.ammendJson(nextPost, "hash", uid);
                         ajaxPostPageRaw("/v1/captcha", nextPost);
                         if (ajax.getHttpConnection().getResponseCode() == 200) {
                             // this seems good. be aware that the security string is still presence in the successful task
                             break;
                         } else if (ajax.getHttpConnection().getResponseCode() == 422) {
-                            if (PluginJSonUtils.parseBoolean(usePassword) && "true".equalsIgnoreCase(getJson(ajax, "passwordFail"))) {
+                            if (PluginJSonUtils.parseBoolean(usePassword) && "true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "passwordFail"))) {
                                 if (i + 1 > tries) {
                                     throw new DecrypterException(DecrypterException.PASSWORD);
                                 }
                                 continue;
-                            } else if ("true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
+                            } else if ("true".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "captchaFail"))) {
                                 if (i + 1 > tries) {
                                     throw new DecrypterException(DecrypterException.CAPTCHA);
                                 }
@@ -265,13 +266,13 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                 }
             }
-            final String linkss = getJsonArray(ajax, "links");
+            final String linkss = PluginJSonUtils.getJsonArray(ajax, "links");
             // lets get links now, these should be in an Json array
-            final String[] links = getJsonResultsFromArray(linkss);
+            final String[] links = PluginJSonUtils.getJsonResultsFromArray(linkss);
             if (links != null) {
                 for (final String link : links) {
                     // we want the url json
-                    final String url = getJson(link, "url");
+                    final String url = PluginJSonUtils.getJsonValue(link, "url");
                     if (url != null) {
                         decryptedLinks.add(createDownloadlink(url));
                     }

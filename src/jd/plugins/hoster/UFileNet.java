@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -27,6 +25,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?(?:u-file\\.net|uf\\.pe)/f-[a-z0-9]+" }, flags = { 0 })
 public class UFileNet extends PluginForHost {

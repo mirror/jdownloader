@@ -40,6 +40,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
@@ -162,7 +163,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                 // waittime is not evaluated
                 // Thread.sleep(15000);
                 submitForm(ajax, rcForm);
-                secretKey = getJson(ajax, "secretKey");
+                secretKey = PluginJSonUtils.getJsonValue(ajax, "secretKey");
                 if (StringUtils.isNotEmpty(secretKey)) {
                     break;
                 } else {

@@ -33,6 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotstar.com" }, urls = { "https?://(?:www\\.)?hotstar\\.com/.+/\\d{10}" }, flags = { 0 })
 public class HotstarCom extends PluginForHost {
@@ -65,12 +66,12 @@ public class HotstarCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String errorDescription = (String) entries.get("errorDescription");
         if (!inValidate(errorDescription)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "resultObj/contentInfo/{0}");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "resultObj/contentInfo/{0}");
 
         final DecimalFormat df = new DecimalFormat("00");
         String season_str = this.br.getRegex("\"categoryName\":\"Chapter (\\d+)\"").getMatch(0);
@@ -81,11 +82,11 @@ public class HotstarCom extends PluginForHost {
             season_str = this.br.getRegex("season (\\d+)").getMatch(0);
         }
         long season = -1;
-        final long episode = DummyScriptEnginePlugin.toLong(entries.get("episodeNumber"), -1);
+        final long episode = JavaScriptEngineFactory.toLong(entries.get("episodeNumber"), -1);
 
         final String objectType = (String) entries.get("objectType");
         final String objectSubtype = (String) entries.get("objectSubtype");
-        final long date = DummyScriptEnginePlugin.toLong(entries.get("broadcastDate"), -1);
+        final long date = JavaScriptEngineFactory.toLong(entries.get("broadcastDate"), -1);
         final String description = (String) entries.get("description");
         String title = (String) entries.get("episodeTitle");
         if (inValidate(title)) {
@@ -131,8 +132,8 @@ public class HotstarCom extends PluginForHost {
         /* This (first) request is not necessarily needed */
         this.br.getPage("https://account.hotstar.com/AVS/besc?action=KeepAlive&channel=PCTV&contentId=" + this.contentId + "&type=VOD");
         this.br.getPage("https://getcdn.hotstar.com/AVS/besc?action=GetCDN&asJson=Y&channel=" + CHANNEL + "&id=" + this.contentId + "&type=VOD");
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final String hls_main_url = (String) DummyScriptEnginePlugin.walkJson(entries, "resultObj/src");
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final String hls_main_url = (String) JavaScriptEngineFactory.walkJson(entries, "resultObj/src");
         if (hls_main_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -168,22 +169,6 @@ public class HotstarCom extends PluginForHost {
             formattedDate = Long.toString(date);
         }
         return formattedDate;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /**

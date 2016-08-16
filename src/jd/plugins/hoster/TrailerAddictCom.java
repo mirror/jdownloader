@@ -33,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "traileraddict.com" }, urls = { "http://(?:www\\.)?traileraddict\\.com/(?:trailer/)?[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class TrailerAddictCom extends PluginForHost {
 
@@ -129,7 +131,7 @@ public class TrailerAddictCom extends PluginForHost {
         if (fn == null) {
             return null;
         }
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval("var res = " + fn);

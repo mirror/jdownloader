@@ -44,6 +44,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/pin/\\d+/" }, flags = { 2 })
 public class PinterestCom extends PluginForHost {
 
@@ -110,7 +112,7 @@ public class PinterestCom extends PluginForHost {
                 if (isOffline(this.br, pin_id)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("page_info");
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("resource_data_cache");
                 dllink = getDirectlinkFromJson(ressourcelist, pin_id);
@@ -135,7 +137,7 @@ public class PinterestCom extends PluginForHost {
                 }
                 if (json != null) {
                     /* Website json */
-                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                     ressourcelist = (ArrayList) entries.get("resourceDataCache");
                 } else {
                     /* API json e.g. needed: https://www.pinterest.com/pin/104497653832270636/ */
@@ -143,7 +145,7 @@ public class PinterestCom extends PluginForHost {
                     final String pin_json_url = "https://www.pinterest.com/resource/PinResource/get/?source_url=%2Fpin%2F" + pin_id + "%2F&data=%7B%22options%22%3A%7B%22field_set_key%22%3A%22detailed%22%2C%22ptrf%22%3Anull%2C%22fetch_visual_search_objects%22%3Atrue%2C%22id%22%3A%22" + pin_id + "%22%7D%2C%22context%22%3A%7B%7D%7D&module_path=Pin(show_pinner%3Dtrue%2C+show_board%3Dtrue%2C+is_original_pin_in_related_pins_grid%3Dtrue)&_=" + System.currentTimeMillis();
                     this.br.getPage(pin_json_url);
                     json = this.br.toString();
-                    entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                     ressourcelist = (ArrayList) entries.get("resource_data_cache");
                 }
                 dllink = getDirectlinkFromJson(ressourcelist, pin_id);
@@ -361,22 +363,6 @@ public class PinterestCom extends PluginForHost {
         /* We already logged in in requestFileInformation */
         br.setFollowRedirects(false);
         doFree(link, false, 1, "account_free_directlink");
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private String getPictureDescription(final DownloadLink dl) {

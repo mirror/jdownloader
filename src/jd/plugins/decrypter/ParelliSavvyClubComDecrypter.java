@@ -37,6 +37,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://(www\\.)?parelliconnect\\.com/resources" }, flags = { 0 })
 public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
@@ -63,7 +64,7 @@ public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
         }
         /* There is only one link we can decrypt. */
         br.getPage("http://www.parelliconnect.com/ajax/resources/vault_media_details");
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("result");
         for (final Object o : ressourcelist) {
             final LinkedHashMap<String, Object> ressource = (LinkedHashMap<String, Object>) o;

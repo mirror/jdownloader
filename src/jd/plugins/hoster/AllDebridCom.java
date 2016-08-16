@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:s\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" }, flags = { 2 })
 public class AllDebridCom extends antiDDoSForHost {
@@ -347,7 +347,7 @@ public class AllDebridCom extends antiDDoSForHost {
      * 0 = everything ok, 1-99 = "error"-errors, 100-199 = other errors
      */
     private void updatestatuscode() {
-        String error = getJson("error");
+        String error = PluginJSonUtils.getJsonValue(br, "error");
         if (error != null) {
             if (error.equals("Ip not allowed.")) {
                 statuscode = 1;

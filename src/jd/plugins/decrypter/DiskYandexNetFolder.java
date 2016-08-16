@@ -31,7 +31,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" }, flags = { 0, 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -100,7 +102,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-            mainhashID = getJson("hash");
+            mainhashID = PluginJSonUtils.getJsonValue(br, "hash");
             if (mainhashID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -136,7 +138,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 return decryptedLinks;
             }
             this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
-            if (this.getJson("error") != null) {
+            if (PluginJSonUtils.getJsonValue(br, "error") != null) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
                 main.setFinalFileName(mainhashID);
@@ -144,7 +146,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             final String type_main = (String) entries.get("type");
 
             if (!type_main.equals(JSON_TYPE_DIR)) {
@@ -163,11 +165,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
 
             final String walk_string = "_embedded/items";
-            final ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, walk_string);
+            final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, walk_string);
 
             if (offset == 0) {
                 /* Set total number of entries on first loop. */
-                numberof_entries = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "_embedded/total"), 0);
+                numberof_entries = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "_embedded/total"), 0);
                 fpName = (String) entries.get("name");
                 if (inValidate(fpName)) {
                     /* Maybe our folder has no name. */
@@ -263,7 +265,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
-        final AvailableStatus status = jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheck(dl, entries);
+        final AvailableStatus status = jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheck(this, dl, entries);
         dl.setAvailableStatus(status);
     }
 
@@ -281,16 +283,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         } else {
             return false;
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
 }

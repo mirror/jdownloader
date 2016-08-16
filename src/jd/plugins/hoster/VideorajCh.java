@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -30,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoraj.ch" }, urls = { "http://(www\\.)?videoraj\\.ch/(v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0 })
 public class VideorajCh extends PluginForHost {
@@ -151,7 +151,7 @@ public class VideorajCh extends PluginForHost {
         if (fn == null) {
             return null;
         }
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval("var res = " + fn);

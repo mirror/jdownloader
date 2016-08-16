@@ -65,22 +65,22 @@ public class UpToStreamCom extends PluginForHost {
 
     @SuppressWarnings("serial")
     public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-             * audioBitrate
-             */
-            /*
-             * Video-bitrates and resultions here are not exact as they vary. Correct
-             * values will be in the filenames!
-             */
-            put("360", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
-            put("480", new String[] { "AVC", "600", "640x480", "AAC LC", "64" });
-            put("720", new String[] { "AVC", "900", "1280x720", "AAC LC", "64" });
-            put("1080", new String[] { "AVC", "1370", "1920x1080", "AAC LC", "128" });
+                                                              {
+                                                                  /*
+                                                                   * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
+                                                                   * audioBitrate
+                                                                   */
+                                                                  /*
+                                                                   * Video-bitrates and resultions here are not exact as they vary. Correct
+                                                                   * values will be in the filenames!
+                                                                   */
+                                                                  put("360", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
+                                                                  put("480", new String[] { "AVC", "600", "640x480", "AAC LC", "64" });
+                                                                  put("720", new String[] { "AVC", "900", "1280x720", "AAC LC", "64" });
+                                                                  put("1080", new String[] { "AVC", "1370", "1920x1080", "AAC LC", "128" });
 
-        }
-    });
+                                                              }
+                                                          });
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -165,22 +165,6 @@ public class UpToStreamCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

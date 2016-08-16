@@ -35,6 +35,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "francetelevisions.fr" }, urls = { "http://francetelevisionsdecrypted/[A-Za-z0-9\\-_]+@[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class FrancetelevisionsCom extends PluginForHost {
@@ -69,16 +70,16 @@ public class FrancetelevisionsCom extends PluginForHost {
         if (responsecode == 400 || responsecode == 404 || json == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final String title = (String) entries.get("titre");
         final String subtitle = (String) entries.get("sous_titre");
         final String description = (String) entries.get("synopsis");
-        final String date = (String) DummyScriptEnginePlugin.walkJson(entries, "diffusion/date_debut");
+        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "diffusion/date_debut");
         String channel = (String) entries.get("chaine");
 
         final DecimalFormat df = new DecimalFormat("00");
-        final long season = DummyScriptEnginePlugin.toLong(entries.get("saison"), -1);
-        final long episode = DummyScriptEnginePlugin.toLong(entries.get("episode"), -1);
+        final long season = JavaScriptEngineFactory.toLong(entries.get("saison"), -1);
+        final long episode = JavaScriptEngineFactory.toLong(entries.get("episode"), -1);
 
         if (inValidate(title)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -157,7 +158,7 @@ public class FrancetelevisionsCom extends PluginForHost {
             // this.br.getPage("http://hdfauthftv-a.akamaihd.net/esi/TA?format=json&url=" + Encoding.urlEncode(hls_master) +
             // "&callback=_jsonp_loader_callback_request_2");
             // final String json = this.br.getRegex("^_jsonp_loader_callback_request_2\\((.+)\\)$").getMatch(0);
-            // entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             // hls_master = (String) entries.get("url");
             // this.br.getPage(hls_master);
 
@@ -192,22 +193,6 @@ public class FrancetelevisionsCom extends PluginForHost {
             formattedDate = input;
         }
         return formattedDate;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /**

@@ -33,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bemywife.cc" }, urls = { "https?://(?:www\\.)?bemywife\\.cc/video/[a-z0-9]+" }, flags = { 0 })
 public class BemywifeCc extends PluginForHost {
 
@@ -82,7 +84,7 @@ public class BemywifeCc extends PluginForHost {
             long quality_temp = 0;
             long quality_best = 0;
             String dllink_temp = null;
-            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jssource);
+            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
             for (final Object videoo : ressourcelist) {
                 entries = (HashMap<String, Object>) videoo;
                 dllink_temp = (String) entries.get("file");
@@ -172,22 +174,6 @@ public class BemywifeCc extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

@@ -34,6 +34,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "overthumbs.com" }, urls = { "http://(www\\.)?overthumbs\\.com/galleries/[a-z0-9\\-]+" }, flags = { 0 })
 public class OverThumbsCom extends PluginForHost {
 
@@ -77,7 +79,7 @@ public class OverThumbsCom extends PluginForHost {
             br.getPage("http://overthumbs.com/jwplayer/playvideo.php?id=" + vid);
             // --> Unpack js and RegEx finallink
             String js = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\{\\}\\))\\)").getMatch(0);
-            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             String result = null;
             try {

@@ -35,6 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "http://dmax\\.dedecrypted\\d+", "http://tlc\\.dedecrypted\\d+", "http://discovery\\.dedecrypted\\d+", "http://animalplanet\\.dedecrypted\\d+" }, flags = { 0, 0, 0, 0 })
 public class DmaxDe extends PluginForHost {
 
@@ -113,7 +115,7 @@ public class DmaxDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         if (entries.get("error") != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

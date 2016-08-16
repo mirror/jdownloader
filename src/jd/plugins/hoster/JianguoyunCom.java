@@ -36,6 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jianguoyun.com" }, urls = { "http://jianguoyundecrypted\\.com/\\d+" }, flags = { 2 })
 public class JianguoyunCom extends PluginForHost {
 
@@ -102,7 +104,7 @@ public class JianguoyunCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         this.dllink = (String) entries.get("url");
     }
 
@@ -179,7 +181,7 @@ public class JianguoyunCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
                 dl.setDownloadPassword(this.passCode);
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final String continue_url = (String) entries.get("url");
                 if (continue_url != null) {
                     this.br.getPage(continue_url);
@@ -275,8 +277,8 @@ public class JianguoyunCom extends PluginForHost {
         }
         this.br.getPage("https://www." + this.getHost() + "/d/ajax/userop/getUserInfo?start=1&_=" + System.currentTimeMillis());
         @SuppressWarnings("unused")
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final long accountExpireLeftTime = DummyScriptEnginePlugin.toLong("accountExpireLeftTime", 0);
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final long accountExpireLeftTime = JavaScriptEngineFactory.toLong("accountExpireLeftTime", 0);
         String accstatus;
         if (accountExpireLeftTime <= 0) {
             account.setType(AccountType.FREE);

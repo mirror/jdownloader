@@ -27,6 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "http://(www\\.)?hypem\\.com/((track|item)/[a-z0-9]+|go/[a-z0-9]+/[A-Za-z0-9]+)" }, flags = { 0 })
 public class HypemCom extends PluginForDecrypt {
 
@@ -59,7 +61,7 @@ public class HypemCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             String js = br.getRegex("id=\"displayList\\-data\">(.*?)<script").getMatch(0);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("tracks");
             entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
             final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
@@ -71,7 +73,7 @@ public class HypemCom extends PluginForDecrypt {
                 return null;
             }
             br.getPage("http://hypem.com/serve/source/" + fid + "/" + key + "?_=" + System.currentTimeMillis());
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             String finallink = (String) entries.get("url");
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

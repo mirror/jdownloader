@@ -34,8 +34,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(?:www\\.)?fakku\\.net/(?:(?:viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
 public class FakkuNet extends PluginForDecrypt {
@@ -86,11 +87,11 @@ public class FakkuNet extends PluginForDecrypt {
             }
             /* Handling for subscription URLs */
             this.br.getPage("https://books.fakku.net/manga/" + url_filename + "/read");
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             if (fpName == null) {
-                fpName = (String) DummyScriptEnginePlugin.walkJson(entries, "content/content_name");
+                fpName = (String) JavaScriptEngineFactory.walkJson(entries, "content/content_name");
             }
-            long content_pages = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "content/content_pages"), 0);
+            long content_pages = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "content/content_pages"), 0);
             entries = (LinkedHashMap<String, Object>) entries.get("pages");
 
             if (fpName == null || content_pages == 0 || entries == null) {

@@ -30,6 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vosprotects.com" }, urls = { "http://(www\\.)?vosprotects\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z0-9]+" }, flags = { 0 })

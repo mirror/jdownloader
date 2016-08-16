@@ -28,7 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileload\\.io/[A-Za-z0-9]+(/[^/]+)?" }, flags = { 0 })
 public class FileloadIo extends PluginForDecrypt {
@@ -73,7 +74,7 @@ public class FileloadIo extends PluginForDecrypt {
             return decryptedLinks;
         }
         LinkedHashMap<String, Object> entries = null;
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         if (ressourcelist.size() == 0) {
             /* Folder offline */
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -95,7 +96,7 @@ public class FileloadIo extends PluginForDecrypt {
             final String filename = (String) entries.get("filename");
             final String status = (String) entries.get("status");
             final String content_url = (String) entries.get("link_single");
-            final long filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize_bytes"), 0);
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize_bytes"), 0);
             final String sha1 = (String) entries.get("sha1");
 
             if (filename == null || content_url == null) {

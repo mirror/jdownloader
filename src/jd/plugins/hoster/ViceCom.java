@@ -32,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vice.com" }, urls = { "https?://([A-Za-z0-9]+\\.)?vicedecrypted\\.com/.+" }, flags = { 0 })
 public class ViceCom extends PluginForHost {
@@ -132,14 +133,14 @@ public class ViceCom extends PluginForHost {
         /* This UA is not necessarily needed. */
         this.br.getHeaders().put("User-Agent", "Dalvik/1.6.0 (Linux; U; Android 4.4.4; A0001 Build/KTU84Q)");
         br.getPage("http://player.ooyala.com/sas/player_api/v1/authorization/embed_code/" + playerid + "/" + videoid + "?device=android_html&domain=www.ooyala.com&supportedFormats=mp4");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String walk_string = "authorization_data/" + videoid + "/streams/{0}/url/data";
-        DLLINK = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, walk_string);
+        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, walk_string);
         if (DLLINK == null) {
             /* No HTTP url available --> must be HLS.only */
             br.getPage("http://player.ooyala.com/sas/player_api/v1/authorization/embed_code/" + playerid + "/" + videoid + "?device=android_html&domain=www.ooyala.com&supportedFormats=m3u8");
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            DLLINK = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, walk_string);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, walk_string);
             if (DLLINK != null) {
                 if (!DLLINK.startsWith("http")) {
                     DLLINK = Encoding.Base64Decode(DLLINK);
@@ -228,22 +229,6 @@ public class ViceCom extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

@@ -88,7 +88,7 @@ public class PornHubCom extends PluginForDecrypt {
             br.getPage(parameter);
         }
         final String viewkey = new Regex(parameter, "viewkey=([a-z0-9]+)").getMatch(0);
-        final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this.br);
+        final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, this.br);
         if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;

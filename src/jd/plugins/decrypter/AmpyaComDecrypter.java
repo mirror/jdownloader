@@ -28,7 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ampya.com" }, urls = { "http://(?:www\\.)?ampya\\.com/(artists/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+|shows/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class AmpyaComDecrypter extends PluginForDecrypt {
@@ -50,13 +51,13 @@ public class AmpyaComDecrypter extends PluginForDecrypt {
         }
 
         String fpName = null;
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("clips");
         for (final Object clipo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) clipo;
             final String title = (String) entries.get("title");
             final String artist = (String) entries.get("artist_name");
-            final String video_id = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("video_id"), 0));
+            final String video_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("video_id"), 0));
             if (fpName == null) {
                 fpName = (String) entries.get("container_title");
             }
@@ -81,22 +82,6 @@ public class AmpyaComDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
 }

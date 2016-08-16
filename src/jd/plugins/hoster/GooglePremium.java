@@ -1,9 +1,5 @@
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.google.GoogleAccountConfig;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -12,6 +8,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.components.google.GoogleAccountConfig;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "recaptcha.google.com" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {

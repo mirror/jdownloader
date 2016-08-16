@@ -10,6 +10,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * @author noone2407
  */
@@ -41,13 +43,13 @@ public class NhacCuaTuiCom extends PluginForHost {
 
         final String datacode = br.getRegex("<input type=\"hidden\" value=\"([a-zA-Z0-9]+)\" id=\"inpHiddenSongKey\"/>").getMatch(0);
         final String json_source = br.getPage("http://www.nhaccuatui.com/download/song/" + datacode);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json_source);
-        final String message = (String) DummyScriptEnginePlugin.walkJson(entries, "error_message");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+        final String message = (String) JavaScriptEngineFactory.walkJson(entries, "error_message");
         if (!"Success".equals(message)) {
             return AvailableStatus.FALSE;
         }
-        final String streamUrl = (String) DummyScriptEnginePlugin.walkJson(entries, "data/stream_url");
-        final String ischarge = (String) DummyScriptEnginePlugin.walkJson(entries, "data/is_charge");
+        final String streamUrl = (String) JavaScriptEngineFactory.walkJson(entries, "data/stream_url");
+        final String ischarge = (String) JavaScriptEngineFactory.walkJson(entries, "data/is_charge");
         if (ischarge != null && ischarge.equals("true")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }

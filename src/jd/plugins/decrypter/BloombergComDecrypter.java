@@ -29,7 +29,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "http://www\\.bloomberg\\.com/news/videos/\\d{4}\\-\\d{2}\\-\\d{2}/[a-z0-9\\-]+" }, flags = { 0 })
 public class BloombergComDecrypter extends PluginForDecrypt {
@@ -85,12 +88,12 @@ public class BloombergComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        vid = getJson("bmmrId");
+        vid = PluginJSonUtils.getJsonValue(br, "bmmrId");
         if (vid == null) {
             return null;
         }
         br.getPage("http://www.bloomberg.com/api/embed?id=" + vid + "&version=v0.8.14&idType=BMMR");
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         title = (String) entries.get("title");
         title = encodeUnicode(title);
         cdn_server = new Regex((String) entries.get("contentLoc"), "(http://[^<>\"]*)/m/.+").getMatch(0);
@@ -223,34 +226,8 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         return formatString;
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     private String getXML(final String source, final String parameter) {
         return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     /**

@@ -161,7 +161,7 @@ public class DailyfilesNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, error);
 
         } else {
-            long watiTime = Long.parseLong(PluginJSonUtils.getJson(response, "wait"));
+            long watiTime = Long.parseLong(PluginJSonUtils.getJsonValue(response, "wait"));
             sleep(watiTime * 100l, downloadLink);
 
         }
@@ -202,7 +202,7 @@ public class DailyfilesNet extends antiDDoSForHost {
         // (string) login - Login użytkownika
         // (string) password - Hasło
         // (string) id - Identyfikator pliku ( np: 7464459120 )
-        String userType = PluginJSonUtils.getJson(loginInfo, "typ");
+        String userType = PluginJSonUtils.getJsonValue(loginInfo, "typ");
         if (!"premium".equals(userType)) {
             // setLoginData(account);
             setCurrentAccount(account);
@@ -225,7 +225,7 @@ public class DailyfilesNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, error);
         }
 
-        String fileLocation = PluginJSonUtils.getJson(response, "downloadlink");
+        String fileLocation = PluginJSonUtils.getJsonValue(br, "downloadlink");
         if (fileLocation == null) {
             logger.info("filelocation not found with link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, getPhrase("DOWNLOADLINK_ERROR"));
@@ -308,9 +308,9 @@ public class DailyfilesNet extends antiDDoSForHost {
         // type: "free",
         // expires: "0000-00-00 00:00:00"
         // }
-        String userType = PluginJSonUtils.getJson(accountResponse, "typ");
+        String userType = PluginJSonUtils.getJsonValue(accountResponse, "typ");
         if ("premium".equals(userType)) {
-            String userPremiumDateEnd = PluginJSonUtils.getJson(accountResponse, "expires");
+            String userPremiumDateEnd = PluginJSonUtils.getJsonValue(accountResponse, "expires");
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
             Date date;
             try {
@@ -320,7 +320,7 @@ public class DailyfilesNet extends antiDDoSForHost {
                 logger.log(e);
             }
 
-            long userTraffic = Long.parseLong(PluginJSonUtils.getJson(accountResponse, "traffic"));
+            long userTraffic = Long.parseLong(PluginJSonUtils.getJsonValue(accountResponse, "traffic"));
             ai.setTrafficLeft(userTraffic);
             ai.setStatus(getPhrase("PREMIUM_USER"));
         } else {
@@ -376,27 +376,27 @@ public class DailyfilesNet extends antiDDoSForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
+        {
 
-                                                      put("LOGIN_ERROR", "Login Error");
-                                                      put("PREMIUM_USER", "Premium Account");
-                                                      put("FREE_USER", "Free Account");
-                                                      put("NOT_AUTHENTICATED", "Not Authenticated");
-                                                      put("DOWNLOADLINK_ERROR", "Downloadlink error");
-                                                  }
-                                              };
+            put("LOGIN_ERROR", "Login Error");
+            put("PREMIUM_USER", "Premium Account");
+            put("FREE_USER", "Free Account");
+            put("NOT_AUTHENTICATED", "Not Authenticated");
+            put("DOWNLOADLINK_ERROR", "Downloadlink error");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
+        {
 
-                                                      put("LOGIN_ERROR", "Błąd logowania");
-                                                      put("PREMIUM_USER", "Użytkownik Premium");
-                                                      put("FREE_USER", "Zarejestrowany użytkownik darmowy");
-                                                      put("NOT_AUTHENTICATED", "Nazwa użytkownika lub hasło jest niepoprawne");
-                                                      put("DOWNLOADLINK_ERROR", "Serwer nie zwrócił linku pobierania");
+            put("LOGIN_ERROR", "Błąd logowania");
+            put("PREMIUM_USER", "Użytkownik Premium");
+            put("FREE_USER", "Zarejestrowany użytkownik darmowy");
+            put("NOT_AUTHENTICATED", "Nazwa użytkownika lub hasło jest niepoprawne");
+            put("DOWNLOADLINK_ERROR", "Serwer nie zwrócił linku pobierania");
 
-                                                  }
-                                              };
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

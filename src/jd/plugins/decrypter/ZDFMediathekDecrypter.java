@@ -35,10 +35,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "neo-magazin-royale.de", "heute.de", "zdfneo.de", "zdfkultur.de", "zdfinfo.de", "zdfsport.de", "tivi.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+", "https?://(?:www\\.)?zdfneo\\.de/.+", "https?://(?:www\\.)?zdfkultur\\.de/.+", "https?://(?:www\\.)?zdfinfo\\.de/.+", "https?://(?:www\\.)?zdfsport\\.de/.+", "https?://(?:www\\.)?tivi\\.de/(mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?|tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -502,7 +502,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             date_formatted = formatDateZDF(date);
 
             this.br.getPage("http://www.zdf.de/ptmd/vod/mediathek/" + basename);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("formitaeten");
             ArrayList<Object> templist = null;
 
@@ -510,7 +510,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) formato;
                 final String type = (String) entries.get("type");
                 String fmt = (String) entries.get("quality");
-                String url = (String) DummyScriptEnginePlugin.walkJson(entries, "playouts/main/uris/{0}");
+                String url = (String) JavaScriptEngineFactory.walkJson(entries, "playouts/main/uris/{0}");
                 if (type == null || fmt == null || url == null) {
                     continue;
                 }
@@ -681,22 +681,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         title = encodeUnicode(title);
         return title;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private String getXML(final String source, final String parameter) {

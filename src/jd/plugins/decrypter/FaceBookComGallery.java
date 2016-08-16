@@ -46,13 +46,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.plugins.hoster.K2SApi.JSonUtils;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
@@ -194,28 +194,28 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
             /* temporarily unavailable (or forever, or permission/rights needed) || empty album */
             if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"") || /*
-                                                                                                                                           * problem
-                                                                                                                                           * is
-                                                                                                                                           * with
-                                                                                                                                           * this
-                                                                                                                                           * is
-                                                                                                                                           * ,
-                                                                                                                                           * plugin
-                                                                                                                                           * would
-                                                                                                                                           * have
-                                                                                                                                           * to
-                                                                                                                                           * work
-                                                                                                                                           * with
-                                                                                                                                           * multiple
-                                                                                                                                           * languages
-                                                                                                                                           * !
-                                                                                                                                           * so
-                                                                                                                                           * ">Sorry, this content isn&#039;t available right now</h2>"
-                                                                                                                                           * would
-                                                                                                                                           * fail
-                                                                                                                                           * .
-                                                                                                                                           */
-            br.containsHTML("<h2 class=\"accessible_elem\">[^<]+</h2>")) {
+             * problem
+             * is
+             * with
+             * this
+             * is
+             * ,
+             * plugin
+             * would
+             * have
+             * to
+             * work
+             * with
+             * multiple
+             * languages
+             * !
+             * so
+             * ">Sorry, this content isn&#039;t available right now</h2>"
+             * would
+             * fail
+             * .
+             */
+                    br.containsHTML("<h2 class=\"accessible_elem\">[^<]+</h2>")) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             } else if (br.getURL().matches("https?://(?:www\\.)facebook\\.com/login\\.php.*?")) {
                 // login required to perform task
@@ -1032,8 +1032,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             this.decryptedLinks = null;
             return;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final Object imagesData = DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final Object imagesData = JavaScriptEngineFactory.walkJson(entries, "payload/imagesData");
         final ArrayList<Object> ressourcelist = (ArrayList) imagesData;
         for (final Object pic_o : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) pic_o;
@@ -1047,7 +1047,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             this.decryptedLinks.add(dl);
         }
-        // entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
+        // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/imagesData");
         // final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
         // while (it.hasNext()) {
         // final Entry<String, Object> entry = it.next();
@@ -1241,7 +1241,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br.getPage(parameter);
         String scriptRedirect = br.getRegex("<script>window\\.location\\.replace\\(\"(https?:[^<>\"]*?)\"\\);</script>").getMatch(0);
         if (scriptRedirect != null) {
-            scriptRedirect = JSonUtils.unescape(scriptRedirect);
+            scriptRedirect = PluginJSonUtils.unescape(scriptRedirect);
             br.getPage(scriptRedirect);
         }
         String normal_redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"0; URL=(/[^<>\"]*?)\"").getMatch(0);

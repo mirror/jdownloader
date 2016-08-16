@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.simplejson.JSonUtils;
@@ -170,7 +171,7 @@ public class FastixRu extends antiDDoSForHost {
             final String externalIP = new BalancedWebIPCheck(new StaticProxySelector(proxyThatWillBeUsed)).getExternalIP().getIP();
             /* External IP of the user is needed for this request, also enforce SSL */
             getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getdirectlink&link=" + JSonUtils.escape(link.getDownloadURL()) + "&ip=" + JSonUtils.escape(externalIP) + "&ssl=true");
-            dllink = getJson("downloadlink");
+            dllink = PluginJSonUtils.getJsonValue(br, "downloadlink");
             if (dllink == null) {
                 handleErrorRetries("dllinknull", 5);
             }
@@ -267,7 +268,7 @@ public class FastixRu extends antiDDoSForHost {
             }
         }
         getAPISafe(DOMAIN + "?sub=get_apikey&email=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
-        final String apikey = getJson("apikey");
+        final String apikey = PluginJSonUtils.getJsonValue(br, "apikey");
         if (apikey == null) {
             // maybe unhandled error reason why apikey is null!
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -275,11 +276,13 @@ public class FastixRu extends antiDDoSForHost {
         account.setProperty("fastixapikey", apikey);
         getAPISafe(DOMAIN + "?apikey=" + getAPIKEY() + "&sub=getaccountdetails");
 
-        final String points = getJson("points");
+        final String points = PluginJSonUtils.getJsonValue(br, "points");
         // null or parse exceptions will result in 0 traffic, users should complain and we can 'fix'
         long p = 0;
         try {
-            p = points.contains(".") ? Long.parseLong(points.substring(0, points.lastIndexOf("."))) : Long.parseLong(points);
+            if (points != null) {
+                p = points.contains(".") ? Long.parseLong(points.substring(0, points.lastIndexOf("."))) : Long.parseLong(points);
+            }
         } catch (final Exception e) {
         }
         p = p * 1024 * 1024;
@@ -297,10 +300,10 @@ public class FastixRu extends antiDDoSForHost {
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] lists = { "partially", "up" };
         for (final String list : lists) {
-            String jsonlist = getJsonArray(list);
+            String jsonlist = PluginJSonUtils.getJsonArray(br.toString(), list);
             if (jsonlist != null) {
                 logger.info("Adding hosts for list: " + list);
-                final String[] hostDomains = getJsonResultsFromArray(jsonlist);
+                final String[] hostDomains = PluginJSonUtils.getJsonResultsFromArray(jsonlist);
                 if (hostDomains != null) {
                     supportedHosts.addAll(Arrays.asList(hostDomains));
                 }
@@ -328,7 +331,7 @@ public class FastixRu extends antiDDoSForHost {
     }
 
     private void updatestatuscode() {
-        final String stcode = getJson("error_code");
+        final String stcode = PluginJSonUtils.getJsonValue(br, "error_code");
         if (stcode == null) {
             statuscode = 0;
         } else {

@@ -54,6 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/[A-Za-z0-9]{15,16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
@@ -137,7 +138,7 @@ public class CatShareNet extends PluginForHost {
 
                 br.postPage(getAPIProtocol() + this.getHost() + "/download/json_check", sb.toString());
                 LinkedHashMap<String, Object> entries = null;
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final String[] json_workaround_array = br.toString().split("\\},\\{");
                 for (final DownloadLink dl : links) {
                     final String state;
@@ -147,7 +148,7 @@ public class CatShareNet extends PluginForHost {
                         entries = (LinkedHashMap<String, Object>) ressourcelist.get(tempcounter);
                         state = (String) entries.get("status");
                         filename = (String) entries.get("filename");
-                        filesize = DummyScriptEnginePlugin.toLong(entries.get("filesize"), 0);
+                        filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
                     } else {
                         state = null;
                         filename = null;

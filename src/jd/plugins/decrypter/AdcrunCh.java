@@ -31,6 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adcrun.ch" }, urls = { "http://(www\\.)?adcrun\\.ch/[A-Za-z0-9]+" }, flags = { 0 })
 public class AdcrunCh extends PluginForDecrypt {
 
@@ -72,7 +74,7 @@ public class AdcrunCh extends PluginForDecrypt {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
                     String result = null;
-                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     try {
                         result = engine.eval(br.getRegex("eval(.*?)\n").getMatch(0)).toString();

@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +34,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  * NOTE: <br />

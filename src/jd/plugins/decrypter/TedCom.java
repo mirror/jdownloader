@@ -16,8 +16,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?\\w+|playlists/\\d+/[^/]+)" }, flags = { 0 })
 public class TedCom extends PluginForDecrypt {
@@ -146,7 +147,7 @@ public class TedCom extends PluginForDecrypt {
         if (json == null) {
             throw new DecrypterException("Decrypter broken");
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         /* Single video = videos.length = 1, playlist = videos.length >= 1 */
         final ArrayList<Object> videos = (ArrayList) entries.get("talks");
         for (final Object videoo : videos) {
@@ -158,15 +159,15 @@ public class TedCom extends PluginForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            final String tedID = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
-            final ArrayList<Object> rtmp_resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "resources/rtmp");
+            final String tedID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
+            final ArrayList<Object> rtmp_resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "resources/rtmp");
             for (final Object rtmpo : rtmp_resource_data_list) {
                 final LinkedHashMap<String, Object> tmp = (LinkedHashMap<String, Object>) rtmpo;
                 final String url_rtmp = (String) tmp.get("file");
                 // final String name = (String) tmp.get("name");
-                final String bitrate = Long.toString(DummyScriptEnginePlugin.toLong(tmp.get("bitrate"), -1));
-                final String width = Long.toString(DummyScriptEnginePlugin.toLong(tmp.get("width"), -1));
-                final String height = Long.toString(DummyScriptEnginePlugin.toLong(tmp.get("height"), -1));
+                final String bitrate = Long.toString(JavaScriptEngineFactory.toLong(tmp.get("bitrate"), -1));
+                final String width = Long.toString(JavaScriptEngineFactory.toLong(tmp.get("width"), -1));
+                final String height = Long.toString(JavaScriptEngineFactory.toLong(tmp.get("height"), -1));
                 final String url_rtmp_part = new Regex(url_rtmp, "/([^/]+\\.mp4)$").getMatch(0);
                 if (url_rtmp_part == null) {
                     throw new DecrypterException("Decrypter broken");
@@ -420,22 +421,6 @@ public class TedCom extends PluginForDecrypt {
 
             }
         }
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /* NO OVERRIDE!! */

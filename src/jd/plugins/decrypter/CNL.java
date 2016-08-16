@@ -38,6 +38,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load", "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/", "http://jdownloader\\.org/cnl/.*?/" }, flags = { 0, 0 })
 public class CNL extends PluginForDecrypt {
 
@@ -98,7 +100,7 @@ public class CNL extends PluginForDecrypt {
         final byte[] key;
         if (jk != null) {
             try {
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 final String fun = jk + "  f()";
                 final Object result = engine.eval(fun);

@@ -31,7 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|my\\.pcloud\\.com/publink/show\\?code=|pc\\.cd/)[A-Za-z0-9]+" }, flags = { 0 })
 public class PCloudComFolder extends PluginForDecrypt {
@@ -66,7 +67,7 @@ public class PCloudComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("metadata");
         final String folderNameMain = (String) entries.get("name");
         addFolder(entries, null);
@@ -106,9 +107,9 @@ public class PCloudComFolder extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void addSingleItem(final LinkedHashMap<String, Object> entries, final String fpName) {
         final DownloadLink dl = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         String filename = (String) entries.get("name");
-        final long fileid = DummyScriptEnginePlugin.toLong(entries.get("fileid"), 0);
+        final long fileid = JavaScriptEngineFactory.toLong(entries.get("fileid"), 0);
         if (filename == null || fileid == 0) {
             return;
         }

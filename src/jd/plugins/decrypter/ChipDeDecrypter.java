@@ -31,6 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chip.de" }, urls = { "https?://(?:[A-Za-z0-9\\-]+\\.)?chip\\.de/(?!downloads|video)[^/]+/[^/]+_\\d+\\.html" }, flags = { 0 })
 public class ChipDeDecrypter extends PluginForDecrypt {
 
@@ -102,7 +104,7 @@ public class ChipDeDecrypter extends PluginForDecrypt {
             jd.plugins.hoster.ChipDe.accesscontainerIdBeitrag(this.br, linkid);
             /* We're using an API here so whatever goes wrong - it is probably a website issue / offline content. */
             try {
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 fpName = (String) entries.get("title");
                 final ArrayList<Object> resource_data_list;
                 if (parameter.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures)) {

@@ -29,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 /**
  * @author noone2407
  * @author raztoki
@@ -61,15 +63,15 @@ public class Mp3ZingVn extends PluginForHost {
         downloadLink.setFinalFileName(filename.replaceFirst("\\.{3}$", "").replace(":", "-") + ".mp3");
         final String datacode = br.getRegex("<a\\s+(?:[^>]*?\\s+)?data-code=\"(.*?)\"").getMatch(0);
         final String json_source = br.getPage("http://mp3.zing.vn/xhr/song/get-download?panel=.fn-tab-panel-service&code=" + datacode + "&group=.fn-tab-panel");
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json_source);
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
         if ("Không thể download bài hát này vì yêu cầu từ nhà sở hữu bản quyền.".equals(entries.get("msg"))) {
             // from google translate
             // Unable to download this song because the request from the copyright owner.
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String datalink = (String) DummyScriptEnginePlugin.walkJson(entries, "data/128/link");
-        final Integer datasize = (Integer) DummyScriptEnginePlugin.walkJson(entries, "data/128/size");
-        final Boolean vip = (Boolean) DummyScriptEnginePlugin.walkJson(entries, "data/128/vip");
+        final String datalink = (String) JavaScriptEngineFactory.walkJson(entries, "data/128/link");
+        final Integer datasize = (Integer) JavaScriptEngineFactory.walkJson(entries, "data/128/size");
+        final Boolean vip = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/128/vip");
         dllink = datalink;
         downloadLink.setDownloadSize(datasize);
         if (Boolean.TRUE.equals(vip)) {

@@ -28,7 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -71,16 +72,16 @@ public class TheSupCm extends PluginForDecrypt {
         String fpName = null;
 
         final String filter = br.getRegex("var gallery_data = (.*?\\}\\});").getMatch(0);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(filter);
-        final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "gallery/slides");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(filter);
+        final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "gallery/slides");
         final DecimalFormat df = new DecimalFormat(ressourcelist.size() < 100 ? "00" : "000");
         for (final Object resource : ressourcelist) {
             if (fpName == null) {
-                fpName = (String) DummyScriptEnginePlugin.walkJson(resource, "post_title");
+                fpName = (String) JavaScriptEngineFactory.walkJson(resource, "post_title");
             }
-            final String image = (String) DummyScriptEnginePlugin.walkJson(resource, "images/full");
-            final String name = (String) DummyScriptEnginePlugin.walkJson(resource, "page_title");
-            final Integer index = (Integer) DummyScriptEnginePlugin.walkJson(resource, "index");
+            final String image = (String) JavaScriptEngineFactory.walkJson(resource, "images/full");
+            final String name = (String) JavaScriptEngineFactory.walkJson(resource, "page_title");
+            final Integer index = (Integer) JavaScriptEngineFactory.walkJson(resource, "index");
             if (image != null && name != null && index != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + image);
                 dl.setFinalFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + getFileNameExtensionFromString(image, ".jpg"));

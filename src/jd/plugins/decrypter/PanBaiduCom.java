@@ -30,8 +30,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(?:#dir/path=%2F.+)?" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -162,8 +163,8 @@ public class PanBaiduCom extends PluginForDecrypt {
             currentlinksnum = 0;
             if (currentpage > 1 || is_subfolder) {
                 br.getPage(getFolder(parameter, dir, currentpage));
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
-                errno = DummyScriptEnginePlugin.toLong(entries.get("errno"), 0);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                errno = JavaScriptEngineFactory.toLong(entries.get("errno"), 0);
                 if (errno == 2) {
                     /* Empty folder */
                     final DownloadLink dl = this.createOfflinelink(parameter);
@@ -178,8 +179,8 @@ public class PanBaiduCom extends PluginForDecrypt {
                     logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
                     return null;
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-                ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "file_list/list");
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
             }
 
             DownloadLink dl = null;
@@ -190,10 +191,10 @@ public class PanBaiduCom extends PluginForDecrypt {
                 if (server_filename == null) {
                     continue;
                 }
-                final String fsid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("fs_id"), 0));
-                final long size = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
-                final long isdelete = DummyScriptEnginePlugin.toLong(entries.get("size"), 0);
-                final long isdir = DummyScriptEnginePlugin.toLong(entries.get("isdir"), 0);
+                final String fsid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), 0));
+                final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                final long isdelete = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                final long isdir = JavaScriptEngineFactory.toLong(entries.get("isdir"), 0);
                 if (isdir == 1) {
                     final String path = (String) entries.get("path");
                     String subdir_link = null;

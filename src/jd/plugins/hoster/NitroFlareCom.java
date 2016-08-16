@@ -47,6 +47,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -176,17 +177,17 @@ public class NitroFlareCom extends antiDDoSForHost {
                         okay = false;
                         continue;
                     }
-                    final String status = getJson(filter, "status");
+                    final String status = PluginJSonUtils.getJsonValue(filter, "status");
                     if ("online".equalsIgnoreCase(status)) {
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);
                     }
-                    final String name = getJson(filter, "name");
-                    final String size = getJson(filter, "size");
-                    final String md5 = getJson(filter, "md5");
-                    final String prem = getJson(filter, "premiumOnly");
-                    final String pass = getJson(filter, "password");
+                    final String name = PluginJSonUtils.getJsonValue(filter, "name");
+                    final String size = PluginJSonUtils.getJsonValue(filter, "size");
+                    final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");
+                    final String prem = PluginJSonUtils.getJsonValue(filter, "premiumOnly");
+                    final String pass = PluginJSonUtils.getJsonValue(filter, "password");
                     if (name != null) {
                         dl.setFinalFileName(name);
                     }
@@ -403,7 +404,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     * 
+     *
      * @param account
      * @return
      * @throws PluginException
@@ -467,7 +468,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * useAPI frame work? <br />
      * Override this when incorrect
-     * 
+     *
      * @return
      */
     private boolean useAPI() {
@@ -490,7 +491,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             getPage(req);
             handleApiErrors(account, null);
             // recaptcha can happen here on brute force attack
-            String recap = getJson("recaptchaPublic");
+            String recap = PluginJSonUtils.getJsonValue(br, "recaptchaPublic");
             if (!inValidate(recap)) {
                 logger.info("Detected captcha method \"Re Captcha\"");
                 final Browser captcha = br.cloneBrowser();
@@ -507,15 +508,15 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 handleApiErrors(account, null);
-                if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) {
+                if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type")) && "6".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "code"))) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            final String expire = getJson("expiryDate");
-            final String status = getJson("status");
-            final String storage = getJson("storageUsed");
-            final String trafficLeft = getJson("trafficLeft");
-            final String trafficMax = getJson("trafficMax");
+            final String expire = PluginJSonUtils.getJsonValue(br, "expiryDate");
+            final String status = PluginJSonUtils.getJsonValue(br, "status");
+            final String storage = PluginJSonUtils.getJsonValue(br, "storageUsed");
+            final String trafficLeft = PluginJSonUtils.getJsonValue(br, "trafficLeft");
+            final String trafficMax = PluginJSonUtils.getJsonValue(br, "trafficMax");
             if (inValidate(status)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -539,6 +540,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                 account.setType(AccountType.PREMIUM);
                 ai.setStatus("Premium Account");
                 account.setValid(true);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!inValidate(storage)) {
                 ai.setUsedSpace(Long.parseLong(storage));
@@ -774,16 +777,16 @@ public class NitroFlareCom extends antiDDoSForHost {
             getPage(req);
             handleApiErrors(account, downloadLink);
             // error handling here.
-            if ("free".equalsIgnoreCase(getJson("linkType"))) {
-                String accessLink = getJson("accessLink");
+            if ("free".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "linkType"))) {
+                String accessLink = PluginJSonUtils.getJsonValue(br, "accessLink");
                 if (inValidate(accessLink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 req = apiURL + "/" + accessLink;
                 // wait
-                String delay = getJson("delay");
+                String delay = PluginJSonUtils.getJsonValue(br, "delay");
                 long startTime = System.currentTimeMillis();
-                String recap = getJson("recaptchaPublic");
+                String recap = PluginJSonUtils.getJsonValue(br, "recaptchaPublic");
                 if (!inValidate(recap)) {
                     logger.info("Detected captcha method \"Re Captcha\"");
                     final Recaptcha rc = new Recaptcha(br, this);
@@ -799,14 +802,14 @@ public class NitroFlareCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if (("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) || (!inValidate(getJson("accessLink")) && !inValidate(getJson("recaptchaPublic")))) {
+                    if (("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type")) && "6".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "code"))) || (!inValidate(PluginJSonUtils.getJsonValue(br, "accessLink")) && !inValidate(PluginJSonUtils.getJsonValue(br, "recaptchaPublic")))) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
             }
             // some times error 4 is found here
             handleApiErrors(account, downloadLink);
-            dllink = getJson("url");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (inValidate(dllink)) {
                 if (br.toString().matches("Connect failed: Can't connect to local MySQL server.+")) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
@@ -860,9 +863,9 @@ public class NitroFlareCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Nitroflare.com is maintenance mode. Try again later", 60 * 60 * 1000);
 
         }
-        final String type = getJson("type");
-        final String code = getJson("code");
-        final String msg = getJson("message");
+        final String type = PluginJSonUtils.getJsonValue(br, "type");
+        final String code = PluginJSonUtils.getJsonValue(br, "code");
+        final String msg = PluginJSonUtils.getJsonValue(br, "message");
         final int cde = (!inValidate(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
         if ("error".equalsIgnoreCase(type)) {
             try {

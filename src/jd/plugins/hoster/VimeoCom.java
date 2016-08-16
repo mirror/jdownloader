@@ -54,6 +54,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
@@ -447,7 +448,7 @@ public class VimeoCom extends PluginForHost {
             /* With dl button */
             gq.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String json = gq.getPage("/" + ID + "?action=load_download_config");
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             if (entries != null) {
                 final List<Object> files = (List<Object>) entries.get("files");
                 if (files != null) {
@@ -545,7 +546,7 @@ public class VimeoCom extends PluginForHost {
             }
             /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
             if (json != null) {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 final LinkedHashMap<String, Object> request = (LinkedHashMap<String, Object>) entries.get("request");
                 final LinkedHashMap<String, Object> files = (LinkedHashMap<String, Object>) request.get("files");
                 // progressive = web, hls = hls

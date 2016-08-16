@@ -29,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  *
@@ -52,10 +53,10 @@ public class AbcNtAu extends antiDDoSForDecrypt {
                 final HashMap<Integer, DownloadLink> abc = new HashMap<Integer, DownloadLink>();
                 String urlPattern = null;
                 final ArrayList<Integer> qual = new ArrayList<Integer>();
-                String[] result_array = getJsonResultsFromArray(result[1]);
+                String[] result_array = PluginJSonUtils.getJsonResultsFromArray(result[1]);
                 if (result_array != null) {
                     for (final String results_a : result_array) {
-                        final String url = getJson(results_a, "url");
+                        final String url = PluginJSonUtils.getJsonValue(results_a, "url");
                         // if video
                         final boolean isVideo = "Video".equalsIgnoreCase(result[0]);
                         final String q = new Regex(url, "(\\d+)k\\.mp4").getMatch(0);
@@ -66,7 +67,7 @@ public class AbcNtAu extends antiDDoSForDecrypt {
                                 urlPattern = url;
                             }
                         }
-                        final String size = getJson(results_a, "fileSize");
+                        final String size = PluginJSonUtils.getJsonValue(results_a, "fileSize");
                         if (!inValidate(url)) {
                             final DownloadLink dl = createDownloadlink(url);
                             if (!inValidate(size)) {

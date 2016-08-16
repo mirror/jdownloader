@@ -16,11 +16,6 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -36,6 +31,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends antiDDoSForHost {
@@ -162,9 +163,9 @@ public class OBoomCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     infos = new HashMap<String, String>();
-                    String keys[] = getKeys(response);
+                    final String keys[] = getKeys(response);
                     for (String key : keys) {
-                        String value = getJson(response, key);
+                        final String value = PluginJSonUtils.getJsonValue(response, key);
                         if (value != null) {
                             infos.put(key, value);
                         }
@@ -287,12 +288,12 @@ public class OBoomCom extends antiDDoSForHost {
             final String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
             if (fileInfos != null) {
                 for (String fileInfo : fileInfos) {
-                    final String directdownload = getJson(fileInfo, "ddl");
-                    final String id = getJson(fileInfo, "id");
-                    final String size = getJson(fileInfo, "size");
-                    final String name = getJson(fileInfo, "name");
-                    final String state = getJson(fileInfo, "state");
-                    final String refToken = getJson(fileInfo, "ref_token");
+                    final String directdownload = PluginJSonUtils.getJsonValue(fileInfo, "ddl");
+                    final String id = PluginJSonUtils.getJsonValue(fileInfo, "id");
+                    final String size = PluginJSonUtils.getJsonValue(fileInfo, "size");
+                    final String name = PluginJSonUtils.getJsonValue(fileInfo, "name");
+                    final String state = PluginJSonUtils.getJsonValue(fileInfo, "state");
+                    final String refToken = PluginJSonUtils.getJsonValue(fileInfo, "ref_token");
                     DownloadLink link = idLinks.get(id);
                     if (link == null) {
                         link = idLinks.get("lower_" + id.toLowerCase(Locale.ENGLISH));
@@ -350,10 +351,10 @@ public class OBoomCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String size = getJson(response, "size");
-        final String name = getJson(response, "name");
-        final String state = getJson(response, "state");
-        final String refToken = getJson(response, "ref_token");
+        final String size = PluginJSonUtils.getJsonValue(response, "size");
+        final String name = PluginJSonUtils.getJsonValue(response, "name");
+        final String state = PluginJSonUtils.getJsonValue(response, "state");
+        final String refToken = PluginJSonUtils.getJsonValue(response, "ref_token");
         if (name != null) {
             link.setFinalFileName(name);
         }
@@ -447,10 +448,10 @@ public class OBoomCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }

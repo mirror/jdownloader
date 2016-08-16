@@ -42,7 +42,7 @@ public class AsscompactDeDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        final String filename = jd.plugins.hoster.AsscompactDe.getFilename(this.br, parameter);
+        final String filename = jd.plugins.hoster.AsscompactDe.getFilename(this, this.br, parameter);
         final String externID = br.getRegex("\"(https?://player\\.vimeo\\.com/video/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(this.createDownloadlink(externID));

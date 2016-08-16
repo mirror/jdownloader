@@ -42,6 +42,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "http://(www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" }, flags = { 0, 0 })
 public class DefineBabeCom extends PluginForHost {
 
@@ -98,7 +100,7 @@ public class DefineBabeCom extends PluginForHost {
         }
         br.getPage("http://www." + downloadLink.getHost() + "/playlist/playlist.php?type=regular&video_id=" + video_id);
         final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(decrypted);
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(decrypted);
         final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
         /* Usually only 360 is available */
         final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p", "180p" };
@@ -172,22 +174,6 @@ public class DefineBabeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

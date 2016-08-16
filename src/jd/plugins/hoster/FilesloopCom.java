@@ -37,8 +37,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "https?://(?:www\\.)?filesloop\\.com/myfiles/.+" }, flags = { 2 })
 public class FilesloopCom extends PluginForHost {
@@ -116,8 +118,8 @@ public class FilesloopCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-        final String filename = getJson("filename");
-        final String filesize = getJson("filesize");
+        final String filename = PluginJSonUtils.getJsonValue(br, "filename");
+        final String filesize = PluginJSonUtils.getJsonValue(br, "filesize");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -179,7 +181,7 @@ public class FilesloopCom extends PluginForHost {
             this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             /* Create downloadlink */
             this.getAPISafe(DOMAIN + "filelink?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = getJson("link");
+            dllink = PluginJSonUtils.getJsonValue(br, "link");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
@@ -340,8 +342,8 @@ public class FilesloopCom extends PluginForHost {
         login(true);
         this.getAPISafe(DOMAIN + "accountinfo?token=" + currLogintoken);
 
-        final String accounttype = getJson("premium");
-        final String validuntil = getJson("premium_to");
+        final String accounttype = PluginJSonUtils.getJsonValue(br, "premium");
+        final String validuntil = PluginJSonUtils.getJsonValue(br, "premium_to");
         long timestamp_validuntil = 0;
         if (validuntil != null) {
             timestamp_validuntil = Long.parseLong(validuntil) * 1000;
@@ -366,13 +368,13 @@ public class FilesloopCom extends PluginForHost {
 
         this.getAPISafe(DOMAIN + "list");
         ArrayList<String> supportedhostslist = new ArrayList();
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
         for (final Object hostinfoo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) hostinfoo;
             final Object max_filesizeo = entries.get("max_filesize");
-            final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_download"), defaultMAXDOWNLOADS));
-            final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
+            final int maxdownloads = this.correctMaxdls((int) JavaScriptEngineFactory.toLong(entries.get("max_download"), defaultMAXDOWNLOADS));
+            final int maxchunks = this.correctChunks((int) JavaScriptEngineFactory.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
             final String host = ((String) entries.get("domain")).toLowerCase();
 
             boolean resumable = defaultRESUME;
@@ -420,7 +422,7 @@ public class FilesloopCom extends PluginForHost {
             }
         }
         this.br.getPage(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
-        currLogintoken = getJson("token");
+        currLogintoken = PluginJSonUtils.getJsonValue(br, "token");
         if (currLogintoken == null) {
             /* Errorhandling should cover failed login already */
             updatestatuscode();
@@ -435,16 +437,6 @@ public class FilesloopCom extends PluginForHost {
             }
         }
         this.currAcc.setProperty(PROPERTY_LOGINTOKEN, currLogintoken);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
@@ -521,7 +513,7 @@ public class FilesloopCom extends PluginForHost {
      */
     private void updatestatuscode() {
         /* First look for errorcode */
-        String error = this.getJson("error");
+        String error = PluginJSonUtils.getJsonValue(br, "error");
         if (inValidate(error)) {
             error = null;
         }
@@ -542,7 +534,7 @@ public class FilesloopCom extends PluginForHost {
                 statuscode = 666;
             }
         } else {
-            final String exists = this.getJson("exists");
+            final String exists = PluginJSonUtils.getJsonValue(br, "exists");
             if ("false".equals(exists)) {
                 statuscode = 100;
             } else {

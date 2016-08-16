@@ -23,10 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -46,7 +42,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(www\\.)?alfafile\\.net/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class AlfafileNet extends PluginForHost {
@@ -102,20 +104,20 @@ public class AlfafileNet extends PluginForHost {
         }
         if (api_token != null && prefer_api_linkcheck) {
             this.br.getPage("https://alfafile.net/api/v1/file/info?file_id=" + getFileID(link) + "&token=" + api_token);
-            final String status = getJson("status");
+            final String status = PluginJSonUtils.getJsonValue(br, "status");
             if (!"401".equals(status)) {
                 api_works = true;
             }
         }
 
         if (api_works) {
-            final String status = getJson("status");
+            final String status = PluginJSonUtils.getJsonValue(br, "status");
             if (!"200".equals(status)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = getJson("name");
-            filesize = getJson("size");
-            md5 = getJson("hash");
+            filename = PluginJSonUtils.getJsonValue(br, "name");
+            filesize = PluginJSonUtils.getJsonValue(br, "size");
+            md5 = PluginJSonUtils.getJsonValue(br, "hash");
         } else {
             br.getPage(link.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -167,7 +169,7 @@ public class AlfafileNet extends PluginForHost {
             if (wait_str != null) {
                 wait = Integer.parseInt(wait_str);
             }
-            String redirect_url = getJson("redirect_url");
+            String redirect_url = PluginJSonUtils.getJsonValue(br, "redirect_url");
             if (redirect_url == null) {
                 redirect_url = "/file/" + fid + "/captcha";
             }
@@ -286,8 +288,8 @@ public class AlfafileNet extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("https://alfafile.net/api/v1/user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String token = this.getJson("token");
-                if (!getJson("status").equals("200") || token == null) {
+                final String token = PluginJSonUtils.getJsonValue(br, "token");
+                if (token == null || !"200".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -321,12 +323,12 @@ public class AlfafileNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final long traffic_total = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "response/user/traffic/total"), -1);
-        final long traffic_left = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "response/user/traffic/left"), -1);
-        final String ispremium = getJson("is_premium");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final long traffic_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/total"), -1);
+        final long traffic_left = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "response/user/traffic/left"), -1);
+        final String ispremium = PluginJSonUtils.getJsonValue(br, "is_premium");
         if ("true".equals(ispremium)) {
-            final String expire = getJson("premium_end_time");
+            final String expire = PluginJSonUtils.getJsonValue(br, "premium_end_time");
             ai.setValidUntil(Long.parseLong(expire) * 1000);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setType(AccountType.PREMIUM);
@@ -366,7 +368,7 @@ public class AlfafileNet extends PluginForHost {
                 final String fid = getFileID(link);
                 this.br.getPage("/api/v1/file/download?file_id=" + fid + "&token=" + getLoginToken(account));
                 handleErrorsGeneral();
-                dllink = getJson("download_url");
+                dllink = PluginJSonUtils.getJsonValue(br, "download_url");
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -389,15 +391,15 @@ public class AlfafileNet extends PluginForHost {
     }
 
     private void handleErrorsGeneral() throws PluginException {
-        final String errorcode = getJson("status");
-        final String errormessage = getJson("details");
+        final String errorcode = PluginJSonUtils.getJsonValue(br, "status");
+        final String errormessage = PluginJSonUtils.getJsonValue(br, "details");
         if (errorcode != null) {
             if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:
-                 *
+                 * 
                  * Conflict. Delay between downloads must be not less than 60 minutes. Try again in 51 minutes.
-                 *
+                 * 
                  * Conflict. DOWNLOAD::ERROR::You can't download not more than 1 file at a time in free mode.
                  */
                 String minutes_regexed = null;
@@ -420,16 +422,6 @@ public class AlfafileNet extends PluginForHost {
 
     private String getLoginToken(final Account acc) {
         return acc.getStringProperty("token", null);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

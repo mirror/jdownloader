@@ -27,7 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "http://(www\\.)?tv\\.adobe\\.com/watch/[a-z0-9\\-]+/[a-z0-9\\-]+/?" }, flags = { 0 })
 public class TvAdbCm extends PluginForDecrypt {
@@ -75,7 +76,7 @@ public class TvAdbCm extends PluginForDecrypt {
             return null;
         }
         // parse for qualities
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(html5player);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(html5player);
         final ArrayList<Object> sources = (ArrayList) entries.get("sources");
         String name = (String) entries.get("title");
         if (name == null) {
@@ -83,7 +84,7 @@ public class TvAdbCm extends PluginForDecrypt {
         }
         for (final Object videoo : sources) {
             entries = (LinkedHashMap<String, Object>) videoo;
-            final String q = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("bitrate"), -1));
+            final String q = Long.toString(JavaScriptEngineFactory.toLong(entries.get("bitrate"), -1));
             final String u = (String) entries.get("fsrc");
             if (q == null || u == null || !u.startsWith("http")) {
                 continue;

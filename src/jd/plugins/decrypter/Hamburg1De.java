@@ -103,21 +103,6 @@ public class Hamburg1De extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     private String formatDate(final String input) {
         final long date = TimeFormatter.getMilliSeconds(input, "HH:mm 'Uhr' | dd.MM.yyyy", Locale.GERMAN);
         String formattedDate = null;

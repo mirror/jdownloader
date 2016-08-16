@@ -42,6 +42,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" }, flags = { 2 })
 public class CloudMailRu extends PluginForHost {
 
@@ -204,7 +206,7 @@ public class CloudMailRu extends PluginForHost {
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 final LinkedHashMap<String, Object> folder = (LinkedHashMap<String, Object>) entries.get("folder");
                 final ArrayList<Object> list = (ArrayList) folder.get("list");
                 for (final Object o : list) {
@@ -236,9 +238,9 @@ public class CloudMailRu extends PluginForHost {
                     // using linkedhashmap here will result in exception
                     // java.lang.ClassCastException: java.util.HashMap cannot be cast to java.util.LinkedHashMap
                     // irc report - raztoki20160619
-                    final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(web_json);
-                    dataserver = (String) DummyScriptEnginePlugin.walkJson(entries, "dispatcher/weblink_get/{0}/url");
-                    pageid = (String) DummyScriptEnginePlugin.walkJson(entries, "params/x-page-id");
+                    final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(web_json);
+                    dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "dispatcher/weblink_get/{0}/url");
+                    pageid = (String) JavaScriptEngineFactory.walkJson(entries, "params/x-page-id");
                     // final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
                     // final ArrayList<Object> ressourcelist = (ArrayList) entries.get("");
                 }

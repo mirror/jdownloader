@@ -28,8 +28,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https://viddecrypted\\.me/[A-Za-z0-9]+" }, flags = { 0 })
 public class VidMe extends PluginForHost {
@@ -78,13 +81,13 @@ public class VidMe extends PluginForHost {
                 /* Typically 400 video offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("video");
             final String state = (String) entries.get("state");
             if (!state.equals("success")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = getVideoTitle(entries);
+            filename = getVideoTitle(this, entries);
             DLLINK = (String) entries.get("complete_url");
         } else {
             website_prepBR(this.br);
@@ -169,22 +172,6 @@ public class VidMe extends PluginForHost {
         return dllink;
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     public static final long api_get_max_videos_per_page() {
         return 100;
     }
@@ -202,10 +189,10 @@ public class VidMe extends PluginForHost {
         return API_ENDPOINT + "list?moderated=-1&private=0&nsfw=-1&order=date_completed&direction=DESC&limit=" + Long.toString(api_get_max_videos_per_page()) + "&offset=" + offset + "&user=" + user_id;
     }
 
-    public static String getVideoTitle(final LinkedHashMap<String, Object> sourcemap) {
+    public static String getVideoTitle(final Plugin plugin, final LinkedHashMap<String, Object> sourcemap) {
         String title = (String) sourcemap.get("title");
         if (title != null && !"".equals(title)) {
-            title = encodeUnicode(title);
+            title = plugin.encodeUnicode(title);
         } else {
             /* Title is not always given - use video-ID then. */
             title = getVideoID(sourcemap);

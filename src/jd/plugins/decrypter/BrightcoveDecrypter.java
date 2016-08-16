@@ -29,8 +29,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brightcove.com" }, urls = { "https?://c\\.brightcove\\.com/services/viewer/htmlFederated\\?.+" }, flags = { 0 })
 public class BrightcoveDecrypter extends PluginForDecrypt {
@@ -70,13 +72,13 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         if (json == null) {
             return null;
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final String publisherName = getPublisherName(entries);
         final String title = getTitle(entries);
         final long creationDate = getCreationDate(entries);
         final String date_formatted = formatDate(creationDate);
 
-        final ArrayList<BrightcoveClipData> media = findAllQualities(entries);
+        final ArrayList<BrightcoveClipData> media = findAllQualities(this, entries);
         for (final BrightcoveClipData clip : media) {
             final String final_filename = date_formatted + "_" + publisherName + "_" + title + "_" + clip.width + "x" + clip.height + "_" + clip.videoCodec + clip.ext;
             final DownloadLink dl = this.createDownloadlink("directhttp://" + clip.downloadurl);
@@ -97,13 +99,13 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static ArrayList<BrightcoveClipData> findAllQualities(final LinkedHashMap<String, Object> map) {
+    public static ArrayList<BrightcoveClipData> findAllQualities(final Plugin plugin, final LinkedHashMap<String, Object> map) {
         final ArrayList<BrightcoveClipData> media = new ArrayList<BrightcoveClipData>();
-        final String publisherName = encodeUnicode(getPublisherName(map));
-        final String title = encodeUnicode(getTitle(map));
+        final String publisherName = plugin.encodeUnicode(getPublisherName(map));
+        final String title = plugin.encodeUnicode(getTitle(map));
         final long creationDate = getCreationDate(map);
         LinkedHashMap<String, Object> entries = null;
-        final ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/renditions");
+        final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/renditions");
         for (final Object o : resource_data_list) {
             entries = (LinkedHashMap<String, Object>) o;
             /* audioOnly == true = untested case */
@@ -113,11 +115,11 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             // }
             final String videoCodec = (String) entries.get("videoCodec");
             final String downloadurl = (String) entries.get("defaultURL");
-            final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size"), -1);
-            final long encodingRate = DummyScriptEnginePlugin.toLong(entries.get("encodingRate"), -1);
-            final long frameWidth = DummyScriptEnginePlugin.toLong(entries.get("frameWidth"), -1);
-            final long frameHeight = DummyScriptEnginePlugin.toLong(entries.get("frameHeight"), -1);
-            final long mediaDeliveryType = DummyScriptEnginePlugin.toLong(entries.get("mediaDeliveryType"), -1);
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
+            final long encodingRate = JavaScriptEngineFactory.toLong(entries.get("encodingRate"), -1);
+            final long frameWidth = JavaScriptEngineFactory.toLong(entries.get("frameWidth"), -1);
+            final long frameHeight = JavaScriptEngineFactory.toLong(entries.get("frameHeight"), -1);
+            final long mediaDeliveryType = JavaScriptEngineFactory.toLong(entries.get("mediaDeliveryType"), -1);
 
             if (videoCodec == null || downloadurl == null || filesize == -1 || encodingRate == -1 || frameWidth == -1 || frameHeight == -1 || mediaDeliveryType == -1) {
                 return null;
@@ -145,23 +147,23 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     /** Finds the highest video quality based on the max filesize. */
     @SuppressWarnings("unchecked")
-    public static BrightcoveClipData findBestVideoHttpByFilesize(final Browser br) {
+    public static BrightcoveClipData findBestVideoHttpByFilesize(final Plugin plugin, final Browser br) {
         final String json = getSourceJson(br);
         if (json == null) {
             return null;
         }
         LinkedHashMap<String, Object> map = null;
         try {
-            map = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json);
+            map = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         } catch (final Throwable e) {
             return null;
         }
-        return findBestVideoByFilesize(map);
+        return findBestVideoByFilesize(plugin, map);
     }
 
     /** Finds the highest video quality based on the max filesize. */
-    public static BrightcoveClipData findBestVideoByFilesize(final LinkedHashMap<String, Object> map) {
-        final ArrayList<BrightcoveClipData> media = findAllQualities(map);
+    public static BrightcoveClipData findBestVideoByFilesize(final Plugin plugin, final LinkedHashMap<String, Object> map) {
+        final ArrayList<BrightcoveClipData> media = findAllQualities(plugin, map);
         return findBestVideoByFilesize(media);
     }
 
@@ -187,15 +189,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     }
 
     public static String getPublisherName(final LinkedHashMap<String, Object> map) {
-        return (String) DummyScriptEnginePlugin.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/publisherName");
+        return (String) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/publisherName");
     }
 
     public static String getTitle(final LinkedHashMap<String, Object> map) {
-        return (String) DummyScriptEnginePlugin.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/displayName");
+        return (String) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/displayName");
     }
 
     public static long getCreationDate(final LinkedHashMap<String, Object> map) {
-        return DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/creationDate"), -1);
+        return JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/creationDate"), -1);
     }
 
     private String formatDate(final long date) {
@@ -210,22 +212,6 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             formattedDate = Long.toString(date);
         }
         return formattedDate;
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     public static class BrightcoveClipData {
@@ -254,7 +240,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public String getStandardFilename() {
-            return formatDate(creationDate) + "_" + encodeUnicode(publisherName) + "_" + encodeUnicode(displayName) + "_" + width + "x" + height + "_" + videoCodec + ext;
+            return formatDate(creationDate) + "_" + publisherName + "_" + displayName + "_" + width + "x" + height + "_" + videoCodec + ext;
         }
 
         private String formatDate(final long date) {

@@ -35,8 +35,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vevo.com" }, urls = { "https?://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+|[A-Z0-9]+)|http://vevo\\.ly/[A-Za-z0-9]+|http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+" }, flags = { 32 })
 public class VevoComDecrypter extends PluginForDecrypt {
@@ -127,7 +128,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
             String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
             if (apijson != null) {
                 /* Old */
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(apijson);
                 final ArrayList<Object> videos = (ArrayList) entries.get("videos");
                 if (videos == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -141,25 +142,25 @@ public class VevoComDecrypter extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(apijson);
                 entries = (LinkedHashMap<String, Object>) entries.get("default");
 
                 /*
                  * 2016-06-10: For newer videos, we cannot get the streamlinks via apiv2 anymore - so let's get if via json inside html
                  * whenever possible!
                  */
-                final Object ressourcelist_o = DummyScriptEnginePlugin.walkJson(entries, "streams/" + fid + "/{0}");
+                final Object ressourcelist_o = JavaScriptEngineFactory.walkJson(entries, "streams/" + fid + "/{0}");
                 if (ressourcelist_o != null && ressourcelist_o instanceof ArrayList) {
                     ressourcelist = (ArrayList) ressourcelist_o;
                 }
                 /* Finally get LinkedHashMap with remaining video information. */
-                videoinfo = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "videos/" + fid);
+                videoinfo = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videos/" + fid);
             }
             if (videoinfo == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String year = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(videoinfo.get("year"), -1));
+            final String year = Long.toString(JavaScriptEngineFactory.toLong(videoinfo.get("year"), -1));
             String artist = (String) videoinfo.get("artistsInfo");
             if (artist == null) {
                 artist = (String) videoinfo.get("artistName");
@@ -204,7 +205,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
         }
         if (!geoblock_1 && !geoblock_2) {
             if (ressourcelist == null) {
-                ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             }
             /* Explanation of sourceType: 0=undefined, 1=?RTMP?, 2=HTTP, 3=HLS iOS,4=HLS, 5=HDS, 10=SmoothStreaming, 13=RTMPAkamai */
             /*
@@ -410,22 +411,6 @@ public class VevoComDecrypter extends PluginForDecrypt {
             logger.info(DOMAIN + ": None of the selected qualities were found, decrypting done...");
         }
         return decryptedLinks;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private DownloadLink createDloadlink() {

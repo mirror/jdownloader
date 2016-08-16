@@ -25,14 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -48,6 +40,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -142,12 +144,12 @@ public class OpenLoadIo extends antiDDoSForHost {
                     sb.append("%2C");
                 }
                 br.getPage(api_base + "/file/info?file=" + sb.toString());
-                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 for (final DownloadLink dl : links) {
                     final String fid = getFID(dl);
                     api_data_singlelink = (LinkedHashMap<String, Object>) api_data.get(fid);
-                    final long status = DummyScriptEnginePlugin.toLong(api_data_singlelink.get("status"), 404);
+                    final long status = JavaScriptEngineFactory.toLong(api_data_singlelink.get("status"), 404);
                     if (status == api_responsecode_private) {
                         /* Private file */
                         dl.setName(fid);
@@ -159,7 +161,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                         continue;
                     }
                     final String filename = (String) api_data_singlelink.get("name");
-                    final long filesize = DummyScriptEnginePlugin.toLong(api_data_singlelink.get("size"), 0);
+                    final long filesize = JavaScriptEngineFactory.toLong(api_data_singlelink.get("size"), 0);
                     final String sha1 = (String) api_data_singlelink.get("sha1");
 
                     /* Trust API */
@@ -233,7 +235,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             if ((account == null && enable_api_free) || (account != null && isAPIAccount(account))) {
                 getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
                 final long timestampBeforeCaptcha = System.currentTimeMillis();
-                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 ticket = (String) api_data.get("ticket");
                 waittime_int = ((Number) api_data.get("wait_time")).intValue();
@@ -254,7 +256,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                 if (captcha && this.api_responsecode == 403 && "Captcha not solved correctly".equals(this.api_msg)) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 dllink = (String) api_data.get("url");
                 if (dllink == null) {
@@ -429,15 +431,15 @@ public class OpenLoadIo extends antiDDoSForHost {
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
                 ai.setStatus("Free Account");
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) entries.get("result");
                 final LinkedHashMap<String, Object> traffic = (LinkedHashMap<String, Object>) result.get("traffic");
                 /* TODO: Use these values correctly, then activate premium API usage */
                 final String signup_at = (String) result.get("signup_at");
-                final Long storage_left = DummyScriptEnginePlugin.toLong(result.get("storage_left"), -1);
-                // final Long storage_used = DummyScriptEnginePlugin.toLong(result.get("storage_used"), -1);
-                final Long traffic_left = DummyScriptEnginePlugin.toLong(traffic.get("left"), -1);
-                // final Long traffic_used_24h = DummyScriptEnginePlugin.toLong(traffic.get("used_24h"), -1);
+                final Long storage_left = JavaScriptEngineFactory.toLong(result.get("storage_left"), -1);
+                // final Long storage_used = JavaScriptEngineFactory.toLong(result.get("storage_used"), -1);
+                final Long traffic_left = JavaScriptEngineFactory.toLong(traffic.get("left"), -1);
+                // final Long traffic_used_24h = JavaScriptEngineFactory.toLong(traffic.get("used_24h"), -1);
                 ai.setCreateTime(TimeFormatter.getMilliSeconds(signup_at, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
                 ai.setUsedSpace(storage_left);
                 if (traffic_left == -1) {
@@ -538,11 +540,11 @@ public class OpenLoadIo extends antiDDoSForHost {
     }
 
     private void updatestatuscode() {
-        final String status = getJson("status");
+        final String status = PluginJSonUtils.getJsonValue(br, "status");
         if (status != null) {
             api_responsecode = Integer.parseInt(status);
         }
-        this.api_msg = getJson("msg");
+        this.api_msg = PluginJSonUtils.getJsonValue(br, "msg");
     }
 
     private void getPageAPI(final String url) throws Exception {
@@ -552,7 +554,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     }
 
     private void handleAPIErrors() throws PluginException {
-        final String status = getJson("status");
+        final String status = PluginJSonUtils.getJsonValue(br, "status");
         switch (api_responsecode) {
         case 0:
             /* Everything okay */

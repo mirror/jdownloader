@@ -27,8 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https?://(?:www\\.)?vid\\.me/(?:e/)?[^/]+" }, flags = { 0 })
 public class VidMeProfile extends PluginForDecrypt {
@@ -74,10 +75,10 @@ public class VidMeProfile extends PluginForDecrypt {
             }
 
             /* Now we know for sure that we got a users' profile --> Get userID, then find all videos */
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("user");
-            final String user_id = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("user_id"), -1));
-            final long video_count = DummyScriptEnginePlugin.toLong(entries.get("user_id"), -1);
+            final String user_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("user_id"), -1));
+            final long video_count = JavaScriptEngineFactory.toLong(entries.get("user_id"), -1);
             final long max_videos_per_page = jd.plugins.hoster.VidMe.api_get_max_videos_per_page();
             long offset = 0;
             ArrayList<Object> ressourcelist = null;
@@ -98,11 +99,11 @@ public class VidMeProfile extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 this.br.getPage(jd.plugins.hoster.VidMe.api_get_user_videos(user_id, Long.toString(offset)));
-                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 ressourcelist = (ArrayList) entries.get("videos");
                 for (final Object videoo : ressourcelist) {
                     entries = (LinkedHashMap<String, Object>) videoo;
-                    final String title = jd.plugins.hoster.VidMe.getVideoTitle(entries);
+                    final String title = jd.plugins.hoster.VidMe.getVideoTitle(this, entries);
                     final String videoid = jd.plugins.hoster.VidMe.getVideoID(entries);
                     if (title == null || videoid == null) {
                         return null;

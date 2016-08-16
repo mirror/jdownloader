@@ -35,6 +35,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://www\\.discovery\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.tlc\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.animalplanet\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/" }, flags = { 0, 0, 0 })
 public class DiscoveryComDecrypter extends PluginForDecrypt {
 
@@ -53,7 +55,8 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     /* Broken flv urls of source: http://discidevflash-f.akamaihd.net//digmed/dp/2015-04/10/879577/145609.002.01.001.flv */
     /*
      * Working HLS:
-     * http://discidevflash-f.akamaihd.net/i/digmed/dp/2015-04/10/879577/145609.002.01.001-,110k,200k,400k,600k,800k,1500k,3500k,.mp4.csmil/master.m3u8
+     * http://discidevflash-f.akamaihd.net/i/digmed/dp/2015-04/10/879577/145609.002.01.001-,110k,200k,400k,600k,800k,1500k,3500k
+     * ,.mp4.csmil/master.m3u8
      */
     /*
      * Working http: http://discsmil.edgesuite.net/digmed/dp/2015-04/10/879577/145609.002.01.001-110k.mp4
@@ -109,7 +112,7 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         videoplayerkey = (String) entries.get("video_player_key");
         if (videoplayerkey == null) {
             videoplayerkey = playerKey;
@@ -143,8 +146,8 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final HashMap<String, Object> videomap = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-                final long videosCount = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(videomap.get("count"), 0);
+                final HashMap<String, Object> videomap = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                final long videosCount = JavaScriptEngineFactory.toLong(videomap.get("count"), 0);
                 if (videosCount <= 0) {
                     logger.info("Found no videos for contentID: " + contentID);
                     continue;
@@ -337,38 +340,6 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
     // }
     // return buf;
     // }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private static boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!

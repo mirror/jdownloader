@@ -35,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ironfiles.net" }, urls = { "http://(www\\.)?ironfiles\\.net/file/download/id/\\d+(?:/key/[a-z0-9]+)?" }, flags = { 2 })
 public class IronfilesNet extends PluginForHost {
@@ -73,7 +74,7 @@ public class IronfilesNet extends PluginForHost {
         final String fid = getFID(link);
         link.setLinkID(fid);
         this.br.getPage(API_ENDPOINT + "/fileInfo/file/" + fid);
-        final String status = getJson("result");
+        final String status = PluginJSonUtils.getJsonValue(br, "result");
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -83,11 +84,11 @@ public class IronfilesNet extends PluginForHost {
             link.setName(fid);
             privatefile = true;
             return AvailableStatus.TRUE;
-        } else if (!status.equals("true")) {
+        } else if (!"true".equals(status)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = getJson("filename");
-        final String filesize = getJson("size");
+        final String filename = PluginJSonUtils.getJsonValue(br, "filename");
+        final String filesize = PluginJSonUtils.getJsonValue(br, "size");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -147,7 +148,7 @@ public class IronfilesNet extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.postPage(API_ENDPOINT + "/auth", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String status = getJson("result");
+                final String status = PluginJSonUtils.getJsonValue(br, "result");
                 if (br.getCookie(MAINPAGE, "PHPSESSID") == null || !"true".equals(status)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -173,8 +174,15 @@ public class IronfilesNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String premium = getJson("premium");
-        if (!"true".equals(premium)) {
+        final String premium = PluginJSonUtils.getJsonValue(br, "premium");
+        if ("true".equals(premium)) {
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
+            ai.setUnlimitedTraffic();
+            ai.setStatus("Premium account");
+        } else {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
@@ -182,13 +190,6 @@ public class IronfilesNet extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
             ai.setStatus("Registered (free) user");
-        } else {
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-            ai.setUnlimitedTraffic();
-            ai.setStatus("Premium account");
         }
         account.setValid(true);
         return ai;
@@ -230,26 +231,6 @@ public class IronfilesNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "/id/(\\d+(?:/key/[a-z0-9]+)?)$").getMatch(0);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

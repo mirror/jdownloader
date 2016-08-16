@@ -33,6 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
 public class EightTracksCom extends PluginForDecrypt {
 
@@ -176,7 +178,7 @@ public class EightTracksCom extends PluginForDecrypt {
              * the track-names :)
              */
             this.br.getPage("/mixes/" + mixid + "/tracks_for_international.jsonh");
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("tracks");
             final int listmax = ressourcelist.size() - 1;
 
@@ -265,21 +267,6 @@ public class EightTracksCom extends PluginForDecrypt {
             filename = artist + " - " + title;
         }
         return filename;
-    }
-
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     private boolean isEmpty(final String ip) {

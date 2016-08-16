@@ -27,7 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DummyScriptEnginePlugin;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/folder/[A-Za-z0-9]+" }, flags = { 0 })
 public class CatShareNetFolder extends PluginForDecrypt {
@@ -53,9 +54,9 @@ public class CatShareNetFolder extends PluginForDecrypt {
 
         /* 2016-06-09: The admin uses json Arrays in a wrong way but this plugin should work ... as long as he doesn't change the json! */
         // final ArrayList<Object> ressourcelist = (ArrayList<Object>)
-        // jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        // JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
 
-        HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         HashMap<String, Object> entries_tmp = null;
         Object entries_tmp_o = null;
 
@@ -74,7 +75,7 @@ public class CatShareNetFolder extends PluginForDecrypt {
             entries_tmp = (HashMap<String, Object>) entries_tmp_o;
             final String linkid = (String) entries_tmp.get("linkid");
             final String filename = (String) entries_tmp.get("filename");
-            final long filesize = DummyScriptEnginePlugin.toLong(entries_tmp.get("filesize"), 0);
+            final long filesize = JavaScriptEngineFactory.toLong(entries_tmp.get("filesize"), 0);
             if (linkid == null || filename == null) {
                 /* This should never happen */
                 continue;

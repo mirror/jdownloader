@@ -35,6 +35,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(?:www\\.)?vmalldecrypted\\.com/\\d+" }, flags = { 2 })
 public class VmallCom extends PluginForHost {
 
@@ -118,7 +120,7 @@ public class VmallCom extends PluginForHost {
         if (json == null) {
             json = br.getRegex("var globallinkdata = (\\{.*?\\});").getMatch(0);
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         entries = (LinkedHashMap<String, Object>) entries.get("resource");
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("files");

@@ -41,12 +41,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.IO;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -279,17 +281,17 @@ public abstract class K2SApi extends PluginForHost {
                     if (filter == null) {
                         return false;
                     }
-                    final String status = getJson(filter, "is_available");
-                    if (!"true".equalsIgnoreCase(status)) {
-                        dl.setAvailable(false);
-                    } else {
+                    final String status = PluginJSonUtils.getJsonValue(filter, "is_available");
+                    if ("true".equalsIgnoreCase(status)) {
                         dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
                     }
-                    final String name = getJson(filter, "name");
-                    final String size = getJson(filter, "size");
-                    final String md5 = getJson(filter, "md5");
-                    final String access = getJson(filter, "access");
-                    final String isFolder = getJson(filter, "is_folder");
+                    final String name = PluginJSonUtils.getJsonValue(filter, "name");
+                    final String size = PluginJSonUtils.getJsonValue(filter, "size");
+                    final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");
+                    final String access = PluginJSonUtils.getJsonValue(filter, "access");
+                    final String isFolder = PluginJSonUtils.getJsonValue(filter, "is_folder");
                     if (!inValidate(name)) {
                         dl.setName(name);
                     }
@@ -336,8 +338,8 @@ public abstract class K2SApi extends PluginForHost {
         // required to get overrides to work
         br = prepAPI(newBrowser());
         postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account) + "\"}", account);
-        final String available_traffic = getJson("available_traffic");
-        final String account_expires = getJson("account_expires");
+        final String available_traffic = PluginJSonUtils.getJsonValue(br, "available_traffic");
+        final String account_expires = PluginJSonUtils.getJsonValue(br, "account_expires");
         if ("false".equalsIgnoreCase(account_expires)) {
             account.setProperty("free", true);
             ai.setStatus("Free Account");
@@ -438,8 +440,8 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
                 postPageRaw(br, "/requestcaptcha", "", account);
-                final String challenge = getJson("challenge");
-                final String captcha_url = getJson("captcha_url");
+                final String challenge = PluginJSonUtils.getJsonValue(br, "challenge");
+                final String captcha_url = PluginJSonUtils.getJsonValue(br, "captcha_url");
                 // Dependency
                 if (inValidate(challenge) || inValidate(captcha_url)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -450,12 +452,12 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}", account);
-                final String free_download_key = getJson("free_download_key");
+                final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
                 if (inValidate(free_download_key)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!inValidate(getJson("time_wait"))) {
-                    sleep(Integer.parseInt(getJson("time_wait")) * 1001l, downloadLink);
+                if (!inValidate(PluginJSonUtils.getJsonValue(br, "time_wait"))) {
+                    sleep(Integer.parseInt(PluginJSonUtils.getJsonValue(br, "time_wait")) * 1001l, downloadLink);
                 } else {
                     // fail over
                     sleep(31 * 1001l, downloadLink);
@@ -466,7 +468,7 @@ public abstract class K2SApi extends PluginForHost {
                 postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
                 // private error files happen here, because we can't identify the owner until download sequence starts!
             }
-            dllink = getJson("url");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (inValidate(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -594,8 +596,8 @@ public abstract class K2SApi extends PluginForHost {
 
                     Browser cbr = new Browser();
                     postPageRaw(cbr, "/requestcaptcha", "", account);
-                    final String challenge = getJson(cbr, "challenge");
-                    final String captcha_url = getJson(cbr, "captcha_url");
+                    final String challenge = PluginJSonUtils.getJsonValue(cbr, "challenge");
+                    final String captcha_url = PluginJSonUtils.getJsonValue(cbr, "captcha_url");
                     // Dependency
                     if (inValidate(challenge) || inValidate(captcha_url)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -611,8 +613,8 @@ public abstract class K2SApi extends PluginForHost {
                     if (!r.contains("captcha_challenge")) {
                         r = arg.replaceFirst("\\}$", "") + ",\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
                     } else {
-                        final String jchallenge = getJson(r, "captcha_challenge");
-                        final String jresponse = getJson(r, "captcha_response");
+                        final String jchallenge = PluginJSonUtils.getJsonValue(r, "captcha_challenge");
+                        final String jresponse = PluginJSonUtils.getJsonValue(r, "captcha_response");
                         r = r.replace(jchallenge, challenge);
                         r = r.replace(jresponse, JSonUtils.escape(code));
                     }
@@ -628,7 +630,7 @@ public abstract class K2SApi extends PluginForHost {
                     // lets retry
                     // The arg contains auth_key, we need to update the original request with new auth_token
                     if (arg.contains("\"auth_token\"")) {
-                        final String r = arg.replace(getJson(arg, "auth_token"), getAuthToken(account));
+                        final String r = arg.replace(PluginJSonUtils.getJsonValue(arg, "auth_token"), getAuthToken(account));
                         // re-enter using new auth_token
                         postPageRaw(ibr, url, r, account);
                         // error handling has been done by above re-entry
@@ -667,8 +669,8 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private boolean loginRequiresCaptcha(final Browser ibr) {
-        final String status = getJson(ibr, "status");
-        final String errorCode = getJson(ibr, "errorCode");
+        final String status = PluginJSonUtils.getJsonValue(ibr, "status");
+        final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
         if ("error".equalsIgnoreCase(status) && ("30".equalsIgnoreCase(errorCode))) {
             return true;
         } else {
@@ -677,8 +679,8 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private boolean sessionTokenInvalid(final Account account, final Browser ibr) {
-        final String status = getJson(ibr, "status");
-        final String errorCode = getJson(ibr, "errorCode");
+        final String status = PluginJSonUtils.getJsonValue(ibr, "status");
+        final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
         if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode)) || ("11".equalsIgnoreCase(errorCode)) || ("75".equalsIgnoreCase(errorCode))) {
             // expired sessionToken
             dumpAuthToken(account);
@@ -699,7 +701,7 @@ public abstract class K2SApi extends PluginForHost {
                     // we don't want to pollute this.br
                     Browser auth = prepBrowser(newBrowser());
                     postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass()) + "\"}", account);
-                    authToken = getJson(auth, "auth_token");
+                    authToken = PluginJSonUtils.getJsonValue(auth, "auth_token");
                     if (authToken == null) {
                         // problemo?
                         logger.warning("problem in the old carel");
@@ -721,14 +723,14 @@ public abstract class K2SApi extends PluginForHost {
         if (inValidate(iString)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if ("success".equalsIgnoreCase(getJson(iString, "status")) && "200".equalsIgnoreCase(getJson(iString, "code")) && !subErrors) {
+        if ("success".equalsIgnoreCase(PluginJSonUtils.getJsonValue(iString, "status")) && "200".equalsIgnoreCase(PluginJSonUtils.getJsonValue(iString, "code")) && !subErrors) {
             return;
         }
         // let the error handling begin!
-        String errCode = getJson(iString, "errorCode");
+        String errCode = PluginJSonUtils.getJsonValue(iString, "errorCode");
         if (inValidate(errCode) && subErrors) {
             // subErrors
-            errCode = getJson(iString, "code");
+            errCode = PluginJSonUtils.getJsonValue(iString, "code");
         }
         if (!inValidate(errCode) && errCode.matches("\\d+")) {
             final int err = Integer.parseInt(errCode);
@@ -765,7 +767,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not
                     // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // think timeRemaining is in seconds
-                    String time = getJson(iString, "timeRemaining");
+                    String time = PluginJSonUtils.getJsonValue(iString, "timeRemaining");
                     if (!inValidate(time) && time.matches("[\\d\\.]+")) {
                         time = time.substring(0, time.indexOf("."));
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, Integer.parseInt(time) * 1000);
@@ -797,7 +799,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download is not
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, getJsonArray(iString, "errors"), true);
+                    handleErrors(account, PluginJSonUtils.getJsonValue(iString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
                 case 23:
@@ -834,7 +836,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, getJsonArray(iString, "errors"), true);
+                    handleErrors(account, PluginJSonUtils.getJsonValue(iString, "errors"), true);
                 case 70:
                 case 72:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
@@ -1203,68 +1205,6 @@ public abstract class K2SApi extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     */
-    protected String getJson(final String source, final String key) {
-        return JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    protected String getJson(final String key) {
-        return JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     */
-    protected String getJson(final Browser ibr, final String key) {
-        return JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     */
-    protected String getJsonArray(final String source, final String key) {
-        return JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     */
-    protected String getJsonArray(final String key) {
-        return JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    protected String[] getJsonResultsFromArray(final String source) {
-        return JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**
@@ -1679,7 +1619,7 @@ public abstract class K2SApi extends PluginForHost {
                     sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
                     sb.append(line2);
 
-                    ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
                     ScriptEngine engine = mgr.getEngineByName("JavaScript");
                     long answer = ((Number) engine.eval(sb.toString())).longValue();
                     cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");

@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.DecimalFormat;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,7 +30,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" }, flags = { 0 })
 public class EightTracksCom extends antiDDoSForHost {
@@ -178,8 +179,8 @@ public class EightTracksCom extends antiDDoSForHost {
                 if (i == 1) {
                     setCookies(playToken);
                     clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/tracks_played?mix_id=" + mixid + "&reverse=true&format=jsonh");
-                    final String tracklist_text = getJsonArray("tracks");
-                    final String[] ids = getJsonResultsFromArray(tracklist_text);
+                    final String tracklist_text = PluginJSonUtils.getJsonArray(clipData, "tracks");
+                    final String[] ids = PluginJSonUtils.getJsonResultsFromArray(tracklist_text);
                     /* Check how many tracks we already unlocked and if our token still works */
                     if (ids != null && ids.length != 0) {
                         final int list_length = ids.length;
@@ -486,7 +487,7 @@ public class EightTracksCom extends antiDDoSForHost {
     }
 
     private String getClipData(final String tag) {
-        return getJson(clipData, tag);
+        return PluginJSonUtils.getJsonValue(clipData, tag);
     }
 
     private String getFilename() {
@@ -496,10 +497,6 @@ public class EightTracksCom extends antiDDoSForHost {
         String artist = getClipData("performer");
         if (title == null || artist == null) {
             return null;
-        }
-
-        if (album.equals("null")) {
-            album = null;
         }
         if (album != null && album.contains(":")) {
             album = album.substring(0, album.indexOf(":"));
@@ -568,21 +565,6 @@ public class EightTracksCom extends antiDDoSForHost {
             // if (hours != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(hours) * 60 * 60 * 1001l); }
             // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-    }
-
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @Override

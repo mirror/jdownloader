@@ -30,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
 
@@ -82,24 +84,24 @@ public class UstreamTv extends PluginForHost {
             link.getLinkStatus().setStatusText("This is a private video which only the owner can watch/download");
             return AvailableStatus.TRUE;
         }
-        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         if (this.br.getHttpConnection().getResponseCode() == 404 || (String) entries.get("error") != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = (LinkedHashMap<String, Object>) entries.get("video");
-        DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "media_urls/smoothStreamingUrl");
+        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/smoothStreamingUrl");
         if (DLLINK == null) {
             /* Sometimes only lower quality mp4's are available??! */
-            DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "media_urls/mp4");
+            DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/mp4");
         }
         if (DLLINK == null) {
             /* Sometimes only lower quality flv's are available! */
-            DLLINK = (String) DummyScriptEnginePlugin.walkJson(entries, "media_urls/flv");
+            DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/flv");
         }
-        final String user = (String) DummyScriptEnginePlugin.walkJson(entries, "owner/username");
+        final String user = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
         String title = (String) entries.get("title");
         final String description = (String) entries.get("description");
-        long filesize = DummyScriptEnginePlugin.toLong(entries.get("file_size"), -1);
+        long filesize = JavaScriptEngineFactory.toLong(entries.get("file_size"), -1);
         if (DLLINK == null || user == null || title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -153,22 +155,6 @@ public class UstreamTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     @SuppressWarnings("deprecation")

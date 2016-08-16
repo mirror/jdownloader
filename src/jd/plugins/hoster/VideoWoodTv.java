@@ -31,6 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "http://(www\\.)?videowood\\.tv/(embed|video)/[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoWoodTv extends antiDDoSForHost {
 
@@ -100,7 +102,7 @@ public class VideoWoodTv extends antiDDoSForHost {
             if (dllink == null) {
                 // packed at this time is missing components within url structure.
                 final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\)\\))\\)").getMatch(0);
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 String result = null;
                 try {
@@ -113,7 +115,7 @@ public class VideoWoodTv extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // mp4 is under the second file, my simple jsonutils wont work well.
-                final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(result);
+                final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(result);
                 dllink = (String) entries.get("file");
             }
             if (dllink == null) {

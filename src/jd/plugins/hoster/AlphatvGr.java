@@ -116,22 +116,6 @@ public class AlphatvGr extends PluginForHost {
         dl.startDownload();
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
     private String formatDate(String input) {
         // 2015-06-28T15:00:00+03:00
         /* 2015-06-23T20:15:00+02:00 --> 2015-06-23T20:15:00+0200 */

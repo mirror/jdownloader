@@ -33,6 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -87,11 +88,11 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         }
         String date = this.br.getRegex("itemprop=\"(?:startDate|datePublished)\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (date == null) {
-            date = getJson("publicationDate");
+            date = PluginJSonUtils.getJsonValue(br, "publicationDate");
         }
         String title = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) {
-            title = getJson("trackTitle");
+            title = PluginJSonUtils.getJsonValue(br, "trackTitle");
         }
         if (title == null || date == null) {
             logger.info("Failed to find any downloadable content");

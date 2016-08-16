@@ -134,7 +134,7 @@ public class FileSharkPl extends PluginForHost {
             // 33 => 'Daily limit has been reached',
             // 34 => 'Max number of active downloads has been reached'
 
-            return PluginJSonUtils.getJson(source, "errorMessage");
+            return PluginJSonUtils.getJsonValue(source, "errorMessage");
         }
         return "Unknown error";
     }
@@ -206,14 +206,13 @@ public class FileSharkPl extends PluginForHost {
                 // isPremium: (bool) : Available only for Premium
                 // createdAt: (datetime) : added date
                 // contentType: (string) : file type
-                String response = br.toString();
-                if ("true".equals(PluginJSonUtils.getJson(response, "success"))) {
-                    fileName = PluginJSonUtils.getJson(response, "fileName");
-                    fileSize = PluginJSonUtils.getJson(response, "fileSize");
-                    String isDownloadable = PluginJSonUtils.getJson(response, "isDownloadable");
-                    String isDeleted = PluginJSonUtils.getJson(response, "isDeleted");
-                    String isDmcaRequested = PluginJSonUtils.getJson(response, "isDmcaRequested");
-                    String isPremium = PluginJSonUtils.getJson(response, "isPremium");
+                if ("true".equals(PluginJSonUtils.getJsonValue(br, "success"))) {
+                    fileName = PluginJSonUtils.getJsonValue(br, "fileName");
+                    fileSize = PluginJSonUtils.getJsonValue(br, "fileSize");
+                    String isDownloadable = PluginJSonUtils.getJsonValue(br, "isDownloadable");
+                    String isDeleted = PluginJSonUtils.getJsonValue(br, "isDeleted");
+                    String isDmcaRequested = PluginJSonUtils.getJsonValue(br, "isDmcaRequested");
+                    String isPremium = PluginJSonUtils.getJsonValue(br, "isPremium");
                     if ("false".equals(isDownloadable)) {
                         link.getLinkStatus().setStatusText(getPhrase("NOT_DOWNLOADABLE"));
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -355,8 +354,8 @@ public class FileSharkPl extends PluginForHost {
             do {
                 useAPI = getAPICall(downloadLink, API_CALL_FILE_GET_DOWNLOAD_LINK, null, null);
                 String response = br.toString();
-                if ("false".equals(PluginJSonUtils.getJson(response, "success"))) {
-                    int errorCode = Integer.parseInt(PluginJSonUtils.getJson(response, "errorCode"));
+                if ("false".equals(PluginJSonUtils.getJsonValue(response, "success"))) {
+                    int errorCode = Integer.parseInt(PluginJSonUtils.getJsonValue(response, "errorCode"));
                     String errorMessage = getErrorMessage(response, errorCode);
                     if (errorCode == 32) {
                         if (trials < 1) {
@@ -505,14 +504,14 @@ public class FileSharkPl extends PluginForHost {
             // registrationDate: (datetime) : Registration date
             if (useAPI) {
                 String response = br.toString();
-                final String success = PluginJSonUtils.getJson(response, "success");
+                final String success = PluginJSonUtils.getJsonValue(response, "success");
                 if ("true".equals(success)) {
-                    final String isUserPremium = PluginJSonUtils.getJson(response, "userPremium");
-                    dailyLimitLeftUsed = PluginJSonUtils.getJson(response, "userDayTrafficLeft");
+                    final String isUserPremium = PluginJSonUtils.getJsonValue(response, "userPremium");
+                    dailyLimitLeftUsed = PluginJSonUtils.getJsonValue(response, "userDayTrafficLeft");
                     setTrafficLeft(ai, dailyLimitLeftUsed, true);
                     if ("true".equals(isUserPremium)) {
                         String userPremiumDateEnd = PluginJSonUtils.getJsonNested(response, "userPremiumDateEnd");
-                        expire = PluginJSonUtils.getJson(userPremiumDateEnd, "date");
+                        expire = PluginJSonUtils.getJsonValue(userPremiumDateEnd, "date");
                         if (expire == null) {
                             ai.setExpired(true);
                             account.setValid(false);
@@ -658,7 +657,7 @@ public class FileSharkPl extends PluginForHost {
                 useAPI = getAPICall(downloadLink, API_CALL_FILE_GET_DOWNLOAD_LINK, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                 if (useAPI) {
                     String response = br.toString();
-                    if ("true".equals(PluginJSonUtils.getJson(response, "success"))) {
+                    if ("true".equals(PluginJSonUtils.getJsonValue(response, "success"))) {
                         // parameters
                         // {id} - file id
                         // {token} - file token
@@ -674,11 +673,11 @@ public class FileSharkPl extends PluginForHost {
                         // fileName: (string) : filename
                         // linkValidTo: (datetime) : Link valid date
 
-                        dllink = PluginJSonUtils.getJson(response, "downloadLink");
+                        dllink = PluginJSonUtils.getJsonValue(response, "downloadLink");
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        String linkValidTo = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(response, "linkValidTo"), "date");
+                        String linkValidTo = PluginJSonUtils.getJsonValue(PluginJSonUtils.getJsonNested(response, "linkValidTo"), "date");
                         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
                         long dateValid;
                         try {

@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,8 +35,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1tube.to" }, urls = { "https?://(?:www\\.)?1tube\\.to/f/([^<>\"]*?\\-[A-Za-z0-9]+\\.html|[A-Za-z0-9]+)" }, flags = { 2 })
 public class OneTubeTo extends antiDDoSForHost {
@@ -119,7 +121,7 @@ public class OneTubeTo extends antiDDoSForHost {
                     sb.append("\n");
                 }
                 postPage("https://1tube.to/p/api/?json=1", sb.toString());
-                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final Object data = api_data.get("data");
                 if (data != null && data instanceof LinkedHashMap) {
                     api_data = (LinkedHashMap<String, Object>) data;
@@ -146,7 +148,7 @@ public class OneTubeTo extends antiDDoSForHost {
                         continue;
                     }
                     final String filename = (String) api_data_singlelink.get("name");
-                    final long filesize = DummyScriptEnginePlugin.toLong(api_data_singlelink.get("size"), 0);
+                    final long filesize = JavaScriptEngineFactory.toLong(api_data_singlelink.get("size"), 0);
                     final String sha1 = (String) api_data_singlelink.get("hash");
 
                     /* Trust API */
@@ -197,15 +199,18 @@ public class OneTubeTo extends antiDDoSForHost {
         if (dllink == null) {
             br.setFollowRedirects(false);
             getPage("https://1tube.to/send/?visited=" + fid);
-            final String canPlay = getJson("canPlay");
-            final String server = getJson("server");
-            final String waittime = getJson("wait");
-            final String free_downloadable = getJson("downloadable");
+            final String canPlay = PluginJSonUtils.getJsonValue(br, "canPlay");
+            final String server = PluginJSonUtils.getJsonValue(br, "server");
+            final String waittime = PluginJSonUtils.getJsonValue(br, "wait");
+            final String free_downloadable = PluginJSonUtils.getJsonValue(br, "downloadable");
             final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
-            final String traffic_left_free = getJson("traffic");
+            final String traffic_left_free = PluginJSonUtils.getJsonValue(br, "traffic");
             if ("true".equals(canPlay)) {
                 /* Prefer to download the stream if possible as it has the same filesize as download but no waittime. */
                 final Browser br2 = br.cloneBrowser();
+                if (server == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 getPage(br2, "https://sx" + server + ".1tube.to/send/?token=" + fid + "&stream=1");
                 dllink = br2.getRedirectLocation();
             }
@@ -215,7 +220,7 @@ public class OneTubeTo extends antiDDoSForHost {
                  * Note that premiumtokens can override this. NOTE that premiumtokens do not (yet) exist for this host (project), see
                  * hdstream.to plugin.
                  */
-                if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
+                if ("premium".equals(free_downloadable) || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && "".equals(premiumtoken)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } else if (traffic_left_free.equals("0")) {
                     /*
@@ -343,7 +348,7 @@ public class OneTubeTo extends antiDDoSForHost {
 
     /** Returns final downloadlink, same for free and premium */
     private String getDllink(final DownloadLink dl) {
-        return "http://sx" + getJson("server") + ".1tube.to/send.php?token=" + getFID(dl);
+        return "http://sx" + PluginJSonUtils.getJsonValue(br, "server") + ".1tube.to/send.php?token=" + getFID(dl);
     }
 
     /**

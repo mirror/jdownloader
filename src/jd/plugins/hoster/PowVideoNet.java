@@ -36,12 +36,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,6 +63,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(www\\.)?powvideo\\.net/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -520,7 +521,7 @@ public class PowVideoNet extends antiDDoSForHost {
             if (inValidate(dllink) && cbr.containsHTML("p,a,c,k,e,d")) {
                 final String[] packed = cbr.getRegex("eval\\((function\\(p,a,c,k,e,d\\).*?\\{.*?\\}.*?\\)\\))\\)").getColumn(0);
                 for (final String js : packed) {
-                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     String result = null;
                     try {
