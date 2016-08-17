@@ -5,10 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.PackageController;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storable;
@@ -22,12 +18,14 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.PackageController;
+
 @ScriptAPI(description = "The context download list link")
 public class CrawledLinkSandbox {
-
     private final CrawledLink                                              link;
     private final CrawledLinkAPIStorableV2                                 storable;
-
     private final static WeakHashMap<CrawledLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<CrawledLink, HashMap<String, Object>>();
 
     public CrawledLinkSandbox(CrawledLink link) {
@@ -205,5 +203,4 @@ public class CrawledLinkSandbox {
     public String toString() {
         return "CrawledLink Instance: " + getName();
     }
-
 }

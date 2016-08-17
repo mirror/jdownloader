@@ -12,7 +12,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.extraction.ArchiveStatusStorable.ArchiveFileStatus;
@@ -196,8 +195,6 @@ public class ExtractionAPIImpl implements ExtractionAPI {
             throw new BadParameterException("invalid archive id");
         }
         final ArchiveSettings localSettings = ArchiveController.getInstance().getArchiveSettings(archiveId, null);
-        System.out.println("Local Settings " + JSonStorage.serializeToJson(localSettings));
-        System.out.println("remoteSettings Settings " + JSonStorage.serializeToJson(remoteSettings));
         if (localSettings != null) {
             if (remoteSettings.getAutoExtract() != null) {
                 localSettings.setAutoExtract(BooleanStatus.convert(remoteSettings.getAutoExtract()));
@@ -209,7 +206,6 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                 localSettings.setRemoveFilesAfterExtraction(BooleanStatus.convert(remoteSettings.getRemoveFilesAfterExtraction()));
             }
             if (!StringUtils.isEmpty(remoteSettings.getExtractPath())) {
-                System.out.println("Set ExtractPath");
                 localSettings.setExtractPath(remoteSettings.getExtractPath());
             }
             if (!StringUtils.isEmpty(remoteSettings.getFinalPassword())) {

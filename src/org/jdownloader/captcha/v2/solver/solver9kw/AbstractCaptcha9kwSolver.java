@@ -8,10 +8,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -35,12 +31,15 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+
 public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> {
-
     private String                                     accountStatusString;
-
     protected final Captcha9kwSettings                 config;
     AtomicInteger                                      counter            = new AtomicInteger();
     AtomicInteger                                      counterInterrupted = new AtomicInteger();
@@ -49,12 +48,9 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     AtomicInteger                                      counterSend        = new AtomicInteger();
     AtomicInteger                                      counterSendError   = new AtomicInteger();
     AtomicInteger                                      counterSolved      = new AtomicInteger();
-
     AtomicInteger                                      counterUnused      = new AtomicInteger();
     public static final HashMap<DownloadLink, Integer> CAPTCHA_MAP        = new HashMap<DownloadLink, Integer>();
-
     private volatile NineKWAccount                     lastAccount        = null;
-
     private String                                     long_debuglog      = "";
 
     public AbstractCaptcha9kwSolver() {
@@ -63,16 +59,20 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         threadPool.allowCoreThreadTimeOut(true);
     }
 
-    protected Challenge<T> getChallenge(SolverJob<?> job) {
+    protected Challenge<T> getChallenge(SolverJob<?> job) throws SolverException {
         final Challenge<?> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
-            return (Challenge<T>) ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+            Challenge<T> ret = (Challenge<T>) ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
+            if (ret == null) {
+                throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
+            }
+            return ret;
         } else {
             return (Challenge<T>) challenge;
         }
     }
 
-    protected Challenge<T> getChallenge(CESSolverJob<?> solverJob) {
+    protected Challenge<T> getChallenge(CESSolverJob<?> solverJob) throws SolverException {
         return getChallenge(solverJob.getJob());
     }
 
@@ -87,7 +87,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                     if (lLastAccount.getCreditBalance() < 10) {
                         if (config.getlowcredits()) {
                             showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits());
-
                         }
                         throw new SolverException("Not Enough Credits for Task");
                     }
@@ -189,7 +188,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     public boolean setInvalid(final AbstractResponse<?> response) {
         if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
             threadPool.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -207,7 +205,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                                 Thread.sleep(2000);
                             }
                         }
-
                     } catch (final Throwable e) {
                         LogController.CL(true).log(e);
                     }
@@ -226,7 +223,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     public boolean setUnused(final AbstractResponse<?> response) {
         if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
             threadPool.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -244,7 +240,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                                 Thread.sleep(2000);
                             }
                         }
-
                     } catch (final Throwable e) {
                         LogController.CL(true).log(e);
                     }
@@ -259,7 +254,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     public boolean setValid(final AbstractResponse<?> response) {
         if (config.isfeedback() && response instanceof Captcha9KWResponseInterface) {
             threadPool.execute(new Runnable() {
-
                 @Override
                 public void run() {
                     try {
@@ -307,10 +301,8 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         Thread.sleep(10000);
         String ret = "";
         Challenge<T> captchaChallenge = getChallenge(solverJob);
-
         queryPoll.appendEncoded("id", captchaID);
         while (true) {
-
             ret = br.getPage(getAPIROOT() + "index.cgi?" + queryPoll.toString());
             if (StringUtils.isEmpty(ret) || ret == "No htmlCode read") {
                 setdebug(solverJob, "CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
@@ -332,7 +324,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
             } else if (ret.matches("\\d\\d\\d\\d .*")) {
                 // throw new SolverException(ret);
             }
-
             checkInterruption();
             Thread.sleep(2000);
         }
@@ -343,16 +334,12 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     protected String upload(Browser br, CESSolverJob<T> solverJob, UrlQuery qi) throws InterruptedException, IOException, SolverException {
         String ret = "";
         Challenge<T> captchaChallenge = getChallenge(solverJob);
-
         setdebug(solverJob, "Upload Captcha - GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
-
         solverJob.showBubble(this, getBubbleTimeout(captchaChallenge));
         counter.incrementAndGet();
         solverJob.setStatus(SolverStatus.UPLOADING);
         captchaChallenge.sendStatsSolving(this);
-
         for (int i = 0; i <= 5; i++) {
-
             ret = br.postPage(getAPIROOT() + "index.cgi", qi);
             if (ret.startsWith("OK-")) {
                 counterSend.incrementAndGet();
@@ -371,10 +358,8 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
             setdebug(solverJob, "Errormessage - " + ret);
             if (ret.contains("0011 Guthaben ist nicht ausreichend") && config.getlowcredits()) {
                 showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocredits() + "\n" + ret);
-
             } else if (ret.contains("0008 Kein Captcha gefunden")) {
                 showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_nocaptcha() + "\n" + ret);
-
             } else if (ret.contains("0015 Captcha zu schnell eingereicht")) {
                 Thread.sleep(15000);
             }
@@ -386,7 +371,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         return ret.substring(3);
     }
 
-    protected UrlQuery createQueryForUpload(CESSolverJob<T> job, RequestOptions options, final byte[] data) {
+    protected UrlQuery createQueryForUpload(CESSolverJob<T> job, RequestOptions options, final byte[] data) throws SolverException {
         UrlQuery qi = new UrlQuery();
         qi.appendEncoded("action", "usercaptchaupload");
         qi.appendEncoded("jd", "2");
@@ -398,7 +383,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         qi.appendEncoded("confirm", options.isConfirm() + "");
         qi.appendEncoded("maxtimeout", options.getTimeoutthing() + "");
         qi.addAll(options.getMoreoptions().list());
-
         qi.appendEncoded("oldsource", getChallenge(job).getTypeID() + "");
         qi.appendEncoded("apikey", config.getApiKey() + "");
         qi.appendEncoded("captchaSource", "jdPlugin");
@@ -414,9 +398,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         RequestOptions options = new RequestOptions(config);
         Challenge<T> captchaChallenge = getChallenge(solverJob);
         validateApiKey(solverJob);
-
         setdebug(solverJob, "Config - Prio: " + options.getPriothing() + " - Timeout: " + options.getTimeoutthing() + "s/" + (config.getCaptchaOther9kwTimeout() / 1000) + "s - Parallel: " + config.getThreadpoolSize());
-
         setdebug(solverJob, "Start Captcha - GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
@@ -431,7 +413,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         if (config.getblacklistcheck()) {
             if (config.getblacklist() != null) {
                 if (config.getblacklist().length() > 5) {
@@ -445,7 +426,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         if (config.getwhitelistprio() != null) {
             if (config.getwhitelistprio().length() > 5) {
                 if (config.getwhitelistprio().contains(captchaChallenge.getTypeID())) {
@@ -456,7 +436,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         if (config.getblacklistprio() != null) {
             if (config.getblacklistprio().length() > 5) {
                 if (config.getblacklistprio().contains(captchaChallenge.getTypeID())) {
@@ -467,7 +446,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         if (config.getwhitelisttimeoutcheck()) {
             if (config.getwhitelisttimeout() != null) {
                 if (config.getwhitelisttimeout().length() > 5) {
@@ -480,7 +458,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         if (config.getblacklisttimeoutcheck()) {
             if (config.getblacklisttimeout() != null) {
                 if (config.getblacklisttimeout().length() > 5) {
@@ -494,13 +471,11 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
             }
         }
         synchronized (CAPTCHA_MAP) {
-
             if (config.getmaxcaptcha() == true) {
                 if (CAPTCHA_MAP.containsKey(captchaChallenge.getDownloadLink())) {
                     if (CAPTCHA_MAP.get(captchaChallenge.getDownloadLink()) >= config.getmaxcaptchaperdl()) {
                         setdebug(solverJob, "Link to BlacklistByLink: " + captchaChallenge.getDownloadLink().getPluginPatternMatcher());
                         CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(captchaChallenge.getDownloadLink()));
-
                     } else {
                         setdebug(solverJob, "BlacklistByLink +1: " + captchaChallenge.getDownloadLink().getPluginPatternMatcher());
                         CAPTCHA_MAP.put(captchaChallenge.getDownloadLink(), CAPTCHA_MAP.get(captchaChallenge.getDownloadLink()) + 1);
@@ -510,55 +485,45 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         boolean badfeedbackstemp = config.getbadfeedbacks();
         if (badfeedbackstemp == true && config.isfeedback() == true) {
             if (counterNotOK.get() > 10 && counterSend.get() > 10 && counterSolved.get() > 10 && counter.get() > 10 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
                 if ((counterNotOK.get() / counter.get() * 100) > 30 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
                     setdebug(solverJob, "Too many bad feedbacks like 30% captchas with NotOK. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
                     showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
-
                 }
             }
         }
-
         boolean badnofeedbackstemp = config.getbadnofeedbacks();
         if (badnofeedbackstemp == true && config.isfeedback() == true) {
             if (counterSend.get() > 10 && counter.get() > 10) {
                 if (((counterOK.get() + counterNotOK.get() + counterInterrupted.get()) / counter.get() * 100) < 50) {
                     setdebug(solverJob, "Too many captchas without feedbacks like OK or NotOK. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
                     showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
-
                 }
             }
         }
-
         boolean getbadtimeouttemp = config.getbadtimeout();
         if (getbadtimeouttemp == true) {
             if (counterSend.get() > 5 && counter.get() > 5 && counterSolved.get() > 5) {
                 if (options.getPriothing() == 0 && (config.getDefaultTimeout() / 1000) < 90) {
                     setdebug(solverJob, "Your max. timeout for 9kw.eu is really low. - " + "Timeout: " + (config.getDefaultTimeout() / 1000) + "s");
                     showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badtimeout_errortext());
-
                 } else if ((config.getDefaultTimeout() / 1000) < (config.getCaptchaOther9kwTimeout() / 1000)) {
                     setdebug(solverJob, "Othertimeout as second max. timeout from the black-/whitelist is higher than your default timeout. - " + "Timeout: " + (config.getDefaultTimeout() / 1000) + "s" + " - OtherTimeout: " + (config.getCaptchaOther9kwTimeout() / 1000) + "s");
                     showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_baderrorsanduploads_errortext());
-
                 }
             }
         }
-
         boolean getbaderrorsanduploadstemp = config.getbaderrorsanduploads();
         if (getbaderrorsanduploadstemp == true) {
             if (counterSendError.get() > 10 || counterInterrupted.get() > 10) {
                 if (((counterSendError.get() + counterInterrupted.get()) / counter.get() * 100) > 50 || counterOK.get() < 10 && counterNotOK.get() > 100) {
                     setdebug(solverJob, "You have many send errors or interrupted captchas. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
                     showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_baderrorsanduploads_errortext());
-
                 }
             }
         }
-
         String hosterOptions = config.gethosteroptions();
         if (hosterOptions != null && hosterOptions.length() > 5) {
             String[] list = hosterOptions.split(";");
@@ -619,7 +584,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         boolean check_highqueue = config.gethighqueue();
         if (check_highqueue == true) {
             String servercheck = "";
@@ -627,12 +591,9 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 Browser br_short = new Browser();
                 servercheck = br_short.getPage(NineKwSolverService.getInstance().getAPIROOT() + "grafik/servercheck.txt");
             } catch (IOException e) {
-
             }
-
             if (Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)) > 100) {
                 showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_highqueue_errortext());
-
             }
         }
         return options;
@@ -646,15 +607,11 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
     protected void validateApiKey(CESSolverJob<T> job) throws SolverException {
         if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
             setdebug(job, "API Key is not correct! (Text)");
-
             showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_errortext_wrongapikey1() + "\n" + _GUI.T.NinekwService_createPanel_errortext_wrongapikey2());
-
         }
     }
 
     protected boolean validateLogins() {
         return StringUtils.isNotEmpty(config.getApiKey()) && isEnabled();
-
     }
-
 }

@@ -12,12 +12,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.DefaultDocsPageFactory;
 import org.appwork.remoteapi.InterfaceHandler;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPI.RemoteAPIMethod;
@@ -92,8 +89,11 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
 
-public class RemoteAPIController {
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
 
+public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
     private final boolean              isJared  = Application.isJared(RemoteAPIController.class);
 
@@ -115,7 +115,6 @@ public class RemoteAPIController {
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
-
         }
     }
 
@@ -125,7 +124,6 @@ public class RemoteAPIController {
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
         rids = new HashMap<String, RIDArray>();
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
-
             @Override
             protected void _handleRemoteAPICall(RemoteAPIRequest request, RemoteAPIResponse response) throws BasicRemoteAPIException {
                 uaController.handle(request);
@@ -133,14 +131,17 @@ public class RemoteAPIController {
             }
 
             @Override
+            protected DefaultDocsPageFactory createHelpBuilder(HttpRequest request, String namespace) throws NoSuchMethodException {
+                return new DocsPageFactoryImpl(this, request, namespace);
+            }
+
+            @Override
             public String toString(RemoteAPIRequest request, RemoteAPIResponse response, Object responseData) {
                 if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) {
                     return JSonStorage.serializeToJson(responseData);
                     // ((DeprecatedRemoteAPIRequest)((SessionRemoteAPIRequest) request).getApiRequest()).getRequest()
-
                 }
                 MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
-
                 // Convert EventData Objects
                 if (responseData instanceof List && ((List) responseData).size() > 0 && ((List) responseData).get(0) instanceof EventObjectStorable) {
                     if (ri.getApiVersion() <= 0) {
@@ -157,19 +158,16 @@ public class RemoteAPIController {
                     }
                     responseData = newResponse;
                 }
-
                 if (ri.getApiVersion() > 0) {
                     return JSonStorage.serializeToJson(responseData);
                 } else {
                     return super.toString(request, response, responseData);
                 }
-
             }
 
             @Override
             public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text) throws UnsupportedEncodingException, IOException {
                 try {
-
                     if (!isJared) {
                         logger.info("\r\n===========API Call Result:==============\r\n" + request.toString() + "\r\nResponse:\r\n" + text + "\r\n" + "=========================================");
                     }
@@ -179,16 +177,13 @@ public class RemoteAPIController {
                             super.sendText(request, response, JSonStorage.serializeToJson(new ObjectData(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
                             }, null), -1)));
                             return;
-
                         }
                         MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
                         if (ri.getApiVersion() > 0) {
-
                             long dka = ri.getDiffKeepAlive();
                             String type = ri.getDiffType();
                             if (dka > 0 && type != null) {
                                 String diffID = ri.getDiffID();
-
                                 String old = null;
                                 if (StringUtils.isNotEmpty(diffID)) {
                                     File tmp = Application.getTempResource("apidiffs/" + ri.getDiffID() + ".dat");
@@ -202,7 +197,6 @@ public class RemoteAPIController {
                                     ObjectData od = new ObjectData(text, ri.getRid());
                                     od.setDiffID(Hash.getMD5(text));
                                     super.sendText(request, response, JSonStorage.serializeToJson(od));
-
                                 } else if ("patch".equalsIgnoreCase(type)) {
                                     DiffMatchPatch differ = new DiffMatchPatch();
                                     LinkedList<Diff> diff = differ.diffMain(old, text);
@@ -212,12 +206,10 @@ public class RemoteAPIController {
                                     String md5 = Hash.getMD5(text);
                                     String difftext = differ.patchToText(patches);
                                     if (difftext.length() >= text.length()) {
-
                                         // diff longer than the actual content.
                                         ObjectData od = new ObjectData(text, ri.getRid());
                                         od.setDiffID(Hash.getMD5(text));
                                         super.sendText(request, response, JSonStorage.serializeToJson(od));
-
                                     } else {
                                         ObjectData od = new ObjectData(difftext, ri.getRid());
                                         od.setDiffID(md5);
@@ -228,7 +220,6 @@ public class RemoteAPIController {
                                     ObjectData od = new ObjectData(text, ri.getRid());
                                     od.setDiffID(Hash.getMD5(text));
                                     super.sendText(request, response, JSonStorage.serializeToJson(od));
-
                                 }
                             } else {
                                 super.sendText(request, response, JSonStorage.serializeToJson(new ObjectData(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
@@ -243,7 +234,6 @@ public class RemoteAPIController {
                 } catch (Throwable e) {
                     throw new WTFException(e);
                 }
-
             }
 
             @Override
@@ -254,11 +244,9 @@ public class RemoteAPIController {
             @Override
             protected RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, final String methodName, InterfaceHandler<?> interfaceHandler, List<String> parameters, String jqueryCallback) throws IOException, ApiCommandNotAvailable {
                 if (request instanceof DeprecatedAPIRequestInterface) {
-
                     return new DeprecatedRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, jqueryCallback);
                     //
                 }
-
                 return new MyJDRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
             }
 
@@ -266,7 +254,6 @@ public class RemoteAPIController {
             protected void validateRequest(HttpRequest request) throws BasicRemoteAPIException {
                 super.validateRequest(request);
                 if (request instanceof DeprecatedAPIRequestInterface) {
-
                     return;
                 }
                 if (request instanceof MyJDownloaderPostRequest) {
@@ -305,7 +292,6 @@ public class RemoteAPIController {
             @Override
             protected void validateRequest(RemoteAPIRequest ret) throws BasicRemoteAPIException {
                 super.validateRequest(ret);
-
             }
         };
         sessionc = new RemoteAPISessionControllerImp();
@@ -323,12 +309,10 @@ public class RemoteAPIController {
             public List<Long> publishEvent(final EventObject event, List<Long> subscriptionids) {
                 if (subscriptionids == null || subscriptionids.size() == 0) {
                     eventSender.fireEvent(new RemoteAPIInternalEvent() {
-
                         @Override
                         public void fireTo(RemoteAPIInternalEventListener listener) {
                             listener.onRemoteAPIEvent(event);
                         }
-
                     });
                 }
                 return super.publishEvent(event, subscriptionids);
@@ -350,7 +334,6 @@ public class RemoteAPIController {
         register(new AccountAPIImplV2());
         register(new SystemAPIImpl());
         register(new LinkCollectorAPIImpl());
-
         register(linkcollector = new LinkCollectorAPIImplV2());
         register(new ContentAPIImpl());
         register(contentAPI = new ContentAPIImplV2());
@@ -371,7 +354,6 @@ public class RemoteAPIController {
         RemoteAPIIOHandlerWrapper wrapper;
         UIOManager.setUserIO(wrapper = new RemoteAPIIOHandlerWrapper(UIOManager.I()));
         register(wrapper.getRemoteHandler());
-
         JDAnywhereAPI.getInstance().init(this, downloadsAPI);
     }
 
@@ -410,7 +392,6 @@ public class RemoteAPIController {
             ridList = new RIDArray();
             rids.put(sessionToken, ridList);
         }
-
         // lowest RID
         System.out.println("RID " + rid + " " + sessionToken);
         long lowestRid = Long.MIN_VALUE;
@@ -427,7 +408,6 @@ public class RemoteAPIController {
                 if (next.getRid() > lowestRid) {
                     lowestRid = next.getRid();
                 }
-
             }
         }
         if (lowestRid > ridList.getMinAcceptedRID()) {
@@ -440,7 +420,6 @@ public class RemoteAPIController {
         }
         RIDEntry ride = new RIDEntry(rid);
         ridList.add(ride);
-
         return true;
     }
 
@@ -498,33 +477,25 @@ public class RemoteAPIController {
             String clientNameSpace = clientInterface.getSimpleName();
             ApiNamespace deviceNameSpaceAnnotation = deviceInterface.getAnnotation(ApiNamespace.class);
             ClientApiNameSpace clientNameSpaceAnnotation = clientInterface.getAnnotation(ClientApiNameSpace.class);
-
             if (deviceNameSpaceAnnotation != null) {
                 deviceNameSpace = deviceNameSpaceAnnotation.value();
             }
             if (clientNameSpaceAnnotation != null) {
                 clientNameSpace = clientNameSpaceAnnotation.value();
             }
-
             if (!StringUtils.equals(deviceNameSpace, clientNameSpace)) {
                 throw new Exception("DeviceNameSpace: " + deviceNameSpace + " != Clientnamespace " + clientNameSpace);
             }
-
             HashMap<String, Method> deviceMap = createMethodMap(deviceInterface.getDeclaredMethods());
-
             HashMap<String, Method> clientMap = createMethodMap(clientInterface.getDeclaredMethods());
-
             for (Entry<String, Method> e : deviceMap.entrySet()) {
                 Method device = e.getValue();
                 Method client = clientMap.get(e.getKey());
                 if (client == null) {
-
                     //
                     throw new Exception(e.getKey() + " Missing in " + clientInterface);
                 }
-
             }
-
             for (Entry<String, Method> e : clientMap.entrySet()) {
                 Method client = e.getValue();
                 Method device = clientMap.get(e.getKey());
@@ -532,12 +503,10 @@ public class RemoteAPIController {
                     //
                     throw new Exception(e.getKey() + " Missing in " + clientInterface);
                 }
-
             }
-
         } catch (Exception e) {
             e.printStackTrace();
-            Dialog.getInstance().showExceptionDialog("Error In API Interface Declaration", e.getMessage(), e);
+            Dialog.getInstance().showExceptionDialog("Error In API Interface Declaration ", e.getMessage(), e);
         }
     }
 
@@ -546,7 +515,6 @@ public class RemoteAPIController {
         for (Method m : deviceMethods) {
             String name = m.getName();
             Class<?>[] actualTypes = m.getParameterTypes();
-
             ArrayList<Class<?>> params = new ArrayList<Class<?>>();
             for (Class<?> c : actualTypes) {
                 if (Clazz.isInstanceof(c, RemoteAPIRequest.class)) {
@@ -563,7 +531,6 @@ public class RemoteAPIController {
                 params.add(c);
             }
             String id = name + "(" + params + ")";
-
             Method oldMethod;
             if ((oldMethod = deviceMap.put(id, m)) != null) {
                 throw new Exception("Dupe Method definition: " + m + " - " + oldMethod);
@@ -584,16 +551,13 @@ public class RemoteAPIController {
                 return null;
             }
         });
-
         InterfaceHandler<?> iface = dummyMethod.getInterfaceHandler();
         Method method = iface.getMethod(methodName, params.length);
         ArrayList<String> stringParams = new ArrayList<String>();
         for (Object o : params) {
             stringParams.add(JSonStorage.serializeToJson(o));
         }
-
         final Object[] parameters = new Object[method.getParameterTypes().length];
-
         int count = 0;
         for (int i = 0; i < parameters.length; i++) {
             if (RemoteAPIRequest.class.isAssignableFrom(method.getParameterTypes()[i])) {
@@ -618,8 +582,6 @@ public class RemoteAPIController {
                 count++;
             }
         }
-
         return iface.invoke(method, parameters);
-
     }
 }

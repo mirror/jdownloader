@@ -50,8 +50,8 @@ public class StreamClientImpl implements StreamClient<StreamClientConfigurationI
         try {
             urlConnection = new HTTPConnectionImpl(url) {
                 @Override
-                protected boolean requiresOutputStream() {
-                    return super.requiresOutputStream() || requestMessage.hasBody();
+                protected boolean isRequiresOutputStream() {
+                    return super.isRequiresOutputStream() || requestMessage.hasBody();
                 }
             };
             urlConnection.setRequestMethod(RequestMethod.valueOf(requestOperation.getHttpMethodName()));

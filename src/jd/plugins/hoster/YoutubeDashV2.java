@@ -364,6 +364,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     try {
                         // do no set variant, do this inloop
                         totalSize = 0;
+                        boolean ok = false;
                         VariantInfo urls = getAndUpdateVariantInfo(downloadLink);
                         YoutubeFinalLinkResource workingVideoStream = null;
                         YoutubeFinalLinkResource workingAudioStream = null;
@@ -384,6 +385,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     workingVideoStream = cache;
                                     // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
                                     totalSize += estimatedSize;
+                                    ok |= estimatedSize > 0;
                                     firstException = null;
                                     break;
                                 } else {
@@ -399,6 +401,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         totalSize += con.getLongContentLength();
                                         data.setDashVideoSize(con.getLongContentLength());
                                         firstException = null;
+                                        ok |= true;
                                         break;
                                     } else {
                                         if (si.getSrc() != null) {
@@ -442,7 +445,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     }
                                     totalSize += estimatedSize;
                                     workingAudioStream = cache;
-                                    ;
+                                    ok |= estimatedSize > 0;
                                     // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, );
                                     firstException = null;
                                     break;
@@ -456,6 +459,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         totalSize += con.getLongContentLength();
                                         data.setDashAudioSize(con.getLongContentLength());
                                         firstException = null;
+                                        ok |= true;
                                         break;
                                     } else {
                                         // if (i == 0) {
@@ -476,7 +480,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, workingAudioStream);
                         downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, workingVideoStream);
                         downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_DATA, workingDataStream);
-                        if (totalSize <= 0) {
+                        if (!ok) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         break test;

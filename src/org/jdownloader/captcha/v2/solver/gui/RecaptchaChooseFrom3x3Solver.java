@@ -13,7 +13,6 @@ import org.jdownloader.plugins.SkipReason;
 import jd.controlling.captcha.SkipException;
 
 public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
-
     private static final RecaptchaChooseFrom3x3Solver INSTANCE = new RecaptchaChooseFrom3x3Solver();
 
     public static RecaptchaChooseFrom3x3Solver getInstance() {
@@ -32,12 +31,10 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
         if (!validateBlackWhite(c)) {
             return false;
         }
-
         if (isBrowserSolverEnabled(c) && !(c instanceof AbstractRecaptcha2FallbackChallenge)) {
             return false;
         }
         if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
-
             return true;
         }
         return false;
@@ -77,7 +74,6 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
 
     @Override
     public void solve(SolverJob<String> solverJob) throws InterruptedException, SolverException, SkipException {
-
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
             if (solverJob.isDone()) {
                 return;
@@ -85,38 +81,29 @@ public class RecaptchaChooseFrom3x3Solver extends AbstractDialogSolver<String> {
             if (!canHandle(solverJob.getChallenge())) {
                 return;
             }
-            if (solverJob.getChallenge() instanceof RecaptchaV2Challenge) {
-                Challenge<?> challenge = solverJob.getChallenge();
-                if (challenge instanceof RecaptchaV2Challenge) {
-                    if (((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge() == null) {
-                        throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
-                    }
-                }
+            Challenge<?> challenge = solverJob.getChallenge();
+            if (challenge instanceof RecaptchaV2Challenge) {
                 checkSilentMode(solverJob);
                 AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) ((RecaptchaV2Challenge) solverJob.getChallenge()).createBasicCaptchaChallenge();
+                if (captchaChallenge == null) {
+                    throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
+                }
                 checkInterruption();
                 handler = new RecaptchaChooseFrom3x3DialogHandler(captchaChallenge);
-
                 handler.run();
-
                 if (handler.getResult() != null) {
                     solverJob.addAnswer(new AbstractResponse<String>(captchaChallenge, this, 100, handler.getResult()));
                 }
             } else if (solverJob.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
-
                 checkSilentMode(solverJob);
                 AbstractRecaptcha2FallbackChallenge captchaChallenge = (AbstractRecaptcha2FallbackChallenge) solverJob.getChallenge();
                 checkInterruption();
                 handler = new RecaptchaChooseFrom3x3DialogHandler(captchaChallenge);
-
                 handler.run();
-
                 if (handler.getResult() != null) {
                     solverJob.addAnswer(new AbstractResponse<String>(captchaChallenge, this, 100, handler.getResult()));
                 }
             }
         }
-
     }
-
 }

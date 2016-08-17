@@ -1416,7 +1416,7 @@ public class YoutubeHelper {
             for (final String line : fmt.mapData.split(",")) {
                 try {
                     final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
-                    if (match != null) {
+                    if (isStreamDataAllowed(match)) {
                         if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
                             continue;
                         }
@@ -1479,13 +1479,13 @@ public class YoutubeHelper {
                                 logger.log(e);
                             }
                             final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
-                            StreamCollection lst = ret.get(itag);
-                            if (lst == null) {
-                                lst = new StreamCollection();
-                                ret.put(itag, lst);
+                            if (itag == null) {
+                                this.logger.info("Unknown Line: " + query);
+                                this.logger.info(query + "");
+                                continue;
                             }
                             YoutubeStreamData vsd;
-                            lst.add(vsd = new YoutubeStreamData(mpdUrl.src, vid, c.downloadurl, itag, query));
+                            vsd = new YoutubeStreamData(mpdUrl.src, vid, c.downloadurl, itag, query);
                             try {
                                 vsd.setHeight(Integer.parseInt(query.get("height")));
                             } catch (Throwable e) {
@@ -1497,6 +1497,14 @@ public class YoutubeHelper {
                             try {
                                 vsd.setFps(query.get("fps"));
                             } catch (Throwable e) {
+                            }
+                            if (isStreamDataAllowed(vsd)) {
+                                StreamCollection lst = ret.get(itag);
+                                if (lst == null) {
+                                    lst = new StreamCollection();
+                                    ret.put(itag, lst);
+                                }
+                                lst.add(vsd);
                             }
                         }
                     } else {
@@ -1530,15 +1538,32 @@ public class YoutubeHelper {
             }
         }
         for (YoutubeStreamData sd : loadThumbnails()) {
-            StreamCollection lst = ret.get(sd.getItag());
-            if (lst == null) {
-                lst = new StreamCollection();
-                ret.put(sd.getItag(), lst);
+            if (isStreamDataAllowed(sd)) {
+                StreamCollection lst = ret.get(sd.getItag());
+                if (lst == null) {
+                    lst = new StreamCollection();
+                    ret.put(sd.getItag(), lst);
+                }
+                lst.add(sd);
             }
-            lst.add(sd);
         }
         vid.streams = ret;
         vid.subtitles = loadSubtitles();
+    }
+
+    private boolean isStreamDataAllowed(YoutubeStreamData match) {
+        if (match == null) {
+            return false;
+        }
+        if (!cfg.isSegmentLoadingEnabled()) {
+            if (match.getSegments() != null && match.getSegments().length > 0) {
+                return false;
+            }
+            if (match.getUrl() != null && match.getUrl().contains("hls_playlist")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private DocumentBuilder createXMLParser() throws ParserConfigurationException {
@@ -1767,17 +1792,20 @@ public class YoutubeHelper {
         }
         if (url != null && itag != null) {
             YoutubeStreamData vsd;
-            StreamCollection lst = ret.get(itag);
-            if (lst == null) {
-                lst = new StreamCollection();
-                ret.put(itag, lst);
-            }
-            lst.add(vsd = new YoutubeStreamData(src.src, vid, url, itag, query));
+            vsd = new YoutubeStreamData(src.src, vid, url, itag, query);
             vsd.setHeight(height);
             vsd.setWidth(width);
             vsd.setFps(fps);
             if (segmentsList.size() > 0) {
                 vsd.setSegments(segmentsList.toArray(new String[] {}));
+            }
+            if (isStreamDataAllowed(vsd)) {
+                StreamCollection lst = ret.get(itag);
+                if (lst == null) {
+                    lst = new StreamCollection();
+                    ret.put(itag, lst);
+                }
+                lst.add(vsd);
             }
         } else {
             this.logger.info("Unknown Line: " + r);
@@ -1935,19 +1963,31 @@ public class YoutubeHelper {
     private List<YoutubeStreamData> loadThumbnails() {
         StreamCollection ret = new StreamCollection();
         String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null));
-        if (best != null && best.equals("default.jpg")) {
-            return ret;
+        YoutubeStreamData match = new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null);
+        if (isStreamDataAllowed(match)) {
+            ret.add(match);
+            if (best != null && best.equals("default.jpg")) {
+                return ret;
+            }
         }
-        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
-        if (best != null && best.equals("mqdefault.jpg")) {
-            return ret;
+        match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
+        if (isStreamDataAllowed(match)) {
+            ret.add(match);
+            if (best != null && best.equals("mqdefault.jpg")) {
+                return ret;
+            }
         }
-        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
-        if (best != null && best.equals("hqdefault.jpg")) {
-            return ret;
+        match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
+        if (isStreamDataAllowed(match)) {
+            ret.add(match);
+            if (best != null && best.equals("hqdefault.jpg")) {
+                return ret;
+            }
         }
-        ret.add(new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
+        match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
+        if (isStreamDataAllowed(match)) {
+            ret.add(match);
+        }
         return ret;
     }
 

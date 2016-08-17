@@ -10,11 +10,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import jd.controlling.downloadcontroller.BadDestinationException;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.PathTooLongException;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.uio.UIOManager;
@@ -28,25 +23,25 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.downloadcontroller.BadDestinationException;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.PathTooLongException;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+
 public class FolderChooser extends PathChooser implements SettingsComponent {
     /**
      *
      */
     private static final long                     serialVersionUID = 1L;
-
     private StateUpdateEventSender<FolderChooser> eventSender;
     private boolean                               setting;
-
     private String                                originalPath     = null;
     private String                                initialPath      = null;
 
     public FolderChooser() {
         super("FolderChooser", true);
-
         eventSender = new StateUpdateEventSender<FolderChooser>();
-
         this.txt.getDocument().addDocumentListener(new DocumentListener() {
-
             public void removeUpdate(DocumentEvent e) {
                 if (!setting) {
                     eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
@@ -66,7 +61,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
             }
         });
         this.destination.addPopupMenuListener(new PopupMenuListener() {
-
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
                 final List<String> list = DownloadPathHistoryManager.getInstance().listPaths(initialPath);
@@ -79,7 +73,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
             @Override
             public void popupMenuCanceled(PopupMenuEvent e) {
-
             }
         });
         // CFG_LINKGRABBER.DOWNLOAD_DESTINATION_HISTORY.getEventSender().addListener(, true);
@@ -90,7 +83,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
         menu.add(new VariableAction(txt, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
-
         return menu;
     }
 
@@ -158,7 +150,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
             checkPath = new File(path);
         }
         File forbidden = null;
-
         try {
             DownloadWatchDog.getInstance().validateDestination(checkPath);
         } catch (PathTooLongException e) {
@@ -166,7 +157,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         } catch (BadDestinationException e) {
             forbidden = e.getFile();
         }
-
         if (forbidden != null) {
             final File finalForbidden = forbidden;
             new EDTHelper<Void>() {
@@ -179,7 +169,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
             }.start(true);
             return null;
         }
-
         if (!checkPath.exists()) {
             if (presetPath != null && presetPath.equals(checkPath)) {
                 //
@@ -198,7 +187,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
                         return presetPath;
                     }
                 }
-
             }
         }
         return file;

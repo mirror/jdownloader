@@ -508,4 +508,11 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isCollectionMergingEnabled();
 
     void setCollectionMergingEnabled(boolean b);
+
+    @RequiresRestart("A JDownloader Restart is Required")
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isSegmentLoadingEnabled();
+
+    void setSegmentLoadingEnabled(boolean b);
 }

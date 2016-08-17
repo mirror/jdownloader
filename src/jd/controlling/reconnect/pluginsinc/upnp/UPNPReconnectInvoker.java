@@ -9,19 +9,18 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.logging.Logger;
 
-import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.ReconnectInvoker;
-import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 
-public class UPNPReconnectInvoker extends ReconnectInvoker {
+import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
+import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
+public class UPNPReconnectInvoker extends ReconnectInvoker {
     private final String serviceType;
 
     public UPNPReconnectInvoker(UPNPRouterPlugin upnpRouterPlugin, String serviceType2, String controlURL2) {
@@ -34,9 +33,8 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         final String data = "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:" + command + " xmlns:u='" + serviceType + "' /> </s:Body> </s:Envelope>";
         // this works for fritz box.
         // old code did NOT work:
-
         /*
-         * 
+         *
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
          * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
@@ -81,7 +79,6 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                 LogSource.exception(logger, e);
                 if (!StringUtils.isEmpty(xmlstr)) {
                     return xmlstr;
-
                 } else {
                     throw e;
                 }
@@ -104,7 +101,6 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                 logger.info(con + "");
             }
         }
-
     }
 
     public String getServiceType() {
@@ -210,5 +206,4 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
     protected void testRun() throws ReconnectException, InterruptedException {
         run();
     }
-
 }

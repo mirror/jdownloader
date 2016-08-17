@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.APIParameterNames;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
@@ -13,9 +14,10 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 
 @ApiNamespace("downloadsV2")
 public interface DownloadsAPIV2 extends RemoteAPIInterface {
-
+    @APIParameterNames({ "enabled", "linkIds", "packageIds" })
     void setEnabled(boolean enabled, long[] linkIds, long[] packageIds);
 
+    @APIParameterNames({ "linkId", "packageId" })
     void setStopMark(long linkId, long packageId);
 
     void removeStopMark();
@@ -43,15 +45,18 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      *
      * @return
      */
-
+    @APIParameterNames({ "queryParams" })
     List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException;
-
+    @APIParameterNames({"linkIds","packageIds"})
     void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException;
 
+    @APIParameterNames({ "packageId", "newName" })
     void renamePackage(Long packageId, String newName);
 
+    @APIParameterNames({ "linkId", "newName" })
     void renameLink(Long linkId, String newName);
 
+    @APIParameterNames({ "linkIds", "packageIds" })
     void resetLinks(long[] linkIds, long[] packageIds);
 
     /**
@@ -61,10 +66,12 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      * @param oldCounterValue
      * @return
      */
+    @APIParameterNames({ "oldCounterValue" })
     long getStructureChangeCounter(long oldCounterValue);
 
+    @APIParameterNames({ "packageIds", "afterDestPackageId" })
     void movePackages(long[] packageIds, long afterDestPackageId);
-
+    @APIParameterNames({"linkIds","afterLinkID","destPackageID"})
     void moveLinks(long[] linkIds, long afterLinkID, long destPackageID);
 
     /**
@@ -87,30 +94,41 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      *
      * @return
      */
+    @APIParameterNames({ "queryParams" })
     List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) throws BadParameterException;
 
+    @APIParameterNames({ "priority", "linkIds", "packageIds" })
     void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "packageIds" })
     void resumeLinks(long[] linkIds, long[] packageIds) throws BadParameterException;
 
+    @APIParameterNames({ "directory", "packageIds" })
     void setDownloadDirectory(String directory, long[] packageIds);
 
     DownloadLinkAPIStorableV2 getStopMarkedLink();
 
+    @APIParameterNames({ "linkIds", "packageIds" })
     void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "packageIds", "urlDisplayType" })
     Map<String, List<Long>> getDownloadUrls(long[] linkIds, long[] packageIds, UrlDisplayTypeStorable[] urlDisplayType) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "pkgIds", "newPkgName", "downloadPath" })
     void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "pkgIds" })
     void splitPackageByHoster(long[] linkIds, long[] pkgIds);
 
+    @APIParameterNames({ "linkIds", "packageIds", "action", "mode", "selectionType" })
     void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "packageIds", "pass" })
     boolean setDownloadPassword(long[] linkIds, long[] packageIds, String pass) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "packageIds" })
     boolean forceDownload(long[] linkIds, long[] packageIds) throws BadParameterException;
 
+    @APIParameterNames({ "packageIds", "linkIds", "filterByReason" })
     boolean unskip(long[] packageIds, long[] linkIds, SkipReasonStorable.Reason filterByReason) throws BadParameterException;
-
 }
