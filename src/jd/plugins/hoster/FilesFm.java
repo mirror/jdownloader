@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://files\\.fm/down\\.php\\?i=[a-z0-9]+\\&n=[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://files\\.fm/down\\.php\\?i=[a-z0-9]+\\&n=[^/]+" }) 
 public class FilesFm extends PluginForHost {
 
     public FilesFm(PluginWrapper wrapper) {

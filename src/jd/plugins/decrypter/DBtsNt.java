@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://(www\\.)?audiobeats\\.net/((liveset|event|artist|link)\\?id=|link\\.php\\?id=)\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://(www\\.)?audiobeats\\.net/((liveset|event|artist|link)\\?id=|link\\.php\\?id=)\\d+" }) 
 public class DBtsNt extends PluginForDecrypt {
 
     private String                  fpName;

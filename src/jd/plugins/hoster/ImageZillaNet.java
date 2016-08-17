@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagezilla.net" }, urls = { "http://(www\\.)?imagezilla\\.net/show/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagezilla.net" }, urls = { "http://(www\\.)?imagezilla\\.net/show/[^<>\"/]+" }) 
 public class ImageZillaNet extends PluginForHost {
 
     public ImageZillaNet(PluginWrapper wrapper) {

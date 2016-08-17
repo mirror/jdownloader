@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://weltderwunder\\.dedecrypted\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://weltderwunder\\.dedecrypted\\d+" }) 
 public class WeltderwunderDe extends PluginForHost {
 
     /** INFORMATION: On problems in the future, check out their Apps: http://www.weltderwunder.de/footer/spalte-3/mobile-smart-tv-apps/ */

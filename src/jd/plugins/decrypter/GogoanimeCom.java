@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,7 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GogoanimeCom extends antiDDoSForDecrypt {
 
     /**
@@ -52,20 +52,6 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         for (final String domain : getAnnotationNames()) {
             a[i] = "http://(?:www\\.)?" + Pattern.quote(domain) + "/(?!flowplayer)(?:embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(?:/\\d+)?)";
             i++;
-        }
-        return a;
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        final int gl = getAnnotationNames().length;
-        int[] a = new int[gl];
-        for (int i = 0; i < gl; i++) {
-            a[i] = 0;
         }
         return a;
     }

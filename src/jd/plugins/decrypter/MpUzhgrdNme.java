@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.uzhgorod.name" }, urls = { "http://(www\\.)?mp3\\.uzhgorod\\.name/(\\d+/\\d+/\\d+/|mp3music/\\d+-).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.uzhgorod.name" }, urls = { "http://(www\\.)?mp3\\.uzhgorod\\.name/(\\d+/\\d+/\\d+/|mp3music/\\d+-).+\\.html" }) 
 public class MpUzhgrdNme extends PluginForDecrypt {
 
     public MpUzhgrdNme(PluginWrapper wrapper) {

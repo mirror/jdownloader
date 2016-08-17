@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareneo.net" }, urls = { "https?://(www\\.)?shareneo\\.net/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareneo.net" }, urls = { "https?://(www\\.)?shareneo\\.net/[A-Za-z0-9]+" }) 
 public class ShareNeoNet extends PluginForHost {
 
     public ShareNeoNet(PluginWrapper wrapper) {

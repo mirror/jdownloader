@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/images/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/images/.+" }) 
 public class ArtstationCom extends PluginForHost {
 
     public ArtstationCom(PluginWrapper wrapper) {

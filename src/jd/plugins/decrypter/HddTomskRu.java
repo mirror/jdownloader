@@ -32,7 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/[a-z]{8}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/[a-z]{8}" }) 
 public class HddTomskRu extends PluginForDecrypt {
 
     private static final String DESK_ENTER_PASSWORD = "http://hdd.tomsk.ru/?rm=desk_enter_password";

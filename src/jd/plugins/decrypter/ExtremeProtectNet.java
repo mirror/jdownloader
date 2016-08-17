@@ -33,7 +33,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.net" }, urls = { "http://(?:www\\.)?extreme\\-protect\\.net/([a-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.net" }, urls = { "http://(?:www\\.)?extreme\\-protect\\.net/([a-z0-9\\-_]+)" }) 
 public class ExtremeProtectNet extends PluginForDecrypt {
 
     public ExtremeProtectNet(PluginWrapper wrapper) {

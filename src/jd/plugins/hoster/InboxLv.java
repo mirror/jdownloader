@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inbox.lv" }, urls = { "http://(www\\.)?files\\.inbox\\.lv/ticket/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inbox.lv" }, urls = { "http://(www\\.)?files\\.inbox\\.lv/ticket/[a-z0-9]+" }) 
 public class InboxLv extends PluginForHost {
 
     public InboxLv(PluginWrapper wrapper) {

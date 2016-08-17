@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rd-fs.com", "flowhot.info" }, urls = { "https?://(www\\.)?(rd-fs\\.com|flowhot\\.info)/[a-z0-9]{12}", "dgzkj65u8efrj6hgDELETEME467zubvr4uijm" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rd-fs.com", "flowhot.info" }, urls = { "https?://(www\\.)?(rd-fs\\.com|flowhot\\.info)/[a-z0-9]{12}", "dgzkj65u8efrj6hgDELETEME467zubvr4uijm" }) 
 @SuppressWarnings("deprecation")
 public class RdFsCom extends PluginForHost {
     // Site Setters

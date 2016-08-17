@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com", "qqmusic.qq.com" }, urls = { "http://(?:www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)", "http://y\\.qq\\.com/#type=(?:album|singer)\\&mid=[A-Za-z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com", "qqmusic.qq.com" }, urls = { "http://(?:www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)", "http://y\\.qq\\.com/#type=(?:album|singer)\\&mid=[A-Za-z0-9]+" }) 
 public class QqComDecrypter extends PluginForDecrypt {
 
     public QqComDecrypter(PluginWrapper wrapper) {

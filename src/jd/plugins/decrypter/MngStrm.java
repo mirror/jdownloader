@@ -16,7 +16,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%\\+\\.]+/){2}\\d+(\\?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%\\+\\.]+/){2}\\d+(\\?page=\\d+)?" }) 
 public class MngStrm extends PluginForDecrypt {
 
     public MngStrm(PluginWrapper wrapper) {

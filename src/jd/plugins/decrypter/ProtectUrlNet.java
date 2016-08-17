@@ -45,7 +45,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-url.net" }, urls = { "http://(www\\.)?(protect-url\\.net|p-u.in)/([a-z0-9]+-[\\w_]+|check\\.[a-z0-9]+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-url.net" }, urls = { "http://(www\\.)?(protect-url\\.net|p-u.in)/([a-z0-9]+-[\\w_]+|check\\.[a-z0-9]+)\\.html" }) 
 public class ProtectUrlNet extends PluginForDecrypt {
 
     public ProtectUrlNet(PluginWrapper wrapper) {

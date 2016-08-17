@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deraktionaer.tv" }, urls = { "https?://(?:www\\.)?(?:daf\\.fm|deraktionaer\\.tv)/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deraktionaer.tv" }, urls = { "https?://(?:www\\.)?(?:daf\\.fm|deraktionaer\\.tv)/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" }) 
 public class DeraktionaerTv extends PluginForHost {
 
     public DeraktionaerTv(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "https?://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drawcrowd.com" }, urls = { "https?://(?:www\\.)?drawcrowd\\.com/(?!projects/)[^/]+" }) 
 public class DrawcrowdCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks = null;

@@ -37,7 +37,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkzhost.com" }, urls = { "http://[\\w\\.]*?linkzhost\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkzhost.com" }, urls = { "http://[\\w\\.]*?linkzhost\\.com/[a-z0-9]{12}" }) 
 public class LinkzHostCom extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://linkzhost.com";

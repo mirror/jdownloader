@@ -34,7 +34,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
  * vrt.be network
  * old content handling --> var vars12345 = Array();
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" }) 
 public class CobraBe extends PluginForHost {
 
     public CobraBe(PluginWrapper wrapper) {

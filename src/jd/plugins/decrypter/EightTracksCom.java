@@ -35,7 +35,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" }) 
 public class EightTracksCom extends PluginForDecrypt {
 
     private static final String  MAINPAGE          = "http://8tracks.com/";

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobashdecrypted\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobashdecrypted\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }) 
 public class VideoBashCom extends PluginForHost {
 
     public VideoBashCom(PluginWrapper wrapper) {

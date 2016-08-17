@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp4upload.com" }, urls = { "https?://(www\\.)?mp4upload\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp4upload.com" }, urls = { "https?://(www\\.)?mp4upload\\.com/(embed\\-)?[a-z0-9]{12}" }) 
 public class Mp4UploadCom extends PluginForHost {
 
     private String               correctedBR                  = "";

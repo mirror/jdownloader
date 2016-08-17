@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otrdecrypted\\.de/\\?file=[^<>\"/]*?\\.otrkey" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otrdecrypted\\.de/\\?file=[^<>\"/]*?\\.otrkey" }) 
 public class MegaOtrDe extends PluginForHost {
 
     @SuppressWarnings("deprecation")

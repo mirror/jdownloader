@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "http://(?:www\\.)?bundestag\\.de/mediathek/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "http://(?:www\\.)?bundestag\\.de/mediathek/.+" }) 
 public class BundestagDe extends PluginForHost {
 
     public BundestagDe(PluginWrapper wrapper) {

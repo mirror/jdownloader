@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(www\\.)?(xxxaporndecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html|media\\.xxxaporn\\.com/video/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(www\\.)?(xxxaporndecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html|media\\.xxxaporn\\.com/video/\\d+)" }) 
 public class XXXAPornCom extends PluginForHost {
 
     private String              DLLINK    = null;

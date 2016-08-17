@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //This plugin only takes decrypted links from the livedrive decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrivedecrypted\\.com/item/[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrivedecrypted\\.com/item/[a-z0-9]{32}" }) 
 public class LiveDriveCom extends PluginForHost {
 
     public LiveDriveCom(PluginWrapper wrapper) {

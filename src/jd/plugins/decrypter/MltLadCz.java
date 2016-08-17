@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //multiload.cz by pspzockerscene
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiload.cz" }, urls = { "http://[\\w\\.]*?multiload\\.cz/stahnout/[0-9]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiload.cz" }, urls = { "http://[\\w\\.]*?multiload\\.cz/stahnout/[0-9]+/" }) 
 public class MltLadCz extends PluginForDecrypt {
 
     public MltLadCz(PluginWrapper wrapper) {

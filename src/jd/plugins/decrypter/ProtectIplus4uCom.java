@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.iplus4u.com" }, urls = { "http://(www\\.)?protect\\.iplus4u\\.com/[A-Za-z0-9\\-_\\.]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.iplus4u.com" }, urls = { "http://(www\\.)?protect\\.iplus4u\\.com/[A-Za-z0-9\\-_\\.]+\\.html" }) 
 public class ProtectIplus4uCom extends PluginForDecrypt {
 
     public ProtectIplus4uCom(PluginWrapper wrapper) {

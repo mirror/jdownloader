@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video\\.php\\?id=[A-Za-z0-9]+.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video\\.php\\?id=[A-Za-z0-9]+.+" }) 
 public class JavynowCom extends PluginForHost {
 
     public JavynowCom(PluginWrapper wrapper) {

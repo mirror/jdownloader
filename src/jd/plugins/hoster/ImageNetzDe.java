@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagenetz.de" }, urls = { "http://(www\\.)?imagenetz\\.de/[a-z0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagenetz.de" }, urls = { "http://(www\\.)?imagenetz\\.de/[a-z0-9]+/.+" }) 
 public class ImageNetzDe extends PluginForHost {
 
     public ImageNetzDe(PluginWrapper wrapper) {

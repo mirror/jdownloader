@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 //Similar to SafeUrlMe (safeurl.me)
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SflnkgNt extends abstractSafeLinking {
 
     /**
@@ -59,20 +59,6 @@ public class SflnkgNt extends abstractSafeLinking {
                 a[i] = "https?://(?:www\\.)?" + Pattern.quote(domain) + "/(?:(?:p|d(?:/com)?)/(?:[a-zA-Z0-9]{10}|" + regexBase58() + ")|[a-f0-9]{10}|(?:d/)?" + regexBase58() + ")";
             }
             i++;
-        }
-        return a;
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        final int gl = getAnnotationNames().length;
-        int[] a = new int[gl];
-        for (int i = 0; i < gl; i++) {
-            a[i] = 0;
         }
         return a;
     }

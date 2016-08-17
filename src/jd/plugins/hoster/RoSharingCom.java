@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rosharing.net", "rosharing.com" }, urls = { "https?://(?:www\\.)?(rosharing\\.com|rosharing\\.net|roshare\\.info)/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rosharing.net", "rosharing.com" }, urls = { "https?://(?:www\\.)?(rosharing\\.com|rosharing\\.net|roshare\\.info)/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }) 
 public class RoSharingCom extends PluginForHost {
 
     public RoSharingCom(PluginWrapper wrapper) {

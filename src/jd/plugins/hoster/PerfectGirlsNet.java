@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?perfectgirlsdecrypted\\.net/\\d+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?perfectgirlsdecrypted\\.net/\\d+/.{1}" }) 
 public class PerfectGirlsNet extends PluginForHost {
 
     public PerfectGirlsNet(PluginWrapper wrapper) {

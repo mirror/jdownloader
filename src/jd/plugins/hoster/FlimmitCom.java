@@ -42,7 +42,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit\\.com/\\d+" }) 
 public class FlimmitCom extends PluginForHost {
 
     public FlimmitCom(PluginWrapper wrapper) {

@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "faphub.xxx" }, urls = { "http://(www\\.)?faphub\\.xxx/video/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "faphub.xxx" }, urls = { "http://(www\\.)?faphub\\.xxx/video/\\d+" }) 
 public class FaphubXxxDecrypter extends PornEmbedParser {
 
     public FaphubXxxDecrypter(PluginWrapper wrapper) {

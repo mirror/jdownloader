@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabase.com" }, urls = { "http://(www\\.)?gigabase\\.com/folder/[A-Za-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabase.com" }, urls = { "http://(www\\.)?gigabase\\.com/folder/[A-Za-z0-9]+/[^<>\"/]*?\\.html" }) 
 public class GigaBaseComFolder extends PluginForDecrypt {
 
     public GigaBaseComFolder(PluginWrapper wrapper) {

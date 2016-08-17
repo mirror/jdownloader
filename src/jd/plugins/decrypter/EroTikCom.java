@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ero-tik.com" }, urls = { "http://(?:www\\.)?ero\\-tik\\.com/[^<>\"/]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ero-tik.com" }, urls = { "http://(?:www\\.)?ero\\-tik\\.com/[^<>\"/]+\\.html" }) 
 public class EroTikCom extends PluginForDecrypt {
 
     public EroTikCom(PluginWrapper wrapper) {

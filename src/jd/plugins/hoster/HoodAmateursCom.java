@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodamateurs.com" }, urls = { "https?://(?:www\\.)?hoodamateurs\\.com/\\d+/[A-Za-z0-9\\-_]+/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodamateurs.com" }, urls = { "https?://(?:www\\.)?hoodamateurs\\.com/\\d+/[A-Za-z0-9\\-_]+/[a-z0-9\\-]+" }) 
 public class HoodAmateursCom extends PluginForHost {
 
     public HoodAmateursCom(PluginWrapper wrapper) {

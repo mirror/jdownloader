@@ -9,8 +9,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "mpc-g.com" }, urls = { "https?://(www\\.)?mpc-g\\.com/[a-zA-Z0-9\\-]+" }, flags = { 0 })
-public class MpcgCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "mpc-g.com" }, urls = { "https?://(www\\.)?mpc-g\\.com/[a-zA-Z0-9\\-]+" }) public class MpcgCom extends PluginForDecrypt {
 
     public MpcgCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foldr.us" }, urls = { "http://(www\\.)?foldr\\.us/(foldr\\.php\\?id=|m/)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foldr.us" }, urls = { "http://(www\\.)?foldr\\.us/(foldr\\.php\\?id=|m/)[a-z0-9]+" }) 
 public class FoldrUs extends PluginForDecrypt {
 
     public FoldrUs(PluginWrapper wrapper) {

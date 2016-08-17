@@ -41,7 +41,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wushare.com" }, urls = { "http://(www\\.)?wushare\\.com/file/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wushare.com" }, urls = { "http://(www\\.)?wushare\\.com/file/[A-Za-z0-9]+" }) 
 public class WuShareCom extends PluginForHost {
 
     public WuShareCom(PluginWrapper wrapper) {

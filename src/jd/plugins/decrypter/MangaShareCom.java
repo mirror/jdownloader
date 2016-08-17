@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangashare.com" }, urls = { "http://(www\\.)?read\\.mangashare\\.com/[A-Za-z0-9\\-_]+/chapter\\-\\d+/page\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangashare.com" }, urls = { "http://(www\\.)?read\\.mangashare\\.com/[A-Za-z0-9\\-_]+/chapter\\-\\d+/page\\d+\\.html" }) 
 public class MangaShareCom extends PluginForDecrypt {
 
     public MangaShareCom(PluginWrapper wrapper) {

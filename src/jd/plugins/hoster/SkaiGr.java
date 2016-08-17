@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://skaidecrypted\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://skaidecrypted\\d+" }) 
 public class SkaiGr extends PluginForHost {
 
     public SkaiGr(PluginWrapper wrapper) {

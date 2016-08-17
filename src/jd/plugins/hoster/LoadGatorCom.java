@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loadgator.com" }, urls = { "http://[\\w\\.]*?loadgator\\.com/hosting/download\\.php\\?id=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loadgator.com" }, urls = { "http://[\\w\\.]*?loadgator\\.com/hosting/download\\.php\\?id=[A-Z0-9]+" }) 
 public class LoadGatorCom extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://loadgator.com/hosting";

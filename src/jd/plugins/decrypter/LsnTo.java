@@ -32,7 +32,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lesen.to" }, urls = { "http://(www\\.)?lesen\\.to/(protection/folder_\\d+\\.html|wp/tipp/Download/\\d+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lesen.to" }, urls = { "http://(www\\.)?lesen\\.to/(protection/folder_\\d+\\.html|wp/tipp/Download/\\d+/)" }) 
 public class LsnTo extends PluginForDecrypt {
 
     private static final String RECAPTCHA = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";

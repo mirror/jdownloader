@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidivodo.com" }, urls = { "https?://(?:www\\.)?(?:en\\.)?vidivodo\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidivodo.com" }, urls = { "https?://(?:www\\.)?(?:en\\.)?vidivodo\\.com/.+" }) 
 public class VidiVodoCom extends PluginForHost {
 
     private String dllink = null;

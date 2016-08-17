@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" }) 
 public class UflashTv extends PluginForHost {
 
     public UflashTv(PluginWrapper wrapper) {

@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdrmaus.de" }, urls = { "https?://(?:www\\.)?wdrmaus\\.de/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdrmaus.de" }, urls = { "https?://(?:www\\.)?wdrmaus\\.de/.+" }) 
 public class WdrDeMediathekWdrmaus extends PluginForHost {
 
     public WdrDeMediathekWdrmaus(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/(d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8}|[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/(d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8}|[a-z0-9]+)" }) 
 public class FileToLinkCom extends PluginForHost {
 
     public FileToLinkCom(PluginWrapper wrapper) {

@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wlnk.biz" }, urls = { "http://(?:www\\.)?wlnk\\.biz/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wlnk.biz" }, urls = { "http://(?:www\\.)?wlnk\\.biz/[A-Za-z0-9]+" }) 
 public class WlnkBiz extends PluginForDecrypt {
 
     public WlnkBiz(PluginWrapper wrapper) {

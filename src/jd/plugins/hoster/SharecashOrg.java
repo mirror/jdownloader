@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "https?://(?:www\\.)?(?:sharecash\\.org/download\\.php\\?(file|id)=\\d+|jafiles\\.net/[A-Za-z0-9]{2,})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "https?://(?:www\\.)?(?:sharecash\\.org/download\\.php\\?(file|id)=\\d+|jafiles\\.net/[A-Za-z0-9]{2,})" }) 
 public class SharecashOrg extends PluginForHost {
 
     public SharecashOrg(PluginWrapper wrapper) {

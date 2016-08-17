@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pervcity.com" }, urls = { "https?://(?:www\\.)?members\\.pervcity\\.com/scenes/[^<>\"/]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pervcity.com" }, urls = { "https?://(?:www\\.)?members\\.pervcity\\.com/scenes/[^<>\"/]+\\.html" }) 
 public class PervcityCom extends PluginForHost {
 
     public PervcityCom(PluginWrapper wrapper) {

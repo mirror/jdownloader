@@ -49,7 +49,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "https?://(www\\.)?(easy\\-share|crocko)\\.com/(?!us|en|pt|accounts|billing|f/|mc)([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "https?://(www\\.)?(easy\\-share|crocko)\\.com/(?!us|en|pt|accounts|billing|f/|mc)([A-Z0-9]+/?|\\d+)" }) 
 public class CrockoCom extends PluginForHost {
 
     private final static String  SSL_CONNECTION = "SSL_CONNECTION";

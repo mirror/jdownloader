@@ -54,7 +54,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.|u\\d+\\.)?shareflare\\.net/download/[^<>\"/]+/[^<>\"/]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.|u\\d+\\.)?shareflare\\.net/download/[^<>\"/]+/[^<>\"/]+\\.html" }) 
 public class ShareFlareNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();

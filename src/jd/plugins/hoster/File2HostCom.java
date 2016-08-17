@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //IMPORTANT: The name of the plugin is CORRECT!
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2host.com" }, urls = { "http://(www\\.)?f2h(\\.nana\\d+)?\\.co\\.il/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2host.com" }, urls = { "http://(www\\.)?f2h(\\.nana\\d+)?\\.co\\.il/\\d+" }) 
 public class File2HostCom extends PluginForHost {
 
     public File2HostCom(PluginWrapper wrapper) {

@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "http://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "http://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" }) 
 public class LiveStreamCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")

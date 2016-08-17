@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downtobox.com" }, urls = { "https?://(?:www\\.)?downtobox\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downtobox.com" }, urls = { "https?://(?:www\\.)?downtobox\\.com/[A-Za-z0-9]+" }) 
 public class DowntoboxCom extends PluginForHost {
 
     public DowntoboxCom(PluginWrapper wrapper) {

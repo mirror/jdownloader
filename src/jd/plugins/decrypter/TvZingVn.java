@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.zing.vn" }, urls = { "https?://tv\\.zing\\.vn/([\\w\\-]+$|series/[\\w\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.zing.vn" }, urls = { "https?://tv\\.zing\\.vn/([\\w\\-]+$|series/[\\w\\-]+)" }) 
 public class TvZingVn extends PluginForDecrypt {
 
     public TvZingVn(PluginWrapper wrapper) {

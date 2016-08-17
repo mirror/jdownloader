@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgdino.com" }, urls = { "http://(www\\.)?imgdino\\.com/viewer\\.php\\?file=[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgdino.com" }, urls = { "http://(www\\.)?imgdino\\.com/viewer\\.php\\?file=[^<>\"/]+" }) 
 public class ImgDinoCom extends PluginForHost {
 
     public ImgDinoCom(PluginWrapper wrapper) {

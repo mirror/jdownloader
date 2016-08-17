@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" }) 
 public class EightMusesCom extends antiDDoSForHost {
 
     public EightMusesCom(PluginWrapper wrapper) {

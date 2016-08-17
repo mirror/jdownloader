@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rdlnk.co" }, urls = { "http://(www\\.)?rdlnk\\.co/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rdlnk.co" }, urls = { "http://(www\\.)?rdlnk\\.co/[A-Za-z0-9]+" }) 
 public class RdLnkCo extends PluginForDecrypt {
 
     public RdLnkCo(PluginWrapper wrapper) {

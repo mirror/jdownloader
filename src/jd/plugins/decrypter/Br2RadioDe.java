@@ -17,8 +17,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 33293 $", interfaceVersion = 3, names = { "br.de" }, urls = { "https?://(www\\.)?br\\.de/radio/bayern2/[^<>\"]+\\d+\\.html" }, flags = { 32 })
-public class Br2RadioDe extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 33293 $", interfaceVersion = 3, names = { "br.de" }, urls = { "https?://(www\\.)?br\\.de/radio/bayern2/[^<>\"]+\\d+\\.html" }) public class Br2RadioDe extends PluginForDecrypt {
 
     public Br2RadioDe(final PluginWrapper wrapper) {
         super(wrapper);

@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euronews.com" }, urls = { "http://de\\.euronews\\.com/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euronews.com" }, urls = { "http://de\\.euronews\\.com/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" }) 
 public class EuronewsCom extends PluginForHost {
 
     public EuronewsCom(PluginWrapper wrapper) {

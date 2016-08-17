@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3adisk.com" }, urls = { "http://(www\\.)?3adisk\\.com/down_\\d+\\.shtml" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3adisk.com" }, urls = { "http://(www\\.)?3adisk\\.com/down_\\d+\\.shtml" }) 
 public class ThreeADiskCom extends PluginForHost {
 
     public ThreeADiskCom(PluginWrapper wrapper) {

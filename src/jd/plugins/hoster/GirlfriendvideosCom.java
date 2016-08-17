@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "http://(www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/\\d+\\.php" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "http://(www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/\\d+\\.php" }) 
 public class GirlfriendvideosCom extends PluginForHost {
 
     public GirlfriendvideosCom(PluginWrapper wrapper) {

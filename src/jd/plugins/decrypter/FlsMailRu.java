@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://(www\\.)?files\\.mail\\.ru/[A-Z0-9]{6,32}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://(www\\.)?files\\.mail\\.ru/[A-Z0-9]{6,32}" }) 
 public class FlsMailRu extends PluginForDecrypt {
 
     public FlsMailRu(PluginWrapper wrapper) {

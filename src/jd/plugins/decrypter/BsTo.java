@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "http://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+(/[^/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "http://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+(/[^/]+)?" }) 
 public class BsTo extends PluginForDecrypt {
 
     public BsTo(PluginWrapper wrapper) {

@@ -38,7 +38,7 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "https?://((www|betastage)\\.)?fileblaze\\.net/external(\\-(html|fileblaze))?\\.html\\?key=[0-9a-f]+|http://fblaz\\.in/\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "https?://((www|betastage)\\.)?fileblaze\\.net/external(\\-(html|fileblaze))?\\.html\\?key=[0-9a-f]+|http://fblaz\\.in/\\w+" }) 
 public class FileBlazeNetA extends PluginForDecrypt {
 
     private String KEY = null;

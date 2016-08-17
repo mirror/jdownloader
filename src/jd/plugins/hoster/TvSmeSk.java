@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://(?:www\\.)?tv\\.sme\\.sk/v/[0-9]+/[\\-a-zA-Z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://(?:www\\.)?tv\\.sme\\.sk/v/[0-9]+/[\\-a-zA-Z0-9]+\\.html" }) 
 public class TvSmeSk extends PluginForHost {
 
     private String dlink = null;

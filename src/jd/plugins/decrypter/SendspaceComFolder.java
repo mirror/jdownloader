@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?sendspace\\.com/folder/[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?sendspace\\.com/folder/[0-9a-zA-Z]+" }) 
 public class SendspaceComFolder extends PluginForDecrypt {
 
     public SendspaceComFolder(PluginWrapper wrapper) {

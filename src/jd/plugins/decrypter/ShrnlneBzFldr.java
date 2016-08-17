@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?share-online\\.biz/folders\\.php\\?fid=[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?share-online\\.biz/folders\\.php\\?fid=[A-Z0-9]+" }) 
 public class ShrnlneBzFldr extends PluginForDecrypt {
 
     public ShrnlneBzFldr(PluginWrapper wrapper) {

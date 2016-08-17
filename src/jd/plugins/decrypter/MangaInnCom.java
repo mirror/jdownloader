@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangainn.com" }, urls = { "http://(www\\.)?mangainn\\.com/manga/chapter/\\d+_" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangainn.com" }, urls = { "http://(www\\.)?mangainn\\.com/manga/chapter/\\d+_" }) 
 public class MangaInnCom extends PluginForDecrypt {
 
     public MangaInnCom(PluginWrapper wrapper) {

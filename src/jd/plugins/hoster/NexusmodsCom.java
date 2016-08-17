@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "http://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "http://(?:www\\.)?nexusmods\\.com/[^/]+/mods/\\d+/" }) 
 public class NexusmodsCom extends PluginForHost {
 
     public NexusmodsCom(PluginWrapper wrapper) {

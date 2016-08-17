@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vodu.ch" }, urls = { "http://(www\\.)?vodu\\.ch/file/[a-f0-9]{32}/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vodu.ch" }, urls = { "http://(www\\.)?vodu\\.ch/file/[a-f0-9]{32}/" }) 
 public class VoduCh extends PluginForHost {
 
     public VoduCh(PluginWrapper wrapper) {

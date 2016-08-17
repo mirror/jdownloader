@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vocaroo.com" }, urls = { "http://(?:www\\.)?vocaroo\\.com/i/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vocaroo.com" }, urls = { "http://(?:www\\.)?vocaroo\\.com/i/[A-Za-z0-9]+" }) 
 public class VocarooCom extends PluginForHost {
 
     public VocarooCom(PluginWrapper wrapper) {

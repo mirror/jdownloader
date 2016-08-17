@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bezvadata.cz" }, urls = { "http://(www\\.)?bezvadata\\.cz/stahnout/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bezvadata.cz" }, urls = { "http://(www\\.)?bezvadata\\.cz/stahnout/\\d+" }) 
 public class BezVadataCz extends PluginForHost {
 
     public BezVadataCz(PluginWrapper wrapper) {

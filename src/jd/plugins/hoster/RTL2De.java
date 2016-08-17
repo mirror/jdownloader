@@ -32,7 +32,7 @@ import jd.plugins.download.DownloadInterface;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/sendung/[^/]+/video/\\d+.+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/sendung/[^/]+/video/\\d+.+" }) 
 public class RTL2De extends PluginForHost {
 
     /* Tags: rtl-interactive.de */

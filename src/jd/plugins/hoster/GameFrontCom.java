@@ -31,7 +31,7 @@ import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamefront.online" }, urls = { "https?://(www\\.)?(filefront\\.com|gamefront\\.com/files|gamefront\\.online/files)/\\d+" }) 
 public class GameFrontCom extends PluginForHost {
 
     public GameFrontCom(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mydisk.ge" }, urls = { "http://[\\w\\.]*?mydisk\\.ge/download\\.php\\?id=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mydisk.ge" }, urls = { "http://[\\w\\.]*?mydisk\\.ge/download\\.php\\?id=[A-Z0-9]+" }) 
 public class MyDiskGe extends PluginForHost {
 
     public MyDiskGe(PluginWrapper wrapper) {

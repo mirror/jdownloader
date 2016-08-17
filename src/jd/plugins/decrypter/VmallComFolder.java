@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "https?://(?:www\\.)?dl\\.(?:dbank|vmall)\\.com/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "https?://(?:www\\.)?dl\\.(?:dbank|vmall)\\.com/[a-z0-9]+" }) 
 public class VmallComFolder extends PluginForDecrypt {
 
     public VmallComFolder(PluginWrapper wrapper) {

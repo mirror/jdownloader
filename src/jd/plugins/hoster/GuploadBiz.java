@@ -42,7 +42,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodload.com" }, urls = { "http://(www\\.)?(gupload\\.biz|hoodload\\.com)/[a-z0-9]+", }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodload.com" }, urls = { "http://(www\\.)?(gupload\\.biz|hoodload\\.com)/[a-z0-9]+", })
 public class GuploadBiz extends PluginForHost {
 
     private final String        MAINPAGE                 = "http://hoodload.com";

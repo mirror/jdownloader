@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ydownload.org" }, urls = { "https?://(www\\.)?ydownload\\.org/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ydownload.org" }, urls = { "https?://(www\\.)?ydownload\\.org/[a-z0-9]{12}" }) 
 public class YDownloadOrg extends PluginForHost {
 
     private String               correctedBR                  = "";

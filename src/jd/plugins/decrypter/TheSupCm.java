@@ -37,7 +37,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 32430 $", interfaceVersion = 2, names = { "thesuperficial.com" }, urls = { "https?://(?:www\\.)?thesuperficial\\.com(?!(/$|/photos/?$|/page/?|/page/\\d+|/photos/(?:hot-bodies|candid|red-carpet|sightings|most-important-people|crap-we-missed)(/?|/\\d+|/page|/page/\\d+)))(?:/[^\\s]+|/photos/[^/]+/[^\\s*]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32430 $", interfaceVersion = 2, names = { "thesuperficial.com" }, urls = { "https?://(?:www\\.)?thesuperficial\\.com(?!(/$|/photos/?$|/page/?|/page/\\d+|/photos/(?:hot-bodies|candid|red-carpet|sightings|most-important-people|crap-we-missed)(/?|/\\d+|/page|/page/\\d+)))(?:/[^\\s]+|/photos/[^/]+/[^\\s*]+)" }) 
 public class TheSupCm extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

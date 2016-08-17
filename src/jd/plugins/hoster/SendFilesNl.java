@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendfiles.nl" }, urls = { "http://(www\\.)?sendfiles\\.nl/download\\.aspx\\?ID=[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendfiles.nl" }, urls = { "http://(www\\.)?sendfiles\\.nl/download\\.aspx\\?ID=[a-z0-9\\-]+" }) 
 public class SendFilesNl extends PluginForHost {
 
     public SendFilesNl(PluginWrapper wrapper) {

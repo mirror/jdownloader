@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x3xtube.com" }, urls = { "http://(www\\.)?x3xtube\\.com/video/[A-Za-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x3xtube.com" }, urls = { "http://(www\\.)?x3xtube\\.com/video/[A-Za-z0-9\\-_]+/" }) 
 public class X3xtubeCom extends PluginForHost {
 
     public X3xtubeCom(PluginWrapper wrapper) {

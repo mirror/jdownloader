@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" }) 
 public class CopiapopEsDecrypter extends PluginForDecrypt {
 
     public CopiapopEsDecrypter(PluginWrapper wrapper) {

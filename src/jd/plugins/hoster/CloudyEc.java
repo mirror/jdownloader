@@ -31,7 +31,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=|video)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "https?://(?:www\\.)?cloudy\\.ec/(?:v/|embed\\.php\\?id=|video)[a-z0-9]+" }) 
 public class CloudyEc extends PluginForHost {
 
     private static final String DOMAIN = "cloudy.ec";

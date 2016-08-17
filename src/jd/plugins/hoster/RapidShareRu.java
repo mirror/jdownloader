@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.ru" }, urls = { "http://[\\w\\.]*?rapidshare\\.ru/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.ru" }, urls = { "http://[\\w\\.]*?rapidshare\\.ru/[0-9]+" }) 
 public class RapidShareRu extends PluginForHost {
 
     public RapidShareRu(PluginWrapper wrapper) {

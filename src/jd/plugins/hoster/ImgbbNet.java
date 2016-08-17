@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgbb.net" }, urls = { "http://(?:www\\.)?imgbb\\.net/v\\-.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgbb.net" }, urls = { "http://(?:www\\.)?imgbb\\.net/v\\-.+" }) 
 public class ImgbbNet extends antiDDoSForHost {
 
     public ImgbbNet(PluginWrapper wrapper) {

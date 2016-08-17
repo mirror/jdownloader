@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.ws" }, urls = { "http://(www\\.)?putlocker\\.ws/file/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.ws" }, urls = { "http://(www\\.)?putlocker\\.ws/file/[A-Z0-9]+" }) 
 public class PutlockerWs extends PluginForHost {
 
     public PutlockerWs(PluginWrapper wrapper) {

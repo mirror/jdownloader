@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7tv.de" }, urls = { "http://7tvdecrypted\\.de/\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7tv.de" }, urls = { "http://7tvdecrypted\\.de/\\d+" }) 
 public class ProSevenDe extends PluginForHost {
 
     /** Other domains: proxieben.at (redirects to .de) */

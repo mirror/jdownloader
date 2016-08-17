@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastimg.org" }, urls = { "https?://(?:www\\.)?fastimg\\.org/(?:enter|thumbnail|original)/[a-f0-9]{16}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastimg.org" }, urls = { "https?://(?:www\\.)?fastimg\\.org/(?:enter|thumbnail|original)/[a-f0-9]{16}" }) 
 public class FastimgOrg extends PluginForHost {
 
     public FastimgOrg(PluginWrapper wrapper) {

@@ -52,7 +52,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesabc.com" }, urls = { "https?://(www\\.)?filesabc\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesabc.com" }, urls = { "https?://(www\\.)?filesabc\\.com/[a-z0-9]{12}" }) 
 public class FilesABCCom extends PluginForHost {
 
     private String               correctedBR         = "";

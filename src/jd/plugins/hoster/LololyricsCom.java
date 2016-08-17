@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lololyrics.com" }, urls = { "https?://(www\\.)?lololyrics\\.com/(ftdownload\\.php\\?download\\&id=\\d+|free\\-\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lololyrics.com" }, urls = { "https?://(www\\.)?lololyrics\\.com/(ftdownload\\.php\\?download\\&id=\\d+|free\\-\\d+)" }) 
 public class LololyricsCom extends PluginForHost {
 
     public LololyricsCom(PluginWrapper wrapper) {

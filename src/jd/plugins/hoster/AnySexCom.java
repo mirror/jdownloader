@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anysex.com" }, urls = { "http://(www\\.)?anysex\\.com/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anysex.com" }, urls = { "http://(www\\.)?anysex\\.com/\\d+/" }) 
 public class AnySexCom extends PluginForHost {
 
     public AnySexCom(PluginWrapper wrapper) {

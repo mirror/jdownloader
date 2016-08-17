@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ampya.com" }, urls = { "http://(?:www\\.)?ampya\\.com/(artists/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+|shows/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ampya.com" }, urls = { "http://(?:www\\.)?ampya\\.com/(artists/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+|shows/[A-Za-z0-9\\-_]+)" }) 
 public class AmpyaComDecrypter extends PluginForDecrypt {
 
     public AmpyaComDecrypter(PluginWrapper wrapper) {

@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keepshare.net" }, urls = { "https?://(www\\.)?keepshare\\.net/(embed\\-)?[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keepshare.net" }, urls = { "https?://(www\\.)?keepshare\\.net/(embed\\-)?[A-Za-z0-9]+" }) 
 public class KeepShareNet extends PluginForHost {
 
     private String                         correctedBR                  = "";

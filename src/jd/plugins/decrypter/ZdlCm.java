@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zoodl.com" }, urls = { "http://[\\w\\.]*?zoodl\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zoodl.com" }, urls = { "http://[\\w\\.]*?zoodl\\.com/\\d+" }) 
 public class ZdlCm extends PluginForDecrypt {
 
     public ZdlCm(PluginWrapper wrapper) {

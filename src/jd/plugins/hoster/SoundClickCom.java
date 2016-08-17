@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "http://(www\\.)?soundclick\\.com/bands/page_songInfo\\.cfm\\?bandID=\\d+\\&songID=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "http://(www\\.)?soundclick\\.com/bands/page_songInfo\\.cfm\\?bandID=\\d+\\&songID=\\d+" }) 
 public class SoundClickCom extends PluginForHost {
 
     public SoundClickCom(PluginWrapper wrapper) {

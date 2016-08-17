@@ -16,7 +16,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube\\.(cn\\.com|com|tv)/|embed\\.redtube\\.(cn\\.com|com|tv)/[^<>\"]*?\\?id=)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube\\.(cn\\.com|com|tv)/|embed\\.redtube\\.(cn\\.com|com|tv)/[^<>\"]*?\\?id=)\\d+" }) 
 public class RedTubeCom extends PluginForHost {
     private String dlink = null;
 

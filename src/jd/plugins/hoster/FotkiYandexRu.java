@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotki.yandex.ru" }, urls = { "https?://fotki\\.yandex\\.ru/next/users/[A-Za-z0-9\\-_]+/album/\\d+/view/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotki.yandex.ru" }, urls = { "https?://fotki\\.yandex\\.ru/next/users/[A-Za-z0-9\\-_]+/album/\\d+/view/\\d+" }) 
 public class FotkiYandexRu extends PluginForHost {
 
     public FotkiYandexRu(PluginWrapper wrapper) {

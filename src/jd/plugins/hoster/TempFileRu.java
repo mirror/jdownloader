@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tempfile.ru" }, urls = { "http://(www\\.)?tempfile\\.ru/file/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tempfile.ru" }, urls = { "http://(www\\.)?tempfile\\.ru/file/\\d+" }) 
 public class TempFileRu extends PluginForHost {
 
     public TempFileRu(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrastar-base.com" }, urls = { "http://(www\\.)?ultrastar-(warez|base)\\.com/index\\.php\\?section=download\\&cat=\\d+\\&id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrastar-base.com" }, urls = { "http://(www\\.)?ultrastar-(warez|base)\\.com/index\\.php\\?section=download\\&cat=\\d+\\&id=\\d+" }) 
 public class LtrstrWzCom extends PluginForDecrypt {
 
     public LtrstrWzCom(PluginWrapper wrapper) {

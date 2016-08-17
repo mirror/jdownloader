@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstaramateurs.com" }, urls = { "http://(www\\.)?worldstaramateurs\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstaramateurs.com" }, urls = { "http://(www\\.)?worldstaramateurs\\.com/\\d+" }) 
 public class WorldStarAmateursCom extends PluginForHost {
 
     public WorldStarAmateursCom(PluginWrapper wrapper) {

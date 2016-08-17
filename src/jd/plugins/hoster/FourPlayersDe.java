@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "http://(www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/\\d+/[^<>\"]*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "http://(www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/\\d+/[^<>\"]*?\\.html" }) 
 public class FourPlayersDe extends PluginForHost {
 
     public FourPlayersDe(PluginWrapper wrapper) {

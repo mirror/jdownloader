@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "http://(?:www\\.)?trainbit\\.com/files/\\d+/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "http://(?:www\\.)?trainbit\\.com/files/\\d+/[^/]+" }) 
 public class TrainbitCom extends PluginForHost {
 
     public TrainbitCom(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webcams.com" }, urls = { "http://[\\w\\.]*?webcams\\.com/index\\.php\\?action=ModelPage\\&page=movie\\&model_id=\\d+\\&media_id=\\d+(\\&mmcat_id=\\d+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webcams.com" }, urls = { "http://[\\w\\.]*?webcams\\.com/index\\.php\\?action=ModelPage\\&page=movie\\&model_id=\\d+\\&media_id=\\d+(\\&mmcat_id=\\d+)?" }) 
 public class WebCamsCom extends PluginForHost {
 
     public String dllink = null;

@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#(!|%21)(q(\\?|%3F))*?album(=|%3D)\\d+|\\?src=profile_(box_see_more|button)#(!|%21)album(=|%3D)\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#(!|%21)(q(\\?|%3F))*?album(=|%3D)\\d+|\\?src=profile_(box_see_more|button)#(!|%21)album(=|%3D)\\d+)?" }) 
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */

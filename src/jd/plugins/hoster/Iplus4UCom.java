@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iplus4u.com" }, urls = { "http://(www\\.)?iplus4u\\.com/owncloud/public\\.php\\?service=files\\&t=[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iplus4u.com" }, urls = { "http://(www\\.)?iplus4u\\.com/owncloud/public\\.php\\?service=files\\&t=[a-z0-9]{32}" }) 
 public class Iplus4UCom extends PluginForHost {
 
     public Iplus4UCom(PluginWrapper wrapper) {

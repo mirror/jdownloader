@@ -13,7 +13,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author noone2407
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhaccuatui.com" }, urls = { "http://(www\\.)?nhaccuatui\\.com/playlist/\\S+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhaccuatui.com" }, urls = { "http://(www\\.)?nhaccuatui\\.com/playlist/\\S+" }) 
 public class NhacCuaTuiCom extends PluginForDecrypt {
 
     public NhacCuaTuiCom(PluginWrapper wrapper) {

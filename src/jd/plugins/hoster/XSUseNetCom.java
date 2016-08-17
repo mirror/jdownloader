@@ -20,8 +20,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" }, flags = { 0 })
-public class XSUseNetCom extends UseNet {
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" }) public class XSUseNetCom extends UseNet {
     public XSUseNetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.xsusenet.com/sign-up/");

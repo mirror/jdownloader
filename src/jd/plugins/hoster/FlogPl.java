@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flog.pl" }, urls = { "https?://[^/]+\\.flog\\.pl/wpis/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flog.pl" }, urls = { "https?://[^/]+\\.flog\\.pl/wpis/\\d+/" }) 
 public class FlogPl extends PluginForHost {
 
     public FlogPl(PluginWrapper wrapper) {

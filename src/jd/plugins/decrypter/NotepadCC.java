@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
  * 
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "notepad.cc" }, urls = { "https?://(?:www\\.)?notepad.cc/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "notepad.cc" }, urls = { "https?://(?:www\\.)?notepad.cc/[A-Za-z0-9\\-_]+" }) 
 public class NotepadCC extends PluginForDecrypt {
 
     public NotepadCC(PluginWrapper wrapper) {

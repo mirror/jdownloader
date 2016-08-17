@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "http://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "http://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" }) 
 public class OldGamesCom extends PluginForHost {
 
     public OldGamesCom(PluginWrapper wrapper) {

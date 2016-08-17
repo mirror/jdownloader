@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulu.com" }, urls = { "http://(www\\.)?hulu\\.com/(?:embed\\.html\\?eid=[a-z0-9\\-]+|watch/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulu.com" }, urls = { "http://(www\\.)?hulu\\.com/(?:embed\\.html\\?eid=[a-z0-9\\-]+|watch/\\d+)" }) 
 public class HuluCom extends PluginForHost {
 
     public HuluCom(PluginWrapper wrapper) {

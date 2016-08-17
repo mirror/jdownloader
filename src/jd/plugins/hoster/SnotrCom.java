@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "snotr.com" }, urls = { "http://(www\\.)?snotr\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "snotr.com" }, urls = { "http://(www\\.)?snotr\\.com/video/\\d+" }) 
 public class SnotrCom extends PluginForHost {
 
     public SnotrCom(PluginWrapper wrapper) {

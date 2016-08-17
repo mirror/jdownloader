@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kyc.pm" }, urls = { "http://(www\\.)?kyc\\.pm/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kyc.pm" }, urls = { "http://(www\\.)?kyc\\.pm/[A-Za-z0-9]+" }) 
 public class KycPm extends PluginForDecrypt {
 
     public KycPm(PluginWrapper wrapper) {

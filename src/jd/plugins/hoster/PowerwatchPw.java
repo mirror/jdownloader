@@ -51,7 +51,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powerwatch.pw" }, urls = { "https?://(?:www\\.)?powerwatch\\.pw/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powerwatch.pw" }, urls = { "https?://(?:www\\.)?powerwatch\\.pw/(embed\\-)?[a-z0-9]{12}" }) 
 public class PowerwatchPw extends PluginForHost {
 
     private String                         correctedBR                  = "";

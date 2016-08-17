@@ -35,7 +35,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kure.tv" }, urls = { "https?://(?:www\\.)?kure\\.tv/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kure.tv" }, urls = { "https?://(?:www\\.)?kure\\.tv/.+" }) 
 public class KureTv extends PluginForHost {
 
     public KureTv(PluginWrapper wrapper) {

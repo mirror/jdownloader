@@ -42,7 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 // LINKBUCKS LINKBUCKS (NET-173-205-185-80-1) 173.205.185.80 - 173.205.185.95
 // www.uid.domain redirects to linkbucks homepage on https.
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LnkBcks extends antiDDoSForDecrypt {
 
     /**
@@ -64,21 +64,6 @@ public class LnkBcks extends antiDDoSForDecrypt {
         int i = 0;
         for (final String domain : getAnnotationNames()) {
             a[i] = "http://(?:[a-f0-9]{8}\\." + Pattern.quote(domain) + "/|(?:www\\.)?" + Pattern.quote(domain) + "/(?:[a-f0-9]{8}/url/.+|[0-9a-zA-Z]{5}/url/[a-f0-9]+|(?:link/)?[a-f0-9]{8}|[a-zA-Z0-9]{4,5}))$";
-            i++;
-        }
-        return a;
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        int[] a = new int[getAnnotationNames().length];
-        int i = 0;
-        for (final String domain : getAnnotationNames()) {
-            a[i] = 0;
             i++;
         }
         return a;

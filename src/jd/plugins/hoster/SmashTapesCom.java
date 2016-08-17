@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smashtapes.com" }, urls = { "http://(www\\.)?smashtapes\\.com/video/[a-z0-9\\-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smashtapes.com" }, urls = { "http://(www\\.)?smashtapes\\.com/video/[a-z0-9\\-]+/" }) 
 public class SmashTapesCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")

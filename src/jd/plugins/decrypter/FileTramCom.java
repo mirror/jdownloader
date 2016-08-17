@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetram.com" }, urls = { "http://(www\\.)?filetram\\.com/(download/.+|(turbobit|uploading|netload|bitshare|rapidshare|mediafire|4shared)/[a-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetram.com" }, urls = { "http://(www\\.)?filetram\\.com/(download/.+|(turbobit|uploading|netload|bitshare|rapidshare|mediafire|4shared)/[a-z0-9\\-_]+)" }) 
 public class FileTramCom extends PluginForDecrypt {
 
     public FileTramCom(PluginWrapper wrapper) {

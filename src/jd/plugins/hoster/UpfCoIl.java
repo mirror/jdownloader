@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upf.co.il" }, urls = { "http://(www\\.)?upf\\.co\\.il/file/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upf.co.il" }, urls = { "http://(www\\.)?upf\\.co\\.il/file/\\d+\\.html" }) 
 public class UpfCoIl extends PluginForHost {
 
     public UpfCoIl(PluginWrapper wrapper) {

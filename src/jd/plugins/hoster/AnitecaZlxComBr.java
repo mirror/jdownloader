@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "aniteca.zlx.com.br" }, urls = { "https?://(?:www\\.)?aniteca\\.zlx\\.com\\.br/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "aniteca.zlx.com.br" }, urls = { "https?://(?:www\\.)?aniteca\\.zlx\\.com\\.br/[A-Za-z0-9]+" }) 
 public class AnitecaZlxComBr extends PluginForHost {
 
     public AnitecaZlxComBr(PluginWrapper wrapper) {

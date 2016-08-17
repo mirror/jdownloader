@@ -36,7 +36,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://[a-z]+\\.hightail\\.com/[A-Za-z]+\\?phi_action=app/orchestrate[A-Za-z]+\\&[A-Za-z0-9\\-_\\&=]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://[a-z]+\\.hightail\\.com/[A-Za-z]+\\?phi_action=app/orchestrate[A-Za-z]+\\&[A-Za-z0-9\\-_\\&=]+" }) 
 public class HighTailComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

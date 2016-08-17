@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bin.ge" }, urls = { "http://(www\\.)?bin\\.ge/dl/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bin.ge" }, urls = { "http://(www\\.)?bin\\.ge/dl/\\d+/" }) 
 public class BinGe extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://bin.ge";

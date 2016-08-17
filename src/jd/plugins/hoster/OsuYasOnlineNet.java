@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "osu.yas-online.net" }, urls = { "https?://(www\\.)?(osu\\.yas\\-online\\.net|osupacks\\.ppy\\.sh)/((p|m)#\\d+|t#[^\"\\'<>]+\\-\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "osu.yas-online.net" }, urls = { "https?://(www\\.)?(osu\\.yas\\-online\\.net|osupacks\\.ppy\\.sh)/((p|m)#\\d+|t#[^\"\\'<>]+\\-\\d+)" }) 
 public class OsuYasOnlineNet extends PluginForHost {
 
     private static final String OFFLINE = "\"Theme or pack does not exist";

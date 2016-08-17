@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bonertube.com" }, urls = { "http://(www\\.)?bonertube\\.com/\\d+[a-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bonertube.com" }, urls = { "http://(www\\.)?bonertube\\.com/\\d+[a-z0-9\\-_]+\\.html" }) 
 public class BonertubeCom extends PluginForHost {
 
     public BonertubeCom(PluginWrapper wrapper) {

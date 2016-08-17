@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" }) 
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {

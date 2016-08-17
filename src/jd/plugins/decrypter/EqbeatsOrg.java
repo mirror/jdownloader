@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eqbeats.org" }, urls = { "https://(www\\.)?eqbeats\\.org/track/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eqbeats.org" }, urls = { "https://(www\\.)?eqbeats\\.org/track/\\d+" }) 
 public class EqbeatsOrg extends PluginForDecrypt {
 
     public EqbeatsOrg(PluginWrapper wrapper) {

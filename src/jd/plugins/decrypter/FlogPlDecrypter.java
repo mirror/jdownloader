@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flog.pl" }, urls = { "https?://(?:www\\.)?[^/]+\\.flog\\.pl/archiwum" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flog.pl" }, urls = { "https?://(?:www\\.)?[^/]+\\.flog\\.pl/archiwum" }) 
 public class FlogPlDecrypter extends PluginForDecrypt {
 
     public FlogPlDecrypter(PluginWrapper wrapper) {

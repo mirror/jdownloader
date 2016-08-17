@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://(www\\.)?video\\.online\\.ua/(embed/)?\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://(www\\.)?video\\.online\\.ua/(embed/)?\\d+" }) 
 public class VideoOnlineUaDecrypter extends PluginForDecrypt {
 
     public VideoOnlineUaDecrypter(PluginWrapper wrapper) {

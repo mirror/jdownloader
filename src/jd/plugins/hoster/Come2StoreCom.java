@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "come2store.com" }, urls = { "http://(www\\.)?download\\.come2store\\.com/[a-z0-9]+/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "come2store.com" }, urls = { "http://(www\\.)?download\\.come2store\\.com/[a-z0-9]+/[^<>\"/]+" }) 
 public class Come2StoreCom extends PluginForHost {
 
     public Come2StoreCom(PluginWrapper wrapper) {

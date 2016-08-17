@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "http://www\\.bloomberg\\.com/news/videos/\\d{4}\\-\\d{2}\\-\\d{2}/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "http://www\\.bloomberg\\.com/news/videos/\\d{4}\\-\\d{2}\\-\\d{2}/[a-z0-9\\-]+" }) 
 public class BloombergComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

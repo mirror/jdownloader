@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[^<>/\"]+/songs/[^<>/\"]+/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[^<>/\"]+/songs/[^<>/\"]+/\\d+/" }) 
 public class BaseShareCom extends PluginForHost {
 
     public BaseShareCom(PluginWrapper wrapper) {

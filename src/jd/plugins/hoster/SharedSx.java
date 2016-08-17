@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shared.sx" }, urls = { "http://(www\\.)?shared\\.sx/[a-z0-9]{10}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shared.sx" }, urls = { "http://(www\\.)?shared\\.sx/[a-z0-9]{10}" }) 
 public class SharedSx extends PluginForHost {
 
     public SharedSx(PluginWrapper wrapper) {

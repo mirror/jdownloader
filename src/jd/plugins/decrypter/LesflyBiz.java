@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lesfly.biz" }, urls = { "http://(?:www\\.)?lesfly\\.biz/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lesfly.biz" }, urls = { "http://(?:www\\.)?lesfly\\.biz/[A-Za-z0-9]+" }) 
 public class LesflyBiz extends PluginForDecrypt {
 
     public LesflyBiz(PluginWrapper wrapper) {

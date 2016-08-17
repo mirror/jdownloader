@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://v\\.youku.com/v_show/id_.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://v\\.youku.com/v_show/id_.*?\\.html" }) 
 public class YkCm extends PluginForDecrypt {
 
     private double                      SEED    = 0;

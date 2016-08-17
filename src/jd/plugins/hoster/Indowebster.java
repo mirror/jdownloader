@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://(www\\.)?(files\\.)?indowebster\\.com/(download/(files|audio|video)/.+|[^\\s]+\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://(www\\.)?(files\\.)?indowebster\\.com/(download/(files|audio|video)/.+|[^\\s]+\\.html)" }) 
 public class Indowebster extends PluginForHost {
 
     private static final String PASSWORDTEXT = "(>THIS FILE IS PASSWORD PROTECTED<|>INSERT PASSWORD<|class=\"redbtn\" value=\"Unlock\"|method=\"post\" id=\"form_pass\")";

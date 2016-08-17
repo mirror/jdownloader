@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" }) 
 public class PornSharingCom extends PluginForHost {
 
     public PornSharingCom(PluginWrapper wrapper) {

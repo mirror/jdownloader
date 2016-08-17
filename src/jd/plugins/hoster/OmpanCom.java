@@ -30,7 +30,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ompan.com" }, urls = { "http://(www\\.)?ompan\\.com/content\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ompan.com" }, urls = { "http://(www\\.)?ompan\\.com/content\\-\\d+\\.html" }) 
 public class OmpanCom extends PluginForHost {
 
     public OmpanCom(PluginWrapper wrapper) {

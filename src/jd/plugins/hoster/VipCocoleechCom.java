@@ -42,7 +42,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.net.CountingOutputStream;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }) 
 public class VipCocoleechCom extends PluginForHost {
 
     private static final String                            API_ENDPOINT         = "http://vip.cocoleech.com/api";

@@ -35,7 +35,7 @@ import jd.plugins.FilePackage;
  *
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2})" }) 
 public class XXXBlg extends antiDDoSForDecrypt {
 
     public XXXBlg(PluginWrapper wrapper) {

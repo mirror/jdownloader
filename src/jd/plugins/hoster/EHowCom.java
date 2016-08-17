@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehowdecrypted\\.com/video_\\d+_.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehowdecrypted\\.com/video_\\d+_.*?\\.html" }) 
 public class EHowCom extends PluginForHost {
 
     private String  dllink = null;

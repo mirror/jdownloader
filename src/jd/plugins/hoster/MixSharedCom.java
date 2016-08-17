@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixshared.com" }, urls = { "https?://(www\\.)?mixshared\\.com/[a-z0-9]{12}(/[^<>\"/]*?\\.html)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixshared.com" }, urls = { "https?://(www\\.)?mixshared\\.com/[a-z0-9]{12}(/[^<>\"/]*?\\.html)?" }) 
 public class MixSharedCom extends PluginForHost {
 
     private String               correctedBR                  = "";

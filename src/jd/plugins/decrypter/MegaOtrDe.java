@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otr\\.de/\\?file=[^<>\"/]*?\\.otrkey" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otr\\.de/\\?file=[^<>\"/]*?\\.otrkey" }) 
 public class MegaOtrDe extends PluginForDecrypt {
 
     public MegaOtrDe(PluginWrapper wrapper) {

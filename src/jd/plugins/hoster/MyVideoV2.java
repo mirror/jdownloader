@@ -20,7 +20,7 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 // Altes Decrypterplugin bis Revision 14394 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }) 
 public class MyVideoV2 extends MyVideo {
 
     public MyVideoV2(PluginWrapper wrapper) {

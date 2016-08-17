@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //Links come from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "http://(www\\.)?file\\.kareliadecrypted\\.ru/[a-z0-9]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "http://(www\\.)?file\\.kareliadecrypted\\.ru/[a-z0-9]+/\\d+" }) 
 public class FileKareliaRu extends PluginForHost {
 
     public FileKareliaRu(PluginWrapper wrapper) {

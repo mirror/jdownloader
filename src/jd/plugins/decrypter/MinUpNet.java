@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minup.net" }, urls = { "http://(www\\.)?minup\\.net/(?!about|api|contact|register|user|index|multiple|remote|login|forgot\\-password|contact|terms|dmca)[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minup.net" }, urls = { "http://(www\\.)?minup\\.net/(?!about|api|contact|register|user|index|multiple|remote|login|forgot\\-password|contact|terms|dmca)[A-Za-z0-9]+" }) 
 public class MinUpNet extends PluginForDecrypt {
 
     public MinUpNet(PluginWrapper wrapper) {

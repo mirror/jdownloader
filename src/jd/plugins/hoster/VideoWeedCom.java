@@ -46,7 +46,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx", "videoweed.es", "videoweed.com" }, urls = { "http://(?:www\\.)?(?:bitvid\\.sx|videoweed\\.(?:com|es)/(?:file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(?:com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-xjahyasbs" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx", "videoweed.es", "videoweed.com" }, urls = { "http://(?:www\\.)?(?:bitvid\\.sx|videoweed\\.(?:com|es)/(?:file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(?:com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-xjahyasbs" }) 
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {

@@ -50,8 +50,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
-@HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
-public class SmoozedCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }) public class SmoozedCom extends antiDDoSForHost {
 
     private final String                                     API                  = "www.smoozed.com";
 

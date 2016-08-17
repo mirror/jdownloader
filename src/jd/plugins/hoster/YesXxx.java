@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" }) 
 public class YesXxx extends PluginForHost {
 
     public YesXxx(PluginWrapper wrapper) {

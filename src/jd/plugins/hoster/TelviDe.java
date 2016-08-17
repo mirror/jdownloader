@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telvi.de" }, urls = { "https?://embed\\.telvi\\.de/\\d+/clip/\\d+|decrypted://telvi\\.de/[a-zA-Z0-9_/\\+\\=\\-%]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telvi.de" }, urls = { "https?://embed\\.telvi\\.de/\\d+/clip/\\d+|decrypted://telvi\\.de/[a-zA-Z0-9_/\\+\\=\\-%]+" }) 
 public class TelviDe extends PluginForHost {
 
     public TelviDe(PluginWrapper wrapper) {

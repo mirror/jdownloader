@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|soundtracks/album/)[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|soundtracks/album/)[a-z0-9\\-_]+" }) 
 public class AnimeTheHyliaCom extends PluginForDecrypt {
 
     public AnimeTheHyliaCom(PluginWrapper wrapper) {

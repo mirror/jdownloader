@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileshare.ro" }, urls = { "http://(www\\.)?fileshare.ro/e\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileshare.ro" }, urls = { "http://(www\\.)?fileshare.ro/e\\d+" }) 
 public class FileshareRo extends PluginForHost {
 
     public FileshareRo(PluginWrapper wrapper) {

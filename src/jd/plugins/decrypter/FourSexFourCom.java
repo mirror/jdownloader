@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sex4.com" }, urls = { "http://(www\\.)?4sex4\\.com/(tube/gallery\\-[a-z0-9\\-_]+\\.html|\\d+/.*?\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sex4.com" }, urls = { "http://(www\\.)?4sex4\\.com/(tube/gallery\\-[a-z0-9\\-_]+\\.html|\\d+/.*?\\.html)" }) 
 public class FourSexFourCom extends PluginForDecrypt {
 
     public FourSexFourCom(PluginWrapper wrapper) {

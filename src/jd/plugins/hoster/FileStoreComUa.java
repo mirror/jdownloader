@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.com.ua" }, urls = { "http://[\\w\\.]*?filestore\\.com\\.ua/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.com.ua" }, urls = { "http://[\\w\\.]*?filestore\\.com\\.ua/\\?d=[A-Z0-9]+" }) 
 public class FileStoreComUa extends PluginForHost {
 
     public FileStoreComUa(PluginWrapper wrapper) {

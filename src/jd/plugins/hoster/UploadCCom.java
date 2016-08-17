@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadc.ch", "uploadc.com" }, urls = { "https?://(?:www\\.)?uploadc\\.(?:com|ch)/(?:vidembed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadc.ch", "uploadc.com" }, urls = { "https?://(?:www\\.)?uploadc\\.(?:com|ch)/(?:vidembed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }) 
 public class UploadCCom extends PluginForHost {
 
     private String               correctedBR                  = "";

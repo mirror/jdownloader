@@ -51,7 +51,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision: 31572 $", interfaceVersion = 3, names = { "filenuke.net" }, urls = { "https?://(www\\.)?filenuke\\.net/[a-f0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 31572 $", interfaceVersion = 3, names = { "filenuke.net" }, urls = { "https?://(www\\.)?filenuke\\.net/[a-f0-9]{32}" }) 
 public class FileNukeNet extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */

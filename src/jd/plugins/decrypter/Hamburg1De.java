@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamburg1.de" }, urls = { "http://(www\\.)?hamburg1\\.de/[^<>\"]+/\\d+/[^<>\"]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamburg1.de" }, urls = { "http://(www\\.)?hamburg1\\.de/[^<>\"]+/\\d+/[^<>\"]+\\.html" }) 
 public class Hamburg1De extends PluginForDecrypt {
 
     public Hamburg1De(PluginWrapper wrapper) {

@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(www\\.)?emohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(www\\.)?emohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }) 
 public class EmoHottiesComDecrypter extends PornEmbedParser {
 
     public EmoHottiesComDecrypter(PluginWrapper wrapper) {

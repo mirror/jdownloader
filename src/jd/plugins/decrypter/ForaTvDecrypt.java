@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fora.tv" }, urls = { "http://(www\\.)?(library\\.)?fora\\.tv/\\d{4}/\\d{2}/\\d{2}/[A-Za-z0-9\\-_]+|http://library\\.fora\\.tv/program_landing\\.php\\?year=\\d{4}\\&month=\\d{2}\\&day=\\d{2}\\&title=[^<>\"/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fora.tv" }, urls = { "http://(www\\.)?(library\\.)?fora\\.tv/\\d{4}/\\d{2}/\\d{2}/[A-Za-z0-9\\-_]+|http://library\\.fora\\.tv/program_landing\\.php\\?year=\\d{4}\\&month=\\d{2}\\&day=\\d{2}\\&title=[^<>\"/]+" }) 
 public class ForaTvDecrypt extends PluginForDecrypt {
 
     public ForaTvDecrypt(PluginWrapper wrapper) {

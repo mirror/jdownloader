@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenfiles.com" }, urls = { "http://(www\\.)?tenfiles\\.(com|info)/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenfiles.com" }, urls = { "http://(www\\.)?tenfiles\\.(com|info)/file/[a-z0-9]+" }) 
 public class TenFilesCom extends PluginForHost {
 
     public TenFilesCom(PluginWrapper wrapper) {

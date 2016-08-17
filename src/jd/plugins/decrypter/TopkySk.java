@@ -27,13 +27,13 @@ import jd.plugins.PluginForDecrypt;
 
 /**
  * Only direct links are suported + those we have plugins for. => for example mtv doesn't work.
- * 
+ *
  * following have been tested: youtube.com, img.zoznam.sk
- * 
+ *
  * @author butkovip
- * 
+ *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://(www\\.)?topky\\.sk/cl/[0-9]+/[0-9]+/(VIDEO\\-[-a-zA-Z0-9]+)?" }, flags = { 0 }, names = { "topky.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://(www\\.)?topky\\.sk/cl/[0-9]+/[0-9]+/(VIDEO\\-[-a-zA-Z0-9]+)?" }, names = { "topky.sk" })
 public class TopkySk extends PluginForDecrypt {
 
     public TopkySk(PluginWrapper wrapper) {
@@ -68,7 +68,9 @@ public class TopkySk extends PluginForDecrypt {
         }
         // extract topky.sk vids
         final String finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        if (finallink != null) {
+            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.info("Found no downloadable content for link: " + parameter);
         }

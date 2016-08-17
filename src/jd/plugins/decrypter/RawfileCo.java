@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawfile.co" }, urls = { "http://(?:www\\.)?rawfile\\.co/\\?p=(\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawfile.co" }, urls = { "http://(?:www\\.)?rawfile\\.co/\\?p=(\\d+)" }) 
 public class RawfileCo extends antiDDoSForDecrypt {
 
     public RawfileCo(PluginWrapper wrapper) {

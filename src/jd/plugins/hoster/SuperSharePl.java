@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "supershare.pl" }, urls = { "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "supershare.pl" }, urls = { "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+" }) 
 public class SuperSharePl extends PluginForHost {
 
     public SuperSharePl(PluginWrapper wrapper) {

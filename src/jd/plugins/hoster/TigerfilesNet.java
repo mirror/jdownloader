@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tigerfiles.net" }, urls = { "http://(?:www\\.)?tigerfiles\\.net/file/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tigerfiles.net" }, urls = { "http://(?:www\\.)?tigerfiles\\.net/file/.+" }) 
 public class TigerfilesNet extends PluginForHost {
 
     public TigerfilesNet(PluginWrapper wrapper) {

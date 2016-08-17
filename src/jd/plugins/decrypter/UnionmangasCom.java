@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(com|net)/leitor/[^/]+/\\d+([\\.,]\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(com|net)/leitor/[^/]+/\\d+([\\.,]\\d+)?" }) 
 public class UnionmangasCom extends PluginForDecrypt {
 
     public UnionmangasCom(PluginWrapper wrapper) {

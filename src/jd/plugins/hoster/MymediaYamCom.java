@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymediadecrypted\\.yam\\.com/m/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymediadecrypted\\.yam\\.com/m/\\d+" }) 
 public class MymediaYamCom extends PluginForHost {
 
     public MymediaYamCom(PluginWrapper wrapper) {

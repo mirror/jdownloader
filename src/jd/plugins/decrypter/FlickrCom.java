@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -163,7 +163,7 @@ public class FlickrCom extends PluginForDecrypt {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         br.getHeaders().put("Referer", "");
-        csrf = PluginJSonUtils.getJson(br, "csrf");
+        csrf = PluginJSonUtils.getJsonValue(br, "csrf");
         if (csrf == null) {
             // csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
             csrf = "";
@@ -176,7 +176,7 @@ public class FlickrCom extends PluginForDecrypt {
             final String setid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
             /* This request is only needed to get the title and owner of the photoset, */
             api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setid));
-            forcedOwner = PluginJSonUtils.getJson(br, "owner");
+            forcedOwner = PluginJSonUtils.getJsonValue(br, "owner");
             if (forcedOwner == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;

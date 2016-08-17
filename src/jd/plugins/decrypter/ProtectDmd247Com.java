@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.dmd247.com" }, urls = { "http://(www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.dmd247.com" }, urls = { "http://(www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" }) 
 public class ProtectDmd247Com extends PluginForDecrypt {
 
     public ProtectDmd247Com(PluginWrapper wrapper) {

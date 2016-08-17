@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaxtube.com" }, urls = { "http://(www\\.)?xaxtube\\.com/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaxtube.com" }, urls = { "http://(www\\.)?xaxtube\\.com/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class XaxTubeCom extends PluginForHost {
 
     public static class XBase64 {

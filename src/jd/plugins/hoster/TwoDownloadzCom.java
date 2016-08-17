@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2downloadz.com" }, urls = { "https?://(www\\.)?2downloadz\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2downloadz.com" }, urls = { "https?://(www\\.)?2downloadz\\.com/[a-z0-9]+" }) 
 public class TwoDownloadzCom extends PluginForHost {
 
     private String               correctedBR                  = "";

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapgay.com" }, urls = { "http://(www\\.)?fapgay\\.com/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapgay.com" }, urls = { "http://(www\\.)?fapgay\\.com/[a-z0-9\\-]+" }) 
 public class FapGyCom extends PluginForDecrypt {
 
     public FapGyCom(PluginWrapper wrapper) {

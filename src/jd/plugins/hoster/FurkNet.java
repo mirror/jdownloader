@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "furk.net" }, urls = { "http(s)?://[\\w\\.]*?furk\\.net/(.*?\\.html|d(f|t)/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "furk.net" }, urls = { "http(s)?://[\\w\\.]*?furk\\.net/(.*?\\.html|d(f|t)/[a-z0-9]+)" }) 
 public class FurkNet extends PluginForHost {
 
     // TODO: Implement API support? -> https://www.furk.net/t/api

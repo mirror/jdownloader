@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydirtyhobby.com" }, urls = { "https?://(?:www\\.)?mydirtyhobby\\.(?:com|de)/profil/\\d+[A-Za-z0-9\\-]+/videos/\\d+[A-Za-z0-9\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydirtyhobby.com" }, urls = { "https?://(?:www\\.)?mydirtyhobby\\.(?:com|de)/profil/\\d+[A-Za-z0-9\\-]+/videos/\\d+[A-Za-z0-9\\-]+" }) 
 public class MydirtyhobbyCom extends PluginForHost {
 
     public MydirtyhobbyCom(PluginWrapper wrapper) {

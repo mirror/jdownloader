@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allnetcorp.com" }, urls = { "http://(?:www\\.)?allnetcorp\\.com/download/\\?sid=[a-f0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allnetcorp.com" }, urls = { "http://(?:www\\.)?allnetcorp\\.com/download/\\?sid=[a-f0-9]{32}" }) 
 public class AllnetcorpCom extends PluginForHost {
 
     public AllnetcorpCom(PluginWrapper wrapper) {

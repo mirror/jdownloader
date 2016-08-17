@@ -32,7 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.com" }, urls = { "http://viacommgid/mgid:.+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.com" }, urls = { "http://viacommgid/mgid:.+" }) 
 public class VivaTv extends PluginForHost {
 
     public VivaTv(PluginWrapper wrapper) {

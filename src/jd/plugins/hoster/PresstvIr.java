@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "presstv.ir" }, urls = { "http://(www\\.)?presstv\\.ir/detail/\\d{4}/\\d{2}/\\d{2}/\\d+/[A-Za-z0-9\\-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "presstv.ir" }, urls = { "http://(www\\.)?presstv\\.ir/detail/\\d{4}/\\d{2}/\\d{2}/\\d+/[A-Za-z0-9\\-]+/" }) 
 public class PresstvIr extends PluginForHost {
 
     public PresstvIr(PluginWrapper wrapper) {

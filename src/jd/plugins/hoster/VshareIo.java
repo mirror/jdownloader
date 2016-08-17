@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/d/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/d/[a-z0-9]+" }) 
 public class VshareIo extends PluginForHost {
 
     public VshareIo(PluginWrapper wrapper) {

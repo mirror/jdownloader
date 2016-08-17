@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/(files/get/[A-Za-z0-9]+|\\w+/\\w+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/(files/get/[A-Za-z0-9]+|\\w+/\\w+)" }) 
 public class UploadingCom extends PluginForHost {
 
     private static AtomicInteger simultanpremium = new AtomicInteger(1);

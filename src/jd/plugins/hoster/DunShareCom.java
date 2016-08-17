@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dunshare.com" }, urls = { "http://(?:www\\.)?dunshare\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dunshare.com" }, urls = { "http://(?:www\\.)?dunshare\\.com/[A-Za-z0-9]+" }) 
 public class DunShareCom extends PluginForHost {
 
     public DunShareCom(PluginWrapper wrapper) {

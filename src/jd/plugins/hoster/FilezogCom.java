@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezog.com" }, urls = { "https?://(www\\.)?filezog\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezog.com" }, urls = { "https?://(www\\.)?filezog\\.com/[A-Za-z0-9]+" }) 
 public class FilezogCom extends PluginForHost {
 
     public FilezogCom(PluginWrapper wrapper) {

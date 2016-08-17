@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vosprotects.com" }, urls = { "http://(www\\.)?vosprotects\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vosprotects.com" }, urls = { "http://(www\\.)?vosprotects\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z0-9]+" }) 
 public class VosProtectsCom extends PluginForDecrypt {
 
     public VosProtectsCom(PluginWrapper wrapper) {

@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/(index/video/[a-z0-9_\\-]+|[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurgalore.net" }, urls = { "http://(www\\.)?amateurgalore\\.net/(index/video/[a-z0-9_\\-]+|[a-z]+/\\d+/[A-Za-z0-9\\-]+\\.html)" }) 
 public class AmateurGaloreNet extends PluginForDecrypt {
 
     public AmateurGaloreNet(PluginWrapper wrapper) {

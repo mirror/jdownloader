@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://(?:uu\\.canna\\.to|ru\\.canna\\.to|85\\.17\\.36\\.224)/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://(?:uu\\.canna\\.to|ru\\.canna\\.to|85\\.17\\.36\\.224)/(?:cpuser/)?links\\.php\\?action=[^<>\"/\\&]+\\&kat_id=\\d+\\&fileid=\\d+" }) 
 public class CnnT extends PluginForDecrypt {
 
     public CnnT(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/user/\\d+/[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/user/\\d+/[^/]+" }) 
 public class ScribdCom extends PluginForDecrypt {
 
     public ScribdCom(PluginWrapper wrapper) {

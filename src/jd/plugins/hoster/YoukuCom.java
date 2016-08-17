@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://f\\.youku\\.com/player/getFlvPath/sid.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://f\\.youku\\.com/player/getFlvPath/sid.+" }) 
 public class YoukuCom extends PluginForHost {
 
     public YoukuCom(final PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "audioinbox.com" }, urls = { "http://(www\\.)?audioinbox\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "audioinbox.com" }, urls = { "http://(www\\.)?audioinbox\\.com/s/[A-Za-z0-9]+" }) 
 public class AudioinboxCom extends PluginForHost {
 
     public AudioinboxCom(PluginWrapper wrapper) {

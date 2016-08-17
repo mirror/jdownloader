@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmap.com" }, urls = { "http://(www\\.)?((es|ar|en|pt|ru|ja|de|fr|tr|pl)?\\.)?filesmap\\.com/(mp3/[A-Za-z0-9]+/[a-z0-9\\-]+|file/[A-Za-z0-9]+/[^<>\"/]+/[^<>\"/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmap.com" }, urls = { "http://(www\\.)?((es|ar|en|pt|ru|ja|de|fr|tr|pl)?\\.)?filesmap\\.com/(mp3/[A-Za-z0-9]+/[a-z0-9\\-]+|file/[A-Za-z0-9]+/[^<>\"/]+/[^<>\"/]+)" }) 
 public class FilesMapCom extends PluginForDecrypt {
 
     public FilesMapCom(PluginWrapper wrapper) {

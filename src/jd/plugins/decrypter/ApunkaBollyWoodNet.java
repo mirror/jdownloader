@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apunkabollywood.net" }, urls = { "http://(www\\.)?apunkabollywood\\.(net|us)/browser/category/view/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apunkabollywood.net" }, urls = { "http://(www\\.)?apunkabollywood\\.(net|us)/browser/category/view/\\d+" }) 
 public class ApunkaBollyWoodNet extends PluginForDecrypt {
 
     public ApunkaBollyWoodNet(PluginWrapper wrapper) {

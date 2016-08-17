@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "directupload.net" }, urls = { "http://(www\\.)?directupload\\.net/file/d/\\d+/[A-Za-z0-9\\-_]+\\.htm" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "directupload.net" }, urls = { "http://(www\\.)?directupload\\.net/file/d/\\d+/[A-Za-z0-9\\-_]+\\.htm" }) 
 public class DirectUploadNet extends PluginForHost {
 
     // other: sites having the same admin: cloud.directupload.net, directupload.net

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonfiles.com" }, urls = { "https://(www\\.)?anonfiles\\.com/file/[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonfiles.com" }, urls = { "https://(www\\.)?anonfiles\\.com/file/[a-z0-9]{32}" }) 
 public class AnonFilesCom extends PluginForHost {
 
     public AnonFilesCom(PluginWrapper wrapper) {

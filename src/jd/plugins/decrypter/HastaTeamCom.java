@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hastateam.com" }, urls = { "http://(www\\.)?hastateam\\.com/forum/viewtopic\\.php\\?f=\\d+\\&t=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hastateam.com" }, urls = { "http://(www\\.)?hastateam\\.com/forum/viewtopic\\.php\\?f=\\d+\\&t=\\d+" }) 
 public class HastaTeamCom extends PluginForDecrypt {
 
     public HastaTeamCom(PluginWrapper wrapper) {

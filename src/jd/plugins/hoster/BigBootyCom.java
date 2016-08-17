@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "http://(?:www\\.)?bigbooty\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "http://(?:www\\.)?bigbooty\\.com/video/\\d+" }) 
 public class BigBootyCom extends PluginForHost {
 
     private String DLLINK = null;

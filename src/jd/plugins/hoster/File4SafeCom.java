@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4safe.com" }, urls = { "https?://(www\\.)?file4safe\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4safe.com" }, urls = { "https?://(www\\.)?file4safe\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
 public class File4SafeCom extends PluginForHost {
 
     private String               correctedBR                  = "";

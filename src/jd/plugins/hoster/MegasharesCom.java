@@ -45,7 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 /**
  * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }) 
 public class MegasharesCom extends PluginForHost {
 
     private final String            UserAgent   = "JD_" + "$Revision$";

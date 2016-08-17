@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "muchacarne.xxx" }, urls = { "http://(www\\.)?muchacarne\\.(com|xxx)/hosted(\\-id\\d+\\-.*?\\.html|/media/[a-z0-9\\-]+,\\d+\\.php)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "muchacarne.xxx" }, urls = { "http://(www\\.)?muchacarne\\.(com|xxx)/hosted(\\-id\\d+\\-.*?\\.html|/media/[a-z0-9\\-]+,\\d+\\.php)" }) 
 public class MuchaCarneCom extends PornEmbedParser {
 
     public MuchaCarneCom(PluginWrapper wrapper) {

@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filthdump.com" }, urls = { "http://(www\\.)?filthdump\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filthdump.com" }, urls = { "http://(www\\.)?filthdump\\.com/\\d+/.*?\\.html" }) 
 public class FilthDumpCom extends PluginForDecrypt {
 
     public FilthDumpCom(PluginWrapper wrapper) {

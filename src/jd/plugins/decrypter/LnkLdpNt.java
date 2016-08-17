@@ -44,7 +44,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author User
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "link.ligadepeliculas.net" }, urls = { "http://link\\.ligadepeliculas\\.net/(?:index\\.php)?\\?v=(\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "link.ligadepeliculas.net" }, urls = { "http://link\\.ligadepeliculas\\.net/(?:index\\.php)?\\?v=(\\d+)" }) 
 public class LnkLdpNt extends antiDDoSForDecrypt {
 
     public LnkLdpNt(PluginWrapper wrapper) {

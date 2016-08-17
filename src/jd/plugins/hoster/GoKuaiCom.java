@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gokuai.com" }, urls = { "https?://(www\\.)?gokuai\\.com/f/[A-Za-z0-9]+|gokuais?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}/[a-z0-9]{40}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gokuai.com" }, urls = { "https?://(www\\.)?gokuai\\.com/f/[A-Za-z0-9]+|gokuais?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}/[a-z0-9]{40}" }) 
 public class GoKuaiCom extends PluginForHost {
 
     public GoKuaiCom(PluginWrapper wrapper) {

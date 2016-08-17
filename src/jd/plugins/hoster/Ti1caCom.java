@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "http://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "http://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" }) 
 public class Ti1caCom extends PluginForHost {
 
     public Ti1caCom(PluginWrapper wrapper) {

@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /** Site is similar to rghost.net */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nashdisk.ru" }, urls = { "http://(?:www\\.)?nashdisk\\.ru/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nashdisk.ru" }, urls = { "http://(?:www\\.)?nashdisk\\.ru/[a-z0-9]+" }) 
 public class NashdiskRu extends PluginForHost {
 
     public NashdiskRu(PluginWrapper wrapper) {

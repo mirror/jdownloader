@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1mbup.com" }, urls = { "http://(www\\.)??1mbup\\.com/(?!img/).+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1mbup.com" }, urls = { "http://(www\\.)??1mbup\\.com/(?!img/).+" }) 
 public class OneMbUpCom extends PluginForHost {
 
     public OneMbUpCom(PluginWrapper wrapper) {

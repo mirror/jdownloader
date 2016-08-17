@@ -16,8 +16,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@DecrypterPlugin(revision = "$Revision: 28474 $", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "https?://tor-.*?rpnet\\.biz/files/.*?/.*?\\$" }, flags = { 0 })
-public class RPNetBiz extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 28474 $", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "https?://tor-.*?rpnet\\.biz/files/.*?/.*?\\$" }) public class RPNetBiz extends PluginForDecrypt {
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);

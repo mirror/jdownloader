@@ -33,7 +33,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" }) 
 public class GfyCatCom extends PluginForHost {
 
     public GfyCatCom(PluginWrapper wrapper) {

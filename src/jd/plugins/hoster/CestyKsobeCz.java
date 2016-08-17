@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cestyksobe.cz" }, urls = { "http://(www\\.)?cestyksobe\\.cz/(novinky/novinky/\\d+|archiv/.*?/.*?)\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cestyksobe.cz" }, urls = { "http://(www\\.)?cestyksobe\\.cz/(novinky/novinky/\\d+|archiv/.*?/.*?)\\.html" }) 
 public class CestyKsobeCz extends PluginForHost {
 
     private String DLLINK = null;

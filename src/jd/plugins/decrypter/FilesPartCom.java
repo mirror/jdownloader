@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filespart.com" }, urls = { "http://(www\\.)?filespart\\.com/(dl|go)/[0-9a-zA-Z]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filespart.com" }, urls = { "http://(www\\.)?filespart\\.com/(dl|go)/[0-9a-zA-Z]+\\.html" }) 
 public class FilesPartCom extends PluginForDecrypt {
 
     public FilesPartCom(PluginWrapper wrapper) {

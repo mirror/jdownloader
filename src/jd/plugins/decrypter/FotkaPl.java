@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotka.pl" }, urls = { "http://[\\w\\.]*?fotka\\.pl/(profil/\\w+/albumy/\\d+,\\w+(/\\d+)?|duza_fotka\\.php\\?fotka_id=\\d+\\&owner_id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotka.pl" }, urls = { "http://[\\w\\.]*?fotka\\.pl/(profil/\\w+/albumy/\\d+,\\w+(/\\d+)?|duza_fotka\\.php\\?fotka_id=\\d+\\&owner_id=\\d+)" }) 
 public class FotkaPl extends PluginForDecrypt {
 
     public FotkaPl(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/[a-z0-9]+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/[a-z0-9]+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" }) 
 public class LiveDriveComFolder extends PluginForDecrypt {
 
     public LiveDriveComFolder(PluginWrapper wrapper) {

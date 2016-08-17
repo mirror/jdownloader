@@ -56,7 +56,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 // note: 4downfiles.com is parked!
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.net" }, urls = { "https?://(www\\.)?4downfiles\\.(?:net|com)/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.net" }, urls = { "https?://(www\\.)?4downfiles\\.(?:net|com)/(vidembed\\-)?[a-z0-9]{12}" }) 
 public class FourDownFilesCom extends PluginForHost {
 
     private String               correctedBR                  = "";

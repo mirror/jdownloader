@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundowl.com" }, urls = { "http://(www\\.)?soundowl\\.com/track/[a-z0-9]+|http://dl\\.soundowl\\.com/[a-z0-9]+\\.mp3" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundowl.com" }, urls = { "http://(www\\.)?soundowl\\.com/track/[a-z0-9]+|http://dl\\.soundowl\\.com/[a-z0-9]+\\.mp3" }) 
 public class SoundOwlCom extends PluginForHost {
 
     public SoundOwlCom(PluginWrapper wrapper) {

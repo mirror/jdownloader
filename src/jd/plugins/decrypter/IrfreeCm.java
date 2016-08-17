@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 import org.jdownloader.controlling.PasswordUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)/.+/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)/.+/.*" }) 
 public class IrfreeCm extends PluginForDecrypt {
 
     public IrfreeCm(PluginWrapper wrapper) {

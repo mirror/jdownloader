@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bemywife.cc" }, urls = { "https?://(?:www\\.)?bemywife\\.cc/video/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bemywife.cc" }, urls = { "https?://(?:www\\.)?bemywife\\.cc/video/[a-z0-9]+" }) 
 public class BemywifeCc extends PluginForHost {
 
     public BemywifeCc(PluginWrapper wrapper) {

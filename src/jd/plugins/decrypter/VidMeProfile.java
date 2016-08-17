@@ -31,7 +31,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https?://(?:www\\.)?vid\\.me/(?:e/)?[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https?://(?:www\\.)?vid\\.me/(?:e/)?[^/]+" }) 
 public class VidMeProfile extends PluginForDecrypt {
 
     public VidMeProfile(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uphere.pl" }, urls = { "http://(www\\.)?uphere\\.pl/\\?v=[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uphere.pl" }, urls = { "http://(www\\.)?uphere\\.pl/\\?v=[a-z0-9]{32}" }) 
 public class UpHerePl extends PluginForHost {
 
     public UpHerePl(PluginWrapper wrapper) {

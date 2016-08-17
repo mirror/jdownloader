@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?vidxporn\\.com/\\d+/[a-z0-9\\-]+/" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?vidxporn\\.com/\\d+/[a-z0-9\\-]+/" }) 
 public class UnknownPornScript8 extends PluginForHost {
 
     public UnknownPornScript8(PluginWrapper wrapper) {

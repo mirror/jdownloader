@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/[A-Za-z0-9\\-_]+\\d+$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/[A-Za-z0-9\\-_]+\\d+$" }) 
 public class ParteeeyDeGallery extends PluginForDecrypt {
 
     public ParteeeyDeGallery(PluginWrapper wrapper) {

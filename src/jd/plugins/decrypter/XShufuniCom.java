@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshufuni.com" }, urls = { "http://(www\\.)?xshufuni\\.com/gallery/[a-z0-9\\-]+/index\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshufuni.com" }, urls = { "http://(www\\.)?xshufuni\\.com/gallery/[a-z0-9\\-]+/index\\.html" }) 
 public class XShufuniCom extends PornEmbedParser {
 
     public XShufuniCom(PluginWrapper wrapper) {

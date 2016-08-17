@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freeshemaletube.com", "ballbustingtube.com", "freegrannytube.com", "crossdresserstube.com" }, urls = { "http://(?:www\\.)?freeshemaletube\\.com/video/\\d+", "http://(?:www\\.)?ballbustingtube\\.com/video/\\d+", "http://(?:www\\.)?freegrannytube\\.com/video/\\d+", "http://(?:www\\.)?crossdresserstube\\.com/video/\\d+" }, flags = { 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freeshemaletube.com", "ballbustingtube.com", "freegrannytube.com", "crossdresserstube.com" }, urls = { "http://(?:www\\.)?freeshemaletube\\.com/video/\\d+", "http://(?:www\\.)?ballbustingtube\\.com/video/\\d+", "http://(?:www\\.)?freegrannytube\\.com/video/\\d+", "http://(?:www\\.)?crossdresserstube\\.com/video/\\d+" }) 
 public class FreeshemaletubeCom extends PluginForHost {
 
     public FreeshemaletubeCom(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesend.com" }, urls = { "http://(www\\.)?sharesend\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesend.com" }, urls = { "http://(www\\.)?sharesend\\.com/[a-z0-9]+" }) 
 public class ShareSendCom extends PluginForHost {
 
     public ShareSendCom(PluginWrapper wrapper) {

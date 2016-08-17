@@ -37,7 +37,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }) 
 public class NdrDeDecrypter extends PluginForDecrypt {
 
     public NdrDeDecrypter(PluginWrapper wrapper) {

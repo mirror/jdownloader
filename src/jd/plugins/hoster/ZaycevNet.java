@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://((www\\.)?zaycev\\.net/pages/[0-9]+/[0-9]+\\.shtml|dl\\.zaycev\\.net/[^\r\n\"]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://((www\\.)?zaycev\\.net/pages/[0-9]+/[0-9]+\\.shtml|dl\\.zaycev\\.net/[^\r\n\"]+)" }) 
 public class ZaycevNet extends PluginForHost {
 
     public ZaycevNet(PluginWrapper wrapper) {

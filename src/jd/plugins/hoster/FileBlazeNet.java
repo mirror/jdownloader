@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "http://(www|stream|betastageflash)\\.fileblaze\\.net/soundblaze/(download/file|external/music;jsessionid=[0-9A-F]+)\\?key=[0-9a-z\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "http://(www|stream|betastageflash)\\.fileblaze\\.net/soundblaze/(download/file|external/music;jsessionid=[0-9A-F]+)\\?key=[0-9a-z\\-]+" }) 
 public class FileBlazeNet extends PluginForHost {
 
     public FileBlazeNet(final PluginWrapper wrapper) {

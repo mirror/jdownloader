@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxkingtube.com" }, urls = { "http://(?:www\\.)?xxxkingtube\\.com/video/[a-z0-9\\-_]+\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxkingtube.com" }, urls = { "http://(?:www\\.)?xxxkingtube\\.com/video/[a-z0-9\\-_]+\\-\\d+\\.html" }) 
 public class XxxkingtubeCom extends PluginForHost {
 
     public XxxkingtubeCom(PluginWrapper wrapper) {

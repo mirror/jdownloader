@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primarywave.com" }, urls = { "http://(www\\.)?primarywave.com/track/[A-Za-z0-9]+(/#/track/[A-Za-z0-9]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primarywave.com" }, urls = { "http://(www\\.)?primarywave.com/track/[A-Za-z0-9]+(/#/track/[A-Za-z0-9]+)?" }) 
 public class PrimarywaveCom extends PluginForHost {
 
     public PrimarywaveCom(PluginWrapper wrapper) {

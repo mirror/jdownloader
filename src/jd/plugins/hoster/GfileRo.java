@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfile.ro" }, urls = { "https?://(www\\.)?gfile\\.ro/\\?do=fD\\&fI=[a-f0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfile.ro" }, urls = { "https?://(www\\.)?gfile\\.ro/\\?do=fD\\&fI=[a-f0-9]{32}" }) 
 public class GfileRo extends PluginForHost {
 
     public GfileRo(PluginWrapper wrapper) {

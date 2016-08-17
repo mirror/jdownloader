@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "proxer.me" }, urls = { "http://(www\\.)?proxer\\.me/watch/\\d+/\\d+/(ger|eng)sub" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "proxer.me" }, urls = { "http://(www\\.)?proxer\\.me/watch/\\d+/\\d+/(ger|eng)sub" }) 
 public class ProxrMe extends PluginForDecrypt {
 
     public ProxrMe(PluginWrapper wrapper) {

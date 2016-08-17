@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/art/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/art/" }) 
 public class NewgroundsComDecrypter extends PluginForDecrypt {
 
     public NewgroundsComDecrypter(PluginWrapper wrapper) {

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tiny.cc" }, urls = { "http://(www\\.)?tiny\\.cc/[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tiny.cc" }, urls = { "http://(www\\.)?tiny\\.cc/[0-9a-zA-Z]+" }) 
 public class TinyCc extends PluginForDecrypt {
 
     public TinyCc(PluginWrapper wrapper) {

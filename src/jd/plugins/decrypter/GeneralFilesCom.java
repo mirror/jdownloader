@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "generalfil.es" }, urls = { "http://(www\\.)?(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "generalfil.es" }, urls = { "http://(www\\.)?(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }) 
 public class GeneralFilesCom extends PluginForDecrypt {
 
     @Override

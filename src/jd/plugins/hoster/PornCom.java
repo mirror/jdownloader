@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,7 +41,9 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(?:www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(?:\\.html)?" }, flags = { 2 })
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(?:www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(?:\\.html)?" }) 
 public class PornCom extends antiDDoSForHost {
 
     /* DEV NOTES */
@@ -206,12 +206,12 @@ public class PornCom extends antiDDoSForHost {
             int highestQual = 0;
             String bestUrl = null;
             for (final String aa : array) {
-                final String quality = PluginJSonUtils.getJson(aa, "name");
+                final String quality = PluginJSonUtils.getJsonValue(aa, "name");
                 final String q = quality != null ? new Regex(quality, "\\d+").getMatch(-1) : null;
                 final int qual = q != null ? Integer.parseInt(q) : 0;
                 if (qual > highestQual) {
                     highestQual = qual;
-                    final String url = PluginJSonUtils.getJson(aa, "url");
+                    final String url = PluginJSonUtils.getJsonValue(aa, "url");
                     if (url != null) {
                         bestUrl = url;
                     }

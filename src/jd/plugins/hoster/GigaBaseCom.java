@@ -32,7 +32,7 @@ import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabase.com" }, urls = { "http://(www\\.)?gigabase\\.com/getfile/[^<>\"\\'/]+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabase.com" }, urls = { "http://(www\\.)?gigabase\\.com/getfile/[^<>\"\\'/]+/?" }) 
 public class GigaBaseCom extends PluginForHost {
 
     public GigaBaseCom(PluginWrapper wrapper) {

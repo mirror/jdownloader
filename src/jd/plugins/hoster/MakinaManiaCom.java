@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" }) 
 public class MakinaManiaCom extends PluginForHost {
 
     public MakinaManiaCom(PluginWrapper wrapper) {

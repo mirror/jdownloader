@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-stream.com" }, urls = { "http://(www\\.)?protect\\-stream\\.com/PS_DL_[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-stream.com" }, urls = { "http://(www\\.)?protect\\-stream\\.com/PS_DL_[A-Za-z0-9\\-_]+" }) 
 public class ProtectStreamCom extends PluginForDecrypt {
 
     public ProtectStreamCom(PluginWrapper wrapper) {

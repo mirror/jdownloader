@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webshare.cz" }, urls = { "https?://(?:www\\.)?webshare\\.cz/#/folder/[a-z0-9]{8,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webshare.cz" }, urls = { "https?://(?:www\\.)?webshare\\.cz/#/folder/[a-z0-9]{8,}" }) 
 public class WebShareCzFolder extends PluginForDecrypt {
 
     public WebShareCzFolder(PluginWrapper wrapper) {

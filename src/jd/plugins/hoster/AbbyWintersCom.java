@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abbywinters.com" }, urls = { "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/(images/stills/[a-z0-9\\-_]+|videos/video/clip)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abbywinters.com" }, urls = { "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/(images/stills/[a-z0-9\\-_]+|videos/video/clip)" }) 
 public class AbbyWintersCom extends PluginForHost {
 
     public AbbyWintersCom(PluginWrapper wrapper) {

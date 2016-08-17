@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "http://(www\\.)?mixupload\\.(org|com)/((es|de)/)?track/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "http://(www\\.)?mixupload\\.(org|com)/((es|de)/)?track/[^<>\"/]+" }) 
 public class MixUploadOrg extends PluginForHost {
 
     public MixUploadOrg(PluginWrapper wrapper) {

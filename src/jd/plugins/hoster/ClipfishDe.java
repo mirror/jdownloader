@@ -35,7 +35,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipfish.de", "dooloop.tv" }, urls = { "http://(?:www\\.)?clipfish\\.de/(?:.*?channel/\\d+/video/\\d+|video/\\d+(?:/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(?:/.+)?)", "https?://(?:www\\.)?dooloop\\.tv/video/\\d+/[A-Za-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clipfish.de", "dooloop.tv" }, urls = { "http://(?:www\\.)?clipfish\\.de/(?:.*?channel/\\d+/video/\\d+|video/\\d+(?:/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(?:/.+)?)", "https?://(?:www\\.)?dooloop\\.tv/video/\\d+/[A-Za-z0-9]+" }) 
 public class ClipfishDe extends PluginForHost {
 
     public ClipfishDe(final PluginWrapper wrapper) {

@@ -48,7 +48,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
 public class FastixRu extends antiDDoSForHost {
 
     /** Using API: http://fastix.ru/apidoc */

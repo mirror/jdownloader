@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "einsfestival.de" }, urls = { "https?://(?:www\\.)?einsfestival\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "einsfestival.de" }, urls = { "https?://(?:www\\.)?einsfestival\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" }) 
 public class EinsfestivalDe extends PluginForHost {
 
     public EinsfestivalDe(PluginWrapper wrapper) {

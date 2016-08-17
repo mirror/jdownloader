@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulmen.tv" }, urls = { "http://(www\\.)?ulmen\\.tv/[\\w\\-]+/\\d+/[\\w\\-]+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulmen.tv" }, urls = { "http://(www\\.)?ulmen\\.tv/[\\w\\-]+/\\d+/[\\w\\-]+" }) 
 public class UlmenTv extends PluginForHost {
 
     private String DLLINK;

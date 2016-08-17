@@ -33,7 +33,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]*?wrzuta\\.pl/(audio|film|obraz)/[a-zA-Z0-9]{11}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]*?wrzuta\\.pl/(audio|film|obraz)/[a-zA-Z0-9]{11}" }) 
 public class WrzutaPl extends PluginForHost {
 
     private String filetype = null;

@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/(video|gallery|girls)/([a-zA-Z0-9_\\-]+)(/[a-zA-Z0-9_\\-]+(/\\d+/?)?)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/(video|gallery|girls)/([a-zA-Z0-9_\\-]+)(/[a-zA-Z0-9_\\-]+(/\\d+/?)?)?" }) 
 public class KndGrlsCom extends PluginForDecrypt {
 
     public KndGrlsCom(PluginWrapper wrapper) {

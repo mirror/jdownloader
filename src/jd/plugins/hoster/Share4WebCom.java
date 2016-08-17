@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share4web.com" }, urls = { "http://(www\\.)?share4web\\.com/get/[\\w\\.\\-]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share4web.com" }, urls = { "http://(www\\.)?share4web\\.com/get/[\\w\\.\\-]{32}" }) 
 public class Share4WebCom extends PluginForHost {
 
     public Share4WebCom(PluginWrapper wrapper) {

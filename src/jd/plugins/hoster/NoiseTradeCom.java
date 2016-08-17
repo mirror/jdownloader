@@ -43,7 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://noisetradedecrypted\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://noisetradedecrypted\\.com/\\d+" }) 
 public class NoiseTradeCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")

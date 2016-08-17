@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bytebx.com" }, urls = { "http://(www\\.)?bytebx\\.com/file/[a-z0-9]+/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bytebx.com" }, urls = { "http://(www\\.)?bytebx\\.com/file/[a-z0-9]+/\\d+" }) 
 public class ByteBxCom extends PluginForHost {
 
     public ByteBxCom(PluginWrapper wrapper) {

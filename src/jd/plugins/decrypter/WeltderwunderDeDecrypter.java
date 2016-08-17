@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://(?:www\\.|video\\.)?weltderwunder\\.de/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://(?:www\\.|video\\.)?weltderwunder\\.de/.+" }) 
 public class WeltderwunderDeDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "f-bit.ru" }, urls = { "http://(www\\.)?f\\-bit\\.ru/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "f-bit.ru" }, urls = { "http://(www\\.)?f\\-bit\\.ru/\\d+" }) 
 public class FBitRu extends PluginForHost {
 
     public FBitRu(PluginWrapper wrapper) {

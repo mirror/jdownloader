@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamicloud.net" }, urls = { "http://(www\\.)?sync\\.hamicloud\\.net/[^/]+/[^/]+/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamicloud.net" }, urls = { "http://(www\\.)?sync\\.hamicloud\\.net/[^/]+/[^/]+/[^/]+" }) 
 public class HamicloudNet extends PluginForHost {
 
     public HamicloudNet(PluginWrapper wrapper) {

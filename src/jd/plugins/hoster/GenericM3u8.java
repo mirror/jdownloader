@@ -35,7 +35,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 /**
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }) 
 public class GenericM3u8 extends PluginForHost {
 
     private String customFavIconHost = null;

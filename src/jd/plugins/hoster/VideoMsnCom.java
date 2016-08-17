@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com", "video.msn.com" }, urls = { "decrypted://bing.com/\\d+", "bteji456z90ubetkmnerlDELETE_MEfhtrjkhrdrfd" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com", "video.msn.com" }, urls = { "decrypted://bing.com/\\d+", "bteji456z90ubetkmnerlDELETE_MEfhtrjkhrdrfd" }) 
 public class VideoMsnCom extends PluginForHost {
 
     public VideoMsnCom(PluginWrapper wrapper) {

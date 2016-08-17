@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
  *
  */
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/.*" }) 
 public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /*

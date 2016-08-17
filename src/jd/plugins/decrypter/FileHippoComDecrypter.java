@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?update\\.filehippo\\.com(/(es|en|pl|jp|de))?/update/check/[a-z0-9\\-]+/detailed" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?update\\.filehippo\\.com(/(es|en|pl|jp|de))?/update/check/[a-z0-9\\-]+/detailed" }) 
 public class FileHippoComDecrypter extends PluginForDecrypt {
 
     public FileHippoComDecrypter(PluginWrapper wrapper) {

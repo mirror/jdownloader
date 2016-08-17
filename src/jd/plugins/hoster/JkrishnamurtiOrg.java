@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jkrishnamurti.org" }, urls = { "http://(www\\.)?jkrishnamurti\\.org/[a-z0-9\\-]+/view\\-video/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jkrishnamurti.org" }, urls = { "http://(www\\.)?jkrishnamurti\\.org/[a-z0-9\\-]+/view\\-video/.+" }) 
 public class JkrishnamurtiOrg extends PluginForHost {
 
     public JkrishnamurtiOrg(PluginWrapper wrapper) {

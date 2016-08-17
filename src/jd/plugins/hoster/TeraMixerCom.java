@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teramixer.com" }, urls = { "http://(www\\.)?teramixer\\.com/(embed/)?[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teramixer.com" }, urls = { "http://(www\\.)?teramixer\\.com/(embed/)?[a-z0-9]+" }) 
 public class TeraMixerCom extends PluginForHost {
 
     public TeraMixerCom(PluginWrapper wrapper) {

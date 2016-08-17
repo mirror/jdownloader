@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "https?://(?:www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideo.net" }, urls = { "https?://(?:www\\.)?(?:(?:moevideos|moevideo|videochart)\\.net|playreplay\\.me)/.+" }) 
 public class MoeVideoNetDecrypter extends PluginForDecrypt {
 
     @Override

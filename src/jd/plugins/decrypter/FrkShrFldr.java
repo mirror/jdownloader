@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.com" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/[^<>\"]+\\.html|\\?x=folder\\&f_id=\\d+\\&f_md5=[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.com" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/[^<>\"]+\\.html|\\?x=folder\\&f_id=\\d+\\&f_md5=[a-z0-9]+)" }) 
 public class FrkShrFldr extends PluginForDecrypt {
 
     public FrkShrFldr(PluginWrapper wrapper) {

@@ -33,7 +33,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornomovies.com" }, urls = { "http://(?:www\\.)?pornomovies\\.com/\\d+\\-[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornomovies.com" }, urls = { "http://(?:www\\.)?pornomovies\\.com/\\d+\\-[a-z0-9\\-]+\\.html" }) 
 public class PornomoviesCom extends PluginForHost {
 
     public PornomoviesCom(PluginWrapper wrapper) {

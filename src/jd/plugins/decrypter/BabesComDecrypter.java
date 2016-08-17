@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "http://members\\.babes\\.com/video/view/id/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "http://members\\.babes\\.com/video/view/id/\\d+/[a-z0-9\\-_]+/" }) 
 public class BabesComDecrypter extends PluginForDecrypt {
 
     public BabesComDecrypter(PluginWrapper wrapper) {

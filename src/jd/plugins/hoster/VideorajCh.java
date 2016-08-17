@@ -31,7 +31,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoraj.ch" }, urls = { "http://(www\\.)?videoraj\\.ch/(v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoraj.ch" }, urls = { "http://(www\\.)?videoraj\\.ch/(v/|embed\\.php\\?id=)[a-z0-9]+" }) 
 public class VideorajCh extends PluginForHost {
 
     private static final String DOMAIN = "videoraj.ch";

@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wicked.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.wicked\\.com/download/\\d+/[a-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wicked.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.wicked\\.com/download/\\d+/[a-z0-9_\\-]+" }) 
 public class WickedCom extends PluginForHost {
 
     public WickedCom(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigholestube.com" }, urls = { "http://(?:www\\.)?bigholestube\\.com/[a-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigholestube.com" }, urls = { "http://(?:www\\.)?bigholestube\\.com/[a-z0-9\\-_]+/" }) 
 public class BigholestubeCom extends PluginForHost {
 
     public BigholestubeCom(PluginWrapper wrapper) {

@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "http://tvthek\\.orf\\.atdecrypted\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "http://tvthek\\.orf\\.atdecrypted\\d+" }) 
 public class ORFMediathek extends PluginForHost {
 
     private static final String NEW_URLFORMAT = "http://tvthek\\.orf\\.atdecrypted\\d+";

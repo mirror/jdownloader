@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(www\\.|porn\\.)?hellspy\\.(cz|com|sk)/(soutez/|sutaz/)?[a-z0-9\\-]+/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(www\\.|porn\\.)?hellspy\\.(cz|com|sk)/(soutez/|sutaz/)?[a-z0-9\\-]+/\\d+" }) 
 public class HellSpyCz extends PluginForHost {
 
     /*

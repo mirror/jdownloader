@@ -16,7 +16,7 @@ import jd.plugins.PluginForHost;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.zing.vn" }, urls = { "http://tv.zing.vn/video/(\\S+).html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.zing.vn" }, urls = { "http://tv.zing.vn/video/(\\S+).html" }) 
 public class TvZingVn extends PluginForHost {
 
     public TvZingVn(PluginWrapper wrapper) {

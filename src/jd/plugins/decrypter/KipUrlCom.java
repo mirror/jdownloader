@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kipurl.com" }, urls = { "http://(www\\.)?kipurl\\.com/\\d/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kipurl.com" }, urls = { "http://(www\\.)?kipurl\\.com/\\d/[a-z0-9]+" }) 
 public class KipUrlCom extends PluginForDecrypt {
 
     public KipUrlCom(PluginWrapper wrapper) {

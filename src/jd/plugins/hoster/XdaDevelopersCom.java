@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xda-developers.com" }, urls = { "http://(www\\.)?forum\\.xda\\-developers\\.com/devdb/project/dl/\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xda-developers.com" }, urls = { "http://(www\\.)?forum\\.xda\\-developers\\.com/devdb/project/dl/\\?id=\\d+" }) 
 public class XdaDevelopersCom extends PluginForHost {
 
     public XdaDevelopersCom(PluginWrapper wrapper) {

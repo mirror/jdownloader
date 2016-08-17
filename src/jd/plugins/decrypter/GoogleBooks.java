@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "https?://books\\.google(\\.[a-z]+){1,2}/books\\?id=[0-9a-zA-Z-_]+.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "https?://books\\.google(\\.[a-z]+){1,2}/books\\?id=[0-9a-zA-Z-_]+.*" }) 
 public class GoogleBooks extends PluginForDecrypt {
 
     private final boolean useRUA = true;

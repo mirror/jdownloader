@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?(?:album|large)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(?:embed\\d-)?(?:album|large)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }) 
 public class AudioMackComDecrypter extends PluginForDecrypt {
 
     public AudioMackComDecrypter(PluginWrapper wrapper) {

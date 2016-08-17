@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornologo.com" }, urls = { "http://(www\\.)?pornologo\\.com/videos/\\d+/[a-z0-9\\-,\\.']+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornologo.com" }, urls = { "http://(www\\.)?pornologo\\.com/videos/\\d+/[a-z0-9\\-,\\.']+\\.html" }) 
 public class PornologoCom extends PluginForHost {
 
     public PornologoCom(PluginWrapper wrapper) {

@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adcrun.ch" }, urls = { "http://(www\\.)?adcrun\\.ch/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adcrun.ch" }, urls = { "http://(www\\.)?adcrun\\.ch/[A-Za-z0-9]+" }) 
 public class AdcrunCh extends PluginForDecrypt {
 
     public AdcrunCh(PluginWrapper wrapper) {

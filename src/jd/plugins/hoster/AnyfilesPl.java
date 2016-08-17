@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anyfiles.pl" }, urls = { "http://video\\.anyfiles\\.pl/((?:videos|w)\\.jsp\\?id=\\d+|.+/video/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anyfiles.pl" }, urls = { "http://video\\.anyfiles\\.pl/((?:videos|w)\\.jsp\\?id=\\d+|.+/video/\\d+)" }) 
 public class AnyfilesPl extends PluginForHost {
 
     public AnyfilesPl(PluginWrapper wrapper) {

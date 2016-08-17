@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsishare.com" }, urls = { "http://(?:www\\.)?fsishare\\.com/videopage/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsishare.com" }, urls = { "http://(?:www\\.)?fsishare\\.com/videopage/.*?\\.html" }) 
 public class FsiShareCom extends PluginForHost {
 
     public FsiShareCom(PluginWrapper wrapper) {

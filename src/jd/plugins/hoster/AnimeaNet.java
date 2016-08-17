@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip.animea.net", "manga.animea.net" }, urls = { "https?://vip\\.animea\\.net/list/d\\.php\\?f=\\d+", "ANIMEA://.+" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip.animea.net", "manga.animea.net" }, urls = { "https?://vip\\.animea\\.net/list/d\\.php\\?f=\\d+", "ANIMEA://.+" }) 
 public class AnimeaNet extends PluginForHost {
 
     /**

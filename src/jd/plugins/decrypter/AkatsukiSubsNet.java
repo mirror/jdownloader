@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?akatsuki\\-subs\\.net/(projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/|\\d+/releases/[a-z0-9]+/[a-z0-9\\-]+\\-\\d+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?akatsuki\\-subs\\.net/(projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/|\\d+/releases/[a-z0-9]+/[a-z0-9\\-]+\\-\\d+/)" }) 
 public class AkatsukiSubsNet extends PluginForDecrypt {
 
     public AkatsukiSubsNet(PluginWrapper wrapper) {

@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rehost.to" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs-rehost" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rehost.to" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs-rehost" }) 
 public class RehostTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();

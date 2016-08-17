@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.info", "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.(com|net|info)/[a-z0-9]{12}", "589ut90j59ujktojhzDELETE_MErf56uj43zgfjz" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.info", "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.(com|net|info)/[a-z0-9]{12}", "589ut90j59ujktojhzDELETE_MErf56uj43zgfjz" }) 
 public class FileDwonCom extends PluginForHost {
 
     private String               correctedBR                  = "";

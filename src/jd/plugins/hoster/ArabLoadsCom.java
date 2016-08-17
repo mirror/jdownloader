@@ -57,7 +57,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arabloads.net", "arabloads.com" }, urls = { "https?://(www\\.)?arabloads\\.(com|net)/(vidembed\\-)?[a-z0-9]{12}", "fh65ih9bu459hj0hbjoerlgmloDELETE_MEfrvdehioefrwoihhgrteikopjnu56ijknobfgrnopik" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arabloads.net", "arabloads.com" }, urls = { "https?://(www\\.)?arabloads\\.(com|net)/(vidembed\\-)?[a-z0-9]{12}", "fh65ih9bu459hj0hbjoerlgmloDELETE_MEfrvdehioefrwoihhgrteikopjnu56ijknobfgrnopik" }) 
 public class ArabLoadsCom extends PluginForHost {
 
     private String               correctedBR                  = "";

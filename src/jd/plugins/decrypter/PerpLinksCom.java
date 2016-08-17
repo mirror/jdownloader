@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perplinks.com" }, urls = { "http://(www\\.)?perplinks\\.com/files/l/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perplinks.com" }, urls = { "http://(www\\.)?perplinks\\.com/files/l/[a-z0-9]+" }) 
 public class PerpLinksCom extends PluginForDecrypt {
 
     public PerpLinksCom(PluginWrapper wrapper) {

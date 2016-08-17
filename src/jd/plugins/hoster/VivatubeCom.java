@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vivatube.com" }, urls = { "http://(?:[a-z]{2}\\.)?vivatube\\.com/video/\\d+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vivatube.com" }, urls = { "http://(?:[a-z]{2}\\.)?vivatube\\.com/video/\\d+/[A-Za-z0-9\\-_]+" }) 
 public class VivatubeCom extends PluginForHost {
 
     public VivatubeCom(PluginWrapper wrapper) {

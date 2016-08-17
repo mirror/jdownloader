@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://(?:www\\.|books\\.)?noisetrade\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://(?:www\\.|books\\.)?noisetrade\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }) 
 public class NoiseTradeCom extends PluginForDecrypt {
 
     public NoiseTradeCom(PluginWrapper wrapper) {

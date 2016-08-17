@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevolume.com" }, urls = { "decrypted://(www\\.)?purevolume\\.com/(new/)?\\w+(/albums/[\\w\\+\\-]+)?\\&songId=[\\w\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevolume.com" }, urls = { "decrypted://(www\\.)?purevolume\\.com/(new/)?\\w+(/albums/[\\w\\+\\-]+)?\\&songId=[\\w\\-]+" }) 
 public class PurevolumeCom extends PluginForHost {
 
     private String  DLLINK       = null;

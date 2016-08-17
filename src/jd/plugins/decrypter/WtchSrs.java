@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 29090 $", interfaceVersion = 2, names = { "watchseries.ag" }, urls = { "https?://(?:www\\.)?(?:watchseries\\.ag|watchtvseries\\.(?:se|vc))/(episode/.*?\\.html|open/cale/\\d+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 29090 $", interfaceVersion = 2, names = { "watchseries.ag" }, urls = { "https?://(?:www\\.)?(?:watchseries\\.ag|watchtvseries\\.(?:se|vc))/(episode/.*?\\.html|open/cale/\\d+\\.html)" }) 
 public class WtchSrs extends antiDDoSForDecrypt {
 
     public WtchSrs(PluginWrapper wrapper) {

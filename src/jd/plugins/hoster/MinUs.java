@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /** Links always come rom a decrypter */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://([a-zA-Z0-9]+\\.)?minusdecrypted\\.com/[A-Za-z0-9\\-_\\.]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://([a-zA-Z0-9]+\\.)?minusdecrypted\\.com/[A-Za-z0-9\\-_\\.]+" }) 
 public class MinUs extends PluginForHost {
 
     private static final String TYPE_DIRECT = jd.plugins.decrypter.MinUsComDecrypter.TYPE_DIRECT;

@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 29542 $", interfaceVersion = 2, names = { "vidspot.net" }, urls = { "https?://(?:www\\.)?vidspot\\.net/\\d+/v-[A-Za-z0-9]{6}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 29542 $", interfaceVersion = 2, names = { "vidspot.net" }, urls = { "https?://(?:www\\.)?vidspot\\.net/\\d+/v-[A-Za-z0-9]{6}" }) 
 public class VidSpotNet extends PluginForDecrypt {
 
     public VidSpotNet(PluginWrapper wrapper) {

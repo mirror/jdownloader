@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfilelink.com" }, urls = { "http://(www\\.)?yourfilelink\\.com/get\\.php\\?fid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfilelink.com" }, urls = { "http://(www\\.)?yourfilelink\\.com/get\\.php\\?fid=\\d+" }) 
 public class YourFileLinkCom extends PluginForHost {
 
     public YourFileLinkCom(PluginWrapper wrapper) {

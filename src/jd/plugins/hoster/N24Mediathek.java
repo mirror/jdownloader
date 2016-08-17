@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n24.de" }, urls = { "http://(www\\.|m\\.)?n24\\.de/[^<>\"]*?(M|m)ediathek/[^/]+/d/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n24.de" }, urls = { "http://(www\\.|m\\.)?n24\\.de/[^<>\"]*?(M|m)ediathek/[^/]+/d/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class N24Mediathek extends PluginForHost {
 
     private static final String html_videounavailable = "class=\"video_not_ready\"";

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyandfunny.com" }, urls = { "http://(www\\.)?sexyandfunny\\.com/watch_video/[a-z0-9\\-_]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyandfunny.com" }, urls = { "http://(www\\.)?sexyandfunny\\.com/watch_video/[a-z0-9\\-_]+_\\d+\\.html" }) 
 public class SexyAndFunnyCom extends PluginForHost {
 
     public SexyAndFunnyCom(PluginWrapper wrapper) {

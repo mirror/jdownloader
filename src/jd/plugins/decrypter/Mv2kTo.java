@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to", "m2k.to" }, urls = { "https?://(www\\.)?movie4k\\.to/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?", "https?://(?:www\\.)?(?:m2k\\.to|movie2k\\.com|movie2k\\.com|movie2k\\.me|movie2k\\.ws)/[a-zA-Z0-9\\-]+\\d+[a-zA-Z0-9\\-]+\\.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to", "m2k.to" }, urls = { "https?://(www\\.)?movie4k\\.to/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?", "https?://(?:www\\.)?(?:m2k\\.to|movie2k\\.com|movie2k\\.com|movie2k\\.me|movie2k\\.ws)/[a-zA-Z0-9\\-]+\\d+[a-zA-Z0-9\\-]+\\.html" }) 
 public class Mv2kTo extends PluginForDecrypt {
 
     // note: movie2k.to no dns record raztoki20160308

@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidok.com" }, urls = { "http://(www\\.)?rapidok\\.com/download/[A-Za-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidok.com" }, urls = { "http://(www\\.)?rapidok\\.com/download/[A-Za-z0-9_\\-]+" }) 
 public class RapidOkCom extends PluginForDecrypt {
 
     public RapidOkCom(PluginWrapper wrapper) {

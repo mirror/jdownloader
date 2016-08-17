@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+\\&uploadid=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+\\&uploadid=\\d+)" }) 
 public class ThreehundredTwenteekIn extends PluginForDecrypt {
 
     public ThreehundredTwenteekIn(PluginWrapper wrapper) {

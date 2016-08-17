@@ -53,7 +53,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indishare.me" }, urls = { "https?://(?:www\\.)?indishare\\.(?:co|com|me)?/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indishare.me" }, urls = { "https?://(?:www\\.)?indishare\\.(?:co|com|me)?/(vidembed\\-)?[a-z0-9]{12}" }) 
 public class IndiShareMe extends antiDDoSForHost {
 
     private String               correctedBR                  = "";

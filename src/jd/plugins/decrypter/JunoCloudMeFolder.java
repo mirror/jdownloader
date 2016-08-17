@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "junocloud.me" }, urls = { "http://(www\\.)?junocloud\\.me/folders/\\d+/[^<>\"/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "junocloud.me" }, urls = { "http://(www\\.)?junocloud\\.me/folders/\\d+/[^<>\"/]+" }) 
 public class JunoCloudMeFolder extends PluginForDecrypt {
 
     public JunoCloudMeFolder(PluginWrapper wrapper) {

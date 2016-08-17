@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakenergy.ru" }, urls = { "http://(www\\.)?freakenergy\\.ru/([a-z0-9\\-_]+\\.html|engine/go\\.php\\?url=[A-Za-z0-9%=]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakenergy.ru" }, urls = { "http://(www\\.)?freakenergy\\.ru/([a-z0-9\\-_]+\\.html|engine/go\\.php\\?url=[A-Za-z0-9%=]+)" }) 
 public class FreakEngyRu extends PluginForDecrypt {
 
     public FreakEngyRu(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "http://(www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "http://(www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/\\d+" }) 
 public class OpenSubtitlesOrg extends PluginForHost {
 
     public OpenSubtitlesOrg(PluginWrapper wrapper) {

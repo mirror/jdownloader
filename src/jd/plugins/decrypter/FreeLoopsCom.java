@@ -29,7 +29,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" }) 
 public class FreeLoopsCom extends PluginForDecrypt {
 
     public FreeLoopsCom(PluginWrapper wrapper) {

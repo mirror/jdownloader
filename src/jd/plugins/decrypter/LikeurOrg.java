@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "likeur.org" }, urls = { "http://(?:www\\.)?likeur\\.org/lien/[^/]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "likeur.org" }, urls = { "http://(?:www\\.)?likeur\\.org/lien/[^/]+\\.html" }) 
 public class LikeurOrg extends PluginForDecrypt {
 
     public LikeurOrg(PluginWrapper wrapper) {

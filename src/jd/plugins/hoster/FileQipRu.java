@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //They are using a copy of the "4shared.com" script
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.qip.ru" }, urls = { "https?://(www\\.)?file\\.qip\\.ru/(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive|music)/[A-Za-z0-9]+/[^<>\"/]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.qip.ru" }, urls = { "https?://(www\\.)?file\\.qip\\.ru/(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive|music)/[A-Za-z0-9]+/[^<>\"/]+\\.html" }) 
 public class FileQipRu extends PluginForHost {
 
     public FileQipRu(PluginWrapper wrapper) {

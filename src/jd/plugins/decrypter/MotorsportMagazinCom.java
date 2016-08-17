@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motorsport-magazin.com" }, urls = { "https?://(?:www\\.)?motorsport\\-magazin\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motorsport-magazin.com" }, urls = { "https?://(?:www\\.)?motorsport\\-magazin\\.com/.+" }) 
 public class MotorsportMagazinCom extends PluginForDecrypt {
 
     public MotorsportMagazinCom(PluginWrapper wrapper) {

@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "interfile.net" }, urls = { "https?://(www\\.)?interfile\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "interfile.net" }, urls = { "https?://(www\\.)?interfile\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }) 
 @SuppressWarnings("deprecation")
 public class InterFileNet extends PluginForHost {
     // Site Setters

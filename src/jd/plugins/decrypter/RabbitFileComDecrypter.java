@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://(www\\.)?rabbitfile\\.com/(download_regular\\.php\\?file=|dl\\.php\\?f=)[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://(www\\.)?rabbitfile\\.com/(download_regular\\.php\\?file=|dl\\.php\\?f=)[A-Za-z0-9]+" }) 
 public class RabbitFileComDecrypter extends PluginForDecrypt {
 
     public RabbitFileComDecrypter(PluginWrapper wrapper) {

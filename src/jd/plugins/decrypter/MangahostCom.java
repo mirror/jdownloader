@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?br\\.mangahost\\.com/manga/[^/]+/[^\\s]*\\d+(\\.\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?br\\.mangahost\\.com/manga/[^/]+/[^\\s]*\\d+(\\.\\d+)?" }) 
 public class MangahostCom extends PluginForDecrypt {
 
     public MangahostCom(PluginWrapper wrapper) {

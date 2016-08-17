@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeon.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?tubeon\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeon.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?tubeon\\.com/video/\\d+" }) 
 public class TubeonCom extends PluginForHost {
 
     public TubeonCom(PluginWrapper wrapper) {

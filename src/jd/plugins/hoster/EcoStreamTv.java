@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(?:www\\.)?ecostream\\.tv/(?:stream|embed)/[a-z0-9]{32}\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(?:www\\.)?ecostream\\.tv/(?:stream|embed)/[a-z0-9]{32}\\.html" }) 
 public class EcoStreamTv extends PluginForHost {
 
     private final AtomicBoolean use_js = new AtomicBoolean(true);

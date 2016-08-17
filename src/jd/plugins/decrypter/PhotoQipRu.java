@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photo.qip.ru" }, urls = { "http://(?:www\\.)?photo\\.qip\\.ru/users/[^/]+/\\d+/(?:\\d+/?)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photo.qip.ru" }, urls = { "http://(?:www\\.)?photo\\.qip\\.ru/users/[^/]+/\\d+/(?:\\d+/?)?" }) 
 public class PhotoQipRu extends PluginForDecrypt {
 
     public PhotoQipRu(PluginWrapper wrapper) {

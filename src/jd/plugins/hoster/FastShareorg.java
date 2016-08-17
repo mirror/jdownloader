@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.org" }, urls = { "http://[\\w\\.]*?fastshare\\.org/download/(.*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.org" }, urls = { "http://[\\w\\.]*?fastshare\\.org/download/(.*)" }) 
 public class FastShareorg extends PluginForHost {
 
     public FastShareorg(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 /*Similar websites: bca-onlive.de, asscompact.de*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bca-onlive.de" }, urls = { "https?://(www\\.)?bca\\-onlive\\.de/mediathek/.+(?:\\[|%5B)showUid(?:\\[|%5D)=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bca-onlive.de" }, urls = { "https?://(www\\.)?bca\\-onlive\\.de/mediathek/.+(?:\\[|%5B)showUid(?:\\[|%5D)=\\d+" }) 
 public class BcaOnliveDe extends PluginForHost {
 
     public BcaOnliveDe(PluginWrapper wrapper) {

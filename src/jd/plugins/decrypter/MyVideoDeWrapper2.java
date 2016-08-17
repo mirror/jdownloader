@@ -19,7 +19,7 @@ package jd.plugins.decrypter;
 import jd.PluginWrapper;
 import jd.plugins.DecrypterPlugin;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 3, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 3, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }) 
 public class MyVideoDeWrapper2 extends MyVideoDeWrapper {
 
     public MyVideoDeWrapper2(PluginWrapper wrapper) {

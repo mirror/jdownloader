@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "whatboyswant.com" }, urls = { "https://(www\\.)?whatboyswant\\.com/(babes|movies|cars)/show/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "whatboyswant.com" }, urls = { "https://(www\\.)?whatboyswant\\.com/(babes|movies|cars)/show/\\d+" }) 
 public class WhatBoysWantCom extends PluginForHost {
 
     public WhatBoysWantCom(PluginWrapper wrapper) {

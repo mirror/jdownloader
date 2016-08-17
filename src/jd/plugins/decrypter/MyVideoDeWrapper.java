@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/(watch/\\d+(/\\w+)?|[a-z0-9\\-/]+\\-m\\-\\d+|embed/(public/)?\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/(watch/\\d+(/\\w+)?|[a-z0-9\\-/]+\\-m\\-\\d+|embed/(public/)?\\d+)" }) 
 public class MyVideoDeWrapper extends PluginForDecrypt {
 
     public MyVideoDeWrapper(PluginWrapper wrapper) {

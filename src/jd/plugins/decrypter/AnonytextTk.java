@@ -38,7 +38,7 @@ import org.jdownloader.controlling.PasswordUtils;
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonytext.tk" }, urls = { "https?://(?:www\\.)?anonytext\\.tk/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonytext.tk" }, urls = { "https?://(?:www\\.)?anonytext\\.tk/[A-Za-z0-9]+" }) 
 public class AnonytextTk extends PluginForDecrypt {
 
     public AnonytextTk(PluginWrapper wrapper) {

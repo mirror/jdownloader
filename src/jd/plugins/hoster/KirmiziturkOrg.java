@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturkdecrypted\\.org/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturkdecrypted\\.org/video/\\d+" }) 
 public class KirmiziturkOrg extends PluginForHost {
 
     public KirmiziturkOrg(PluginWrapper wrapper) {

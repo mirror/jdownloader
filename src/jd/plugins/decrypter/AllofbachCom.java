@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allofbach.com" }, urls = { "https?://(?:www\\.)?allofbach\\.com/[A-Za-z]{2}/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allofbach.com" }, urls = { "https?://(?:www\\.)?allofbach\\.com/[A-Za-z]{2}/.+" }) 
 public class AllofbachCom extends PluginForDecrypt {
 
     public AllofbachCom(PluginWrapper wrapper) {

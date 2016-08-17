@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "https?://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "https?://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }) 
 public class FileTripNet extends PluginForHost {
 
     public FileTripNet(PluginWrapper wrapper) {

@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://anime\\.thehyliadecrypted\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://anime\\.thehyliadecrypted\\.com/\\d+" }) 
 public class AnimeTheHyliaCom extends PluginForHost {
 
     public AnimeTheHyliaCom(PluginWrapper wrapper) {

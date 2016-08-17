@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(www\\.)?redmp3\\.(cc|su)/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(www\\.)?redmp3\\.(cc|su)/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class Redmp3Cc extends PluginForHost {
 
     public Redmp3Cc(PluginWrapper wrapper) {

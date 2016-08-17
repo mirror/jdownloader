@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "miravideos.net" }, urls = { "http://(www\\.)?miravideos\\.net/[a-z0-9\\-]+_[a-z0-9]{5,}\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "miravideos.net" }, urls = { "http://(www\\.)?miravideos\\.net/[a-z0-9\\-]+_[a-z0-9]{5,}\\.html" }) 
 public class MiraVideosNet extends PluginForHost {
 
     public MiraVideosNet(PluginWrapper wrapper) {

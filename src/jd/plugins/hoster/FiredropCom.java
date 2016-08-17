@@ -49,7 +49,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firedrop.com" }, urls = { "https?://(www\\.)?firedrop\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firedrop.com" }, urls = { "https?://(www\\.)?firedrop\\.com/[A-Za-z0-9]+" }) 
 public class FiredropCom extends PluginForHost {
 
     public FiredropCom(PluginWrapper wrapper) {

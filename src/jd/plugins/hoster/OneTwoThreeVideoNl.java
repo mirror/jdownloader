@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123video.nl" }, urls = { "http://(www\\.)?123video\\.nl/sexvideo/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123video.nl" }, urls = { "http://(www\\.)?123video\\.nl/sexvideo/\\d+" }) 
 public class OneTwoThreeVideoNl extends PluginForHost {
 
     public OneTwoThreeVideoNl(PluginWrapper wrapper) {

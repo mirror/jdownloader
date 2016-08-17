@@ -33,7 +33,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "player.bfi.org.uk" }, urls = { "https?://(?:www\\.)?player\\.bfi\\.org\\.uk/film/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "player.bfi.org.uk" }, urls = { "https?://(?:www\\.)?player\\.bfi\\.org\\.uk/film/[a-z0-9\\-]+" }) 
 public class PlayerBfiOrgUk extends PluginForHost {
 
     public PlayerBfiOrgUk(PluginWrapper wrapper) {

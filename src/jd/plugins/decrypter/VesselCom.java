@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "https?://www\\.vessel\\.com/(?:news/)?videos/[A-Za-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "https?://www\\.vessel\\.com/(?:news/)?videos/[A-Za-z0-9\\-]+" }) 
 public class VesselCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

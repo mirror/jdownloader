@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.com" }, urls = { "http://(www\\.)?files\\.(com|co\\.uk|de|fr|com\\.au|at|com\\.sq|co\\.hu)/shared/[a-z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.com" }, urls = { "http://(www\\.)?files\\.(com|co\\.uk|de|fr|com\\.au|at|com\\.sq|co\\.hu)/shared/[a-z0-9]+/" }) 
 public class FilesCom extends PluginForHost {
 
     public FilesCom(PluginWrapper wrapper) {

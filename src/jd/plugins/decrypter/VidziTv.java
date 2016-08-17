@@ -40,7 +40,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }) 
 public class VidziTv extends antiDDoSForDecrypt {
 
     public VidziTv(PluginWrapper wrapper) {

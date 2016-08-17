@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3hamster.net" }, urls = { "http://(www\\.)?mp3hamster\\.net/(files\\.php\\?eq=[A-Za-z0-9%]+|dll2/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3hamster.net" }, urls = { "http://(www\\.)?mp3hamster\\.net/(files\\.php\\?eq=[A-Za-z0-9%]+|dll2/.+)" }) 
 public class Mp3HamsterNet extends PluginForHost {
 
     public Mp3HamsterNet(PluginWrapper wrapper) {

@@ -39,11 +39,11 @@ import jd.plugins.PluginForDecrypt;
 
 /**
  * supported: archiv doma, archiv markiza, fun tv, music tv (live stream capture is not supported)
- * 
+ *
  * @author butkovip
- * 
+ *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://video\\.markiza\\.sk/archiv\\-tv\\-markiza/[\\-a-z0-9]+/[0-9]+", "http://doma\\.markiza\\.sk/archiv\\-doma/[\\-a-z0-9]+/[0-9]+", "http://video\\.markiza\\.sk/(mini\\-music\\-tv|fun\\-tv)/[0-9]+/[\\-a-z0-9]+/[0-9]+", "http://(www\\.)?markiza\\.sk/clanok/aktualne/[^<>\"]*?\\.html" }, flags = { 0, 0, 0, 0 }, names = { "video.markiza.sk", "doma.markiza.sk", "video.markiza.sk", "video.markiza.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://video\\.markiza\\.sk/archiv\\-tv\\-markiza/[\\-a-z0-9]+/[0-9]+", "http://doma\\.markiza\\.sk/archiv\\-doma/[\\-a-z0-9]+/[0-9]+", "http://video\\.markiza\\.sk/(mini\\-music\\-tv|fun\\-tv)/[0-9]+/[\\-a-z0-9]+/[0-9]+", "http://(www\\.)?markiza\\.sk/clanok/aktualne/[^<>\"]*?\\.html" }, names = { "video.markiza.sk", "doma.markiza.sk", "video.markiza.sk", "video.markiza.sk" })
 public class VideoMarkizaSk extends PluginForDecrypt {
 
     public VideoMarkizaSk(final PluginWrapper wrapper) {
@@ -52,10 +52,12 @@ public class VideoMarkizaSk extends PluginForDecrypt {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     * 
+     *
      */
     private String AESCounterModeDecrypt(final String cipherText, final String key, int nBits) {
-        if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
+        if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+            return "Error: Must be a key mode of either 128, 192, 256 bits";
+        }
         String res = null;
         nBits = nBits / 8;
         final byte[] data = Base64.decode(cipherText.toCharArray());

@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "http://dmax\\.dedecrypted\\d+", "http://tlc\\.dedecrypted\\d+", "http://discovery\\.dedecrypted\\d+", "http://animalplanet\\.dedecrypted\\d+" }, flags = { 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "http://dmax\\.dedecrypted\\d+", "http://tlc\\.dedecrypted\\d+", "http://discovery\\.dedecrypted\\d+", "http://animalplanet\\.dedecrypted\\d+" }) 
 public class DmaxDe extends PluginForHost {
 
     public DmaxDe(PluginWrapper wrapper) {

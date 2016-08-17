@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com" }, urls = { "(http://(www\\.)?theisozonedecrypted\\.com/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com" }, urls = { "(http://(www\\.)?theisozonedecrypted\\.com/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)" }) 
 public class XboxIsoZoneCom extends PluginForHost {
 
     public XboxIsoZoneCom(PluginWrapper wrapper) {

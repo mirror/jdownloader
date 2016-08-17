@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-space.org" }, urls = { "http://(www\\.)?file\\-space\\.org/files/(free|new)?get/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-space.org" }, urls = { "http://(www\\.)?file\\-space\\.org/files/(free|new)?get/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }) 
 public class FileSpaceOrg extends PluginForHost {
 
     public FileSpaceOrg(PluginWrapper wrapper) {

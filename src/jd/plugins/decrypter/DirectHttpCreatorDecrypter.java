@@ -24,7 +24,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
     /**
      * Returns the annotations names array
@@ -57,15 +57,6 @@ public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
         }
         // System.out.println(("Directhttp: " + list.length + " pattern added!"));
         return new String[] { completePattern.toString() };
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        return new int[] { 0 };
     }
 
     public DirectHttpCreatorDecrypter(PluginWrapper wrapper) {
