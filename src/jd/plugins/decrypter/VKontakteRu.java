@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -49,10 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -80,6 +80,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return jd.plugins.hoster.VKontakteRuHoster.getProtocol();
     }
 
+    private static final String     EXCEPTION_ACCOUNT_REQUIRED                = "EXCEPTION_ACCOUNT_REQUIRED";
     private static final String     EXCEPTION_ACCPROBLEM                      = "EXCEPTION_ACCPROBLEM";
     public static final String      EXCEPTION_LINKOFFLINE                     = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
@@ -116,14 +117,15 @@ public class VKontakteRu extends PluginForDecrypt {
     private String                  vkwall_graburlsinsideposts_regex_default;
 
     /* Some supported url patterns */
-    private static final String     PATTERN_SHORT                             = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
-    private static final String     PATTERN_URL_EXTERN                        = "https?://(?:www\\.)?vk\\.com/away\\.php\\?to=.+";
-    private static final String     PATTERN_GENERAL_AUDIO                     = "https?://(www\\.)?vk\\.com/audio.*?";
-    private static final String     PATTERN_AUDIO_ALBUM                       = "https?://(?:www\\.)?vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
-    private static final String     PATTERN_AUDIO_PAGE                        = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+.*?";
-    private static final String     PATTERN_AUDIO_PAGE_oid                    = "https?://(www\\.)?vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
-    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = "https?://(www\\.)?vk\\.com/audios\\-\\d+\\?album_id=\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_Z                    = "https?://(?:www\\.)?vk\\.com/.*?z=video(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_VALID_PREFIXES                    = "https?://(?:www\\.|new\\.)?";
+    private static final String     PATTERN_SHORT                             = PATTERN_VALID_PREFIXES + "vk\\.cc/[A-Za-z0-9]+";
+    private static final String     PATTERN_URL_EXTERN                        = PATTERN_VALID_PREFIXES + "vk\\.com/away\\.php\\?to=.+";
+    private static final String     PATTERN_GENERAL_AUDIO                     = PATTERN_VALID_PREFIXES + "vk\\.com/audio.*?";
+    private static final String     PATTERN_AUDIO_ALBUM                       = PATTERN_VALID_PREFIXES + "vk\\.com/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
+    private static final String     PATTERN_AUDIO_PAGE                        = PATTERN_VALID_PREFIXES + "vk\\.com/page\\-\\d+_\\d+.*?";
+    private static final String     PATTERN_AUDIO_PAGE_oid                    = PATTERN_VALID_PREFIXES + "vk\\.com/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
+    private static final String     PATTERN_AUDIO_AUDIOS_ALBUM                = PATTERN_VALID_PREFIXES + "vk\\.com/audios\\-\\d+\\?album_id=\\d+";
+    private static final String     PATTERN_VIDEO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "vk\\.com/.*?z=video(\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL             = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
@@ -132,20 +134,20 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_ALBUM                       = "https?://(?:[a-z0-9]+\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = "https?://(?:[a-z0-9]+\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = "https?://(?:[a-z0-9]+\\.)?vk\\.com/video\\?gid=\\d+";
-    private static final String     PATTERN_PHOTO_SINGLE                      = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PHOTO_SINGLE_Z                    = "https?://(?:www\\.)?vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PHOTO_MODULE                      = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_SINGLE                      = PATTERN_VALID_PREFIXES + "vk\\.com/photo(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_SINGLE_Z                    = PATTERN_VALID_PREFIXES + "vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_MODULE                      = PATTERN_VALID_PREFIXES + "vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
-    private static final String     PATTERN_PHOTO_ALBUMS                      = "https?://(?:www\\.)?vk\\.com/.*?albums(?:\\-)?\\d+";
-    private static final String     PATTERN_GENERAL_WALL_LINK                 = "https?://(www\\.)?vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
-    private static final String     PATTERN_WALL_LOOPBACK_LINK                = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
-    private static final String     PATTERN_WALL_POST_LINK                    = "https?://(?:www\\.)?vk\\.com/wall(?:\\-)?\\d+_\\d+";
-    private static final String     PATTERN_WALL_POST_LINK_2                  = "https?://(?:www\\.)?vk\\.com/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
-    private static final String     PATTERN_PUBLIC_LINK                       = "https?://(www\\.)?vk\\.com/public\\d+";
-    private static final String     PATTERN_CLUB_LINK                         = "https?://(www\\.)?vk\\.com/club\\d+.*?";
-    private static final String     PATTERN_EVENT_LINK                        = "https?://(www\\.)?vk\\.com/event\\d+";
-    private static final String     PATTERN_ID_LINK                           = "https?://(www\\.)?vk\\.com/id\\d+";
-    private static final String     PATTERN_DOCS                              = "https?://(www\\.)?vk\\.com/docs\\?oid=\\-\\d+";
+    private static final String     PATTERN_PHOTO_ALBUMS                      = PATTERN_VALID_PREFIXES + "vk\\.com/.*?albums(?:\\-)?\\d+";
+    private static final String     PATTERN_GENERAL_WALL_LINK                 = PATTERN_VALID_PREFIXES + "vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
+    private static final String     PATTERN_WALL_LOOPBACK_LINK                = PATTERN_VALID_PREFIXES + "vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
+    private static final String     PATTERN_WALL_POST_LINK                    = PATTERN_VALID_PREFIXES + "vk\\.com/wall(?:\\-)?\\d+_\\d+";
+    private static final String     PATTERN_WALL_POST_LINK_2                  = PATTERN_VALID_PREFIXES + "vk\\.com/wall\\-\\d+.+w=wall(?:\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PUBLIC_LINK                       = PATTERN_VALID_PREFIXES + "vk\\.com/public\\d+";
+    private static final String     PATTERN_CLUB_LINK                         = PATTERN_VALID_PREFIXES + "vk\\.com/club\\d+.*?";
+    private static final String     PATTERN_EVENT_LINK                        = PATTERN_VALID_PREFIXES + "vk\\.com/event\\d+";
+    private static final String     PATTERN_ID_LINK                           = PATTERN_VALID_PREFIXES + "vk\\.com/id\\d+";
+    private static final String     PATTERN_DOCS                              = PATTERN_VALID_PREFIXES + "vk\\.com/docs\\?oid=\\-\\d+";
 
     /* Some html text patterns: English, Russian, German, Polish */
     public static final String      TEMPORARILYBLOCKED                        = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
@@ -181,6 +183,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private final boolean           docs_add_unique_id                        = true;
 
+    private boolean                 loggedIn                                  = false;
     private ArrayList<DownloadLink> decryptedLinks                            = null;
 
     /* General error handling language implementation: English | Rus | Polish */
@@ -226,7 +229,7 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_graburlsinsideposts_regex = cfg.getStringProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX, vkwall_graburlsinsideposts_regex_default);
 
         prepBrowser(br);
-        prepCryptedLink();
+        prepCryptedLink(null);
         boolean loginrequired = true;
         /* Check/fix links before browser access START */
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_SHORT)) {
@@ -265,17 +268,16 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE)) {
             loginrequired = false;
         }
-        boolean loggedIN = getUserLogin(false);
+        loggedIn = getUserLogin(false);
         try {
             if (loginrequired) {
                 /* Login process */
-                if (!loggedIN) {
-                    logger.info("Existing account is invalid or no account available, cannot decrypt link: " + CRYPTEDLINK_FUNCTIONAL);
-                    return decryptedLinks;
+                if (!loggedIn) {
+                    throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
                 }
                 /* Login process end */
             }
-
+            prepCryptedLink(Boolean.valueOf(loggedIn));
             /* Replace section start */
             String newLink = CRYPTEDLINK_FUNCTIONAL;
             if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
@@ -408,8 +410,11 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Decrypter failed for link: " + CRYPTEDLINK_FUNCTIONAL);
             e.printStackTrace();
         } catch (final DecrypterException e) {
-            try {
-                if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
+            if (e.getMessage() != null) {
+                if (e.getMessage().equals(EXCEPTION_ACCOUNT_REQUIRED)) {
+                    logger.info("Existing account is invalid or no account available, cannot process link: " + CRYPTEDLINK_FUNCTIONAL);
+                    return decryptedLinks;
+                } else if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
                     logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
                     return decryptedLinks;
                 } else if (e.getMessage().equals(EXCEPTION_API_UNKNOWN)) {
@@ -419,7 +424,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks.add(createOffline(this.CRYPTEDLINK_ORIGINAL));
                     return decryptedLinks;
                 }
-            } catch (final Exception x) {
             }
             throw e;
         }
@@ -663,27 +667,29 @@ public class VKontakteRu extends PluginForDecrypt {
         } else {
             listID = new Regex(parameter, "listid=([a-z0-9]+)").getMatch(0);
         }
-
-        jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID);
-        if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS) || this.br.toString().length() < 150) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
         try {
             br.setFollowRedirects(false);
             String correctedBR = br.toString().replace("\\", "");
             String embedHash = null;
             String filename = null;
-            String embeddedVideo = PluginJSonUtils.getJson(br, "extra_data");
-            if (embeddedVideo != null) {
-                embeddedVideo = Encoding.htmlDecode(embeddedVideo);
-                if (embeddedVideo.startsWith("http")) {
-                    decryptedLinks.add(createDownloadlink(embeddedVideo));
-                } else if (embeddedVideo.matches("[a-f0-9]{32}")) {
-                    decryptedLinks.add(createDownloadlink("http://rutube.ru/video/" + embeddedVideo));
-                } else {
-                    decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo));
+            {
+                // webui, youtube stuff within -raztoki20160817
+                jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
+                if ((br.containsHTML("<div class=\"message_page_title\">Error</div>") && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
+                    throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
                 }
-                return;
+                String ajax = br.getRegex("ajax\\.preload\\('al_video\\.php',[^\r\n]+\\);[\r\n]+").getMatch(-1);
+                if (ajax != null) {
+                    // now these are within iframe
+                    ajax = PluginJSonUtils.unescape(ajax);
+                    final String embeddedVideo = new Regex(ajax, "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
+                    if (embeddedVideo != null) {
+                        decryptedLinks.add(createDownloadlink(embeddedVideo));
+                        return;
+                    }
+                    // vk video is also within ajax.preload, so make searches faster below...
+                    correctedBR = ajax;
+                }
             }
             embedHash = new Regex(correctedBR, "\"hash\":\"([a-z0-9]+)\"").getMatch(0);
             if (embedHash == null) {
@@ -698,7 +704,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             /* Find needed information */
-            final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
+            final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities(correctedBR);
             if (foundQualities == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
@@ -780,7 +786,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
-
         } catch (final Throwable e) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -979,16 +984,18 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Same function in hoster and decrypter plugin, sync it!! */
-    private LinkedHashMap<String, String> findAvailableVideoQualities() {
+    private LinkedHashMap<String, String> findAvailableVideoQualities(String source) {
         /** Find needed information */
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        if (source == null) {
+            source = br.toString().replace("\\", "");
+        }
         /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
         final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         for (final String[] qualityInfo : qualities) {
-            String finallink = PluginJSonUtils.getJson(br, qualityInfo[0]);
+            String finallink = PluginJSonUtils.getJson(source, qualityInfo[0]);
             if (finallink == null) {
-                finallink = PluginJSonUtils.getJson(br, qualityInfo[1]);
+                finallink = PluginJSonUtils.getJson(source, qualityInfo[1]);
             }
             if (finallink != null) {
                 foundQualities.put(qualityInfo[2], finallink);
@@ -1929,11 +1936,15 @@ public class VKontakteRu extends PluginForDecrypt {
      * Basic preparations on user-added links. Make sure to remove unneeded things so that in the end, our links match the desired
      * linktypes. This is especially important because we get required IDs out of these urls or even access them directly without API.
      *
+     * @param a
+     *
      * @throws IOException
      */
-    private void prepCryptedLink() throws IOException {
+    private void prepCryptedLink(final Boolean a) throws IOException {
         /* Correct encoding, domain and protocol. */
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
+        // CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/",
+        // Boolean.FALSE.equals(a) ? "new.vk.com/" : "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need em! */
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS)) {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
