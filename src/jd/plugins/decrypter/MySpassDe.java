@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de" }, urls = { "http://(?:www\\.)?myspass\\.de/myspass/shows/(?:tv|web)shows/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de" }, urls = { "http://(?:www\\.)?myspass\\.de/myspass/shows/(?:tv|web)shows/.+" }) 
 public class MySpassDe extends PluginForDecrypt {
 
     public MySpassDe(PluginWrapper wrapper) {

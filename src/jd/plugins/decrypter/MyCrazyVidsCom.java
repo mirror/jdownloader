@@ -27,7 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mycrazyvids.com" }, urls = { "http://(www\\.)?mycrazyvids\\.com/([a-z0-9\\-_]+\\-\\d+\\.html|\\?go=click\\&c=\\d+\\&n=\\d+\\&e=\\d+\\&g=\\d+\\&r=\\d+\\&u=http[^<>\"/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mycrazyvids.com" }, urls = { "http://(www\\.)?mycrazyvids\\.com/([a-z0-9\\-_]+\\-\\d+\\.html|\\?go=click\\&c=\\d+\\&n=\\d+\\&e=\\d+\\&g=\\d+\\&r=\\d+\\&u=http[^<>\"/]+)" }) 
 public class MyCrazyVidsCom extends PornEmbedParser {
 
     public MyCrazyVidsCom(PluginWrapper wrapper) {

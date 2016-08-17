@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "howfile.com" }, urls = { "http://(www\\.)?howfile\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "howfile.com" }, urls = { "http://(www\\.)?howfile\\.com/file/[a-z0-9]+/[a-z0-9]+" }) 
 public class HowFileCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://howfile.com/";

@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vodlocker.com", "vodlocker.city" }, urls = { "https?://(?:www\\.)?vodlocker\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(?:www\\.)?vodlocker\\.city/video/\\d+/[^/]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vodlocker.com", "vodlocker.city" }, urls = { "https?://(?:www\\.)?vodlocker\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(?:www\\.)?vodlocker\\.city/video/\\d+/[^/]+" }) 
 @SuppressWarnings("deprecation")
 public class VodLockerCom extends PluginForHost {
     // Site Setters

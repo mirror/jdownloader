@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotgoo.com" }, urls = { "http://(www\\.)?hotgoo\\.com/watch/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotgoo.com" }, urls = { "http://(www\\.)?hotgoo\\.com/watch/\\d+" }) 
 public class HotGooCom extends PluginForHost {
 
     public HotGooCom(PluginWrapper wrapper) {

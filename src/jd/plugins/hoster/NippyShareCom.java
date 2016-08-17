@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/[a-z0-9]+" }) 
 public class NippyShareCom extends PluginForHost {
 
     public NippyShareCom(PluginWrapper wrapper) {

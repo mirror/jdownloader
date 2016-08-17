@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamer.nl" }, urls = { "http://(www\\.)?gamer\\.nl/(video/|game/[a-z0-9\\-]+/[a-z0-9\\-]+/videos/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamer.nl" }, urls = { "http://(www\\.)?gamer\\.nl/(video/|game/[a-z0-9\\-]+/[a-z0-9\\-]+/videos/)\\d+" }) 
 public class GamerNl extends PluginForHost {
 
     public GamerNl(PluginWrapper wrapper) {

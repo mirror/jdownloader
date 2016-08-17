@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/down/[a-f0-9]{8}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{12}|https?://www\\.blockfilestoredecrypted\\.com/folder/([a-z0-9\\-]+)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/down/[a-f0-9]{8}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{12}|https?://www\\.blockfilestoredecrypted\\.com/folder/([a-z0-9\\-]+)/\\d+" }) 
 public class BlockfilestoreCom extends PluginForHost {
 
     public BlockfilestoreCom(PluginWrapper wrapper) {

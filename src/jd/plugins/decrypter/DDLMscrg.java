@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.to" }, urls = { "http://(?:www\\.)?ddl-music\\.(?:org|to)/(download/\\d+/.*?/|download/links/[a-z0-9]+/(mirror/\\d+/)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.to" }, urls = { "http://(?:www\\.)?ddl-music\\.(?:org|to)/(download/\\d+/.*?/|download/links/[a-z0-9]+/(mirror/\\d+/)?)" }) 
 public class DDLMscrg extends PluginForDecrypt {
     private static final String DECRYPTER_DDLMSC_MAIN  = "http://(www\\.)?ddl-music\\.to/download/\\d+/.*?/";
     private static final String DECRYPTER_DDLMSC_CRYPT = "http://(www\\.)?ddl-music\\.to/download/links/[a-z0-9]+/(mirror/\\d+/)?";

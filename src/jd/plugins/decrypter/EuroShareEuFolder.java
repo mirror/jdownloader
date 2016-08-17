@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "https?://(?:www\\.)?euroshare\\.(?:eu|sk)/folder/\\d+/[^\"<>\\' ]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "https?://(?:www\\.)?euroshare\\.(?:eu|sk)/folder/\\d+/[^\"<>\\' ]+" }) 
 public class EuroShareEuFolder extends PluginForDecrypt {
 
     public EuroShareEuFolder(PluginWrapper wrapper) {

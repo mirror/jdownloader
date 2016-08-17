@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.oboz.ua" }, urls = { "http://(www\\.)?file\\.oboz\\.ua/download\\.php\\?fid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.oboz.ua" }, urls = { "http://(www\\.)?file\\.oboz\\.ua/download\\.php\\?fid=\\d+" }) 
 public class FileObozUa extends PluginForHost {
 
     public FileObozUa(PluginWrapper wrapper) {

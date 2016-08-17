@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zalivalka.ru" }, urls = { "http://(www\\.)?zalivalka\\.ru/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zalivalka.ru" }, urls = { "http://(www\\.)?zalivalka\\.ru/\\d+" }) 
 public class ZalivalkaRu extends PluginForHost {
 
     public ZalivalkaRu(PluginWrapper wrapper) {

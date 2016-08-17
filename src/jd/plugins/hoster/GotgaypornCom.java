@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotgayporn.com" }, urls = { "http://(www\\.)?gotgayporn\\.com/\\d+[a-z0-9\\-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotgayporn.com" }, urls = { "http://(www\\.)?gotgayporn\\.com/\\d+[a-z0-9\\-]+/" }) 
 public class GotgaypornCom extends PluginForHost {
 
     public GotgaypornCom(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * This decrypted decrypts embedded videos from videobash.com.. If no embedded video is found the link gets passed over to the hosterplugin
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobash\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobash\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }) 
 public class VideoBashComDecrypter extends PluginForDecrypt {
 
     public VideoBashComDecrypter(PluginWrapper wrapper) {

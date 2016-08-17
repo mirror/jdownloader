@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "falinks.com" }, urls = { "http://(www\\.)?falinks\\.com/((index\\.php)?\\?fa=link\\&id=\\d+|link/\\d+/?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "falinks.com" }, urls = { "http://(www\\.)?falinks\\.com/((index\\.php)?\\?fa=link\\&id=\\d+|link/\\d+/?)" }) 
 public class FlnksCm extends PluginForDecrypt {
 
     public FlnksCm(PluginWrapper wrapper) {

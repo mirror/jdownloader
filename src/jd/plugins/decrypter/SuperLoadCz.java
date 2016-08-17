@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superload.cz" }, urls = { "http://(www\\.)?superload\\.(cz|hu|pl|com)/dl/[^<>\"]*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superload.cz" }, urls = { "http://(www\\.)?superload\\.(cz|hu|pl|com)/dl/[^<>\"]*" }) 
 public class SuperLoadCz extends PluginForDecrypt {
 
     public SuperLoadCz(PluginWrapper wrapper) {

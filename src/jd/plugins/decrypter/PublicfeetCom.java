@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "publicfeet.com" }, urls = { "https?://(?:www\\.)?publicfeet\\.com/posts/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "publicfeet.com" }, urls = { "https?://(?:www\\.)?publicfeet\\.com/posts/\\d+" }) 
 public class PublicfeetCom extends PluginForDecrypt {
 
     public PublicfeetCom(PluginWrapper wrapper) {

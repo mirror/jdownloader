@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vii.sk" }, urls = { "http://[\\w\\.]*?vii\\.sk/video/[a-zA-Z0-9]+/[-a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vii.sk" }, urls = { "http://[\\w\\.]*?vii\\.sk/video/[a-zA-Z0-9]+/[-a-zA-Z0-9]+" }) 
 public class ViiSk extends PluginForHost {
 
     private String dlink = null;

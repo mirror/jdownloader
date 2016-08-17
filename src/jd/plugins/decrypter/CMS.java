@@ -39,21 +39,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CMS extends PluginForDecrypt {
-
-    /**
-     * Returns the annotations flags array
-     */
-    public static int[] getAnnotationFlags() {
-        final String[] names = getAnnotationNames();
-
-        final int[] ret = new int[names.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = 0;
-        }
-        return ret;
-    }
 
     /**
      * Returns the annotations names array

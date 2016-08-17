@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "http://(www\\.)?vporno\\.tv/\\d+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporno.tv" }, urls = { "http://(www\\.)?vporno\\.tv/\\d+/.{1}" }) 
 public class VPornoTv extends PluginForHost {
 
     /* DEV NOTES */

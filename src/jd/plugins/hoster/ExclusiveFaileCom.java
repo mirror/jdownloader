@@ -75,7 +75,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "exclusiveloader.com", "exclusivefaile.com" }, urls = { "https?://(www\\.)?(exclusivefaile\\.com|exclusiveloader\\.com)/((vid)?embed-)?[a-z0-9]{12}", "NOTUSED_4812jdmSDusd4aSAJD415uauadfjadafasadx" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "exclusiveloader.com", "exclusivefaile.com" }, urls = { "https?://(www\\.)?(exclusivefaile\\.com|exclusiveloader\\.com)/((vid)?embed-)?[a-z0-9]{12}", "NOTUSED_4812jdmSDusd4aSAJD415uauadfjadafasadx" }) 
 @SuppressWarnings("deprecation")
 public class ExclusiveFaileCom extends PluginForHost {
     // Site Setters

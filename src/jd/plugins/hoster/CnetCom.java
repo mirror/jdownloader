@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "http://(www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "http://(www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]*?\\.html" }) 
 public class CnetCom extends PluginForHost {
 
     public CnetCom(PluginWrapper wrapper) {

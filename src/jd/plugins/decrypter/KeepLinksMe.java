@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.me", "linkpacking.net" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu)/(p\\d*|d)/[a-z0-9]+", "http://(www\\.)?linkpacking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kprotector.com", "keeplinks.me", "linkpacking.net" }, urls = { "https?://(www\\.)?kprotector\\.com/(p\\d*|d)/[a-z0-9]+", "https?://(www\\.)?keeplinks\\.(me|eu)/(p\\d*|d)/[a-z0-9]+", "http://(www\\.)?linkpacking\\.net/(p|d)/[a-z0-9]+" }) 
 public class KeepLinksMe extends abstractSafeLinking {
 
     public KeepLinksMe(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "http://www\\.bilibilidecrypted\\.com/video/av\\d+/index_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "http://www\\.bilibilidecrypted\\.com/video/av\\d+/index_\\d+\\.html" }) 
 public class BilibiliCom extends PluginForHost {
 
     public BilibiliCom(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liens-protect.com" }, urls = { "https?://(www\\.)?liens\\-protect\\.com/[A-Za-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liens-protect.com" }, urls = { "https?://(www\\.)?liens\\-protect\\.com/[A-Za-z0-9_\\-]+" }) 
 public class LiensProtectCom extends antiDDoSForDecrypt {
 
     public LiensProtectCom(PluginWrapper wrapper) {

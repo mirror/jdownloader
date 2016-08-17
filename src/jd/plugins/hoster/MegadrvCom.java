@@ -38,7 +38,7 @@ import org.appwork.utils.formatter.SizeFormatter;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrv.com" }, urls = { "http://megadrvdecrypted\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrv.com" }, urls = { "http://megadrvdecrypted\\.com/.+" }) 
 public class MegadrvCom extends PluginForHost {
 
     public MegadrvCom(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dwn.so" }, urls = { "http://(www\\.)?(dwn\\.so/show\\-file/[a-z0-9]+/\\d+/[^<>\"/]+\\.html|st\\.dwn\\.so/v/[A-Z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dwn.so" }, urls = { "http://(www\\.)?(dwn\\.so/show\\-file/[a-z0-9]+/\\d+/[^<>\"/]+\\.html|st\\.dwn\\.so/v/[A-Z0-9]+)" }) 
 public class DwnSo extends PluginForHost {
 
     public DwnSo(PluginWrapper wrapper) {

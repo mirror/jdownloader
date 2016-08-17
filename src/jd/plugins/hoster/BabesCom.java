@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "http://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "http://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/" }) 
 public class BabesCom extends PluginForHost {
 
     public BabesCom(PluginWrapper wrapper) {

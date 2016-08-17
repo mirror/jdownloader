@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "http://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshark.pl" }, urls = { "http://(www\\.)?fileshark\\.pl/pobierz/(\\d+)/(.+)" }) 
 public class FileSharkPl extends PluginForHost {
 
     public FileSharkPl(PluginWrapper wrapper) {

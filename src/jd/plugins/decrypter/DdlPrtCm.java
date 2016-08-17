@@ -34,7 +34,7 @@ import jd.plugins.components.UserAgents;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 23331 $", interfaceVersion = 2, names = { "ddlprotect.com" }, urls = { "http://(www\\.)?ddlprotect\\.com/ml/[a-zA-Z]{5}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 23331 $", interfaceVersion = 2, names = { "ddlprotect.com" }, urls = { "http://(www\\.)?ddlprotect\\.com/ml/[a-zA-Z]{5}" }) 
 public class DdlPrtCm extends PluginForDecrypt {
 
     // DEV NOTES

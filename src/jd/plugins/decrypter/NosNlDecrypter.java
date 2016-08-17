@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://(www\\.)?nos\\.nl/(video/[A-Za-z0-9\\-_]+\\.html|/?embed/\\?id=v:\\d+|uitzendingen/(lq/)?\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://(www\\.)?nos\\.nl/(video/[A-Za-z0-9\\-_]+\\.html|/?embed/\\?id=v:\\d+|uitzendingen/(lq/)?\\d+)" }) 
 public class NosNlDecrypter extends PluginForDecrypt {
 
     public NosNlDecrypter(PluginWrapper wrapper) {

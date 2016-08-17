@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mcanime.net" }, urls = { "http://(www\\.)?[a-z0-9]+\\.mcanime\\.net/manga_enlinea/[a-z0-9\\-_]+/realidad/\\d+/1" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mcanime.net" }, urls = { "http://(www\\.)?[a-z0-9]+\\.mcanime\\.net/manga_enlinea/[a-z0-9\\-_]+/realidad/\\d+/1" }) 
 public class McAnimeNet extends PluginForDecrypt {
 
     public McAnimeNet(PluginWrapper wrapper) {

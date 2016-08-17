@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn5.com" }, urls = { "http://(?:www\\.)?porn5\\.com/video\\-\\d+(/[a-z0-9\\-]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn5.com" }, urls = { "http://(?:www\\.)?porn5\\.com/video\\-\\d+(/[a-z0-9\\-]+)?" }) 
 public class Porn5Com extends PluginForHost {
 
     public Porn5Com(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|net|org|info|me|download|eu|be|club)|isbox\\.net)/[0-9]+-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|net|org|info|me|download|eu|be|club)|isbox\\.net)/[0-9]+-.*?\\.html" }) 
 public class SrBoxCom extends PluginForDecrypt {
 
     public SrBoxCom(PluginWrapper wrapper) {

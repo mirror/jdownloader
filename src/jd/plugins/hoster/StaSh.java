@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?stadecrypted\\.sh/(zip/)?[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?stadecrypted\\.sh/(zip/)?[a-z0-9]+" }) 
 public class StaSh extends PluginForHost {
 
     public StaSh(PluginWrapper wrapper) {

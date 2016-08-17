@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tr5.in" }, urls = { "http://(www\\.)?tr5\\.in/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tr5.in" }, urls = { "http://(www\\.)?tr5\\.in/[A-Za-z0-9]+" }) 
 public class Tr5In extends PluginForDecrypt {
 
     public Tr5In(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" }) 
 public class ChThnhInfo extends PluginForDecrypt {
 
     public ChThnhInfo(PluginWrapper wrapper) {

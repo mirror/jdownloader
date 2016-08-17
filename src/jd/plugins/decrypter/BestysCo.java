@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestys.co" }, urls = { "https?://(?:www\\.)?bestys\\.co/(?:album/[A-Za-z0-9]+|(?!image/)[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestys.co" }, urls = { "https?://(?:www\\.)?bestys\\.co/(?:album/[A-Za-z0-9]+|(?!image/)[A-Za-z0-9\\-_]+)" }) 
 public class BestysCo extends PluginForDecrypt {
 
     public BestysCo(PluginWrapper wrapper) {

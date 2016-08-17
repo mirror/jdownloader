@@ -24,7 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://rabbitfiledecrypted\\.com/[A-Za-z0-9]+\\&part=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://rabbitfiledecrypted\\.com/[A-Za-z0-9]+\\&part=\\d+" }) 
 public class RabbitFileCom extends PluginForHost {
 
     public RabbitFileCom(PluginWrapper wrapper) {

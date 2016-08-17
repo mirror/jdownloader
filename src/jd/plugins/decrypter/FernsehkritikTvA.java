@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv" }, urls = { "http://(?:www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv" }, urls = { "http://(?:www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }) 
 public class FernsehkritikTvA extends PluginForDecrypt {
 
     private static final String GRAB_POSTECKE      = "GRAB_POSTECKE";

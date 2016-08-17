@@ -20,7 +20,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?\\w+|playlists/\\d+/[^/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?\\w+|playlists/\\d+/[^/]+)" }) 
 public class TedCom extends PluginForDecrypt {
 
     public TedCom(PluginWrapper wrapper) {

@@ -28,12 +28,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class RLCsh extends PluginForDecrypt {
 
     /**
      * Returns the annotations names array
-     * 
+     *
      * @return
      */
     public static String[] getAnnotationNames() {
@@ -43,7 +43,7 @@ public class RLCsh extends PluginForDecrypt {
 
     /**
      * returns the annotation pattern array
-     * 
+     *
      * @return
      */
     public static String[] getAnnotationUrls() {
@@ -52,22 +52,6 @@ public class RLCsh extends PluginForDecrypt {
 
         for (int i = 0; i < ret.length; i++) {
             ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|sitemap|reset_password|register_new|mailto|(.*?)\\.php|https:).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
-
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the annotations flags array
-     * 
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        String[] names = getAnnotationNames();
-        int[] ret = new int[names.length];
-
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = 0;
 
         }
         return ret;

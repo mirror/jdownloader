@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://discovery\\.comdecrypted\\d+", "http://tlc\\.comdecrypted\\d+", "http://animalplanet\\.comdecrypted\\d+" }, flags = { 2, 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://discovery\\.comdecrypted\\d+", "http://tlc\\.comdecrypted\\d+", "http://animalplanet\\.comdecrypted\\d+" }) 
 public class DiscoveryCom extends PluginForHost {
 
     /* Tags: Discovery Communications Inc */

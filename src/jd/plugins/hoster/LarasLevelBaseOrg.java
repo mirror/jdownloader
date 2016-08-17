@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "laraslevelbase.org" }, urls = { "http://(www\\.)?laraslevelbase\\.org/box_download\\.asp\\?Id=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "laraslevelbase.org" }, urls = { "http://(www\\.)?laraslevelbase\\.org/box_download\\.asp\\?Id=\\d+" }) 
 public class LarasLevelBaseOrg extends PluginForHost {
 
     public static Object LOCK = new Object();

@@ -41,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xyou.com" }, urls = { "http://(?:www\\.|members\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xyou.com" }, urls = { "http://(?:www\\.|members\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" }) 
 public class XyouCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")

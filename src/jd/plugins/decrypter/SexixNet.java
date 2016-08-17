@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexix.net" }, urls = { "https?://(?:www\\.)?sexix\\.net/video\\d+[a-z0-9\\-_]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexix.net" }, urls = { "https?://(?:www\\.)?sexix\\.net/video\\d+[a-z0-9\\-_]+/" }) 
 public class SexixNet extends PluginForDecrypt {
 
     public SexixNet(PluginWrapper wrapper) {

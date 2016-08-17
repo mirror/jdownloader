@@ -34,7 +34,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingfile.pl" }, urls = { "http://(?:www\\.)?kingfile\\.pl/download/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingfile.pl" }, urls = { "http://(?:www\\.)?kingfile\\.pl/download/[A-Za-z0-9]+" }) 
 public class KingfilePl extends PluginForHost {
 
     public KingfilePl(PluginWrapper wrapper) {

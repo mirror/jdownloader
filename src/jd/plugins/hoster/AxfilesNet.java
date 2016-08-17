@@ -60,7 +60,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axfiles.net" }, urls = { "https?://(www\\.)?axfiles\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axfiles.net" }, urls = { "https?://(www\\.)?axfiles\\.net/(embed\\-)?[a-z0-9]{12}" }) 
 public class AxfilesNet extends PluginForHost {
 
     private String                         correctedBR                  = "";

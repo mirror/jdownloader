@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imxd.net" }, urls = { "http://(www\\.)?imxd\\.(net|us)/file\\?id=[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imxd.net" }, urls = { "http://(www\\.)?imxd\\.(net|us)/file\\?id=[A-Z0-9]+" }) 
 public class ImXdNet extends PluginForHost {
 
     private static final boolean all_offline = true;

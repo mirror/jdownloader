@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidyard.com" }, urls = { "http://(?:www\\.)?[A-Za-z0-9]+\\.vidyard\\.com/watch/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidyard.com" }, urls = { "http://(?:www\\.)?[A-Za-z0-9]+\\.vidyard\\.com/watch/[A-Za-z0-9\\-_]+" }) 
 public class VidyardCom extends PluginForHost {
 
     public VidyardCom(PluginWrapper wrapper) {

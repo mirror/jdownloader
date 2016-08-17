@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dinoshare.cz" }, urls = { "http://(www\\.)?dinoshare\\.cz/[a-z0-9\\-]+/[A-Za-z0-9]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dinoshare.cz" }, urls = { "http://(www\\.)?dinoshare\\.cz/[a-z0-9\\-]+/[A-Za-z0-9]+/" }) 
 public class DinoShareCz extends PluginForHost {
 
     public DinoShareCz(PluginWrapper wrapper) {

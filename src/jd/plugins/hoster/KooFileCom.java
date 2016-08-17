@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "koofile.com" }, urls = { "https?://(www\\.)?koofile\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "koofile.com" }, urls = { "https?://(www\\.)?koofile\\.com/((vid)?embed-)?[a-z0-9]{12}" }) 
 @SuppressWarnings("deprecation")
 public class KooFileCom extends PluginForHost {
     // Site Setters

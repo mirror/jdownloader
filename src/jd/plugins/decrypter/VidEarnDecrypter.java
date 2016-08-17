@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?((videarn|pornxs)\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?((videarn|pornxs)\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?" }) 
 public class VidEarnDecrypter extends PluginForDecrypt {
 
     public VidEarnDecrypter(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tenlua.vn" }, urls = { "https?://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tenlua.vn" }, urls = { "https?://(www\\.)?tenlua\\.vn/[^<>\"]+" }) 
 public class TenluaVnFolder extends antiDDoSForDecrypt {
 
     public TenluaVnFolder(PluginWrapper wrapper) {

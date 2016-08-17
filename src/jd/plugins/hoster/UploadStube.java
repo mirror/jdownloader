@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadstube.de" }, urls = { "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadstube.de" }, urls = { "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*" }) 
 public class UploadStube extends PluginForHost {
 
     public UploadStube(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * Decrypts embedded vidobu links, the hosterplugin for this site exists for the other kind of links
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidobu.com" }, urls = { "http://(www\\.)?vidobu\\.com/videolar/[a-z0-9\\-_]+/(\\d+/)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidobu.com" }, urls = { "http://(www\\.)?vidobu\\.com/videolar/[a-z0-9\\-_]+/(\\d+/)?" }) 
 public class VidobuComDecrypter extends PluginForDecrypt {
 
     public VidobuComDecrypter(PluginWrapper wrapper) {

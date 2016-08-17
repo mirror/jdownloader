@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shesfreaky.com" }, urls = { "http://(www\\.)?shesfreaky\\.com/video/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shesfreaky.com" }, urls = { "http://(www\\.)?shesfreaky\\.com/video/[A-Za-z0-9\\-_]+\\.html" }) 
 public class ShesFreakyCom extends PluginForHost {
 
     public ShesFreakyCom(PluginWrapper wrapper) {

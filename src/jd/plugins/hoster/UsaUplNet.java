@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usaupload.net" }, urls = { "http://[\\w\\.]*?usaupload\\.net/d/[a-z0-9]{11}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usaupload.net" }, urls = { "http://[\\w\\.]*?usaupload\\.net/d/[a-z0-9]{11}" }) 
 public class UsaUplNet extends PluginForHost {
 
     public UsaUplNet(PluginWrapper wrapper) {

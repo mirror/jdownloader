@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cleanxvideos.net" }, urls = { "https?://(?:www\\.)?cleanxvideos\\.net/[a-z]{2}/v/\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cleanxvideos.net" }, urls = { "https?://(?:www\\.)?cleanxvideos\\.net/[a-z]{2}/v/\\d+\\.html" }) 
 public class CleanxvideosNet extends PornEmbedParser {
 
     public CleanxvideosNet(PluginWrapper wrapper) {

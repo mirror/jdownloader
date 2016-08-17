@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "green.otr-c.at" }, urls = { "http://(www\\.)?green\\.otr\\-c\\.at/download/[^<>\"\\']+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "green.otr-c.at" }, urls = { "http://(www\\.)?green\\.otr\\-c\\.at/download/[^<>\"\\']+" }) 
 public class GreenOtrCAt extends PluginForHost {
 
     public GreenOtrCAt(PluginWrapper wrapper) {

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?(telly|twitvid)\\.com/(?!awesome|post|best|funnyimpressions|http|https|index|javascript|redirect)[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?(telly|twitvid)\\.com/(?!awesome|post|best|funnyimpressions|http|https|index|javascript|redirect)[A-Z0-9]+" }) 
 public class TwitVidComDecrypter extends PluginForDecrypt {
 
     public TwitVidComDecrypter(PluginWrapper wrapper) {

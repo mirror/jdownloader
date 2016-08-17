@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" }) 
 public class YunFileComFolder extends PluginForDecrypt {
 
     public YunFileComFolder(PluginWrapper wrapper) {

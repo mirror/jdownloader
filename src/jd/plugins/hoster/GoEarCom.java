@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //goear.com hoster plugin by HerrDaur
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goear.com" }, urls = { "http://(www\\.)?(goear\\.com/listen/[0-9a-f]+/|youares\\.com/reproducir/[a-z0-9]+/[0-9a-f]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goear.com" }, urls = { "http://(www\\.)?(goear\\.com/listen/[0-9a-f]+/|youares\\.com/reproducir/[a-z0-9]+/[0-9a-f]+/)" }) 
 public class GoEarCom extends PluginForHost {
     public GoEarCom(PluginWrapper wrapper) {
         super(wrapper);

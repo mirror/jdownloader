@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "http://(www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "http://(www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" }) 
 public class StiahnitoSk extends PluginForHost {
 
     public StiahnitoSk(PluginWrapper wrapper) {

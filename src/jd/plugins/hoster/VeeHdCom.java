@@ -34,7 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veehd.com" }, urls = { "https?://(?:www\\.)?veehd\\.com/video/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veehd.com" }, urls = { "https?://(?:www\\.)?veehd\\.com/video/\\d+" }) 
 public class VeeHdCom extends antiDDoSForHost {
 
     public VeeHdCom(PluginWrapper wrapper) {

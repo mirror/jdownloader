@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubeq.xxx" }, urls = { "http://(www\\.)?tubeq\\.xxx/video/\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubeq.xxx" }, urls = { "http://(www\\.)?tubeq\\.xxx/video/\\d+\\.html" }) 
 public class TubeqXxxDecrypter extends PornEmbedParser {
 
     public TubeqXxxDecrypter(PluginWrapper wrapper) {

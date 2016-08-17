@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "https?://(?:www\\.)?hard55\\.com/post/list/[^/]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "https?://(?:www\\.)?hard55\\.com/post/list/[^/]+/\\d+" }) 
 public class Hard55Com extends PluginForDecrypt {
 
     public Hard55Com(PluginWrapper wrapper) {

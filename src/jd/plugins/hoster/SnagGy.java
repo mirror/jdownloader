@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snag.gy" }, urls = { "https?://(?:(?:www|i)\\.)?snag\\.gy/[A-Za-z0-9]+\\.jpg" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snag.gy" }, urls = { "https?://(?:(?:www|i)\\.)?snag\\.gy/[A-Za-z0-9]+\\.jpg" }) 
 public class SnagGy extends PluginForHost {
 
     public SnagGy(PluginWrapper wrapper) {

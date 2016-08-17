@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "herosh.com" }, urls = { "http://(www\\.)?(ar\\.)?herosh\\.com/download/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "herosh.com" }, urls = { "http://(www\\.)?(ar\\.)?herosh\\.com/download/\\d+/.*?\\.html" }) 
 public class HeroshCom extends PluginForHost {
 
     public HeroshCom(PluginWrapper wrapper) {

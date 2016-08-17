@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "http://(www\\.)?photoshare\\.ru/photo\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "http://(www\\.)?photoshare\\.ru/photo\\d+\\.html" }) 
 public class PhotoShareRu extends PluginForHost {
 
     public PhotoShareRu(PluginWrapper wrapper) {

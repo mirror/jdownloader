@@ -42,7 +42,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://(u\\d+\\.)?vip\\-file\\.com/download(lib)?/[^<>\"/]*?/[^<>\"/]*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://(u\\d+\\.)?vip\\-file\\.com/download(lib)?/[^<>\"/]*?/[^<>\"/]*?\\.html" }) 
 public class Vipfilecom extends PluginForHost {
 
     public static final String  FREELINKREGEX = "\"(http://vip\\-file\\.com/download([0-9]+)/.*?)\"";

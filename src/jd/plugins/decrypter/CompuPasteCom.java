@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "http://(www\\.)?compupaste\\.com/\\?v=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "http://(www\\.)?compupaste\\.com/\\?v=\\d+" }) 
 public class CompuPasteCom extends PluginForDecrypt {
 
     public CompuPasteCom(PluginWrapper wrapper) {

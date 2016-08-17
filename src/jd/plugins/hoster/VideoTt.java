@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.tt" }, urls = { "http://(www\\.)?video\\.tt/(watch_video\\.php\\?v=|video/|e/)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.tt" }, urls = { "http://(www\\.)?video\\.tt/(watch_video\\.php\\?v=|video/|e/)[A-Za-z0-9]+" }) 
 public class VideoTt extends PluginForHost {
 
     public VideoTt(PluginWrapper wrapper) {

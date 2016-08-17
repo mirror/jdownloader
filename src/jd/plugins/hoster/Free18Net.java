@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free18.net" }, urls = { "http://(www\\.)?free18\\.net/video\\-[a-z0-9\\-_]+\\-watch\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free18.net" }, urls = { "http://(www\\.)?free18\\.net/video\\-[a-z0-9\\-_]+\\-watch\\-\\d+\\.html" }) 
 public class Free18Net extends PluginForHost {
 
     public Free18Net(PluginWrapper wrapper) {

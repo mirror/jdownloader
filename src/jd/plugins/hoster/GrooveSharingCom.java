@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "groovesharing.com" }, urls = { "http://(www\\.)?(groovesharing|groovestreams)\\.com/\\?d=[A-Z0-9]+" }) 
 public class GrooveSharingCom extends PluginForHost {
 
     public GrooveSharingCom(PluginWrapper wrapper) {

@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.SizeFormatter;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrv.com" }, urls = { "http://(?:www\\.)?megadrv\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadrv.com" }, urls = { "http://(?:www\\.)?megadrv\\.com/.+" }) 
 public class MegadrvCom extends PluginForDecrypt {
 
     public MegadrvCom(PluginWrapper wrapper) {

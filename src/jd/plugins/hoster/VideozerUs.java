@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.us" }, urls = { "http://(www\\.)?videozerdecrypted\\.us/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.us" }, urls = { "http://(www\\.)?videozerdecrypted\\.us/[A-Za-z0-9\\-_]+\\.html" }) 
 public class VideozerUs extends PluginForHost {
 
     public VideozerUs(PluginWrapper wrapper) {

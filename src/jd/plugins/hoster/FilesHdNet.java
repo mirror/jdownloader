@@ -57,7 +57,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshd.net" }, urls = { "https?://(www\\.)?fileshd\\.net/((vidembed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshd.net" }, urls = { "https?://(www\\.)?fileshd\\.net/((vidembed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" }) 
 public class FilesHdNet extends PluginForHost {
 
     private String                         correctedBR                  = "";

@@ -52,7 +52,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idowatch.net" }, urls = { "https?://(?:www\\.)?idowatch\\.net/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idowatch.net" }, urls = { "https?://(?:www\\.)?idowatch\\.net/(?:embed\\-)?[a-z0-9]{12}" }) 
 public class IdowatchNet extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */

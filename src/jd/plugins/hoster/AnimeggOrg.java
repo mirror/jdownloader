@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,12 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" }) 
 public class AnimeggOrg extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -91,10 +91,10 @@ public class AnimeggOrg extends antiDDoSForHost {
         final LinkedHashMap<Integer, String> results = new LinkedHashMap<Integer, String>();
         final String[] quals = PluginJSonUtils.getJsonResultsFromArray(vidquals);
         for (final String qual : quals) {
-            final String label = PluginJSonUtils.getJson(qual, "label");
+            final String label = PluginJSonUtils.getJsonValue(qual, "label");
             final String lapel = new Regex(label, "(\\d+)p").getMatch(0);
             final Integer p = lapel != null ? Integer.parseInt(lapel) : -1;
-            final String lnk = PluginJSonUtils.getJson(qual, "file");
+            final String lnk = PluginJSonUtils.getJsonValue(qual, "file");
             if (lnk != null && lapel != null) {
                 results.put(p, lnk);
             }

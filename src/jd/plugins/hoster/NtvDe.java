@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(www\\.)?n\\-tv\\.de/mediathek/videos/[^/]+/[^/]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(www\\.)?n\\-tv\\.de/mediathek/videos/[^/]+/[^/]+\\.html" }) 
 public class NtvDe extends PluginForHost {
 
     public NtvDe(PluginWrapper wrapper) {

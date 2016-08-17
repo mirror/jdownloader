@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userporn.com" }, urls = { "http://(www\\.)?userporn\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userporn.com" }, urls = { "http://(www\\.)?userporn\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }) 
 public class UserPornCom extends PluginForHost {
 
     private static int[] internalKeys = { 526729, 269502, 264523, 130622, 575869 };

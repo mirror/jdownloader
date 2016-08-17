@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://(www\\.)?ex\\.ua/get/[0-9]+/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex.ua" }, urls = { "http://(www\\.)?ex\\.ua/get/[0-9]+/[0-9]+" }) 
 public class Xa extends PluginForDecrypt {
 
     public Xa(PluginWrapper wrapper) {

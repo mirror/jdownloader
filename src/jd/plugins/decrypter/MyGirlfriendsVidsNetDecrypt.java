@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mygirlfriendvids.net" }, urls = { "http://(www\\.)?mygirlfriendvids\\.net/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mygirlfriendvids.net" }, urls = { "http://(www\\.)?mygirlfriendvids\\.net/\\d+/.*?\\.html" }) 
 public class MyGirlfriendsVidsNetDecrypt extends PluginForDecrypt {
 
     public MyGirlfriendsVidsNetDecrypt(PluginWrapper wrapper) {

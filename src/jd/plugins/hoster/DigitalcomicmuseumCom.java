@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/index\\.php\\?dlid=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/index\\.php\\?dlid=\\d+" }) 
 public class DigitalcomicmuseumCom extends PluginForHost {
 
     public DigitalcomicmuseumCom(PluginWrapper wrapper) {

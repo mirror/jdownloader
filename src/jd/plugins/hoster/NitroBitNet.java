@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitrobit.net" }, urls = { "http://(www\\.)?nitrobit\\.net/(?:view|watch)/[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitrobit.net" }, urls = { "http://(www\\.)?nitrobit\\.net/(?:view|watch)/[A-Z0-9]+" }) 
 public class NitroBitNet extends PluginForHost {
 
     public NitroBitNet(PluginWrapper wrapper) {

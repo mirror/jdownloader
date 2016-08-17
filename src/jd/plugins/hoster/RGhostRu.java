@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://([a-z0-9]+\\.)?rghost\\.(?:net|ru)/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://([a-z0-9]+\\.)?rghost\\.(?:net|ru)/.+" }) 
 public class RGhostRu extends PluginForHost {
 
     private static final String PWTEXT              = "id=\"password_field\"";

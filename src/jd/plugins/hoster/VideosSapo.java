@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videos.sapo.pt" }, urls = { "http://(\\w+\\.)?videos\\.sapo\\.(pt|cv|ao|mz|tl)/\\w{20}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videos.sapo.pt" }, urls = { "http://(\\w+\\.)?videos\\.sapo\\.(pt|cv|ao|mz|tl)/\\w{20}" }) 
 public class VideosSapo extends PluginForHost {
 
     private String DLLINK = null;

@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ref.so" }, urls = { "http://(www\\.)?ref\\.so/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ref.so" }, urls = { "http://(www\\.)?ref\\.so/[a-z0-9]+" }) 
 public class RefSo extends PluginForDecrypt {
 
     public RefSo(PluginWrapper wrapper) {

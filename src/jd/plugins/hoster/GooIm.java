@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goo.im" }, urls = { "https?://(www\\.)?goo\\.im/[^<>\"]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goo.im" }, urls = { "https?://(www\\.)?goo\\.im/[^<>\"]+" }) 
 public class GooIm extends PluginForHost {
 
     public GooIm(PluginWrapper wrapper) {

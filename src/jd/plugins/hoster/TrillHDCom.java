@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trillhd.com" }, urls = { "https?://(www\\.)?trillhd\\.com/(?:video|embed)/\\d{4}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trillhd.com" }, urls = { "https?://(www\\.)?trillhd\\.com/(?:video|embed)/\\d{4}" }) 
 public class TrillHDCom extends PluginForHost {
 
     public TrillHDCom(PluginWrapper wrapper) {

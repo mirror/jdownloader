@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photo.qip.ru" }, urls = { "http://(?:www\\.)?photo\\.qipdecrypted\\.ru/users/[^/]+/\\d+/\\d+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photo.qip.ru" }, urls = { "http://(?:www\\.)?photo\\.qipdecrypted\\.ru/users/[^/]+/\\d+/\\d+/?" }) 
 public class PhotoQipRu extends PluginForHost {
 
     public PhotoQipRu(PluginWrapper wrapper) {

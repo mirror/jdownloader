@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldclips.ru" }, urls = { "http://(www\\.)?(dev\\.)?worldclips\\.ru/clips/[^<>\"/]*?/[^<>\"/]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldclips.ru" }, urls = { "http://(www\\.)?(dev\\.)?worldclips\\.ru/clips/[^<>\"/]*?/[^<>\"/]+" }) 
 public class WorldClipsRu extends PluginForHost {
 
     public WorldClipsRu(PluginWrapper wrapper) {

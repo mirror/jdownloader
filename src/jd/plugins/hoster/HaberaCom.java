@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "habera.com" }, urls = { "http://(www\\.)?habera\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "habera.com" }, urls = { "http://(www\\.)?habera\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" }) 
 public class HaberaCom extends PluginForHost {
 
     public HaberaCom(PluginWrapper wrapper) {

@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boxca.com" }, urls = { "https?://(www\\.)?boxca\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boxca.com" }, urls = { "https?://(www\\.)?boxca\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
 public class BoxCaCom extends PluginForHost {
 
     private String               correctedBR                  = "";

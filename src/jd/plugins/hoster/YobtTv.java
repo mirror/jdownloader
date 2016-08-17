@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iboner.com", "yobt.tv", "coolmovs.com", "bigxvideos.com", "hdporn.in", "fetishok.com", "nastymovs.com" }, urls = { "http://(www\\.)?iboner\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?yobt\\.tv/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?coolmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bigxvideos\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?hdporn\\.in/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?fetishok\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?nastymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0, 0, 0, 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iboner.com", "yobt.tv", "coolmovs.com", "bigxvideos.com", "hdporn.in", "fetishok.com", "nastymovs.com" }, urls = { "http://(www\\.)?iboner\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?yobt\\.tv/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?coolmovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?bigxvideos\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?hdporn\\.in/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?fetishok\\.com/content/\\d+/[a-z0-9\\-]+\\.html", "http://(www\\.)?nastymovs\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class YobtTv extends PluginForHost {
 
     private String dllink = null;

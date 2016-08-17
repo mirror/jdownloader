@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faphub.xxx" }, urls = { "http://(www\\.)?faphubdecrypted\\.xxx/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faphub.xxx" }, urls = { "http://(www\\.)?faphubdecrypted\\.xxx/video/\\d+" }) 
 public class FaphubXxx extends PluginForHost {
 
     public FaphubXxx(PluginWrapper wrapper) {

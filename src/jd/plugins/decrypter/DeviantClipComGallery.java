@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?(deviantclip|dagay|dachix)\\.com/watch/[A-Za-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?(deviantclip|dagay|dachix)\\.com/watch/[A-Za-z0-9\\-]+" }) 
 public class DeviantClipComGallery extends PluginForDecrypt {
 
     public DeviantClipComGallery(PluginWrapper wrapper) {

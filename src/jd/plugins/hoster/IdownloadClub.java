@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idownload.club" }, urls = { "http://(?:www\\.)?idownload\\.club/members/ext/get_file\\.php\\?file=.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idownload.club" }, urls = { "http://(?:www\\.)?idownload\\.club/members/ext/get_file\\.php\\?file=.+" }) 
 public class IdownloadClub extends PluginForHost {
 
     public IdownloadClub(PluginWrapper wrapper) {

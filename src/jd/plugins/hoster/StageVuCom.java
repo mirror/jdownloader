@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stagevu.com" }, urls = { "http://[\\w\\.]*?stagevu\\.com/(video/[a-z0-9]{12}|embed\\?.*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stagevu.com" }, urls = { "http://[\\w\\.]*?stagevu\\.com/(video/[a-z0-9]{12}|embed\\?.*)" }) 
 public class StageVuCom extends PluginForHost {
 
     public StageVuCom(PluginWrapper wrapper) {

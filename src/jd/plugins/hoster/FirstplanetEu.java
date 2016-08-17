@@ -45,7 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firstplanet.eu" }, urls = { "http://(?:www\\.)?firstplanet\\.eu/file/\\d+/[a-z0-9\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firstplanet.eu" }, urls = { "http://(?:www\\.)?firstplanet\\.eu/file/\\d+/[a-z0-9\\-]+" }) 
 public class FirstplanetEu extends PluginForHost {
 
     public FirstplanetEu(PluginWrapper wrapper) {

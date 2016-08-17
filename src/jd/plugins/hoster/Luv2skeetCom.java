@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luv2skeet.com" }, urls = { "http://(?:www\\.)?luv2skeet\\.com/\\d+(?:/[a-z0-9\\-]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luv2skeet.com" }, urls = { "http://(?:www\\.)?luv2skeet\\.com/\\d+(?:/[a-z0-9\\-]+)?" }) 
 public class Luv2skeetCom extends PluginForHost {
 
     public Luv2skeetCom(PluginWrapper wrapper) {

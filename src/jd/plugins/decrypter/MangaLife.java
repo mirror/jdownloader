@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.life" }, urls = { "https?://manga\\.life/read\\-online/[^/]+/chapter\\-\\d+(?:\\.\\d+)?/index\\-\\d+/page\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.life" }, urls = { "https?://manga\\.life/read\\-online/[^/]+/chapter\\-\\d+(?:\\.\\d+)?/index\\-\\d+/page\\-\\d+" }) 
 public class MangaLife extends PluginForDecrypt {
 
     public MangaLife(PluginWrapper wrapper) {

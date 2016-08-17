@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+|tusfil(es\\.(net|co\\.nz)|\\.es)/d/[0-9A-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+|tusfil(es\\.(net|co\\.nz)|\\.es)/d/[0-9A-Z]+)" }) 
 public class TusFilesNet extends PluginForDecrypt {
 
     public TusFilesNet(PluginWrapper wrapper) {

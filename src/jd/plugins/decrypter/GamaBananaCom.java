@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamebanana.com" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?gamebanana\\.com/[a-z0-9]+/download/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamebanana.com" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?gamebanana\\.com/[a-z0-9]+/download/\\d+" }) 
 public class GamaBananaCom extends PluginForDecrypt {
 
     public GamaBananaCom(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusch-tv.com" }, urls = { "http://(www\\.)?rusch\\-tv\\.com/player/\\?vID=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusch-tv.com" }, urls = { "http://(www\\.)?rusch\\-tv\\.com/player/\\?vID=\\d+" }) 
 public class RuschTvCom extends PluginForHost {
 
     public RuschTvCom(PluginWrapper wrapper) {

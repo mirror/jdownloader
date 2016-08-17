@@ -48,7 +48,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revclouds.com" }, urls = { "https?://(www\\.)?revclouds\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revclouds.com" }, urls = { "https?://(www\\.)?revclouds\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
 public class RevcloudsCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */

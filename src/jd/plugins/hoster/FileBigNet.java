@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebig.net" }, urls = { "http://(www\\.)?filebig\\.net/files/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebig.net" }, urls = { "http://(www\\.)?filebig\\.net/files/[A-Za-z0-9]+" }) 
 public class FileBigNet extends PluginForHost {
 
     public FileBigNet(PluginWrapper wrapper) {

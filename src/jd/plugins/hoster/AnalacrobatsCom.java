@@ -35,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "analacrobats.com" }, urls = { "https?://members\\.analacrobats\\.com/(?:en/)?[^/]+/scene/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "analacrobats.com" }, urls = { "https?://members\\.analacrobats\\.com/(?:en/)?[^/]+/scene/\\d+" }) 
 public class AnalacrobatsCom extends PluginForHost {
 
     public AnalacrobatsCom(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "http://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "http://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" }) 
 public class ShooshTimeCom extends PluginForHost {
 
     public ShooshTimeCom(PluginWrapper wrapper) {

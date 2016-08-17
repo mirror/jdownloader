@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-beat.com" }, urls = { "http://[\\w\\.]*?free-beat\\.com/audios/[0-9]+/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-beat.com" }, urls = { "http://[\\w\\.]*?free-beat\\.com/audios/[0-9]+/.*?\\.html" }) 
 public class FreeBeatDe extends PluginForHost {
 
     public FreeBeatDe(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 // this plugin supports 'folders' and 'other files of this uploader'.
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crocko.com" }, urls = { "https?://(www\\.)?(easy\\-share|crocko)\\.com/(f/[A-Z0-9]+/(.+)?|o/[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crocko.com" }, urls = { "https?://(www\\.)?(easy\\-share|crocko)\\.com/(f/[A-Z0-9]+/(.+)?|o/[0-9]+)" }) 
 public class SShrFldr extends PluginForDecrypt {
 
     public SShrFldr(PluginWrapper wrapper) {

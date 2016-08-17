@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homerj.de" }, urls = { "http://(www\\.)?homerj\\.de/index\\.php\\?show=vods\\&play=\\d+(\\&res=\\d+p)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homerj.de" }, urls = { "http://(www\\.)?homerj\\.de/index\\.php\\?show=vods\\&play=\\d+(\\&res=\\d+p)?" }) 
 public class HomerjDe extends PluginForHost {
 
     private String DLLINK = null;

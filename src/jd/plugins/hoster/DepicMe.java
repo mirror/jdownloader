@@ -52,7 +52,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depic.me" }, urls = { "https?://(?:www\\.)?depic\\.me/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depic.me" }, urls = { "https?://(?:www\\.)?depic\\.me/(?:embed\\-)?[a-z0-9]{12}" }) 
 public class DepicMe extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */

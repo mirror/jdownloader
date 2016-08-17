@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tookapic.com" }, urls = { "https?://stock\\.tookapic\\.com/photos/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tookapic.com" }, urls = { "https?://stock\\.tookapic\\.com/photos/\\d+" }) 
 public class TookapicCom extends PluginForHost {
 
     public TookapicCom(PluginWrapper wrapper) {

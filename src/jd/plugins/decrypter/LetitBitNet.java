@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net/{1,2}(folder/\\d+/\\d+|page/folder/\\d+(\\||%7C)[^<>\"\\'/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net/{1,2}(folder/\\d+/\\d+|page/folder/\\d+(\\||%7C)[^<>\"\\'/]+)" }) 
 public class LetitBitNet extends PluginForDecrypt {
 
     public LetitBitNet(PluginWrapper wrapper) {

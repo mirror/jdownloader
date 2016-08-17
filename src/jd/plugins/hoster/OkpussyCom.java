@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussydecrypted\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussydecrypted\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" }) 
 public class OkpussyCom extends PluginForHost {
 
     public OkpussyCom(PluginWrapper wrapper) {

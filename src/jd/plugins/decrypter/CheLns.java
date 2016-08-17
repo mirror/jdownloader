@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision: 23948 $", interfaceVersion = 2, names = { "cacheliens.com" }, urls = { "http://(www\\.)?cacheliens\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 23948 $", interfaceVersion = 2, names = { "cacheliens.com" }, urls = { "http://(www\\.)?cacheliens\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z0-9]+" }) 
 public class CheLns extends PluginForDecrypt {
 
     public CheLns(PluginWrapper wrapper) {

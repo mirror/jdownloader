@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1filesharing.com" }, urls = { "https?://(?:www\\.)?1filesharing\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1filesharing.com" }, urls = { "https?://(?:www\\.)?1filesharing\\.com/[A-Za-z0-9]+" }) 
 public class OneFilesharingCom extends PluginForHost {
 
     public OneFilesharingCom(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dj97.com" }, urls = { "http://(?:www\\.)?(dj97\\.com/m/\\d+|dj19\\.com/dj19/play\\d+\\.htm)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dj97.com" }, urls = { "http://(?:www\\.)?(dj97\\.com/m/\\d+|dj19\\.com/dj19/play\\d+\\.htm)" }) 
 public class Dj97Com extends PluginForHost {
 
     public Dj97Com(PluginWrapper wrapper) {

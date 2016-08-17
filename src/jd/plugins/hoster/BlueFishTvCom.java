@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "bluefishtv.comrtmpe?://(s\\d\\.)?csl\\.delvenetworks.com/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "bluefishtv.comrtmpe?://(s\\d\\.)?csl\\.delvenetworks.com/.+" }) 
 public class BlueFishTvCom extends PluginForHost {
 
     private static final String ALLOW_HD     = "ALLOW_HD";

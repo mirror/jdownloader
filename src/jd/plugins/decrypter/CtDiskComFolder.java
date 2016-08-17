@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/u/\\d{6,7}(/\\d{6,7})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/u/\\d{6,7}(/\\d{6,7})?" }) 
 public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES

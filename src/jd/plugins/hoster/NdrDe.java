@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "http://ndrdecrypted\\.de/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "http://ndrdecrypted\\.de/\\d+" }) 
 public class NdrDe extends PluginForHost {
 
     public NdrDe(PluginWrapper wrapper) {

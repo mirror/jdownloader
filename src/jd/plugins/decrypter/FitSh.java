@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30210 $", interfaceVersion = 2, names = { "fit.sh" }, urls = { "https?://(?:www\\.)?fit\\.sh/[a-zA-Z0-9]{3,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30210 $", interfaceVersion = 2, names = { "fit.sh" }, urls = { "https?://(?:www\\.)?fit\\.sh/[a-zA-Z0-9]{3,}" }) 
 @SuppressWarnings("deprecation")
 public class FitSh extends PluginForDecrypt {
 

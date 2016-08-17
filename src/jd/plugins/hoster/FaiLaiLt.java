@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "failai.lt" }, urls = { "http://[\\w\\.]*?failai\\.lt/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "failai.lt" }, urls = { "http://[\\w\\.]*?failai\\.lt/[a-z0-9]{12}" }) 
 public class FaiLaiLt extends PluginForHost {
 
     public FaiLaiLt(PluginWrapper wrapper) {

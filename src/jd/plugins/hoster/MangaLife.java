@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.life" }, urls = { "http://mangadecrypted\\.life/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.life" }, urls = { "http://mangadecrypted\\.life/\\d+" }) 
 public class MangaLife extends PluginForHost {
 
     public MangaLife(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bollywoodhungama.com" }, urls = { "http://(www\\.)?bollywoodhungama\\.com/(more/)?videos/view/([^<>\"]+/)?id/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bollywoodhungama.com" }, urls = { "http://(www\\.)?bollywoodhungama\\.com/(more/)?videos/view/([^<>\"]+/)?id/\\d+" }) 
 public class BollywoodHungamaCom extends PluginForHost {
 
     public BollywoodHungamaCom(PluginWrapper wrapper) {

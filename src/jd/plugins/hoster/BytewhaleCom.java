@@ -60,7 +60,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bytewhale.com" }, urls = { "https?://(?:www\\.)?bytewhale\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bytewhale.com" }, urls = { "https?://(?:www\\.)?bytewhale\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
 public class BytewhaleCom extends PluginForHost {
 
     private String                         correctedBR                  = "";

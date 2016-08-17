@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3dl.tv" }, urls = { "http://(www\\.)?(music|games|movies|serien|apps|porn)\\.3dl\\.tv/(download/\\d+/[^<>\"/]+/detail\\.html|folder/[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3dl.tv" }, urls = { "http://(www\\.)?(music|games|movies|serien|apps|porn)\\.3dl\\.tv/(download/\\d+/[^<>\"/]+/detail\\.html|folder/[a-z0-9]+)" }) 
 public class ThreeDlTv extends PluginForDecrypt {
 
     public ThreeDlTv(PluginWrapper wrapper) {

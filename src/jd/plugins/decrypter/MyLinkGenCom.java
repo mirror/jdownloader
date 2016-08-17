@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
  * @author psp
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mylinkgen.com" }, urls = { "https?://(?:www\\.)?mylinkgen\\.com/(p|g)/([A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mylinkgen.com" }, urls = { "https?://(?:www\\.)?mylinkgen\\.com/(p|g)/([A-Za-z0-9]+)" }) 
 public class MyLinkGenCom extends antiDDoSForDecrypt {
 
     public MyLinkGenCom(PluginWrapper wrapper) {

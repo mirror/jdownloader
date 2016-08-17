@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "http://gloriadecrypted\\.tv/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "http://gloriadecrypted\\.tv/\\d+" }) 
 public class GloriaTv extends PluginForHost {
 
     public GloriaTv(PluginWrapper wrapper) {

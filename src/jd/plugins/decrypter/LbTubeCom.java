@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lbtube.com" }, urls = { "http://(www\\.)?lbtube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lbtube.com" }, urls = { "http://(www\\.)?lbtube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class LbTubeCom extends PornEmbedParser {
 
     public LbTubeCom(PluginWrapper wrapper) {

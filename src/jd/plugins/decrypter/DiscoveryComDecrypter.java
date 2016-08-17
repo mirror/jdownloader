@@ -37,7 +37,7 @@ import jd.utils.JDHexUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://www\\.discovery\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.tlc\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.animalplanet\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discovery.com", "tlc.com", "animalplanet.com" }, urls = { "http://www\\.discovery\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.tlc\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/", "http://www\\.animalplanet\\.com/tv\\-shows/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/" }) 
 public class DiscoveryComDecrypter extends PluginForDecrypt {
 
     public DiscoveryComDecrypter(PluginWrapper wrapper) {

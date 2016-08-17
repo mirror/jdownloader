@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 import org.jdownloader.controlling.PasswordUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "http://(www\\.)?rlslog\\.net/.+/(.+/)?#comments" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "http://(www\\.)?rlslog\\.net/.+/(.+/)?#comments" }) 
 public class Rlslg extends PluginForDecrypt {
 
     public Rlslg(PluginWrapper wrapper) {

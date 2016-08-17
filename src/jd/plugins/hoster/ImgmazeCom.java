@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com" }, urls = { "https?://(www\\.)?imgmaze\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com" }, urls = { "https?://(www\\.)?imgmaze\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
 public class ImgmazeCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */

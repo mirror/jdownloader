@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "github.com" }, urls = { "https://(www\\.)?github\\.com/[^<>\"]+/downloads" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "github.com" }, urls = { "https://(www\\.)?github\\.com/[^<>\"]+/downloads" }) 
 public class GitHubCom extends PluginForHost {
 
     public GitHubCom(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornimagex.com" }, urls = { "http://(?:www\\.)?pornimagex\\.com/image/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornimagex.com" }, urls = { "http://(?:www\\.)?pornimagex\\.com/image/[A-Za-z0-9]+" }) 
 public class PornimagexCom extends PluginForHost {
 
     public PornimagexCom(PluginWrapper wrapper) {

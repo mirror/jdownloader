@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://swrmediathekdecrypted\\.de/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://swrmediathekdecrypted\\.de/\\d+" }) 
 public class SwrMediathekDe extends PluginForHost {
 
     public SwrMediathekDe(PluginWrapper wrapper) {

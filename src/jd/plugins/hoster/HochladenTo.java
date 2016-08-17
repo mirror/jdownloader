@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hochladen.to" }, urls = { "http://(www\\.)?hochladen\\.to/files/[A-Za-z0-9]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hochladen.to" }, urls = { "http://(www\\.)?hochladen\\.to/files/[A-Za-z0-9]+\\.html" }) 
 public class HochladenTo extends PluginForHost {
 
     public HochladenTo(PluginWrapper wrapper) {

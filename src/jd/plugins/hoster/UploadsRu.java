@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.ru" }, urls = { "http://(www\\.)?uploads\\.ru/(?:\\?v=)?[A-Za-z0-9]+\\.[a-z]{3,4}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.ru" }, urls = { "http://(www\\.)?uploads\\.ru/(?:\\?v=)?[A-Za-z0-9]+\\.[a-z]{3,4}" }) 
 public class UploadsRu extends PluginForHost {
 
     public UploadsRu(PluginWrapper wrapper) {

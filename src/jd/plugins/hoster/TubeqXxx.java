@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeq.xxx" }, urls = { "http://(www\\.)?tubeqdecrypted\\.xxx/video/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeq.xxx" }, urls = { "http://(www\\.)?tubeqdecrypted\\.xxx/video/\\d+\\.html" }) 
 public class TubeqXxx extends PluginForHost {
 
     public TubeqXxx(PluginWrapper wrapper) {

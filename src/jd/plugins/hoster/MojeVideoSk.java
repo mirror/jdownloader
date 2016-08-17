@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "http://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "http://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" }) 
 public class MojeVideoSk extends PluginForHost {
     private String dlink = null;
 

@@ -34,7 +34,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hippohosted.com" }, urls = { "http://(www\\.)?hippohosted\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hippohosted.com" }, urls = { "http://(www\\.)?hippohosted\\.com/[A-Za-z0-9]+" }) 
 public class HippoHostedCom extends PluginForHost {
 
     public HippoHostedCom(PluginWrapper wrapper) {

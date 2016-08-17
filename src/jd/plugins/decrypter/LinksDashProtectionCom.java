@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksprotection.com" }, urls = { "http://(?:www\\.)?linksprotection\\.com/ddl/[^/]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksprotection.com" }, urls = { "http://(?:www\\.)?linksprotection\\.com/ddl/[^/]+\\.html" }) 
 public class LinksDashProtectionCom extends PluginForDecrypt {
 
     @Override

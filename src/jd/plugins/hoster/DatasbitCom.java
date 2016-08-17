@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datasbit.com" }, urls = { "https?://(www\\.)?datasbit\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datasbit.com" }, urls = { "https?://(www\\.)?datasbit\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
 public class DatasbitCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */

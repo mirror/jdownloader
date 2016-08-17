@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg(?:\\.uol)?\\.com\\.br/files/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg(?:\\.uol)?\\.com\\.br/files/[0-9]+" }) 
 public class ShareXXpgComBr extends PluginForHost {
 
     public ShareXXpgComBr(PluginWrapper wrapper) {

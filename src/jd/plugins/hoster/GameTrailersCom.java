@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[0-9a-z\\.]+\\.mtvnservices\\.com/.*?\\?__gda__=\\d+_[0-9a-f]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[0-9a-z\\.]+\\.mtvnservices\\.com/.*?\\?__gda__=\\d+_[0-9a-f]+" }) 
 public class GameTrailersCom extends PluginForHost {
 
     public GameTrailersCom(PluginWrapper wrapper) {

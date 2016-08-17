@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extradj.com" }, urls = { "http://[\\w\\.]*?extradj.(net\\.ua|com)/music/.+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extradj.com" }, urls = { "http://[\\w\\.]*?extradj.(net\\.ua|com)/music/.+/.+" }) 
 public class ExtraDjCom extends PluginForHost {
 
     public ExtraDjCom(PluginWrapper wrapper) {

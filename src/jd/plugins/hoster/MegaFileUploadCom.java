@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megafileupload.com" }, urls = { "https?://(www\\.)?megafileupload\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megafileupload.com" }, urls = { "https?://(www\\.)?megafileupload\\.com/[A-Za-z0-9]+" }) 
 public class MegaFileUploadCom extends PluginForHost {
 
     public MegaFileUploadCom(PluginWrapper wrapper) {

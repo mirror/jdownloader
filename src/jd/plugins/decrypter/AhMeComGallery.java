@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://(www\\.)?ah\\-me\\.com/pics/gallery/\\d+/\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://(www\\.)?ah\\-me\\.com/pics/gallery/\\d+/\\d+/" }) 
 public class AhMeComGallery extends PluginForDecrypt {
 
     public AhMeComGallery(PluginWrapper wrapper) {

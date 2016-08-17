@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ebook-hell.to" }, urls = { "https?://(www\\.)?ebook\\-hell\\.to/(category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ebook-hell.to" }, urls = { "https?://(www\\.)?ebook\\-hell\\.to/(category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)" }) 
 public class EbkHellTo extends antiDDoSForDecrypt {
 
     public EbkHellTo(PluginWrapper wrapper) {

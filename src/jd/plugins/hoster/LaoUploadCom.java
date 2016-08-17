@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "laoupload.com" }, urls = { "https?://(www\\.)?laoupload\\.com/[A-Za-z0-9]{12}/[^<>\"]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "laoupload.com" }, urls = { "https?://(www\\.)?laoupload\\.com/[A-Za-z0-9]{12}/[^<>\"]+\\.html" }) 
 public class LaoUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";

@@ -45,7 +45,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfhd.de" }, urls = { "http://mfhd\\.de/notsupported/blahblbha/[a-z]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfhd.de" }, urls = { "http://mfhd\\.de/notsupported/blahblbha/[a-z]+" }) 
 public class Mfhd extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 

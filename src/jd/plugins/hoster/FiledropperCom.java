@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedropper.com" }, urls = { "http://[\\w\\.]*?filedropper\\.com/[A-Za-z0-9-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedropper.com" }, urls = { "http://[\\w\\.]*?filedropper\\.com/[A-Za-z0-9-_]+" }) 
 public class FiledropperCom extends PluginForHost {
 
     public FiledropperCom(PluginWrapper wrapper) {

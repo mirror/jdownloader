@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javmon.com" }, urls = { "https?://(www\\.)?(javmon|jamo)\\.(com|tv)/(online\\-\\d+/)?(video|movie|clip)\\-\\d+(/|\\-)[a-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javmon.com" }, urls = { "https?://(www\\.)?(javmon|jamo)\\.(com|tv)/(online\\-\\d+/)?(video|movie|clip)\\-\\d+(/|\\-)[a-z0-9\\-_]+\\.html" }) 
 public class JavMonCom extends PluginForDecrypt {
 
     public JavMonCom(PluginWrapper wrapper) {

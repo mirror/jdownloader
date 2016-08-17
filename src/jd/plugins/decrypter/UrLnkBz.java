@@ -36,7 +36,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(www\\.)?urlink\\.biz/[A-Za-z0-9]{4,6}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(www\\.)?urlink\\.biz/[A-Za-z0-9]{4,6}" }) 
 public class UrLnkBz extends PluginForDecrypt {
 
     public UrLnkBz(PluginWrapper wrapper) {

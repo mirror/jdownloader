@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy)\\.com/(file|rf)view_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy)\\.com/(file|rf)view_\\d+\\.html" }) 
 public class HundredTwentySixDiskCom extends PluginForHost {
 
     public HundredTwentySixDiskCom(PluginWrapper wrapper) {

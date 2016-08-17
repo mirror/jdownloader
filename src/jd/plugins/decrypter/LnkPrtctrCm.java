@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-protector.com" }, urls = { "http://[\\w\\.]*?link-protector\\.com(/(x-)?\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-protector.com" }, urls = { "http://[\\w\\.]*?link-protector\\.com(/(x-)?\\d+)?" }) 
 public class LnkPrtctrCm extends PluginForDecrypt {
 
     public LnkPrtctrCm(PluginWrapper wrapper) {

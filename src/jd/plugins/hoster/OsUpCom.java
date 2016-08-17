@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "os-up.com" }, urls = { "http://(www\\.)?os\\-up\\.com/filehost/file/[A-Za-z0-9]+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "os-up.com" }, urls = { "http://(www\\.)?os\\-up\\.com/filehost/file/[A-Za-z0-9]+/.{1}" }) 
 public class OsUpCom extends PluginForHost {
 
     public OsUpCom(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudeflix.com" }, urls = { "http://(?:www\\.)?nudeflix\\.com/dvd/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nudeflix.com" }, urls = { "http://(?:www\\.)?nudeflix\\.com/dvd/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }) 
 public class NudeflixCom extends PluginForHost {
 
     public NudeflixCom(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/.+" }) 
 public class NarodRuDecrypter extends PluginForDecrypt {
 
     public NarodRuDecrypter(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "http://(www\\.)?ancensored\\.com/clip/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "http://(www\\.)?ancensored\\.com/clip/.+" }) 
 public class AncensoredCom extends PluginForHost {
 
     public AncensoredCom(PluginWrapper wrapper) {

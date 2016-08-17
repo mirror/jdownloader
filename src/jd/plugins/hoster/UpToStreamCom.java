@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com" }, urls = { "http://uptostream\\.comdecrypted/[a-z0-9]{12}_\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com" }, urls = { "http://uptostream\\.comdecrypted/[a-z0-9]{12}_\\d+" }) 
 public class UpToStreamCom extends PluginForHost {
 
     public UpToStreamCom(PluginWrapper wrapper) {

@@ -38,9 +38,9 @@ import org.appwork.utils.StringUtils;
  */
 @DecrypterPlugin(revision = "$Revision: 31344 $", interfaceVersion = 3, names = { "safelinkconverter.com" },
 
-urls = { "https?://(?:\\w+\\.)?(?:safelinkconverter\\.com/(?:index\\.php|review\\.php|noadsense\\.php|decrypt(?:-2)?/)?|safelinkreview\\.com/[a-z]{2}/\\w+/)\\?(?:.*?&)?id=([a-zA-Z0-9_/\\+\\=\\-%]+)[^\\s%]*" },
+urls = { "https?://(?:\\w+\\.)?(?:safelinkconverter\\.com/(?:index\\.php|review\\.php|noadsense\\.php|decrypt(?:-2)?/)?|safelinkreview\\.com/[a-z]{2}/\\w+/)\\?(?:.*?&)?id=([a-zA-Z0-9_/\\+\\=\\-%]+)[^\\s%]*" }
 
-flags = { 0 })
+)
 public class SfLnkCnvCm extends PluginForDecrypt {
 
     public SfLnkCnvCm(final PluginWrapper wrapper) {

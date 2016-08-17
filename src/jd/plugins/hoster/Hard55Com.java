@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "http://(?:www\\.)?hard55\\.com/post/view/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "http://(?:www\\.)?hard55\\.com/post/view/\\d+" }) 
 public class Hard55Com extends PluginForHost {
 
     public Hard55Com(PluginWrapper wrapper) {

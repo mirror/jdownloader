@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prochan.com" }, urls = { "http://(?:www\\.)?prochan\\.com/(view\\?p=|embed\\?f=)[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prochan.com" }, urls = { "http://(?:www\\.)?prochan\\.com/(view\\?p=|embed\\?f=)[A-Za-z0-9\\-_]+" }) 
 public class ProchanCom extends PluginForHost {
 
     public ProchanCom(PluginWrapper wrapper) {

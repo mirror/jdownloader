@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter(\\.[a-z]+){1,2}/books\\?id=.*&pg=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter(\\.[a-z]+){1,2}/books\\?id=.*&pg=.*" }) 
 public class GoogleBooks extends PluginForHost {
 
     // Dev Notes

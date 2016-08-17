@@ -38,7 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosyupload.com" }, urls = { "https?://(www\\.)?cosyupload.com/uploads/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosyupload.com" }, urls = { "https?://(www\\.)?cosyupload.com/uploads/[a-z0-9]+" }) 
 public class CosyUploadCom extends PluginForDecrypt {
 
     public CosyUploadCom(PluginWrapper wrapper) {

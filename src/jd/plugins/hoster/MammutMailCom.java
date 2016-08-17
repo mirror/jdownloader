@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mammutmail.com" }, urls = { "http://(www\\.)?mammutmail\\.com/\\?action=download\\&sid=[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mammutmail.com" }, urls = { "http://(www\\.)?mammutmail\\.com/\\?action=download\\&sid=[a-z0-9]{32}" }) 
 public class MammutMailCom extends PluginForHost {
 
     private static final String INFOREGEX = "<p><a href=\"(http://.*?)\"><span class=\"a_blue\">Letöltés: (.*?) \\(([0-9\\.]+ [A-Za-z]+)\\)</span>";

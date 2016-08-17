@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com", "dachix.com", "dagay.com" }, urls = { "http://(www\\.)?deviantclipdecrypted\\.com/watch/[a-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dachixdecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dagaydecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com", "dachix.com", "dagay.com" }, urls = { "http://(www\\.)?deviantclipdecrypted\\.com/watch/[a-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dachixdecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dagaydecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?" }) 
 public class DeviantClipCom extends PluginForHost {
 
     public DeviantClipCom(PluginWrapper wrapper) {

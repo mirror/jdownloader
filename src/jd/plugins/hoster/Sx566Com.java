@@ -34,7 +34,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "72bbb.com" }, urls = { "https?://(?:www\\.)?72bbb\\.com/(?:file|view)\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "72bbb.com" }, urls = { "https?://(?:www\\.)?72bbb\\.com/(?:file|view)\\-\\d+\\.html" }) 
 public class Sx566Com extends PluginForHost {
 
     public Sx566Com(PluginWrapper wrapper) {

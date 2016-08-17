@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamcloud.eu" }, urls = { "http://(www\\.)?streamcloud\\.eu/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamcloud.eu" }, urls = { "http://(www\\.)?streamcloud\\.eu/[a-z0-9]{12}" }) 
 public class StreamCloudEu extends PluginForHost {
 
     private String               correctedBR                  = "";

@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoalbumy.azet.sk" }, urls = { "http://(www\\.)?videoalbumy\\.azet\\.sk/[-a-z0=9]+/[0-9a-zA-Z]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoalbumy.azet.sk" }, urls = { "http://(www\\.)?videoalbumy\\.azet\\.sk/[-a-z0=9]+/[0-9a-zA-Z]+/" }) 
 public class VideoalbumyAzetSk extends PluginForHost {
     private String dlink = null;
 

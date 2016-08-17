@@ -17,7 +17,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/[a-z0-9-_/\\%\\+\\.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/[a-z0-9-_/\\%\\+\\.]+" }) 
 public class Mangastream extends antiDDoSForHost {
 
     public Mangastream(PluginWrapper wrapper) {

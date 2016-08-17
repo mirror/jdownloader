@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" }, flags = { 2, 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de", "kika.de", "sputnik.de" }, urls = { "http://mdrdecrypted\\.de/\\d+", "http://kikadecrypted\\.de/\\d+", "http://sputnikdecrypted\\.de/\\d+" }) 
 public class MdrDe extends PluginForHost {
 
     /** Settings stuff */

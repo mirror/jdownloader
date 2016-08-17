@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/(movies(/recent/[\\w\\+\\%]+)?\\?id=/video/\\d+/|movies\\?id=%2Fvideo%2F\\d+%2F)" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/(movies(/recent/[\\w\\+\\%]+)?\\?id=/video/\\d+/|movies\\?id=%2Fvideo%2F\\d+%2F)" }) 
 public class OrgasmCom extends PluginForHost {
 
     private String DLLINK = null;

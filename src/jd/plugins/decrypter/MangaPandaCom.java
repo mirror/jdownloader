@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapanda.com" }, urls = { "http://(www\\.)?mangapanda\\.com/([a-z0-9\\-]+/\\d+|\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapanda.com" }, urls = { "http://(www\\.)?mangapanda\\.com/([a-z0-9\\-]+/\\d+|\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html)" }) 
 public class MangaPandaCom extends PluginForDecrypt {
 
     public MangaPandaCom(PluginWrapper wrapper) {

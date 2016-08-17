@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.vnn.vn" }, urls = { "http://(?:www\\.)?share\\.vnn\\.vn/tai\\-file\\-\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share.vnn.vn" }, urls = { "http://(?:www\\.)?share\\.vnn\\.vn/tai\\-file\\-\\d+" }) 
 public class ShareVnnVn extends PluginForHost {
 
     public ShareVnnVn(PluginWrapper wrapper) {

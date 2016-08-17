@@ -48,7 +48,7 @@ import org.w3c.dom.NodeList;
  * vrt.be network
  * new content handling --> data-video-src
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactiedecrypted\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporzadecrypted\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactiedecrypted\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporzadecrypted\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" }) 
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {

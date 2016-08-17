@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torrent.ajee.sh" }, urls = { "https?://torrent\\.ajee\\.sh/file\\.php\\?hash=[a-z0-9]+\\&file=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torrent.ajee.sh" }, urls = { "https?://torrent\\.ajee\\.sh/file\\.php\\?hash=[a-z0-9]+\\&file=\\d+" }) 
 public class TorrentAjeeSh extends PluginForHost {
 
     public TorrentAjeeSh(PluginWrapper wrapper) {

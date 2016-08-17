@@ -39,7 +39,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" }) 
 public class BatoTo extends PluginForDecrypt {
 
     public BatoTo(PluginWrapper wrapper) {

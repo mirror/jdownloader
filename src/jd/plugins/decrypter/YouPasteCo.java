@@ -45,7 +45,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youpaste.co" }, urls = { "http://(www\\.)?youpaste\\.co/(?:index\\.php/paste|p)/[a-zA-Z0-9_/\\+\\=\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youpaste.co" }, urls = { "http://(www\\.)?youpaste\\.co/(?:index\\.php/paste|p)/[a-zA-Z0-9_/\\+\\=\\-]+" }) 
 public class YouPasteCo extends antiDDoSForDecrypt {
 
     public YouPasteCo(PluginWrapper wrapper) {

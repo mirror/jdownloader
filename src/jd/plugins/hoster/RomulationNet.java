@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.net" }, urls = { "https?://(?:www\\.)?romulation\\.net/rom/[^/]+/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.net" }, urls = { "https?://(?:www\\.)?romulation\\.net/rom/[^/]+/[^/]+" }) 
 public class RomulationNet extends PluginForHost {
 
     public RomulationNet(PluginWrapper wrapper) {

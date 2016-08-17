@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
  ru.album.ee
  en.album.ee
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }) 
 public class AlbumEE extends PluginForDecrypt {
 
     private Pattern fileNamePattern    = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");

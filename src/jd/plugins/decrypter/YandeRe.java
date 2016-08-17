@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://(?:www\\.)?yande\\.re/post\\?tags=[^<>\"/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://(?:www\\.)?yande\\.re/post\\?tags=[^<>\"/]+" }) 
 public class YandeRe extends PluginForDecrypt {
 
     public YandeRe(PluginWrapper wrapper) {

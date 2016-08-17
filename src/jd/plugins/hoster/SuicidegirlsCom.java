@@ -42,7 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.logging2.LogInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" }) 
 public class SuicidegirlsCom extends PluginForHost {
 
     public SuicidegirlsCom(PluginWrapper wrapper) {

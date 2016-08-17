@@ -224,19 +224,6 @@ public class PluginJSonUtils {
     }
 
     /**
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * @param source
-     * @param key
-     * @return
-     */
-    @Deprecated
-    public static String getJson(final String source, final String key) {
-        return getJson(source, key, true);
-    }
-
-    /**
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki

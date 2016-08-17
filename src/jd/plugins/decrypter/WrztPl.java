@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}(/[\\w\\-\\.]+/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}(/[\\w\\-\\.]+/\\d+)?" }) 
 public class WrztPl extends PluginForDecrypt {
 
     public WrztPl(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kino-dom.tv" }, urls = { "http://(www\\.)?kino-dom.tv/\\w+/\\d+-[a-zA-Z0-9-]+?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kino-dom.tv" }, urls = { "http://(www\\.)?kino-dom.tv/\\w+/\\d+-[a-zA-Z0-9-]+?\\.html" }) 
 public class KinoDomTv extends PluginForDecrypt {
     public KinoDomTv(PluginWrapper wrapper) {
         super(wrapper);

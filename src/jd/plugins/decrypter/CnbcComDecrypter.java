@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video\\.cnbc\\.com/gallery/\\?video=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video\\.cnbc\\.com/gallery/\\?video=\\d+" }) 
 public class CnbcComDecrypter extends PluginForDecrypt {
 
     public CnbcComDecrypter(PluginWrapper wrapper) {

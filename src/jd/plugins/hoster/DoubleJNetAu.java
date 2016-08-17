@@ -32,7 +32,7 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doublej.net.au" }, urls = { "http://(www\\.)?doublej\\.net\\.au/programs/[a-z0-9\\-]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doublej.net.au" }, urls = { "http://(www\\.)?doublej\\.net\\.au/programs/[a-z0-9\\-]+/.+" }) 
 public class DoubleJNetAu extends PluginForHost {
 
     // raztoki embed video player template.

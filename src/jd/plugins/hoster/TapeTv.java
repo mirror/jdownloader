@@ -54,7 +54,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tape.tv" }, urls = { "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+(/[\\w\\-]+)?|vid/\\d+)" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tape.tv" }, urls = { "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+(/[\\w\\-]+)?|vid/\\d+)" }) 
 public class TapeTv extends PluginForHost {
 
     private class ReplacerInputStream extends InputStream {

@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(video-watch/|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(video-watch/|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" }) 
 public class XTubeCom extends PluginForHost {
 
     private String              DLLINK   = null;

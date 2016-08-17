@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tyzden.sk" }, urls = { "http://(?:www\\.)?tyzden\\.sk/(?:video-komentare|filmy|rozhovory-dna|rozhovory-tyzdna|reportaze-tyzdna|kampan|vecery-tyzdna|ankety|pripravujeme0|tyzden-na-pulte|komentare-dna)/[-0-9a-zA-Z]+.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tyzden.sk" }, urls = { "http://(?:www\\.)?tyzden\\.sk/(?:video-komentare|filmy|rozhovory-dna|rozhovory-tyzdna|reportaze-tyzdna|kampan|vecery-tyzdna|ankety|pripravujeme0|tyzden-na-pulte|komentare-dna)/[-0-9a-zA-Z]+.html" }) 
 public class TyzdenSk extends PluginForHost {
     private String dlink = null;
 

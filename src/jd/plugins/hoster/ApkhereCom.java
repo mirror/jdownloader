@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkhere.com" }, urls = { "http://([a-z]+\\.)?apkhere\\.com/app/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkhere.com" }, urls = { "http://([a-z]+\\.)?apkhere\\.com/app/[^/]+" }) 
 public class ApkhereCom extends PluginForHost {
 
     public ApkhereCom(PluginWrapper wrapper) {

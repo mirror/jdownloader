@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uber-sha.re" }, urls = { "https?://(www\\.)?uber\\-sha\\.re/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uber-sha.re" }, urls = { "https?://(www\\.)?uber\\-sha\\.re/[A-Za-z0-9]+" }) 
 public class UberShaRe extends PluginForHost {
 
     public UberShaRe(PluginWrapper wrapper) {

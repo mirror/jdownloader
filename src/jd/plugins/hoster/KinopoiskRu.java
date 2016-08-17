@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/(film/\\d+|player/[a-z0-9]+/f/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/(film/\\d+|player/[a-z0-9]+/f/\\d+)" }) 
 public class KinopoiskRu extends PluginForHost {
 
     public KinopoiskRu(PluginWrapper wrapper) {

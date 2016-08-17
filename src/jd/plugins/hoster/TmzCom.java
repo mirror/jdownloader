@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tmz.com" }, urls = { "http://(www\\.|m\\.)?tmz\\.com/videos/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tmz.com" }, urls = { "http://(www\\.|m\\.)?tmz\\.com/videos/[A-Za-z0-9\\-_]+" }) 
 public class TmzCom extends PluginForHost {
 
     public TmzCom(PluginWrapper wrapper) {

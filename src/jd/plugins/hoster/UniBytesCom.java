@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/([a-zA-Z0-9\\-\\.\\_]{11}B|[a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/([a-zA-Z0-9\\-\\.\\_]{11}B|[a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB)" }) 
 public class UniBytesCom extends PluginForHost {
 
     // DEV NOTES

@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadkadeh.ir" }, urls = { "https?://(www\\.)?uploadkadeh\\.ir/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadkadeh.ir" }, urls = { "https?://(www\\.)?uploadkadeh\\.ir/(vidembed\\-)?[a-z0-9]{12}" }) 
 public class UploadkadehIr extends PluginForHost {
 
     private String                         correctedBR                  = "";

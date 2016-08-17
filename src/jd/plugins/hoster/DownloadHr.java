@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.hr" }, urls = { "https?://(?:www\\.)?download\\.hr/software\\-.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.hr" }, urls = { "https?://(?:www\\.)?download\\.hr/software\\-.*?\\.html" }) 
 public class DownloadHr extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.download.hr";

@@ -35,7 +35,7 @@ import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/[a-z0-9\\-_%,]+(/[a-z0-9\\-_%]+/dir\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/[a-z0-9\\-_%,]+(/[a-z0-9\\-_%]+/dir\\.html)?" }) 
 public class ZippyShareComFolder extends PluginForDecrypt {
 
     public ZippyShareComFolder(PluginWrapper wrapper) {

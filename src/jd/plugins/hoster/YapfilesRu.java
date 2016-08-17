@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yapfiles.ru" }, urls = { "http://(?:www\\.)?yapfiles\\.ru/(?:show|files)/\\d+/[a-f0-9]{32}\\.(?:mp4|flv)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yapfiles.ru" }, urls = { "http://(?:www\\.)?yapfiles\\.ru/(?:show|files)/\\d+/[a-f0-9]{32}\\.(?:mp4|flv)" }) 
 public class YapfilesRu extends PluginForHost {
 
     public YapfilesRu(PluginWrapper wrapper) {

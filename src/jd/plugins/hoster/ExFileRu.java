@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exfile.ru" }, urls = { "http://(www\\.)?exfile\\.ru/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exfile.ru" }, urls = { "http://(www\\.)?exfile\\.ru/\\d+" }) 
 public class ExFileRu extends PluginForHost {
 
     public ExFileRu(PluginWrapper wrapper) {

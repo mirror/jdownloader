@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3rbup.com" }, urls = { "https?://(?:www\\.)?3rbup\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3rbup.com" }, urls = { "https?://(?:www\\.)?3rbup\\.com/[A-Za-z0-9]+" }) 
 public class ThreerbupCom extends PluginForHost {
 
     public ThreerbupCom(PluginWrapper wrapper) {

@@ -32,43 +32,33 @@ public @interface HostPlugin {
 
     /**
      * A list of pluginnames. A plugin may be used under various names.
-     * 
+     *
      * Take care that names, urls and flags ALWAYS have to have the same length.
-     * 
+     *
      * @return
      */
     String[] names();
 
     /**
      * A list of url patterns. a plugin may fit to various urls/domains.
-     * 
+     *
      * Take care that names, urls and flags ALWAYS have to have the same length.
-     * 
+     *
      * @return
      */
     String[] urls();
 
     /**
-     * A list of Pluginflags. For most plugins the flag 0 is ok. Use PluginWrapper.*** FLAGS for special cases
-     * 
-     * Take care that names, urls and flags ALWAYS have to have the same length.
-     * 
-     * @return
-     */
-
-    int[] flags();
-
-    /**
      * A Plugins interface always has to have the same value as HostPlugin.INTERFACE_VERSION . This value is used to filter out outdated
      * plugins if the plugin interface has changed.
-     * 
+     *
      * @return
      */
     int interfaceVersion();
 
     /**
      * The Revision is autoset by SVN. always is revision="$Revision$" and to not forget to ste the svn keyword svn:keywords to Revision
-     * 
+     *
      * @return
      */
     String revision();

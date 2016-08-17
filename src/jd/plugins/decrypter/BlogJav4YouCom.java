@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blog.jav4you.com" }, urls = { "http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blog.jav4you.com" }, urls = { "http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/" }) 
 public class BlogJav4YouCom extends PluginForDecrypt {
 
     public BlogJav4YouCom(PluginWrapper wrapper) {

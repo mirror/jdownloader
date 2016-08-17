@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-ultime.net" }, urls = { "http://(www\\.)?anime\\-ultime\\.net/info\\-0\\-1/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-ultime.net" }, urls = { "http://(www\\.)?anime\\-ultime\\.net/info\\-0\\-1/\\d+" }) 
 public class AnimeUltimeNet extends PluginForHost {
 
     public AnimeUltimeNet(PluginWrapper wrapper) {

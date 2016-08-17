@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stooorage.com" }, urls = { "http://(www\\.)?stooorage\\.com/(show|images)/\\d+/[A-Za-z0-9\\-\\._]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stooorage.com" }, urls = { "http://(www\\.)?stooorage\\.com/(show|images)/\\d+/[A-Za-z0-9\\-\\._]+" }) 
 public class StooorageCom extends PluginForHost {
 
     public StooorageCom(PluginWrapper wrapper) {

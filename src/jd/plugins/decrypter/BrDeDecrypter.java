@@ -37,7 +37,7 @@ import jd.plugins.hoster.BrDe;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/[^<>\"]+\\.html" }) 
 public class BrDeDecrypter extends PluginForDecrypt {
 
     private static final String TYPE_INVALID = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";

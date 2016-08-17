@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?(sharegadget\\.com|leteckaposta\\.cz)/[0-9]+." }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?(sharegadget\\.com|leteckaposta\\.cz)/[0-9]+." }) 
 public class ShareGadgetCom extends PluginForHost {
 
     public ShareGadgetCom(PluginWrapper wrapper) {

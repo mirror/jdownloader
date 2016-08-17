@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "http://tididodecrypted\\.com/a[a-f0-9]+/al[a-f0-9]+/t[a-f0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "http://tididodecrypted\\.com/a[a-f0-9]+/al[a-f0-9]+/t[a-f0-9]+" }) 
 public class TididoCom extends PluginForHost {
 
     public static final String  FAST_LINKCHECK        = "FAST_LINKCHECK";

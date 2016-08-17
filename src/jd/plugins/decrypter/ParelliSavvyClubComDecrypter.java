@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://(www\\.)?parelliconnect\\.com/resources" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://(www\\.)?parelliconnect\\.com/resources" }) 
 public class ParelliSavvyClubComDecrypter extends PluginForDecrypt {
 
     public ParelliSavvyClubComDecrypter(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)?mangatraders\\.org/manga/\\?series=\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)?mangatraders\\.org/manga/\\?series=\\w+" }) 
 public class MngTrdOg extends PluginForDecrypt {
 
     private PluginForHost plugin = null;

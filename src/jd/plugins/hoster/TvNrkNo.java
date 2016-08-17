@@ -34,7 +34,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[^<>\"/]+/[A-Z]{4}\\d{8}/sesong\\-\\d+/episode\\-\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[^<>\"/]+/[A-Z]{4}\\d{8}/sesong\\-\\d+/episode\\-\\d+" }) 
 public class TvNrkNo extends PluginForHost {
 
     public TvNrkNo(PluginWrapper wrapper) {

@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animestash.info" }, urls = { "http://(www\\.)?animestash\\.info/downloads/go/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animestash.info" }, urls = { "http://(www\\.)?animestash\\.info/downloads/go/\\d+" }) 
 public class NmeStashInfo extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */

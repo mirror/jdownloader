@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ishare.iask.sina.com.cn" }, urls = { "https?://(?:www\\.)?ishare\\.iask\\.sina\\.com\\.cn/f/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ishare.iask.sina.com.cn" }, urls = { "https?://(?:www\\.)?ishare\\.iask\\.sina\\.com\\.cn/f/\\d+\\.html" }) 
 public class IshareIaskSinaComCn extends PluginForHost {
 
     public IshareIaskSinaComCn(PluginWrapper wrapper) {

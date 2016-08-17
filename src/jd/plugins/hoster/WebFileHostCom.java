@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webfilehost.com" }, urls = { "http://(www\\.)?webfilehost\\.com/\\?mode=viewupload\\&id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webfilehost.com" }, urls = { "http://(www\\.)?webfilehost\\.com/\\?mode=viewupload\\&id=\\d+" }) 
 public class WebFileHostCom extends PluginForHost {
 
     public WebFileHostCom(PluginWrapper wrapper) {

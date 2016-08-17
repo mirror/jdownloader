@@ -35,7 +35,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aljazeera.com" }, urls = { "https?://(?:www\\.)?aljazeera\\.com/[^<>\"]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aljazeera.com" }, urls = { "https?://(?:www\\.)?aljazeera\\.com/[^<>\"]+\\.html" }) 
 public class AljazeeraCom extends PluginForHost {
 
     public AljazeeraCom(PluginWrapper wrapper) {

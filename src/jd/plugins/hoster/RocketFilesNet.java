@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //Same code as  YamiVideoCom, DivxHostedCom, RocketFilesNet, FlashVidsOrg
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rocketfiles.net" }, urls = { "http://(www\\.)?rocketfiles\\.net/video/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rocketfiles.net" }, urls = { "http://(www\\.)?rocketfiles\\.net/video/[a-z0-9]+" }) 
 public class RocketFilesNet extends PluginForHost {
 
     public RocketFilesNet(PluginWrapper wrapper) {

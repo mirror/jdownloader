@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(?:www\\.)?xxxaporn\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(?:www\\.)?xxxaporn\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html" }) 
 public class XXXAPornComDecrypter extends PluginForDecrypt {
 
     public XXXAPornComDecrypter(PluginWrapper wrapper) {

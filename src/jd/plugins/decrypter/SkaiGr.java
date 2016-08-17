@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://(?:www\\.)?skai\\.gr/\\d+/shows/show/\\?rshowid=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://(?:www\\.)?skai\\.gr/\\d+/shows/show/\\?rshowid=\\d+" }) 
 public class SkaiGr extends PluginForDecrypt {
 
     public SkaiGr(PluginWrapper wrapper) {

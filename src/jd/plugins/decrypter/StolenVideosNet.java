@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(?:www\\.)?stolenvideos\\.net/(tube/video/[a-z0-9\\-]+\\-[A-Za-z0-9]+\\.html|\\d+/[A-Za-z0-9\\-_]+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(?:www\\.)?stolenvideos\\.net/(tube/video/[a-z0-9\\-]+\\-[A-Za-z0-9]+\\.html|\\d+/[A-Za-z0-9\\-_]+\\.html)" }) 
 public class StolenVideosNet extends PluginForDecrypt {
 
     public StolenVideosNet(PluginWrapper wrapper) {

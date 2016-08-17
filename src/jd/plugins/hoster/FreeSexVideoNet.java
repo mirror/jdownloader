@@ -33,7 +33,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net" }, urls = { "http://(?:www\\.)?free\\-sex\\-video\\.net/video/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-sex-video.net" }, urls = { "http://(?:www\\.)?free\\-sex\\-video\\.net/video/[a-z0-9\\-]+\\-\\d+\\.html" }) 
 public class FreeSexVideoNet extends PluginForHost {
 
     public FreeSexVideoNet(PluginWrapper wrapper) {

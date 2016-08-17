@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/videotraining/[a-z0-9\\-]+|en/courses/[a-z0-9\\-]+|fr/formation/[a-z0-9\\-]+|es/cursos/[a-z0-9\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(de/videotraining/[a-z0-9\\-]+|en/courses/[a-z0-9\\-]+|fr/formation/[a-z0-9\\-]+|es/cursos/[a-z0-9\\-]+)" }) 
 public class Video2brainComDecrypter extends PluginForDecrypt {
 
     public Video2brainComDecrypter(PluginWrapper wrapper) {

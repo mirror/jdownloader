@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(?:www\\.)?(?:ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(?:www\\.)?(?:ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }) 
 public class FilecloudIoFolder extends PluginForDecrypt {
 
     public FilecloudIoFolder(PluginWrapper wrapper) {

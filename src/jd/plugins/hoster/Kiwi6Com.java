@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwi6.com" }, urls = { "https?://(?:(?:www\\.)?kiwi6\\.com/file/[a-z0-9]+|[a-z0-9]+\\.kiwi6\\.com/hotlink/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwi6.com" }, urls = { "https?://(?:(?:www\\.)?kiwi6\\.com/file/[a-z0-9]+|[a-z0-9]+\\.kiwi6\\.com/hotlink/[a-z0-9]+)" }) 
 public class Kiwi6Com extends PluginForHost {
 
     public Kiwi6Com(PluginWrapper wrapper) {

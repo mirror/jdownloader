@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easybytez.com" }, urls = { "http://(www\\.)?easybytez.com/users/[^<>\"\\?\\&]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easybytez.com" }, urls = { "http://(www\\.)?easybytez.com/users/[^<>\"\\?\\&]+" }) 
 public class EasyBytezComFolder extends PluginForDecrypt {
 
     public EasyBytezComFolder(PluginWrapper wrapper) {

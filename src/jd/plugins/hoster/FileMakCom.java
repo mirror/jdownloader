@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemac.com", "filekom.com" }, urls = { "https?://(www\\.)?(filemac|filekom)\\.com/[a-z0-9]{12}", "redhgz58opjgfr9cnfmj8gfvDELETEMEfvcjehgonvdqsxwdczjli8" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemac.com", "filekom.com" }, urls = { "https?://(www\\.)?(filemac|filekom)\\.com/[a-z0-9]{12}", "redhgz58opjgfr9cnfmj8gfvDELETEMEfvcjehgonvdqsxwdczjli8" }) 
 public class FileMakCom extends PluginForHost {
 
     private String              BRBEFORE            = "";

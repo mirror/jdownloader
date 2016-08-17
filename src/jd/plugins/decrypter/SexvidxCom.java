@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://sexvidx.tv/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://sexvidx.tv/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class SexvidxCom extends PluginForDecrypt {
 
     public SexvidxCom(PluginWrapper wrapper) {

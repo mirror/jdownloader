@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }) 
 public class KeezMoviesComDecrypter extends PornEmbedParser {
 
     public KeezMoviesComDecrypter(PluginWrapper wrapper) {

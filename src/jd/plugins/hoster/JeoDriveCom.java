@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jeodrive.com" }, urls = { "https?://(?:www\\.)?jeodrive\\.com/(?:download|go)/([a-z0-9\\-]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jeodrive.com" }, urls = { "https?://(?:www\\.)?jeodrive\\.com/(?:download|go)/([a-z0-9\\-]+)" }) 
 public class JeoDriveCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")

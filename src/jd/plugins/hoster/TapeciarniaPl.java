@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tapeciarnia.pl" }, urls = { "http://(?:www\\.)?tapeciarnia\\.pl/\\d+_[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tapeciarnia.pl" }, urls = { "http://(?:www\\.)?tapeciarnia\\.pl/\\d+_[^/]+" }) 
 public class TapeciarniaPl extends PluginForHost {
 
     public TapeciarniaPl(PluginWrapper wrapper) {

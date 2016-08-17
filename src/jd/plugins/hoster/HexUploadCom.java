@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hexupload.com" }, urls = { "https?://(www\\.)?hexupload\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hexupload.com" }, urls = { "https?://(www\\.)?hexupload\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
 public class HexUploadCom extends PluginForHost {
 
     private String               correctedBR                  = "";

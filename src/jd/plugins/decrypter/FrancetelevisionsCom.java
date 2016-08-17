@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FrancetelevisionsCom extends PluginForDecrypt {
 
     /**
@@ -51,21 +51,6 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
         int i = 0;
         for (final String domain : getAnnotationNames()) {
             a[i] = "https?://(?:www\\.)?" + Pattern.quote(domain) + "/.+";
-            i++;
-        }
-        return a;
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        int[] a = new int[getAnnotationNames().length];
-        int i = 0;
-        for (final String domain : getAnnotationNames()) {
-            a[i] = 0;
             i++;
         }
         return a;

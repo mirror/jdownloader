@@ -28,7 +28,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://yunpandecrypted\\.cn/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://yunpandecrypted\\.cn/\\d+" }) 
 public class YunPanCn extends PluginForHost {
 
     public static final String html_preDownloadPassword = "<input class=\"pwd-input\" type=\"";

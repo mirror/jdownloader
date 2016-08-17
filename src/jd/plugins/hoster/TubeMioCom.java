@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubemio.com" }, urls = { "http://(?:www\\.)?tubemio\\.com/view/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubemio.com" }, urls = { "http://(?:www\\.)?tubemio\\.com/view/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class TubeMioCom extends PluginForHost {
 
     public TubeMioCom(PluginWrapper wrapper) {

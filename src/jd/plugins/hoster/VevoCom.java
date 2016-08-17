@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vevo.com" }, urls = { "http://vevodecrypted/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vevo.com" }, urls = { "http://vevodecrypted/\\d+" }) 
 public class VevoCom extends PluginForHost {
 
     public VevoCom(PluginWrapper wrapper) {

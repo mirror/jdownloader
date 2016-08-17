@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.net" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.net/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.net" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.net/\\d+" }) 
 public class FayloobmennikNet extends PluginForHost {
 
     public FayloobmennikNet(PluginWrapper wrapper) {

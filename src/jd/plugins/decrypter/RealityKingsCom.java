@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "http://(?:www\\.)?members\\.(?:rk|realitykings)\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "http://(?:www\\.)?members\\.(?:rk|realitykings)\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+.+" }) 
 public class RealityKingsCom extends PluginForDecrypt {
 
     public RealityKingsCom(PluginWrapper wrapper) {

@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "119g.com" }, urls = { "http://(www\\.)?d\\.119g\\.com/f/[A-Z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "119g.com" }, urls = { "http://(www\\.)?d\\.119g\\.com/f/[A-Z0-9]+\\.html" }) 
 public class OneHundredNineteenGCom extends PluginForHost {
 
     public OneHundredNineteenGCom(PluginWrapper wrapper) {

@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modthesims.info" }, urls = { "http://[a-z0-9]+\\.modthesims2\\.com/files/[^<>\"]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modthesims.info" }, urls = { "http://[a-z0-9]+\\.modthesims2\\.com/files/[^<>\"]+" }) 
 public class ModTheSimsInfo extends PluginForHost {
 
     public ModTheSimsInfo(PluginWrapper wrapper) {

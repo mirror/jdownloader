@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hastateam.com" }, urls = { "http://(www\\.)?hastateam.com/getfile\\.php\\?num_link=\\d+\\&name=[^<>\"/]+/[^<>\"/]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hastateam.com" }, urls = { "http://(www\\.)?hastateam.com/getfile\\.php\\?num_link=\\d+\\&name=[^<>\"/]+/[^<>\"/]+" }) 
 public class HastaTeamComHoster extends PluginForHost {
 
     public HastaTeamComHoster(PluginWrapper wrapper) {

@@ -35,7 +35,7 @@ import jd.plugins.hoster.TrinimixzoneCom;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "https?://(www\\.)?trinimixzone\\.com/forum/[^\\s/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "https?://(www\\.)?trinimixzone\\.com/forum/[^\\s/]+" }) 
 public class TrnmxznCm extends PluginForDecrypt {
 
     public TrnmxznCm(PluginWrapper wrapper) {

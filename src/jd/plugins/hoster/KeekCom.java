@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keek.com" }, urls = { "https?://(?:www\\.)?keek\\.com/keek/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keek.com" }, urls = { "https?://(?:www\\.)?keek\\.com/keek/[A-Za-z0-9]+" }) 
 public class KeekCom extends PluginForHost {
 
     public KeekCom(PluginWrapper wrapper) {

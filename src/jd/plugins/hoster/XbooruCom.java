@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "http://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "http://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" }) 
 public class XbooruCom extends PluginForHost {
 
     public XbooruCom(PluginWrapper wrapper) {

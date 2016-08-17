@@ -47,7 +47,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }) 
 public class Publish2Me extends K2SApi {
 
     private final String MAINPAGE = "http://publish2.me";

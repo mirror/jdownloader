@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "220.ro" }, urls = { "http://(www\\.)?220\\.ro/(embi/[A-Za-z0-9]+|[a-z0-9\\-]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+/)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "220.ro" }, urls = { "http://(www\\.)?220\\.ro/(embi/[A-Za-z0-9]+|[a-z0-9\\-]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+/)" }) 
 public class TwoHundredTwentyRo extends PluginForHost {
 
     public TwoHundredTwentyRo(PluginWrapper wrapper) {

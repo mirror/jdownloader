@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "someimage.com" }, urls = { "https?://someimage\\.com/([^<>\"]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "someimage.com" }, urls = { "https?://someimage\\.com/([^<>\"]+)" }) 
 public class SomeImageCom extends PluginForHost {
 
     public SomeImageCom(PluginWrapper wrapper) {

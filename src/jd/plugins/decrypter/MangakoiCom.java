@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "https?://(?:www\\.)?mangakoi\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "https?://(?:www\\.)?mangakoi\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" }) 
 public class MangakoiCom extends antiDDoSForDecrypt {
 
     public MangakoiCom(PluginWrapper wrapper) {

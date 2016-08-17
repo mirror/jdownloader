@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "omerta.is" }, urls = { "https?://(?:www\\.)?omerta\\.is/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "omerta.is" }, urls = { "https?://(?:www\\.)?omerta\\.is/[A-Za-z0-9]+" }) 
 public class OmertaIs extends PluginForHost {
 
     public OmertaIs(PluginWrapper wrapper) {

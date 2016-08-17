@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filemirror.org" }, urls = { "http://(?:www\\.)?filemirror\\.org/mirror/mirror\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filemirror.org" }, urls = { "http://(?:www\\.)?filemirror\\.org/mirror/mirror\\.php\\?id=\\d+" }) 
 public class FilemirrorOrg extends PluginForDecrypt {
 
     public FilemirrorOrg(PluginWrapper wrapper) {

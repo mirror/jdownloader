@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "http://(www\\.)?sexuria\\.com/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html|http://(www\\.)?sexuria\\.com/(v1/)?dl_links_\\d+_\\d+\\.html|http://(www\\.)?sexuria\\.com/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "http://(www\\.)?sexuria\\.com/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html|http://(www\\.)?sexuria\\.com/(v1/)?dl_links_\\d+_\\d+\\.html|http://(www\\.)?sexuria\\.com/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" }) 
 public class Sxrcm extends PluginForDecrypt {
 
     private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("http://(www\\.)?sexuria\\.com/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);

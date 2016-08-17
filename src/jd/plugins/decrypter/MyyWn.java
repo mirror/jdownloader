@@ -39,7 +39,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 33828 $", interfaceVersion = 3, names = { "myegy.win" }, urls = { "https?://(?:www\\.)?myegy\\.win/link/(\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 33828 $", interfaceVersion = 3, names = { "myegy.win" }, urls = { "https?://(?:www\\.)?myegy\\.win/link/(\\d+)" }) 
 public class MyyWn extends antiDDoSForDecrypt {
 
     public MyyWn(PluginWrapper wrapper) {

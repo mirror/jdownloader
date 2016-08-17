@@ -42,7 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.cryptojs.CryptoJS;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }) 
 public class MangaTradersOrg extends antiDDoSForHost {
 
     private boolean      weAreAlreadyLoggedIn = false;

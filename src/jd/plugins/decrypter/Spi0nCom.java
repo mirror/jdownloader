@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spi0n.com" }, urls = { "http://www\\.spi0n\\.com/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spi0n.com" }, urls = { "http://www\\.spi0n\\.com/[a-z0-9\\-_]+" }) 
 public class Spi0nCom extends PluginForDecrypt {
 
     public Spi0nCom(PluginWrapper wrapper) {

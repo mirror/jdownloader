@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornstarnetwork.com" }, urls = { "https?://(?:www\\.)?pornstarnetwork\\.com/video/(?:(?:[a-z0-9\\-_]+)?\\d+\\.html|embed\\?id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornstarnetwork.com" }, urls = { "https?://(?:www\\.)?pornstarnetwork\\.com/video/(?:(?:[a-z0-9\\-_]+)?\\d+\\.html|embed\\?id=\\d+)" }) 
 public class PornStarNetworkCom extends PluginForHost {
 
     public PornStarNetworkCom(PluginWrapper wrapper) {

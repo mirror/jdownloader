@@ -12,8 +12,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision: 28714 $", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(\\w*\\.)?dancehallarena\\.com/[a-zA-Z0-9\\-/]+" }, flags = { 0 })
-public class DncHllArCom extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 28714 $", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(\\w*\\.)?dancehallarena\\.com/[a-zA-Z0-9\\-/]+" }) public class DncHllArCom extends antiDDoSForDecrypt {
 
     public DncHllArCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymedia\\.yam\\.com/(m/\\d+|media_playlist_listcontent\\.php\\?pID=\\d+(\\&numrw=\\d+\\&)?|embed_playlist\\.swf\\?pID=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymedia\\.yam\\.com/(m/\\d+|media_playlist_listcontent\\.php\\?pID=\\d+(\\&numrw=\\d+\\&)?|embed_playlist\\.swf\\?pID=\\d+)" }) 
 public class MymediaYamComDecrypter extends PluginForDecrypt {
 
     public MymediaYamComDecrypter(PluginWrapper wrapper) {

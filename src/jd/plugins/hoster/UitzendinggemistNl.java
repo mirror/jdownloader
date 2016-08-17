@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uitzendinggemist.nl" }, urls = { "http://(www\\.)?uitzendinggemist\\.nl/afleveringen/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uitzendinggemist.nl" }, urls = { "http://(www\\.)?uitzendinggemist\\.nl/afleveringen/\\d+" }) 
 public class UitzendinggemistNl extends PluginForHost {
 
     private enum Quality {

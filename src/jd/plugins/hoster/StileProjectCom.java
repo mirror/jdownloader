@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileprojectdecrypted\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileprojectdecrypted\\.com/video/\\d+" }) 
 public class StileProjectCom extends PluginForHost {
 
     private String DLLINK = null;

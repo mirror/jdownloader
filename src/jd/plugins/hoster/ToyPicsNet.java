@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toypics.net" }, urls = { "http://(www\\.)?videos\\.toypics\\.net/view/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toypics.net" }, urls = { "http://(www\\.)?videos\\.toypics\\.net/view/\\d+/[a-z0-9\\-_]+/" }) 
 public class ToyPicsNet extends PluginForHost {
 
     public ToyPicsNet(PluginWrapper wrapper) {

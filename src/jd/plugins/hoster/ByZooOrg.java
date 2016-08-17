@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byzoo.org" }, urls = { "http://(www\\.)?byzoo\\.org/embed\\.php\\?.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byzoo.org" }, urls = { "http://(www\\.)?byzoo\\.org/embed\\.php\\?.+" }) 
 public class ByZooOrg extends PluginForHost {
 
     // raztoki embed video player template.

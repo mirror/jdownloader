@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lixy.in" }, urls = { "http://[\\w\\.]*?lixy\\.in/-[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lixy.in" }, urls = { "http://[\\w\\.]*?lixy\\.in/-[0-9]+" }) 
 public class LxyN extends PluginForDecrypt {
 
     public LxyN(PluginWrapper wrapper) {

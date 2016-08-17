@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?" }) 
 public class XpnFldr extends PluginForDecrypt {
 
     public XpnFldr(PluginWrapper wrapper) {

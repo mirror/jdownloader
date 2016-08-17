@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "givemegay.com" }, urls = { "http://(www\\.)?givemegay\\.com/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "givemegay.com" }, urls = { "http://(www\\.)?givemegay\\.com/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class GivemegayCom extends PluginForHost {
 
     public GivemegayCom(PluginWrapper wrapper) {

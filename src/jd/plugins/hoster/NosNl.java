@@ -42,7 +42,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://nosdecrypted\\.nl/\\d+|http://nos\\.nl/(audio/\\d+/|embed/\\?id=a:\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://nosdecrypted\\.nl/\\d+|http://nos\\.nl/(audio/\\d+/|embed/\\?id=a:\\d+)" }) 
 public class NosNl extends PluginForHost {
 
     public NosNl(PluginWrapper wrapper) {

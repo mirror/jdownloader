@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "http://[\\w\\.]*?girlshare\\.ro/[0-9\\.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "http://[\\w\\.]*?girlshare\\.ro/[0-9\\.]+" }) 
 public class GirlShareRo extends PluginForHost {
 
     private static AtomicReference<String> agent = new AtomicReference<String>(RandomUserAgent.generate());

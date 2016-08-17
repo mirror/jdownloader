@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbar.net" }, urls = { "http://(www\\.)?imgbar\\.net/img\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbar.net" }, urls = { "http://(www\\.)?imgbar\\.net/img\\-\\d+\\.html" }) 
 public class ImgBarNet extends PluginForHost {
 
     public ImgBarNet(PluginWrapper wrapper) {

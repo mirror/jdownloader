@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/(video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|media/rm\\d+/(tt|nm|rg)\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/(video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|media/rm\\d+/(tt|nm|rg)\\d+)" }) 
 public class ImDbCom extends PluginForHost {
 
     private String              DLLINK     = null;

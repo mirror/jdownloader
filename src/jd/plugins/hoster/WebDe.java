@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "web.de" }, urls = { "https?://(www\\.)?web\\.de/magazine/nachrichten/[a-z]+/\\d+[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "web.de" }, urls = { "https?://(www\\.)?web\\.de/magazine/nachrichten/[a-z]+/\\d+[a-z0-9\\-]+\\.html" }) 
 public class WebDe extends PluginForHost {
 
     public WebDe(PluginWrapper wrapper) {

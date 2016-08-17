@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lilfile.com" }, urls = { "http://(www\\.)?lilfile\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lilfile.com" }, urls = { "http://(www\\.)?lilfile\\.com/[A-Za-z0-9]+" }) 
 public class LilFileCom extends PluginForHost {
 
     public LilFileCom(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafe\\.com/((watch|fplayer)/(sy\\-)?\\d+/.{1}|watch/yt\\-[A-Za-z0-9\\-_]+/.{1})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafe\\.com/((watch|fplayer)/(sy\\-)?\\d+/.{1}|watch/yt\\-[A-Za-z0-9\\-_]+/.{1})" }) 
 public class MetaCafeComDecrypter extends PluginForDecrypt {
 
     public MetaCafeComDecrypter(PluginWrapper wrapper) {

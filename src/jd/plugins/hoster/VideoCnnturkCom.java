@@ -36,7 +36,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.w3c.dom.Document;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.cnnturk.com" }, urls = { "http://(www\\.)?video\\.cnnturk\\.com/\\d+/\\w+/\\d+/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.cnnturk.com" }, urls = { "http://(www\\.)?video\\.cnnturk\\.com/\\d+/\\w+/\\d+/\\d+/[a-z0-9\\-]+" }) 
 public class VideoCnnturkCom extends PluginForHost {
 
     private String   DLLINK = null;

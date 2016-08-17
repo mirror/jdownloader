@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(?:www\\.)?vmalldecrypted\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(?:www\\.)?vmalldecrypted\\.com/\\d+" }) 
 public class VmallCom extends PluginForHost {
 
     public VmallCom(PluginWrapper wrapper) {

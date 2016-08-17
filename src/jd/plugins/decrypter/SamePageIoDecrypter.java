@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "https://samepage\\.io/([a-z0-9]+/share/[a-z0-9]+|app/#(!|%21)/[a-z0-9]+/page\\-\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "https://samepage\\.io/([a-z0-9]+/share/[a-z0-9]+|app/#(!|%21)/[a-z0-9]+/page\\-\\d+)" }) 
 public class SamePageIoDecrypter extends PluginForDecrypt {
 
     public SamePageIoDecrypter(PluginWrapper wrapper) {

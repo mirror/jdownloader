@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dmax.de" }, urls = { "http://(www\\.)?(dmax|tlc|animalplanet|discovery)\\.de/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dmax.de" }, urls = { "http://(www\\.)?(dmax|tlc|animalplanet|discovery)\\.de/.+" }) 
 public class DmaxDeDecrypter extends PluginForDecrypt {
 
     public DmaxDeDecrypter(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+(.+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+(.+)?" }) 
 public class MovikiRu extends PluginForHost {
 
     public MovikiRu(PluginWrapper wrapper) {

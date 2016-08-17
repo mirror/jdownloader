@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectup.com" }, urls = { "http://(www\\.)?protectup\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectup.com" }, urls = { "http://(www\\.)?protectup\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" }) 
 public class PrtUpCm extends PluginForDecrypt {
 
     // DEV NOTES

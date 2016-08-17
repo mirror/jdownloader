@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "http://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "http://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" }) 
 public class GaskrankTv extends PluginForHost {
 
     public GaskrankTv(PluginWrapper wrapper) {

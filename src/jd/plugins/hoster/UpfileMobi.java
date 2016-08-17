@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file&f=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file&f=\\d+)" }) 
 public class UpfileMobi extends PluginForHost {
 
     private final String password_required = "Enter password:<br/>";

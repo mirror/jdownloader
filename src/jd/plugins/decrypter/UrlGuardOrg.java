@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlguard.org" }, urls = { "http://(www\\.)?urlguard\\.org/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlguard.org" }, urls = { "http://(www\\.)?urlguard\\.org/[a-z0-9]+" }) 
 public class UrlGuardOrg extends PluginForDecrypt {
 
     public UrlGuardOrg(PluginWrapper wrapper) {

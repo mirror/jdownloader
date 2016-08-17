@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.us" }, urls = { "https?://(www\\.)?videozer\\.us/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.us" }, urls = { "https?://(www\\.)?videozer\\.us/[A-Za-z0-9\\-_]+\\.html" }) 
 public class VideozerUsDecrypter extends PluginForDecrypt {
 
     public VideozerUsDecrypter(PluginWrapper wrapper) {

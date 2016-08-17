@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eba.gov.tr" }, urls = { "http://(www\\.)?eba\\.gov\\.tr/(video/(?!izle/)[a-z0-9\\-_]+|dergi/goster/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eba.gov.tr" }, urls = { "http://(www\\.)?eba\\.gov\\.tr/(video/(?!izle/)[a-z0-9\\-_]+|dergi/goster/\\d+)" }) 
 public class EbaGovTrFolder extends PluginForDecrypt {
 
     public EbaGovTrFolder(PluginWrapper wrapper) {

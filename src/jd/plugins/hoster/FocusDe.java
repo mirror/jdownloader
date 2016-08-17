@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "focus.de" }, urls = { "http://(?:www\\.)?focus\\.de/[A-Za-z]+/(?:videos|internet/[a-zA-Z]+)/[\\w\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "focus.de" }, urls = { "http://(?:www\\.)?focus\\.de/[A-Za-z]+/(?:videos|internet/[a-zA-Z]+)/[\\w\\-]+\\.html" }) 
 public class FocusDe extends PluginForHost {
 
     public FocusDe(PluginWrapper wrapper) {

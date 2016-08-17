@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onf.ca" }, urls = { "https?://(www\\.)?(onf|nfb)\\.ca/film/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onf.ca" }, urls = { "https?://(www\\.)?(onf|nfb)\\.ca/film/[a-z0-9\\-_]+" }) 
 public class OnfCa extends PluginForHost {
 
     public OnfCa(PluginWrapper wrapper) {

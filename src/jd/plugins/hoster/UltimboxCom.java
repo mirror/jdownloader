@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultimbox.com" }, urls = { "https?://(www\\.)?ultimbox\\.com/mega/(?!index\\.[a-z]+)[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultimbox.com" }, urls = { "https?://(www\\.)?ultimbox\\.com/mega/(?!index\\.[a-z]+)[A-Za-z0-9]+" }) 
 public class UltimboxCom extends PluginForHost {
 
     public UltimboxCom(PluginWrapper wrapper) {

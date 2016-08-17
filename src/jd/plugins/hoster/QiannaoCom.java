@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qiannao.com" }, urls = { "http://(www\\.)?qiannao\\.com/(file/[a-z0-9]+/[a-z0-9]+|space/file/[^<>\"]*\\.page)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qiannao.com" }, urls = { "http://(www\\.)?qiannao\\.com/(file/[a-z0-9]+/[a-z0-9]+|space/file/[^<>\"]*\\.page)" }) 
 public class QiannaoCom extends PluginForHost {
 
     public QiannaoCom(PluginWrapper wrapper) {

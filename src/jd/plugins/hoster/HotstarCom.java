@@ -35,7 +35,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotstar.com" }, urls = { "https?://(?:www\\.)?hotstar\\.com/.+/\\d{10}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotstar.com" }, urls = { "https?://(?:www\\.)?hotstar\\.com/.+/\\d{10}" }) 
 public class HotstarCom extends PluginForHost {
 
     public HotstarCom(PluginWrapper wrapper) {

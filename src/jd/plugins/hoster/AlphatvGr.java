@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
 /*Similar websites: bca-onlive.de, asscompact.de*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(www\\.)?alphatv\\.gr/shows/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(www\\.)?alphatv\\.gr/shows/.+" }) 
 public class AlphatvGr extends PluginForHost {
 
     public AlphatvGr(PluginWrapper wrapper) {

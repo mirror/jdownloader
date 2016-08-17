@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "http://(www\\.)?wikifortio\\.com/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "http://(www\\.)?wikifortio\\.com/\\d+/" }) 
 public class WikiFortioCom extends PluginForHost {
 
     public WikiFortioCom(PluginWrapper wrapper) {

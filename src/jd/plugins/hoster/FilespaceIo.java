@@ -37,7 +37,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filespace.io" }, urls = { "http://(www\\.)?filespace\\.io/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filespace.io" }, urls = { "http://(www\\.)?filespace\\.io/file/[a-z0-9]+" }) 
 public class FilespaceIo extends PluginForHost {
 
     public FilespaceIo(PluginWrapper wrapper) {

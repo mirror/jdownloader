@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/areader\\?id=[a-z0-9]+\\&p=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/areader\\?id=[a-z0-9]+\\&p=\\d+" }) 
 public class BatoTo extends PluginForHost {
 
     public BatoTo(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?(?:u-file\\.net|uf\\.pe)/f-[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?(?:u-file\\.net|uf\\.pe)/f-[a-z0-9]+" }) 
 public class UFileNet extends PluginForHost {
 
     public UFileNet(PluginWrapper wrapper) {

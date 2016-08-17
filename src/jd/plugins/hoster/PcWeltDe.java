@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcwelt.de" }, urls = { "http://(www\\.)?pcwelt\\.de/downloads/[^<>\"]+\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcwelt.de" }, urls = { "http://(www\\.)?pcwelt\\.de/downloads/[^<>\"]+\\-\\d+\\.html" }) 
 public class PcWeltDe extends PluginForHost {
 
     public PcWeltDe(PluginWrapper wrapper) {

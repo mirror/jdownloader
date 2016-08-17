@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexseevideo.net" }, urls = { "http://(www\\.)?sexseevideo\\.net/\\d+(/[a-z0-9\\-]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexseevideo.net" }, urls = { "http://(www\\.)?sexseevideo\\.net/\\d+(/[a-z0-9\\-]+)?" }) 
 public class SexSeeVideoNet extends PluginForHost {
 
     public SexSeeVideoNet(PluginWrapper wrapper) {

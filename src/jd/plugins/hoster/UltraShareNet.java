@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrashare.net" }, urls = { "http://[\\w\\.]*?ultrashare\\.net/hosting/dl/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrashare.net" }, urls = { "http://[\\w\\.]*?ultrashare\\.net/hosting/dl/[a-z0-9]+" }) 
 public class UltraShareNet extends PluginForHost {
 
     public UltraShareNet(PluginWrapper wrapper) {

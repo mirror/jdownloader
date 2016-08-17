@@ -72,7 +72,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(www\\.)?powvideo\\.net/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(www\\.)?powvideo\\.net/((vid)?embed-)?[a-z0-9]{12}" }) 
 @SuppressWarnings("deprecation")
 public class PowVideoNet extends antiDDoSForHost {
     // Site Setters

@@ -12,7 +12,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stereomood.com" }, urls = { "http://(www\\.)?stereomood\\.com/(song/\\d+|artist/.+|activity/.+|mood/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stereomood.com" }, urls = { "http://(www\\.)?stereomood\\.com/(song/\\d+|artist/.+|activity/.+|mood/.+)" }) 
 public class StereoMoodCom extends PluginForDecrypt {
 
     public StereoMoodCom(PluginWrapper wrapper) {

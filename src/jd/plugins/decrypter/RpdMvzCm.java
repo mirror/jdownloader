@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.rezavn|rmz\\.cr)/release/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.rezavn|rmz\\.cr)/release/[a-z0-9\\-]+" }) 
 public class RpdMvzCm extends antiDDoSForDecrypt {
 
     public RpdMvzCm(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-stream24.com" }, urls = { "http://(www\\.)?(anime\\-stream24\\.(com|tv)/\\d+/\\d+/.*?|anime\\-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-stream24.com" }, urls = { "http://(www\\.)?(anime\\-stream24\\.(com|tv)/\\d+/\\d+/.*?|anime\\-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+)\\.html" }) 
 public class NmStrm24Com extends PluginForDecrypt {
 
     public NmStrm24Com(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadc.com" }, urls = { "http://(www\\.)?uploadc\\.com/users/[a-z0-9]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadc.com" }, urls = { "http://(www\\.)?uploadc\\.com/users/[a-z0-9]+/\\d+" }) 
 public class UploadCComFolder extends PluginForDecrypt {
 
     public UploadCComFolder(PluginWrapper wrapper) {

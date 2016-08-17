@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spinrilla.com" }, urls = { "https?://(www\\.)?spinrilla\\.com/(?:mixtapes|songs)/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spinrilla.com" }, urls = { "https?://(www\\.)?spinrilla\\.com/(?:mixtapes|songs)/[a-z0-9\\-]+" }) 
 public class SpinrillaCom extends PluginForHost {
 
     public SpinrillaCom(PluginWrapper wrapper) {

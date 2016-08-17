@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaytube.com" }, urls = { "http://(www\\.)?gaytube\\.com/media/\\d+(/[a-z0-9\\-]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaytube.com" }, urls = { "http://(www\\.)?gaytube\\.com/media/\\d+(/[a-z0-9\\-]+)?" }) 
 public class GayTubeCom extends PluginForHost {
 
     private String DLLINK = null;

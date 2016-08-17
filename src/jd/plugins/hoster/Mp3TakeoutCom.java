@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3takeout.com" }, urls = { "http://(www\\.)?mp3takeout\\.com/download\\.php\\?file=[A-Za-z0-9\\-_\\.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3takeout.com" }, urls = { "http://(www\\.)?mp3takeout\\.com/download\\.php\\?file=[A-Za-z0-9\\-_\\.]+" }) 
 public class Mp3TakeoutCom extends PluginForHost {
 
     public Mp3TakeoutCom(PluginWrapper wrapper) {

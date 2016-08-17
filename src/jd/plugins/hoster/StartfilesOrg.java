@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "startfiles.org" }, urls = { "http://(www\\.)?startfiles\\.org/download/\\?a=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "startfiles.org" }, urls = { "http://(www\\.)?startfiles\\.org/download/\\?a=\\d+" }) 
 public class StartfilesOrg extends PluginForHost {
 
     public StartfilesOrg(PluginWrapper wrapper) {

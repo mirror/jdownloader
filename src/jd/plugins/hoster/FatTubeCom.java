@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fat-tube.com" }, urls = { "http://(www\\.)?fat\\-tube\\.com/view/\\d+/[a-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fat-tube.com" }, urls = { "http://(www\\.)?fat\\-tube\\.com/view/\\d+/[a-z0-9\\-_]+/" }) 
 public class FatTubeCom extends PluginForHost {
 
     public FatTubeCom(PluginWrapper wrapper) {

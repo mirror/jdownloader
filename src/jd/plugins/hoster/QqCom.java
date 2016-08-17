@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com" }, urls = { "http://qqdecrypted\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com" }, urls = { "http://qqdecrypted\\.com/\\d+" }) 
 public class QqCom extends PluginForHost {
 
     public QqCom(final PluginWrapper wrapper) {

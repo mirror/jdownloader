@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pussy.com" }, urls = { "http://(www\\.)?bangyoulater\\.com/(embed\\.php\\?id=\\d+|[a-z0-9]+/\\d+/.{1})|https?://(?:www\\.)?pussy\\.com/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pussy.com" }, urls = { "http://(www\\.)?bangyoulater\\.com/(embed\\.php\\?id=\\d+|[a-z0-9]+/\\d+/.{1})|https?://(?:www\\.)?pussy\\.com/[A-Za-z0-9\\-_]+" }) 
 public class PussyCom extends PluginForHost {
 
     public PussyCom(PluginWrapper wrapper) {

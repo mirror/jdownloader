@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vitaminogretmen.com" }, urls = { "http://(www\\.)?vitaminogretmen\\.com/videolar/video\\-detay/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vitaminogretmen.com" }, urls = { "http://(www\\.)?vitaminogretmen\\.com/videolar/video\\-detay/\\d+" }) 
 public class VitaminoGretmenCom extends PluginForHost {
 
     private String DLLINK = null;

@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourtapes.com" }, urls = { "http://(www\\.)?submityourtapes\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submityourtapes.com" }, urls = { "http://(www\\.)?submityourtapes\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }) 
 public class SubmitYourTapesCom extends PluginForHost {
 
     /* DEV NOTES */

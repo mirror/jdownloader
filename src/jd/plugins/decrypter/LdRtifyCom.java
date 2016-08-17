@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.controlling.PasswordUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ld.rtify.com" }, urls = { "http://(www\\.)?ld\\.rtify\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ld.rtify.com" }, urls = { "http://(www\\.)?ld\\.rtify\\.com/\\d+" }) 
 public class LdRtifyCom extends PluginForDecrypt {
 
     public LdRtifyCom(PluginWrapper wrapper) {

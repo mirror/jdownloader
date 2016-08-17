@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heise.de" }, urls = { "http://(www\\.)?heise\\.de/video/artikel/[A-Za-z0-9\\-_]+\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heise.de" }, urls = { "http://(www\\.)?heise\\.de/video/artikel/[A-Za-z0-9\\-_]+\\d+\\.html" }) 
 public class HeiseDeVideo extends PluginForHost {
 
     public HeiseDeVideo(PluginWrapper wrapper) {

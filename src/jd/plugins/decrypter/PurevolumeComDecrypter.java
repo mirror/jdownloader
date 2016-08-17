@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevolume.com" }, urls = { "http://(www\\.)?purevolume\\.com/(new/)?\\w+(/albums/[\\w\\+\\-]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevolume.com" }, urls = { "http://(www\\.)?purevolume\\.com/(new/)?\\w+(/albums/[\\w\\+\\-]+)?" }) 
 public class PurevolumeComDecrypter extends PluginForDecrypt {
 
     public PurevolumeComDecrypter(final PluginWrapper wrapper) {

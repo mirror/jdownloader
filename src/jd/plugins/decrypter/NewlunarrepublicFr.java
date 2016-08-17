@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newlunarrepublic.fr" }, urls = { "http://(www\\.)?newlunarrepublic\\.fr/episodes/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newlunarrepublic.fr" }, urls = { "http://(www\\.)?newlunarrepublic\\.fr/episodes/.+" }) 
 public class NewlunarrepublicFr extends PluginForDecrypt {
 
     public NewlunarrepublicFr(PluginWrapper wrapper) {

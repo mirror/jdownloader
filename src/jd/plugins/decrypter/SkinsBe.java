@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "skins.be" }, urls = { "http://(www\\.)?wallpaper\\.skins\\.be/[a-z\\-]+/\\d+/\\d{3,4}x\\d{3,4}/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "skins.be" }, urls = { "http://(www\\.)?wallpaper\\.skins\\.be/[a-z\\-]+/\\d+/\\d{3,4}x\\d{3,4}/" }) 
 public class SkinsBe extends PluginForDecrypt {
 
     public SkinsBe(PluginWrapper wrapper) {

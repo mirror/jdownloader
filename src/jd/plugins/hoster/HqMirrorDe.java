@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hq-mirror.de" }, urls = { "http://(www\\.)?hq\\-mirror\\.de/film/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hq-mirror.de" }, urls = { "http://(www\\.)?hq\\-mirror\\.de/film/\\d+" }) 
 public class HqMirrorDe extends PluginForHost {
 
     public HqMirrorDe(PluginWrapper wrapper) {

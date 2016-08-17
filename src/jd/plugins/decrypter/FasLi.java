@@ -37,7 +37,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li" }, urls = { "http://fas\\.li/[A-Za-z0-9]{4,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li" }, urls = { "http://fas\\.li/[A-Za-z0-9]{4,}" }) 
 public class FasLi extends antiDDoSForDecrypt {
 
     public FasLi(PluginWrapper wrapper) {

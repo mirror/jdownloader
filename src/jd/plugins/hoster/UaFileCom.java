@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uafile.com" }, urls = { "http://(www\\.)?uafile\\.com/file/\\d+/[^<>\"/]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uafile.com" }, urls = { "http://(www\\.)?uafile\\.com/file/\\d+/[^<>\"/]+\\.html" }) 
 public class UaFileCom extends PluginForHost {
 
     public UaFileCom(PluginWrapper wrapper) {

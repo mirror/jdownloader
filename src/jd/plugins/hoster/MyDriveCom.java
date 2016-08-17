@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //INDO: belongs to fileserving.com
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mydrive.com" }, urls = { "http://(www\\.)?(myvdrive|fileserving)\\.com/files/[A-Za-z0-9_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mydrive.com" }, urls = { "http://(www\\.)?(myvdrive|fileserving)\\.com/files/[A-Za-z0-9_]+" }) 
 public class MyDriveCom extends PluginForHost {
 
     public MyDriveCom(PluginWrapper wrapper) {

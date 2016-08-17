@@ -39,7 +39,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 
-@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "http://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]+/?#.*|[^/]*\\?.+|/?$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "http://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]+/?#.*|[^/]*\\?.+|/?$)" }) 
 public class DnsCz extends PluginForDecrypt {
 
     public DnsCz(PluginWrapper wrapper) {

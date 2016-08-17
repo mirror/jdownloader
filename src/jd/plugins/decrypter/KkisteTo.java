@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kkiste.to" }, urls = { "http://(?:www\\.)?kkiste\\.to/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kkiste.to" }, urls = { "http://(?:www\\.)?kkiste\\.to/[a-z0-9\\-]+\\.html" }) 
 public class KkisteTo extends PluginForDecrypt {
 
     public KkisteTo(PluginWrapper wrapper) {

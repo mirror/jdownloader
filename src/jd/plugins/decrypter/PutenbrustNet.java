@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 32196 $", interfaceVersion = 3, names = { "putenbrust.net" }, urls = { "http://putenbrust\\.net/download\\.php\\?file=.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 32196 $", interfaceVersion = 3, names = { "putenbrust.net" }, urls = { "http://putenbrust\\.net/download\\.php\\?file=.*" }) 
 public class PutenbrustNet extends PluginForDecrypt {
 
     public PutenbrustNet(PluginWrapper wrapper) {

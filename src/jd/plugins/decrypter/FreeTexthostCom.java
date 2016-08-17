@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freetexthost.com" }, urls = { "http://(www\\.)?freetexthost\\.com/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freetexthost.com" }, urls = { "http://(www\\.)?freetexthost\\.com/[0-9a-z]+" }) 
 public class FreeTexthostCom extends PluginForDecrypt {
 
     public FreeTexthostCom(PluginWrapper wrapper) {

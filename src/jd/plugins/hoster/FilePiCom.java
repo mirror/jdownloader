@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepi.com" }, urls = { "http://(www\\.)?filepi\\.com/i/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepi.com" }, urls = { "http://(www\\.)?filepi\\.com/i/[A-Za-z0-9]+" }) 
 public class FilePiCom extends PluginForHost {
 
     public FilePiCom(PluginWrapper wrapper) {

@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }) 
 @SuppressWarnings("deprecation")
 public class MightyUploadCom extends PluginForHost {
     // Site Setters

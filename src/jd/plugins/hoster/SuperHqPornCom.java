@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporndecrypted\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporndecrypted\\.com/\\?v=[A-Z0-9]+" }) 
 public class SuperHqPornCom extends PluginForHost {
 
     public SuperHqPornCom(PluginWrapper wrapper) {

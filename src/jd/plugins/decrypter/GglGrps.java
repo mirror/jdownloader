@@ -27,7 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://groups.google.com/group/[^/]+/files/?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://groups.google.com/group/[^/]+/files/?" }) 
 public class GglGrps extends PluginForDecrypt {
 
     public GglGrps(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)zophar\\.net/download_file/[0-9]{1,}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)zophar\\.net/download_file/[0-9]{1,}" }) 
 public class RomsZopharNet extends PluginForHost {
 
     public RomsZopharNet(PluginWrapper wrapper) {

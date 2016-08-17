@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+" }) 
 public class RlCtCm extends PluginForDecrypt {
 
     public RlCtCm(PluginWrapper wrapper) {

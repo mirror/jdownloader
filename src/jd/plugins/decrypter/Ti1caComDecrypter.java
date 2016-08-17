@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ti1ca.com" }, urls = { "http://ti1ca\\.com/Album\\-.+(?!\\.html)$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ti1ca.com" }, urls = { "http://ti1ca\\.com/Album\\-.+(?!\\.html)$" }) 
 public class Ti1caComDecrypter extends PluginForDecrypt {
 
     public Ti1caComDecrypter(PluginWrapper wrapper) {

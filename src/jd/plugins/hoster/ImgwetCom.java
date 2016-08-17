@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgwet.com" }, urls = { "https?://(?:www\\.)?imgwet\\.com/img\\-[a-z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgwet.com" }, urls = { "https?://(?:www\\.)?imgwet\\.com/img\\-[a-z0-9]+\\.html" }) 
 public class ImgwetCom extends PluginForHost {
 
     public ImgwetCom(PluginWrapper wrapper) {

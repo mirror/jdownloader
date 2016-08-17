@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jpopsuki.tv" }, urls = { "http://(www\\.)?jpopsuki\\.tv/video/[^<>\"]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jpopsuki.tv" }, urls = { "http://(www\\.)?jpopsuki\\.tv/video/[^<>\"]+" }) 
 public class JpopsukiTv extends PluginForHost {
 
     public JpopsukiTv(PluginWrapper wrapper) {

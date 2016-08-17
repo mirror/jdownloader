@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eba.gov.tr" }, urls = { "https?://(www\\.)?(eba\\.gov\\.tr/(video/izle/[a-z0-9]+|ses/dinle/[a-z0-9]+|gorsel/bak/[a-z0-9]+)|ebadecrypted\\.gov\\.tr/dergi/goster/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eba.gov.tr" }, urls = { "https?://(www\\.)?(eba\\.gov\\.tr/(video/izle/[a-z0-9]+|ses/dinle/[a-z0-9]+|gorsel/bak/[a-z0-9]+)|ebadecrypted\\.gov\\.tr/dergi/goster/\\d+)" }) 
 public class EbaGovTr extends PluginForHost {
 
     public EbaGovTr(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hfiles.ro" }, urls = { "http://(?:www\\.)?(hfiles\\.ro/download/[^/]+/\\d+|hotfil\\.es/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hfiles.ro" }, urls = { "http://(?:www\\.)?(hfiles\\.ro/download/[^/]+/\\d+|hotfil\\.es/\\d+)" }) 
 public class HfilesRo extends PluginForDecrypt {
 
     public HfilesRo(PluginWrapper wrapper) {

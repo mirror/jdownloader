@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.ru" }, urls = { "https?://(www\\.)?fastpic\\.ru/view/[^<>\"]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.ru" }, urls = { "https?://(www\\.)?fastpic\\.ru/view/[^<>\"]+\\.html" }) 
 public class FastPicRu extends PluginForHost {
 
     public FastPicRu(PluginWrapper wrapper) {

@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "timsah.com" }, urls = { "http://(www\\.)?timsah\\.com/[A-Za-z0-9_\\-]+/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "timsah.com" }, urls = { "http://(www\\.)?timsah\\.com/[A-Za-z0-9_\\-]+/[A-Za-z0-9]+" }) 
 public class TimSahCom extends PluginForHost {
 
     private String DLLINK = null;

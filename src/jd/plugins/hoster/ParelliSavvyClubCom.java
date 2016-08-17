@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://www\\.parelliconnect\\.com/ajax/resources/\\d+/(vault_display_video|vault_display_pdf)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parelliconnect.com" }, urls = { "http://www\\.parelliconnect\\.com/ajax/resources/\\d+/(vault_display_video|vault_display_pdf)" }) 
 public class ParelliSavvyClubCom extends PluginForHost {
 
     public ParelliSavvyClubCom(final PluginWrapper wrapper) {

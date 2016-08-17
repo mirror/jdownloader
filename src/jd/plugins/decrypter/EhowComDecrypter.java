@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehow\\.com/video_\\d+_.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ehow.com" }, urls = { "https?://(?:www\\.)?ehow\\.com/video_\\d+_.*?\\.html" }) 
 public class EhowComDecrypter extends PluginForDecrypt {
 
     public EhowComDecrypter(PluginWrapper wrapper) {
