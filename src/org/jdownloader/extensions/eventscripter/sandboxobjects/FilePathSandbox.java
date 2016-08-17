@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
 
 public class FilePathSandbox {
@@ -57,17 +58,41 @@ public class FilePathSandbox {
         return file.getPath();
     }
 
-    public boolean renameTo(String fileOrUrl) throws EnvironmentException {
+    public boolean renameTo(String to) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename or move files or folders");
-        return file.renameTo(new File(fileOrUrl));
+        final File dest = new File(to);
+        return !dest.exists() && file.renameTo(dest);
     }
 
     public boolean moveTo(String folder) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("move a file to a new folder");
         File dest = new File(folder);
+        if (!dest.exists()) {
+            dest.mkdirs();
+        }
         dest = new File(dest, file.getName());
-        final boolean ret = file.renameTo(dest);
+        final boolean ret = !dest.exists() && file.renameTo(dest);
         return ret;
+    }
+
+    public boolean copyTo(String folder) throws EnvironmentException {
+        if (isFile()) {
+            org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("copy a file to a new folder");
+            File dest = new File(folder);
+            if (!dest.exists()) {
+                dest.mkdirs();
+            }
+            dest = new File(dest, file.getName());
+            try {
+                if (!dest.exists()) {
+                    IO.copyFile(file, dest);
+                    return true;
+                }
+            } catch (final IOException e) {
+                throw new EnvironmentException(e);
+            }
+        }
+        return false;
     }
 
     public String getAbsolutePath() {
