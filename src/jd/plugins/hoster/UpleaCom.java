@@ -37,6 +37,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplea.com" }, urls = { "http://(www\\.)?uplea\\.com/dl/[A-Z0-9]+" }, flags = { 2 })
 public class UpleaCom extends antiDDoSForHost {

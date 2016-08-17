@@ -43,6 +43,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "weshare.me" }, urls = { "https?://(www\\.)?weshare\\.me/[A-Za-z0-9]+" }, flags = { 2 })
 public class WeShareMe extends antiDDoSForHost {

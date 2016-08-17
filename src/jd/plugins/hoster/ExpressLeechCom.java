@@ -46,6 +46,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4upld.com" }, urls = { "https?://(www\\.)?4upld\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class ExpressLeechCom extends antiDDoSForHost {

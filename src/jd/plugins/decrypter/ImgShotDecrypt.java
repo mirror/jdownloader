@@ -31,6 +31,7 @@ import jd.plugins.Plugin;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
 public class ImgShotDecrypt extends antiDDoSForDecrypt {

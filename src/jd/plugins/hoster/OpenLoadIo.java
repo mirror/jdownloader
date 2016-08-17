@@ -49,6 +49,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })

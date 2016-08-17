@@ -33,6 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]*)(?:\\.?app)?\\.box\\.(net|com)/(shared|s)/(?!static)[a-z0-9]+(/\\d+/\\d+)?" }, flags = { 0 })
 public class BxNt extends antiDDoSForDecrypt {

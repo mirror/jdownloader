@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly

@@ -47,6 +47,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesuniverse.com" }, urls = { "https?://(www\\.)?filesuniverse\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class FilesuniverseCom extends antiDDoSForHost {

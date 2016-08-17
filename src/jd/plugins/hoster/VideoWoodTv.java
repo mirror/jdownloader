@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "http://(www\\.)?videowood\\.tv/(embed|video)/[A-Za-z0-9]+" }, flags = { 0 })

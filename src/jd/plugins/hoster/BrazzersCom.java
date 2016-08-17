@@ -29,6 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?|embed/\\d+/?)" }, flags = { 0 })
 public class BrazzersCom extends antiDDoSForHost {

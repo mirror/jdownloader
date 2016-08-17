@@ -37,6 +37,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * notes: using cloudflare

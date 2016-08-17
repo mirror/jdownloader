@@ -36,6 +36,7 @@ import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * @captcha recaptchav1

@@ -52,6 +52,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadocean.com" }, urls = { "https?://(www\\.)?uploadocean\\.com/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class UploadoceanCom extends antiDDoSForHost {

@@ -40,6 +40,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**

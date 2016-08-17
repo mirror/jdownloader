@@ -30,6 +30,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "primejailbait.com" }, urls = { "https?://(?:www\\.)?(?:primejailbait\\.com|primejb\\.net)/(id/\\d+|profile/[A-Za-z0-9\\-_]+(?:/fav/\\d+)?|setview/\\d+)/?$" }, flags = { 0 })
 public class PrimeJailBaitCom extends antiDDoSForDecrypt {

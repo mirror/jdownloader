@@ -53,6 +53,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudsix.me" }, urls = { "https?://(www\\.)?cloudsix\\.me/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class CloudSixMe extends antiDDoSForHost {
