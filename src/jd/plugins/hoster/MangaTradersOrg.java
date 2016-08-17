@@ -38,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.utils.IO;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.cryptojs.CryptoJS;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 

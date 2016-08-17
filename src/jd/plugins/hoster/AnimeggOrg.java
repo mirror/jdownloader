@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;

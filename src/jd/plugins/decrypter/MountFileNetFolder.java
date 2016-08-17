@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mountfile.net" }, urls = { "https?://(?:www\\.)?mountfile\\.net/d/[A-Za-z0-9]+" }, flags = { 0 })
 public class MountFileNetFolder extends antiDDoSForDecrypt {

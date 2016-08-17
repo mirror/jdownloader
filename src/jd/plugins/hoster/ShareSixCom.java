@@ -187,7 +187,7 @@ public class ShareSixCom extends PluginForHost {
         /* @ in filename triggers email protection */
         final String dl_contains_at = new Regex(correctedBR, flname_pt1 + "<a class=\".*?</p>").getMatch(-1);
         if (filename == null && dl_contains_at != null) {
-            filename = jd.plugins.hoster.antiDDoSForHost.getStringFromCloudFlareEmailProtection(dl_contains_at);
+            filename = org.jdownloader.plugins.components.antiDDoSForHost.getStringFromCloudFlareEmailProtection(dl_contains_at);
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);

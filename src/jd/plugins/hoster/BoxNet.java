@@ -28,6 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com", "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=f_\\d+\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+|https?://www\\.boxdecrypted\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class BoxNet extends antiDDoSForHost {

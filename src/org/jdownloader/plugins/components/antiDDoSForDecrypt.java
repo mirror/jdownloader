@@ -1,4 +1,4 @@
-package jd.plugins.hoster;
+package org.jdownloader.plugins.components;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +28,10 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.DownloadLink;
+import jd.plugins.CryptedLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
@@ -39,7 +39,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
@@ -52,11 +52,13 @@ import org.mozilla.javascript.ScriptableObject;
  *
  */
 @SuppressWarnings({ "deprecation", "unused" })
-public abstract class antiDDoSForHost extends PluginForHost {
+public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
 
-    public antiDDoSForHost(PluginWrapper wrapper) {
+    public antiDDoSForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    protected CryptedLink param = null;
 
     protected boolean useRUA() {
         return false;
@@ -68,7 +70,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     private static final String                   bfRequiredCookies     = "rcksid|BLAZINGFAST-WEB-PROTECT";
     protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
-    protected BrowserName                         browserName           = null;
+    protected static BrowserName                  browserName           = null;
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
 
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
@@ -467,10 +469,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
             a_captchaRequirement = true;
             // recapthcha v2
             if (cloudflare.containsHTML("class=\"g-recaptcha\"")) {
-                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                this.setDownloadLink(dllink);
                 final Form cf = cloudflare;
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, ibr) {
 
                     @Override
                     public String getSiteKey() {
@@ -508,12 +508,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                 final Recaptcha rc = new Recaptcha(ibr, this);
                 rc.setId(apiKey);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String response = getCaptchaCode("recaptcha", cf, dllink);
+                final String response = getCaptchaCode("recaptcha", cf, param);
                 if (inValidate(response)) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
                 }
@@ -776,12 +775,11 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 if (apiKey == null) {
                     apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
                 }
-                final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
                 final Recaptcha rc = new Recaptcha(ibr, this);
                 rc.setId(apiKey);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String response = getCaptchaCode("recaptcha", cf, dllink);
+                final String response = getCaptchaCode("recaptcha", cf, param);
                 if (inValidate(response)) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }

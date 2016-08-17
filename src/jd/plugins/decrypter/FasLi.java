@@ -28,6 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *

@@ -47,6 +47,7 @@ import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })

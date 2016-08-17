@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;

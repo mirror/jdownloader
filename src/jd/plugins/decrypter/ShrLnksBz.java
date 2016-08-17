@@ -46,6 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;

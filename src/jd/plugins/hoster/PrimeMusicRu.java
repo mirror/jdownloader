@@ -25,6 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "http://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc)/Media\\-page\\-\\d+\\.html" }, flags = { 0 })
 public class PrimeMusicRu extends antiDDoSForHost {

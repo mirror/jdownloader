@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 
 import javax.imageio.ImageIO;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;

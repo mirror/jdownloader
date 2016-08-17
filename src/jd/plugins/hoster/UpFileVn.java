@@ -33,6 +33,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.vn" }, urls = { "http://(www\\.)?upfile\\.vn/(?!faq|register|login|terms|report_file)[a-z0-9~]+(?:/.*?\\.html)?" }, flags = { 0 })
 public class UpFileVn extends antiDDoSForHost {

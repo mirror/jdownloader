@@ -36,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.jdownloader.controlling.PasswordUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * NOTE: <br />

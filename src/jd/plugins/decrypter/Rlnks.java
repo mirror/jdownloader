@@ -42,6 +42,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }, flags = { 0 })
 public class Rlnks extends antiDDoSForDecrypt {

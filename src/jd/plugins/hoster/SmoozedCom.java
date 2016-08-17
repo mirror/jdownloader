@@ -46,6 +46,7 @@ import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 

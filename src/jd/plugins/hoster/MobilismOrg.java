@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**

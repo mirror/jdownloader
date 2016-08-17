@@ -45,6 +45,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends antiDDoSForDecrypt {

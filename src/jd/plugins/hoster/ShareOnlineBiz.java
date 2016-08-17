@@ -60,6 +60,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })

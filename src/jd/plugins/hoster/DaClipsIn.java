@@ -46,6 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daclips.in" }, urls = { "https?://(?:www\\.)?daclips\\.(?:in|com)/[a-z0-9]{12}" }, flags = { 0 })
 public class DaClipsIn extends antiDDoSForHost {

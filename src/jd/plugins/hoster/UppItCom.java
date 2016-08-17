@@ -43,6 +43,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uppit.com" }, urls = { "http://(?:www\\.)?uppit\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class UppItCom extends antiDDoSForHost {

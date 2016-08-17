@@ -20,6 +20,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;

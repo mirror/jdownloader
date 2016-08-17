@@ -65,7 +65,7 @@ public class Account extends Property {
         /*
          * do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
          */
-        final String antiddosCookies = jd.plugins.hoster.antiDDoSForHost.antiDDoSCookiePattern;
+        final String antiddosCookies = org.jdownloader.plugins.components.antiDDoSForHost.antiDDoSCookiePattern;
         for (final Cookie cookie : cookies.getCookies()) {
             if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies) && !cookie.isExpired()) {
                 cookieStorables.add(new CookieStorable(cookie));
