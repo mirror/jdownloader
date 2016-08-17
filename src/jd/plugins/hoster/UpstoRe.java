@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -52,7 +53,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
@@ -449,6 +450,18 @@ public class UpstoRe extends antiDDoSForHost {
     private final long   useLoginIndividual = 6 * 3480000l;
     private final String regexLoginCaptcha  = "/captcha/\\?\\d+";
 
+    private long getPremiumTill(Browser br) {
+        String expire = br.getRegex("premium till\\s*(\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+        if (expire != null) {
+            return TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null);
+        }
+        expire = br.getRegex("premium till\\s*([a-zA-Z.]+\\s*\\d{2}\\s*,\\s*(\\d{4}|\\d{2}))").getMatch(0);
+        if (expire != null) {
+            return TimeFormatter.getMilliSeconds(expire, "MMMM dd','yyyy", Locale.ENGLISH);
+        }
+        return -1;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -458,8 +471,8 @@ public class UpstoRe extends antiDDoSForHost {
         getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/stat/download/?lang=en");
         // Check for never-ending premium accounts
         if (!br.containsHTML(lifetimeAccount)) {
-            final String expire = br.getRegex(premiumTilAccount).getMatch(0);
-            if (expire == null) {
+            final long validUntil = getPremiumTill(br);
+            if (validUntil == -1) {
                 if (br.containsHTML("unlimited premium")) {
                     ai.setValidUntil(-1);
                     ai.setStatus("Unlimited Premium Account");
@@ -467,7 +480,7 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree Accounts are not supported for this host!\r\nKostenlose Accounts dieses Hosters werden nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
+                ai.setValidUntil(validUntil);
             }
         }
         // traffic is not unlimited they have 20GiB/day fair use. see ticket HZI-220-58438
@@ -486,9 +499,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     // lifetime account
-    private String lifetimeAccount   = "eternal premium";
-    // expiring type account
-    private String premiumTilAccount = "premium till (\\d{2}/\\d{2}/\\d{2})";
+    private String lifetimeAccount = "eternal premium";
 
     /**
      * Method to determine if current cookie session is still valid.
@@ -512,7 +523,7 @@ public class UpstoRe extends antiDDoSForHost {
                 // send a get page to mainpage to see if premium cookie is cleared.
                 getPage(MAINPAGE);
                 // upstore doesn't remove invalid cookies, so we need to also check against account types!
-                if (browserCookiesMatchLoginCookies(br) && br.containsHTML(this.lifetimeAccount + "|" + this.premiumTilAccount)) {
+                if (browserCookiesMatchLoginCookies(br) && (br.containsHTML(this.lifetimeAccount) || br.containsHTML("unlimited premium") || getPremiumTill(br) > 0)) {
                     // save these incase they changed value.
                     final HashMap<String, String> cookies = getBrowsersLoginCookies(br);
                     account.setProperty("cookies", cookies);
