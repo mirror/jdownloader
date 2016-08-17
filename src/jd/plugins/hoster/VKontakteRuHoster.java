@@ -26,6 +26,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,14 +61,8 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                                          = "vk.com";
@@ -303,7 +303,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     /* Refresh directlink */
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
-                    accessVideo(this.br, oid, id, null);
+                    accessVideo(this.br, oid, id, null, true);
                     if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -317,10 +317,10 @@ public class VKontakteRuHoster extends PluginForHost {
                         logger.warning("Failed to find new link for selected quality...");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                }
-                checkstatus = linkOk(link, link.getStringProperty("directfilename", null), isDownload);
-                if (checkstatus != 1) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - this video might be offline");
+                    checkstatus = linkOk(link, link.getStringProperty("directfilename", null), isDownload);
+                    if (checkstatus != 1) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - this video might be offline");
+                    }
                 }
             } else {
                 finalUrl = link.getStringProperty("picturedirectlink", null);
@@ -401,10 +401,9 @@ public class VKontakteRuHoster extends PluginForHost {
         dl.startDownload();
     }
 
-    public static void accessVideo(final Browser br, final String oid, final String id, final String listID) throws IOException {
+    public static void accessVideo(final Browser br, final String oid, final String id, final String listID, final boolean useApi) throws IOException {
         final String videoids_together = oid + "_" + id;
-        final boolean allowAPIUsage = false;
-        if (listID == null && allowAPIUsage) {
+        if (listID == null && useApi) {
             /*
              * 2016-08-10: Seems like this API method does not löonger work/return the information we need. The new method seems to require
              * authentication: https://api.vk.com/method/video.get?format=json&owner_id=&videos=-12345678_87654321 See here:
@@ -690,7 +689,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     /* Check cookies */
                     br.setFollowRedirects(true);
                     br.getPage(getBaseURL());
-                    if (br.containsHTML("id=\"logout_link_td\"")) {
+                    if (br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
                         /* Refresh timestamp */
                         account.saveCookies(br.getCookies(DOMAIN), "");
                         return;
@@ -699,16 +698,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     br = prepBrowser(new Browser(), false);
                 }
                 br.setFollowRedirects(true);
-                br.getPage(getBaseURL() + "/login.php");
-                final String damnlg_h = br.getRegex("name=\"lg_h\" value=\"([^<>\"]*?)\"").getMatch(0);
-                String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
-                if (damnIPH == null) {
-                    damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
-                }
-                if (damnIPH == null) {
-                    damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
-                }
-                if (damnIPH == null || damnlg_h == null) {
+                br.getPage(getBaseURL() + "/");
+                final Form login = br.getFormbyProperty("id", "quick_login_form");
+                if (login == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -717,16 +709,18 @@ public class VKontakteRuHoster extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage(getBaseURL() + "/login.php", "op=a_login_attempt&login=" + Encoding.urlEncode(account.getUser()));
-                br.postPage(getProtocol() + "login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
+                login.put("email", Encoding.urlEncode(account.getUser()));
+                login.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
+                // should redirect to /login/act=slogin....
+                br.getPage("/");
                 // language set in user profile, so after login it could be changed! We don't want this, we need to save and use ENGLISH
                 if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
                     br.setCookie(DOMAIN, "remixlang", "3");
                     br.getPage(br.getURL());
                 }
                 /* Do NOT check based on cookies as they sometimes change them! */
-                if (!br.containsHTML("id=\"(?:top_)?logout_link\"")) {
+                if (!br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
