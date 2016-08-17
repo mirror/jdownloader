@@ -25,6 +25,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,20 +53,13 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
  * Note: prem.link redirects to grab8
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "grab8.com", "prem.link" }, urls = { "https?://(?:\\w+\\.)?grab8.com/dl\\.php\\?id=(\\d+)", "https?://(?:\\w+\\.)?prem.link/dl\\.php\\?id=(\\d+)" })
 public class Grab8Com extends antiDDoSForHost {
 
     private final String                                   NICE_HOSTproperty              = getHost().replaceAll("[-\\.]", "");
@@ -449,12 +449,14 @@ public class Grab8Com extends antiDDoSForHost {
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    login.setAction("/ajax/action.php");
+                    // https request, login action seems to be to http.
+                    login.setAction("http://www." + getHost() + "/ajax/action.php");
                     login.put("username", Encoding.urlEncode(currAcc.getUser()));
                     login.put("password", Encoding.urlEncode(currAcc.getPass()));
                     login.put("rememberme", "true");
-                    final String url_ordinary_captcha = br.getRegex("(https?://(?:www\\.)?grab8\\.com/captcha\\.php\\?tp=login[^<>\"\\']+)").getMatch(0);
-                    if (login.containsHTML("name=\"g\\-recaptcha\\-response\"")) {
+                    // on https request, images are http (hard coded).
+                    final String url_ordinary_captcha = login.getRegex("(?:https?:)?(?://(?:www\\.)?[^/]+)?/captcha\\.php\\?tp=login[^<>\"']+").getMatch(-1);
+                    if (login.containsHTML("name=\"g-recaptcha-response\"")) {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
                         final DownloadLink odl = this.getDownloadLink();
                         this.setDownloadLink(dummyLink);
@@ -467,7 +469,7 @@ public class Grab8Com extends antiDDoSForHost {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
                         final DownloadLink odl = this.getDownloadLink();
                         this.setDownloadLink(dummyLink);
-                        final String code = this.getCaptchaCode(url_ordinary_captcha, dummyLink);
+                        final String code = this.getCaptchaCode(url_ordinary_captcha.concat("&characters=2"), dummyLink);
                         login.put("icaptcha", Encoding.urlEncode(code));
                         if (odl != null) {
                             this.setDownloadLink(odl);
