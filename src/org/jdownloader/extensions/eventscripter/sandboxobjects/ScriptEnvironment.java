@@ -28,24 +28,6 @@ import javax.sound.sampled.LineEvent.Type;
 import javax.sound.sampled.LineListener;
 import javax.swing.JTextPane;
 
-import jd.controlling.AccountController;
-import jd.controlling.TaskQueue;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.reconnect.Reconnecter;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sourceforge.htmlunit.corejs.javascript.Function;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
@@ -82,9 +64,26 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.controlling.AccountController;
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.reconnect.Reconnecter;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sourceforge.htmlunit.corejs.javascript.Function;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
+
 public class ScriptEnvironment {
     private static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
-
     @ScriptAPI(description = "JDownloader Installation Directory")
     public static String                                         JD_HOME           = Application.getResource("").getAbsolutePath();
     private static LogSource                                     LOGGER            = LogController.getInstance().getLogger("ScriptEnvironment");
@@ -102,11 +101,9 @@ public class ScriptEnvironment {
                     try {
                         showMessageDialog(new JacksonMapper().objectToString(objects[0]));
                     } catch (Throwable e) {
-
                         showMessageDialog(format(toJson(objects[0])));
                     }
                 } catch (Throwable e) {
-
                     showMessageDialog(objects[0] + "");
                 }
                 return;
@@ -117,11 +114,9 @@ public class ScriptEnvironment {
                 showMessageDialog(new JacksonMapper().objectToString(objects));
             } catch (Throwable e) {
                 showMessageDialog(format(toJson(objects)));
-
             }
         } catch (Throwable e) {
             showMessageDialog(objects + "");
-
         }
         return;
     }
@@ -130,12 +125,9 @@ public class ScriptEnvironment {
         final ScriptThread env = getScriptThread();
         final String md5 = Hash.getMD5(env.getScript().getScript());
         ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
-
             @Override
             public String getDontShowAgainKey() {
-
                 return "ASK_FOR_PERMISSION_" + md5 + "_" + string;
-
             }
 
             @Override
@@ -152,11 +144,8 @@ public class ScriptEnvironment {
                 setReturnmask(false);
                 this.dispose();
             }
-
         };
-
         d.setDoNotShowAgainSelected(true);
-
         // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
         // if (ret != null && ret > 0) {
         // return;
@@ -164,7 +153,6 @@ public class ScriptEnvironment {
         if (d.show().getCloseReason() != CloseReason.OK) {
             throw new EnvironmentException("Security Warning: User Denied Access to " + string);
         }
-
     }
 
     @ScriptAPI(description = "Call the MyJDownloader API", parameters = { "\"namespace\"", "\"methodname\"", "parameter1", "parameter2", "..." }, example = "callAPI(\"downloadsV2\", \"queryLinks\", { \"name\": true})")
@@ -184,9 +172,7 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Call a local Process asynchronous", parameters = { "\"myCallBackFunction\"|null", "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "callAsync(function(exitCode,stdOut,errOut){ alert(\"Closed Notepad\");},\"notepad.exe\",JD_HOME+\"\\\\license.txt\");")
     public static void callAsync(final Function callback, final String... commands) throws EnvironmentException {
-
         askForPermission("Execute a local process");
-
         try {
             final ScriptThread env = getScriptThread();
             if (commands != null && commands.length > 0) {
@@ -196,21 +182,16 @@ public class ScriptEnvironment {
                         try {
                             try {
                                 ProcessOutput ret = ProcessBuilderFactory.runCommand(commands);
-
                                 if (callback != null) {
-
                                     if (CrossSystem.getOSFamily() == OSFamily.WINDOWS) {
                                         executeCallback(callback, ret.getExitCode(), new String(new String(ret.getStdOutData(), "cp850").getBytes("UTF-8"), "UTF-8"), new String(new String(ret.getErrOutData(), "cp850").getBytes("UTF-8"), "UTF-8"));
                                     } else {
                                         executeCallback(callback, ret.getExitCode(), new String(ret.getStdOutData(), "UTF-8"), new String(ret.getErrOutData(), "UTF-8"));
-
                                     }
                                 }
                             } catch (IOException e) {
-
                                 if (callback != null) {
                                     executeCallback(callback, -1, null, Exceptions.getStackTrace(e));
-
                                 }
                                 env.getLogger().log(e);
                                 env.notifyAboutException(e);
@@ -218,10 +199,8 @@ public class ScriptEnvironment {
                         } catch (Throwable e) {
                             env.notifyAboutException(e);
                         }
-
                     }
                 }.start();
-
             }
         } catch (Throwable e) {
             throw new EnvironmentException(e);
@@ -231,7 +210,6 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Call a local Process. Blocks Until the process returns", parameters = { "\"commandline1\"", "\"commandline2\"", "\"...\"" }, example = "var pingResultString = callSync(\"ping\",\"jdownloader.org\");")
     public static String callSync(final String... commands) throws EnvironmentException {
         askForPermission("Execute a local process");
-
         try {
             ProcessBuilder pb = ProcessBuilderFactory.create(commands);
             pb.redirectErrorStream(true);
@@ -240,16 +218,13 @@ public class ScriptEnvironment {
                 return new String(new String(ret.getStdOutData(), "cp850").getBytes("UTF-8"), "UTF-8");
             } else {
                 return ret.getStdOutString("UTF-8");
-
             }
-
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
     }
 
     protected static void collectClasses(Class<? extends Object> cl, ArraySet<Class<?>> clazzes) {
-
         for (Method m : cl.getDeclaredMethods()) {
             if (cl == ScriptEnvironment.class && m.getAnnotation(ScriptAPI.class) == null) {
                 continue;
@@ -267,7 +242,6 @@ public class ScriptEnvironment {
                 if (clazzes.add(cl2)) {
                     collectClasses(cl2, clazzes);
                 }
-
             }
             for (Field f : cl.getFields()) {
                 if (f.getType() == Object.class || !Modifier.isPublic(m.getModifiers()) || Clazz.isPrimitive(f.getType()) || Clazz.isPrimitiveWrapper(f.getType()) || Clazz.isString(f.getType())) {
@@ -276,7 +250,6 @@ public class ScriptEnvironment {
                 if (clazzes.add(f.getType())) {
                     collectClasses(f.getType(), clazzes);
                 }
-
             }
         }
     }
@@ -323,10 +296,8 @@ public class ScriptEnvironment {
         StringBuilder sb = new StringBuilder();
         //
         ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
-
         sb.append("/* =============== ").append("Global API").append(" =============== */").append("\r\n");
         getAPIDescriptionForClass(sb, ScriptEnvironment.class);
-
         sb.append("/* =========  Properties =========*/\r\n");
         for (Field f : Utils.sort(ScriptEnvironment.class.getDeclaredFields())) {
             ScriptAPI ann = f.getAnnotation(ScriptAPI.class);
@@ -334,7 +305,6 @@ public class ScriptEnvironment {
                 sb.append("//").append(ann.description()).append(";\r\n");
                 sb.append("var my").append(f.getType().getSimpleName().substring(0, 1).toUpperCase(Locale.ENGLISH)).append(f.getType().getSimpleName().substring(1)).append(" = ");
                 sb.append(f.getName()).append(";\r\n");
-
                 if (StringUtils.isNotEmpty(ann.example())) {
                     sb.append(ann.example()).append("\r\n");
                 }
@@ -343,21 +313,17 @@ public class ScriptEnvironment {
         collectClasses(ScriptEnvironment.class, clazzes);
         clazzes.addAll(triggerClazzes);
         Collections.sort(clazzes, new Comparator<Class<?>>() {
-
             @Override
             public int compare(Class<?> o1, Class<?> o2) {
                 return Utils.cleanUpClass(o1.getSimpleName()).compareTo(Utils.cleanUpClass(o2.getSimpleName()));
             }
-
         });
         sb.append("/* =============== ").append("Classes").append(" =============== */").append("\r\n");
         for (Class<?> cl : clazzes) {
             if (doCollectClass(cl)) {
-
                 sb.append("/* === ").append(Utils.cleanUpClass(cl.getSimpleName())).append(" === */").append("\r\n");
                 getAPIDescriptionForClass(sb, cl);
             }
-
         }
         return sb.toString();
     }
@@ -368,15 +334,12 @@ public class ScriptEnvironment {
      */
     public static void getAPIDescriptionForClass(StringBuilder sb, Class<?> cl) {
         ScriptAPI clazzAnn = cl.getAnnotation(ScriptAPI.class);
-
         if (clazzAnn != null && StringUtils.isNotEmpty(clazzAnn.description())) {
             sb.append("/* ").append(clazzAnn.description()).append("*/").append("\r\n");
         }
         sb.append("/* =========  Methods =========*/\r\n");
         for (Method m : Utils.sort(cl.getDeclaredMethods())) {
-
             if (!Modifier.isPublic(m.getModifiers())) {
-
                 continue;
             }
             ScriptAPI ann = m.getAnnotation(ScriptAPI.class);
@@ -416,7 +379,6 @@ public class ScriptEnvironment {
                 sb.append("\r\n");
             }
         }
-
     }
 
     @ScriptAPI(description = "Set the Speedlimit in bytes/second. Values<=0 -> Disable Limiter", parameters = { "speedlimit in bytes/second" })
@@ -545,6 +507,23 @@ public class ScriptEnvironment {
             ret[i++] = new FilePackageSandBox(pkg);
         }
         return ret;
+    }
+
+    @ScriptAPI(description = "Create a Checksum for a file. Types: e.g. CRC32, md5, SHA-1, SHA-256")
+    public static String getChecksum(String type, String path) throws EnvironmentException {
+        askForPermission("Create Checksum of local file");
+        try {
+            File rel = new File(path);
+            if (!rel.isAbsolute()) {
+                rel = Application.getResource(path);
+            }
+            if (StringUtils.equalsIgnoreCase("CRC32", type)) {
+                return Hash.getCRC32(rel) + "";
+            }
+            return Hash.getFileHash(rel, type);
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
     }
 
     @ScriptAPI(description = "Get a list of all crawledpackages")
@@ -730,7 +709,6 @@ public class ScriptEnvironment {
                     }
                     final AtomicBoolean runningFlag = new AtomicBoolean(true);
                     clip.addLineListener(new LineListener() {
-
                         @Override
                         public void update(LineEvent event) {
                             if (event.getType() == Type.STOP) {
@@ -767,7 +745,6 @@ public class ScriptEnvironment {
                 } catch (Throwable e) {
                 }
             }
-
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
@@ -805,7 +782,6 @@ public class ScriptEnvironment {
     @ScriptAPI(description = "Refresh all premium accounts", parameters = { "true|false (Wait for account checks)", "true|false (Force Check)" }, example = "refreshAccounts(true,true);")
     public static void refreshAccounts(final boolean wait, final boolean force) throws EnvironmentException {
         final QueueAction<Void, InterruptedException> action = new QueueAction<Void, InterruptedException>() {
-
             @Override
             protected Void run() throws InterruptedException {
                 final List<AccountCheckJob> jobs = new ArrayList<AccountCheckJob>();
@@ -890,7 +866,6 @@ public class ScriptEnvironment {
 
             @Override
             protected void modifyTextPane(JTextPane textField) {
-
             }
 
             @Override
@@ -923,5 +898,4 @@ public class ScriptEnvironment {
             throw new EnvironmentException(e);
         }
     }
-
 }

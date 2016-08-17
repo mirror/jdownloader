@@ -14,6 +14,10 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderDirectHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
 public class ConnectedDevice {
+    public static final String   FRONTEND_WEBINTERFACE              = "Webinterface http://my.jdownloader.org by AppWork";
+    public static final String   FRONTEND_ANDROID_APP               = "MyJDownloader by AppWork";
+    public static final String   FRONTEND_FIREFOX_EXTENSION         = "Firefox Extension by AppWork";
+    public static final String   FRONTEND_CHROME_EXTENSION          = "Chrome Extension by AppWork";
     private static final Pattern ANDROID_USERAGENT_PATTERN          = Pattern.compile("MyJDownloader Android App \\(Version: (.+) \\/ (.+)\\) \\(Android (.+);(.+)\\/(.+)\\)");
     private static final Pattern WINMOB_FILERECON_USERAGENT_PATTERN = Pattern.compile("MyJDownloader file.recon App \\(Version: (.+) \\/ (.+)\\)");
     private static final Pattern WIN_UNIVERSAL_USERAGENT_PATTERN    = Pattern.compile("MyJDownloader JD Universal App \\(Version: (.+) \\/ (.+)\\)");
@@ -72,14 +76,14 @@ public class ConnectedDevice {
     private String _getFrontendName() {
         final String origin = latestRequest.getRequestHeaders().getValue("Origin");
         if (StringUtils.equals(origin, "http://my.jdownloader.org") || StringUtils.equals(origin, "https://my.jdownloader.org")) {
-            return "Webinterface http://my.jdownloader.org by AppWork";
+            return FRONTEND_WEBINTERFACE;
         } else if (StringUtils.startsWithCaseInsensitive(origin, "chrome-extension://")) {
-            return "Chrome Extension by AppWork";
+            return FRONTEND_CHROME_EXTENSION;
         } else if (StringUtils.equals(origin, "null")) {
             // TODO: add proper detection
-            return "Firefox Extension by AppWork";
+            return FRONTEND_FIREFOX_EXTENSION;
         } else if (isAndroidApp(getUserAgentString())) {
-            return "MyJDownloader by AppWork";
+            return FRONTEND_ANDROID_APP;
         } else if (isFileReconApp(getUserAgentString())) {
             return "file.recon by Pseudocode";
         } else if (isJDUniversalApp(getUserAgentString())) {
@@ -155,7 +159,6 @@ public class ConnectedDevice {
         if (addr.isAnyLocalAddress() || addr.isLoopbackAddress()) {
             return true;
         }
-
         // Check if the address is defined on any interface
         try {
             return NetworkInterface.getByInetAddress(addr) != null;
@@ -190,9 +193,7 @@ public class ConnectedDevice {
             } else {
                 return Integer.toString(num).concat(" Remote Connection via my.jdownloader");
             }
-
         }
-
     }
 
     public RemoteAPIRequest getLatestRequest() {

@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.plugins.DownloadLink;
-
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -36,8 +32,11 @@ import org.jdownloader.captcha.v2.solver.service.DialogSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.SkipReason;
 
-public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
+public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
     private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
 
     public static CaptchaAPISolver getInstance() {
@@ -63,7 +62,10 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         if (c instanceof KeyCaptchaCategoryChallenge && super.canHandle(c)) {
             return true;
         }
-        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
+        if (c instanceof AbstractRecaptcha2FallbackChallenge) {
+            return true;
+        }
+        if (c instanceof RecaptchaV2Challenge) {
             return true;
         }
         if (c instanceof AccountLoginOAuthChallenge) {
@@ -75,6 +77,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     @Override
     public void solve(final SolverJob<Object> job) throws InterruptedException, SolverException, SkipException {
         Challenge<?> challenge = job.getChallenge();
+        // ensure that getChallenge(job) is never null;
         if (challenge instanceof RecaptchaV2Challenge) {
             if (((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge() == null) {
                 throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
@@ -82,7 +85,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
         job.getLogger().info("Fire MyJDownloader Captcha Event");
         eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
-
             @Override
             public void sendTo(CaptchaAPISolverListener listener) {
                 listener.onAPIJobStarted(job);
@@ -132,7 +134,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             final Challenge<?> challenge = getChallenge(entry);
             if (challenge instanceof ImageCaptchaChallenge) {
                 final CaptchaJob job = new CaptchaJob();
-
                 Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
@@ -146,7 +147,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 ret.add(job);
             } else if (challenge instanceof AccountLoginOAuthChallenge) {
                 final CaptchaJob job = new CaptchaJob();
-
                 Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
@@ -227,7 +227,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @SuppressWarnings("unchecked")
     public boolean solve(long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException {
-
         final SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
@@ -294,7 +293,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     @Override
     public void onJobDone(final SolverJob<?> job) {
         eventSender.fireEvent(new CaptchaAPISolverEvent(this) {
-
             @Override
             public void sendTo(CaptchaAPISolverListener listener) {
                 listener.onAPIJobDone(job);
@@ -333,5 +331,4 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     @Override
     public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
-
 }

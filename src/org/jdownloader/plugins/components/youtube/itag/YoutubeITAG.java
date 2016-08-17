@@ -13,7 +13,6 @@ public enum YoutubeITAG {
     // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
     DASH_AUDIO_192K_WEBM(172, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
-
     // [bitrate=241311, spatial_audio_type=2, lmt=14 0754970951297, index=3318-3620, init=0-3317, clen=4606281,
     // url=https%3A%2F%2Fr1---sn-4g57knzd.googlevideo.com%2Fvideoplayback%3Fsource%3Dyoutube%26nh%3DIgpwZjAxLmZyYTE1Kg04Ny4xMjguMjM2LjUz%26pl%3D19%26signature%3DA8263BC5CD261BEA4982973AB1547B69FEABFE06.727C49E18D216876C67D7C6FD40C026DE87F0ABF%26initcwndbps%3D591250%26gir%3Dyes%26sver%3D3%26expire%3D1461080045%26ms%3Dau%26clen%3D4606281%26mv%3Dm%26mt%3D1461058237%26ipbits%3D0%26mn%3Dsn-4g57knzd%26mm%3D31%26requiressl%3Dyes%26id%3Do-AG82gRa3_bivEt9zZg_17JLkO2U_RnxefRI9bwk2GiE3%26itag%3D339%26dur%3D174.353%26lmt%3D1460754970951297%26key%3Dyt6%26ip%3D79.196.104.182%26fexp%3D9408354%252C9416126%252C9416778%252C9416891%252C9420452%252C9422596%252C9424134%252C9426927%252C9427413%252C9428398%252C9431012%252C9431438%252C9432683%252C9432842%252C9433096%252C9433304%252C9433622%252C9433644%252C9433810%252C9433998%252C9434748%26sparams%3Dclen%252Cdur%252Cgir%252Cid%252Cinitcwndbps%252Cip%252Cipbits%252Citag%252Clmt%252Cmime%252Cmm%252Cmn%252Cms%252Cmv%252Cnh%252Cpl%252Crequiressl%252Csource%252Cupn%252Cexpire%26upn%3DmUoYdnZwYhM%26mime%3Daudio%252Fwebm,
     // itag=339, type=audio%2Fwebm%3B+codecs%3D%22vorbis%22, projection_type=1]
@@ -34,26 +33,19 @@ public enum YoutubeITAG {
     // http://www.youtube.com/watch?v=gBabKoHSErI
     DASH_VIDEO_1440P_H264(264, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_144P_H264(160, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_30),
-
     DASH_VIDEO_144P_H264_FPS15(160, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_15),
     // Mobile/Portrait Format https://www.youtube.com/watch?v=kiZse2vZXfw
     DASH_VIDEO_1920_H264_FPS_60(266, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.H264, VideoFrameRate.FPS_60),
-
     DASH_VIDEO_2160_H264_FPS_60(266, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_2160_H264(266, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_1920_H264(266, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.H264, VideoFrameRate.FPS_30),
-
     DASH_VIDEO_240P_H264(133, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.H264, VideoFrameRate.FPS_30),
-
     DASH_VIDEO_360P_H264(134, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_480P_H264(135, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_720_H264_FPS60(298, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_60),
-
     DASH_VIDEO_720P_H264(136, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30),
-
     DASH_VIDEO_ITAG304_MP4_1280P_60FPS(304, StreamContainer.DASH_VIDEO, VideoResolution.P_1280, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_ITAG305_MP4_1280P_60FPS(305, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.H264, VideoFrameRate.FPS_60),
-
     DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.VP9, VideoFrameRate.FPS_60),
     // https://www.youtube.com/watch?v=kiZse2vZXfw&nohtml5=False
     DASH_VIDEO_ITAG313_VP9_1920P_30FPS(313, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.VP9_WORSE_PROFILE_1, VideoFrameRate.FPS_30),
@@ -64,10 +56,8 @@ public enum YoutubeITAG {
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
     DASH_VIDEO_ORIGINAL_H264_GENERIC_4K(138, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_ORIGINAL_H264_GENERIC_1080P(138, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30),
-
     // https://www.youtube.com/watch?v=sLprVF6d7Ug
     DASH_VIDEO_ORIGINAL_H264_GENERIC_8K(138, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.H264, VideoFrameRate.FPS_30),
-
     // https://www.youtube.com/watch?v=ZSn3Tvc7jQU
     // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "VP9", null, null, VideoResolution.VIDEO_RESOLUTION_1080P,
     // VideoCodec.VIDEO_CODEC_VP9),
@@ -75,10 +65,8 @@ public enum YoutubeITAG {
     // https://www.youtube.com/watch?v=T3ny9zIckP0
     // the 2610 stream on itag 266 is deklared as 60fps stream in the backend, but it is actually just 30fps. maybe 60fps will come soon on
     // the same itag?
-
     DASH_WEBM_VIDEO_1080P_VP9_60FPS(303, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.VP9, VideoFrameRate.FPS_60),
     DASH_WEBM_VIDEO_1440P_VP9(271, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.VP9, VideoFrameRate.FPS_30),
-
     DASH_WEBM_VIDEO_144P_VP9(278, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.VP9, VideoFrameRate.FPS_30),
     // DASH_WEBM_VIDEO_720P_VP9(247, "VP9",null, null, VideoResolution.VIDEO_RESOLUTION_720P,
     // VideoContainer.WEBM, VideoCodec.VIDEO_CODEC_VP9),
@@ -101,19 +89,15 @@ public enum YoutubeITAG {
     FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3(6, StreamContainer.FLV, VideoResolution.P_270, VideoCodec.H263, VideoFrameRate.FPS_30, AudioCodec.MP3, AudioBitrate.KBIT_64),
     FLV_VIDEO_LOW_240P_H263_AUDIO_MP3(5, StreamContainer.FLV, VideoResolution.P_240, VideoCodec.H263, VideoFrameRate.FPS_30, AudioCodec.MP3, AudioBitrate.KBIT_64),
     // we do not need such a bad itag. Ignore the variants
-
     THREEGP4_ITAG13_H263_144P_15FPS_AMRNB_12KBIT(13, StreamContainer.THREEGP, VideoResolution.P_144, VideoCodec.H263, VideoFrameRate.FPS_15, AudioCodec.AMR, AudioBitrate.KBIT_12),
     // fake id
     IMAGE_HQ(10002, StreamContainer.PLAIN, ImageQuality.HIGH),
     // fake id
     IMAGE_LQ(10004, StreamContainer.PLAIN, ImageQuality.LOW),
-
     // fake id
     IMAGE_MAX(10001, StreamContainer.PLAIN, ImageQuality.HIGHEST),
-
     // fake id
     IMAGE_MQ(10003, StreamContainer.PLAIN, ImageQuality.NORMAL),
-
     // 192 kbits aac
     MP4_VIDEO_1080P_H264_AUDIO_AAC(37, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     MP4_VIDEO_1080P_H264_AUDIO_AAC_3D(85, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
@@ -137,18 +121,14 @@ public enum YoutubeITAG {
     MP4_VIDEO_AUDIO_ORIGINAL(38, StreamContainer.MP4, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_192),
     // fake id
     SUBTITLE(10002, StreamContainer.PLAIN, MediaTagsVarious.SUBTITLE),
-
     // very different audio bitrates!!!
     THREEGP_VIDEO_144P_H264_AUDIO_AAC(17, StreamContainer.THREEGP, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_32_ESTIMATED),
-
     // LIve stream?
     // I tested several streams, and this itag contains 180p and 32kbit audio
     THREEGP_VIDEO_240P_H263_AUDIO_AAC(132, StreamContainer.THREEGP, VideoResolution.P_240, VideoCodec.H263, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_32),
-
     THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, StreamContainer.THREEGP, VideoResolution.P_240, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_32),
     // not sure - did not find testvideos
     WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS(46, StreamContainer.WEBM, VideoResolution.P_1080, VideoCodec.VP8, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
-
     WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D(100, StreamContainer.WEBM, VideoResolution.P_360, VideoCodec.VP9, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
     WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D(101, StreamContainer.WEBM, VideoResolution.P_360, VideoCodec.VP9, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
     WEBM_VIDEO_360P_VP8_AUDIO_VORBIS(43, StreamContainer.WEBM, VideoResolution.P_360, VideoCodec.VP8, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
@@ -159,25 +139,19 @@ public enum YoutubeITAG {
     // both Itags are almost the same video
     MP4_ITAG59_H264_480P_24FPS_AAC_128KBIT(59, StreamContainer.MP4, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_24, AudioCodec.AAC, AudioBitrate.KBIT_128),
     MP4_ITAG78_H264_480P_24FPS_AAC_128KBIT(78, StreamContainer.MP4, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_24, AudioCodec.AAC, AudioBitrate.KBIT_128),
-
     // not sure - did not find testvideos
     WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, StreamContainer.WEBM, VideoResolution.P_720, VideoCodec.VP8, VideoFrameRate.FPS_30, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
     // fps 6
     HLS_VIDEO_MP4_72P_6FPS_AUDIO_AAC(151, StreamContainer.MP4, VideoResolution.P_72, VideoCodec.H264, VideoFrameRate.FPS_6, AudioCodec.AAC, AudioBitrate.KBIT_24),
     // fps 15
     HLS_VIDEO_MP4_240P_15FPS_AUDIO_AAC(132, StreamContainer.MP4, VideoResolution.P_240, VideoCodec.H264, VideoFrameRate.FPS_15, AudioCodec.AAC, AudioBitrate.KBIT_48),
-
+    HLS_VIDEO_MP4_144P_AUDIO_AAC(91, StreamContainer.MP4, VideoResolution.P_144, VideoCodec.H264, VideoFrameRate.FPS_15, AudioCodec.AAC, AudioBitrate.KBIT_48),
     HLS_VIDEO_MP4_240P_AUDIO_AAC_2(92, StreamContainer.MP4, VideoResolution.P_240, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_48),
-
     HLS_VIDEO_MP4_360P_AUDIO_AAC(93, StreamContainer.MP4, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
-
     HLS_VIDEO_MP4_480P_AUDIO_AAC(94, StreamContainer.MP4, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_128),
     HLS_VIDEO_MP4_720P_AUDIO_AAC(95, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
     HLS_VIDEO_MP4_720P_AUDIO_AAC_300(300, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
-
-    HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256)
-
-    ;
+    HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256);
     private static HashMap<Integer, List<YoutubeITAG>> TAG_MAP = new HashMap<Integer, List<YoutubeITAG>>();
 
     static {
@@ -189,7 +163,6 @@ public enum YoutubeITAG {
             }
             lst.add(tag);
         }
-
     }
 
     public static enum YoutubeITAGVersion {
@@ -254,11 +227,9 @@ public enum YoutubeITAG {
 
         public boolean matches(long uploadDate) {
             return uploadDate >= from && uploadDate < to;
-
         }
 
         public static YoutubeITAGVersion getByDate(long uploadDate) {
-
             for (YoutubeITAGVersion v : YoutubeITAGVersion.values()) {
                 if (v.matches(uploadDate)) {
                     return v;
@@ -266,15 +237,14 @@ public enum YoutubeITAG {
             }
             return YoutubeITAGVersion.V4;
         }
-
     }
 
     public static YoutubeITAG get(int itag, int width, int height, int fps, String type, UrlQuery query, long uploadDate) {
+        System.out.println("ITAG: " + itag);
         YoutubeITAGVersion version = null;
         if (query == null) {
             query = new UrlQuery();
         }
-
         switch (itag) {
         case 132:
             // https://www.youtube.com/watch?v=KF47Za1lfjM
@@ -283,7 +253,6 @@ public enum YoutubeITAG {
             } else {
                 return THREEGP_VIDEO_240P_H263_AUDIO_AAC;
             }
-
             // case 18:
             // if (version == null) {
             // version = YoutubeITAGVersion.getByDate(uploadDate);
@@ -307,7 +276,6 @@ public enum YoutubeITAG {
             default:
                 return MP4_VIDEO_720P_H264_AUDIO_AAC;
             }
-
         case 84:
             if (version == null) {
                 version = YoutubeITAGVersion.getByDate(uploadDate);
@@ -322,22 +290,18 @@ public enum YoutubeITAG {
                 return MP4_VIDEO_720P_H264_AUDIO_AAC_3D;
             }
         }
-
         List<YoutubeITAG> options = TAG_MAP.get(itag);
         if (options == null) {
             return null;
         }
-
         YoutubeITAG best = null;
         double bestValue = Double.MAX_VALUE;
         for (final YoutubeITAG tag : options) {
             double value = 0d;
-
             if (tag.getVideoResolution() != null) {
                 value += Math.abs(height - tag.getVideoResolution().getHeight());
                 value += Math.abs(fps - tag.getVideoFrameRate().getFps());
             }
-
             if (best == null || bestValue > value) {
                 bestValue = value;
                 best = tag;
@@ -351,7 +315,6 @@ public enum YoutubeITAG {
             // Log.warning("Youtube ITag Mismatch: lookup fps" + fps + " height" + height + " -> " + best);
         }
         return best;
-
     }
 
     public VideoResolution getVideoResolution() {
@@ -359,16 +322,12 @@ public enum YoutubeITAG {
     }
 
     private final int          itag;
-
     private MediaTagsVarious[] qualityTags;
-
     private VideoResolution    videoResolution;
-
     private VideoCodec         videoCodec;
     private AudioCodec         audioCodec;
     private AudioBitrate       audioBitrate;
     private ImageQuality       imageQuality;
-
     private StreamContainer    rawContainer;
 
     public VideoCodec getVideoCodec() {
@@ -393,17 +352,14 @@ public enum YoutubeITAG {
 
     private YoutubeITAG(final int itag, StreamContainer streamcontainer, MediaTagsVarious various) {
         this(itag);
-
         this.qualityTags = new MediaTagsVarious[] { various };
         this.rawContainer = streamcontainer;
-
     }
 
     private YoutubeITAG(final int itag, StreamContainer streamcontainer, ImageQuality image) {
         this(itag);
         this.imageQuality = image;
         this.rawContainer = streamcontainer;
-
     }
 
     private YoutubeITAG(final int itag, StreamContainer streamcontainer, AudioCodec tags, AudioBitrate bitrate) {
@@ -415,7 +371,6 @@ public enum YoutubeITAG {
 
     private YoutubeITAG(final int itag, StreamContainer streamcontainer, VideoResolution resolution, VideoCodec codec, VideoFrameRate fps, AudioCodec audioCodec, AudioBitrate bitrate, MediaTagsVarious various) {
         this(itag);
-
         this.videoResolution = resolution;
         this.videoCodec = codec;
         this.audioCodec = audioCodec;
@@ -428,7 +383,6 @@ public enum YoutubeITAG {
     private YoutubeITAG(final int itag, StreamContainer streamcontainer, VideoResolution resolution, VideoCodec codec, VideoFrameRate fps, AudioCodec audioCodec, AudioBitrate bitrate) {
         this(itag);
         this.videoResolution = resolution;
-
         this.videoCodec = codec;
         this.audioCodec = audioCodec;
         this.audioBitrate = bitrate;
@@ -443,7 +397,6 @@ public enum YoutubeITAG {
         this.videoCodec = codec;
         this.videoFrameRate = fps;
         this.qualityTags = new MediaTagsVarious[] { various };
-
     }
 
     private YoutubeITAG(final int itag, StreamContainer streamcontainer, VideoResolution resolution, VideoCodec codec, VideoFrameRate fps) {
@@ -453,7 +406,6 @@ public enum YoutubeITAG {
         this.videoCodec = codec;
         this.videoFrameRate = fps;
         this.qualityTags = new MediaTagsVarious[] {};
-
     }
 
     public boolean containsTag(MediaTagsVarious tag) {
@@ -470,9 +422,7 @@ public enum YoutubeITAG {
     }
 
     private YoutubeITAG(final int itag) {
-
         this.itag = itag;
-
     }
 
     public int getITAG() {
@@ -488,5 +438,4 @@ public enum YoutubeITAG {
     public StreamContainer getRawContainer() {
         return rawContainer;
     }
-
 }

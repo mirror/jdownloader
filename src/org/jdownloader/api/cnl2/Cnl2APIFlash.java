@@ -3,6 +3,7 @@ package org.jdownloader.api.cnl2;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.APIParameterNames;
 import org.appwork.remoteapi.annotations.ApiMethodName;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.annotations.ApiRawMethod;
@@ -11,6 +12,7 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 @ApiNamespace("flash")
 public interface Cnl2APIFlash extends RemoteAPIInterface {
     @ApiMethodName("addcnl")
+    @APIParameterNames({ "response", "request", "cnl" })
     public void addcnl(RemoteAPIResponse response, RemoteAPIRequest request, CnlQueryStorable cnl) throws InternalApiException;
 
     @ApiMethodName("addcrypted2")
@@ -21,6 +23,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
+    @APIParameterNames({ "response", "request" })
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException;
 
     @ApiMethodName("add")
@@ -31,6 +34,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
+    @APIParameterNames({ "response", "request" })
     public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException;
 
     @ApiMethodName("addcrypted")
@@ -41,6 +45,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
+    @APIParameterNames({ "response", "request" })
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException;
 
     @ApiMethodName("")
@@ -51,6 +56,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
+    @APIParameterNames({ "response", "request" })
     public void alive(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException;
 
     @ApiMethodName("addcrypted2Remote")
@@ -60,6 +66,7 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
+    @APIParameterNames({ "response", "request", "crypted", "jk", "k" })
     public void addcrypted2Remote(RemoteAPIResponse response, RemoteAPIRequest request, String crypted, String jk, String k);
 
     @ApiMethodName("add")
@@ -70,6 +77,8 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
+    
+    @APIParameterNames({"request","response","password","source","url"})
+    
     public void add(RemoteAPIRequest request, RemoteAPIResponse response, String password, String source, String url) throws InternalApiException;
-
 }

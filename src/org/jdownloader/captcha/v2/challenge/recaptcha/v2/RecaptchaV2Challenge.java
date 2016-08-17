@@ -28,16 +28,11 @@ import jd.http.Browser;
 import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
-
     public static final String             RECAPTCHAV2 = "recaptchav2";
-
     private final String                   siteKey;
     private volatile BasicCaptchaChallenge basicChallenge;
-
     private final String                   siteDomain;
-
     private final String                   siteUrl;
-
     private final String                   secureToken;
 
     public String getSiteKey() {
@@ -57,7 +52,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
             if (rect == null) {
                 sleep *= 2;
-
                 continue;
             }
             break;
@@ -171,6 +165,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (basicChallenge != null) {
             return basicChallenge;
         }
+        // if (Recaptcha2FallbackChallengeViaBrowserExtension.canHandle(this)) {
+        // basicChallenge = new Recaptcha2FallbackChallengeViaBrowserExtension(this); //
+        // return basicChallenge;
+        // }
         final PhantomJS binding = new PhantomJS();
         if (!binding.isAvailable()) {
             try {
@@ -184,7 +182,5 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
         basicChallenge = new Recaptcha2FallbackChallengeViaPhantomJS(this); //
         return basicChallenge;
-
     }
-
 }

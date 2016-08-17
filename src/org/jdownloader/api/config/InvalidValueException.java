@@ -17,11 +17,13 @@ public class InvalidValueException extends RemoteAPIException {
         public ResponseCode getCode() {
             return code;
         }
+    }
 
+    public InvalidValueException() {
+        this(new Exception("Dummy"));
     }
 
     public InvalidValueException(Throwable e) {
         super(e, Type.INVALID_VALUE, null);
     }
-
 }

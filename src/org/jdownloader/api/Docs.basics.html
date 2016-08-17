@@ -1,0 +1,184 @@
+
+<a class="anchor" id="basics"></a>
+<h1 class='major'>Basics</h1>
+
+<a class="anchor" id="introduction"></a>
+<div class='header1'>
+	<h1 class="main-type-method">
+		<span style="">Introduction</span>
+	</h1>
+</div>
+<p>This document specifies the development state of the
+	MyJDownloader API. As the API changes regularly, changes in this
+	document will happen every so often. The API is designed to offer a
+	secure communication between the JDownloader client and the request
+	client, and to prevent any man in the middle listeners. For this
+	approach the API is using AES128CBC and HMAC-SHA256 for encryption. To
+	be able to communicate with the API we would suggest to make sure you
+	understand the procedure as this can get somewhat complicated for
+	beginners. The API is REST based, but currently only GET and POST
+	routes are offered.</p>
+
+
+
+<a class="anchor" id="communication"></a>
+<div class='header1'>
+	<h1 class="main-type-method">
+		<span style="">Communication</span>
+	</h1>
+</div>
+<p>
+	API Endpoint: https://api.jdownloader.org<br />To avoid problems with
+	NAT and Portforwarding, the communication between the frontends and
+	JDownloader is routed through our Connection-Server. IF available, the
+	frontend will try to establish a direct connection between the frontend
+	and JDownloader after validating the account credentials and
+	initializing the encryption tokens. <br />Pro Tip: It's possible to
+	access the JDownloader API directly (Bypass our server) by enabling the
+	so called 'Deprecated API' in the Advanced Options.
+</p>
+
+
+<a class="anchor" id="mistakes"></a>
+<div class='header1'>
+	<h1 class="main-type-method">
+		<span style="">Common Mistakes</span>
+	</h1>
+</div>
+<p>If thinks do not work as expected, please check the common
+	mistakes section first.</p>
+<h3 class='main-type-method'>Parameter Order</h3>
+<p>The parameter in GET/POST requests are important. Use the
+	documented order or you won't get a positive response.</p>
+<h3 class='main-type-method'>Content-Type Header &amp; JSON Syntax</h3>
+<p>Make sure to use the correct Content-Type. For most calls, this
+	is application/json; charset=utf-8, see call description</p>
+<p>
+	The API expects JSON Input and will return JSON output. Make sure that
+	you send valid JSON formatted text.<br />We highly recommend, that you
+	use a JSON Library to create proper JSON, and parse the results. The
+	results syntax of existing methods MAY CHANGE, but the content
+	structure and field names will remain. (e.g. we might add a field, or
+	shuffle fields, but we will not rename or remove an existing field.
+	This way, the API will stay compatible)
+</p>
+
+<h3 class='main-type-method'>Always provide a new RequestID</h3>
+<p>
+	The RequestID is required in almost every request. It's a number that
+	has to increase from one call to another. You can either use a
+	millisecond precise timestamp, or a self incrementing number. The API
+	will return the RequestID in the response. <b>You should validate
+		the response to make sure the answer is valid.</b>
+</p>
+
+<h3 class='main-type-method'>Field names</h3>
+<p>Make sure that you use the correct field names.</p>
+<pre class='wrong'>WRONG!
+	/downloadsV2/queryLinks?{"packageUUID":[1468427395088]}
+	</pre>
+<pre class='correct'>CORRECT!
+	/downloadsV2/queryLinks?{"packageUUIDs":[1468427395088]}
+	</pre>
+
+<h3 class='main-type-method'>URL-Encoding</h3>
+<p>Make sure all url parameters are correctly urlencoded.</p>
+<a class="anchor" id="signature"></a>
+<div class='header1'>
+	<h1 class="main-type-method">
+		<span style="">Signature</span>
+	</h1>
+</div>
+<p>
+	Most calls require a signature that validates the call against our
+	server and your JDownloader. The API will only accept calls with a
+	proper signature. <br /> Create the Signature:
+</p>
+<ol>
+	<li>build the full queryString (incl. RequestID)</li>
+	<li>hmac the queryString. The used Key depends. Some calls use
+		serverEncryptionToken, others have to ask the user for email and
+		password, create the loginSecret and use the loginsecret as key. email
+		needs to be lower case!</li>
+	<li>hexformat the result</li>
+	<li>append the signature to the queryString &signature=.</li>
+
+</ol>
+<pre>Example:
+queryString = "/my/connect?email=foo@bar.com&rid=1361982773157";
+queryString += "&signature=" + HmacSha256(utf8bytes(queryString), ServerEncryptionToken);
+
+</pre>
+<a class="anchor" id="exceptions"></a>
+<div class='header1'>
+	<h1 class="main-type-method">
+		<span style="">Errors &amp; Exceptions </span>
+
+	</h1>
+</div>
+<p>All HTTP Response codes except 200 are errors or exceptions. The
+	response content contains an ErrorObject in this case. Errors can have
+	different origins. Depending on the call, the Connection Server or the
+	JDownloader installation might throw an error. Check the 'src' field to
+	get the origin.</p>
+<pre>
+{
+"src":"MYJD"|"DEVICE"  
+"type":&lt;see errortypes below&gt;
+"data":&lt;Optional Data Object&gt;
+}
+
+</pre>
+<h3 class='main-type-method'>Device Error Types</h3>
+<p>Device Errors' origin is a JDownloader installation.</p>
+<pre>"src":"DEVICE"</pre>
+
+<!--%%%DeviceErrorType%%%-->
+<h3 class='main-type-method'>Server Error Types</h3>
+<p>Server Errors' origin is the Connection Server</p>
+<pre>"src":"MYJD"</pre>
+<!--%%%ServerErrorType%%%-->
+
+<a class="anchor" id="account"></a>
+<h1 class='major'>Account Management</h1>
+
+<a class="anchor" id="register"></a>
+<div class='header1'>
+	<h1 class="main-type-method">
+		<span style="">Create/Register an account</span>
+	</h1>
+</div>
+<h3 class='main-type-method'>1. Get Captcha Challenge</h3>
+
+<ul class="keyvalue">
+	<li class="keyvalueentry"><span class="key">Call</span> <span
+		class="value">/captcha/getCaptcha</span></li>
+		<li class="keyvalueentry"><span class="key">Return type</span> <span
+		class="value">/captcha/getCaptcha</span></li>
+	<li class="keyvalueentry"><span class="key">Possible&nbsp;Errors</span>
+		<span class="value">OVERLOAD</span></li>
+	<li><span class="key">&nbsp;</span> <span class="value">MAINTENANCE</span>
+	</li>
+	<li><span class="key">&nbsp;</span> <span class="value">TOO_MANY_REQUESTS</span>
+	</li>
+</ul>
+
+
+<p>Response Content</p>
+<pre>
+{ 
+"captchaChallenge" :	"13650058317(...)8299d97cf5",
+"image" : 		"data:image/png;base64,iVBORw0KGgoCAYAA(...)"
+}
+</pre>
+
+
+
+<h3 class='main-type-method'>2. Register</h3>
+
+<p></p>
+
+<h3 class='main-type-method'>3. Finish Registration</h3>
+<p></p>
+<a class='anchor' id='tag_methods'></a>
+<h1 class='major'>Methods</h1>

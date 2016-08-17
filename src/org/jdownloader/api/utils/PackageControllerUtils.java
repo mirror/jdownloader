@@ -7,20 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -37,8 +23,21 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
-public class PackageControllerUtils<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> {
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 
+public class PackageControllerUtils<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> {
     private final PackageController<PackageType, ChildType> packageController;
 
     public PackageControllerUtils(PackageController<PackageType, ChildType> packageController) {
@@ -102,6 +101,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
             boolean readL = packageController.readLock();
             try {
                 main: for (PackageType pkg : packageController.getPackages()) {
+                    System.out.println(pkg.getName() + " - " + pkg.getUniqueID().getID());
                     if (packageLookup != null && packageLookup.remove(pkg.getUniqueID().getID())) {
                         ret.add((T) pkg);
                         if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
@@ -293,7 +293,6 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
             }
             hostList.add(cL);
         }
-
         final String nameFactory = JsonConfig.create(LinkgrabberSettings.class).getSplitPackageNameFactoryPattern();
         final Iterator<Entry<PackageType, HashMap<String, ArrayList<ChildType>>>> it = splitMap.entrySet().iterator();
         while (it.hasNext()) {
@@ -381,7 +380,6 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
      * @return true if nodes were removed
      * @throws BadParameterException
      */
-
     public boolean cleanup(final long[] linkIds, final long[] pkgIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
         final SelectionInfo<PackageType, ChildType> selection;
         if (CleanupActionOptions.SelectionType.ALL.equals(selectionType)) {
