@@ -5,16 +5,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+
 public abstract class LinkCrawlerRunnable implements Runnable {
 
+    private final LinkCrawlerGeneration                               generation;
     private final LinkCrawler                                         crawler;
-    private final int                                                 generation;
     static final HashMap<Object, java.util.List<LinkCrawlerRunnable>> SEQ_RUNNABLES = new HashMap<Object, java.util.List<LinkCrawlerRunnable>>();
     static final HashMap<Object, AtomicInteger>                       SEQ_COUNTER   = new HashMap<Object, AtomicInteger>();
 
-    protected LinkCrawlerRunnable(LinkCrawler crawler, int generation) {
+    protected LinkCrawlerRunnable(LinkCrawler crawler, final LinkCrawlerGeneration generation) {
         if (crawler == null) {
             throw new IllegalArgumentException("crawler==null?");
+        }
+        if (generation == null) {
+            throw new IllegalArgumentException("generation==null?");
         }
         this.crawler = crawler;
         this.generation = generation;
@@ -95,16 +100,12 @@ public abstract class LinkCrawlerRunnable implements Runnable {
      */
     protected void run_now() {
         try {
-            if (crawler.checkAllowStart(getGeneration())) {
+            if (generation.isValid()) {
                 crawling();
             }
         } finally {
             crawler.checkFinishNotify();
         }
-    }
-
-    public int getGeneration() {
-        return generation;
     }
 
     abstract void crawling();

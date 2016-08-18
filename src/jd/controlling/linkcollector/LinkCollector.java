@@ -2706,7 +2706,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 lc.setDeepInspector(new LinkCrawlerDeepInspector() {
 
                                     @Override
-                                    public List<CrawledLink> deepInspect(LinkCrawler lc, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
+                                    public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawler.LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
                                         if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200) {
                                             if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
                                                 final String url = urlConnection.getRequest().getUrl();
@@ -2731,11 +2731,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                         urlConnection.disconnect();
                                                     } catch (Throwable e) {
                                                     }
-                                                    return lc.find("directhttp://" + url, null, false);
+                                                    return lc.find(generation, "directhttp://" + url, null, false, false);
                                                 }
                                             }
                                         }
-                                        return defaultDeepInspector.deepInspect(lc, br, urlConnection, link);
+                                        return defaultDeepInspector.deepInspect(lc, generation, br, urlConnection, link);
                                     }
                                 });
                             }
