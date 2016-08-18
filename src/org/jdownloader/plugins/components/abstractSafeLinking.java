@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package org.jdownloader.plugins.components;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +31,6 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**

@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -51,6 +48,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -993,9 +993,9 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         for (final String[] qualityInfo : qualities) {
-            String finallink = PluginJSonUtils.getJson(source, qualityInfo[0]);
+            String finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[0]);
             if (finallink == null) {
-                finallink = PluginJSonUtils.getJson(source, qualityInfo[1]);
+                finallink = PluginJSonUtils.getJsonValue(source, qualityInfo[1]);
             }
             if (finallink != null) {
                 foundQualities.put(qualityInfo[2], finallink);

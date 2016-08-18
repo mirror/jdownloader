@@ -30,7 +30,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerAbort;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
@@ -71,7 +71,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private volatile LazyCrawlerPlugin      lazyC                   = null;
 
-    private volatile LinkCrawlerAbort       linkCrawlerAbort;
+    private volatile LinkCrawlerGeneration  generation;
 
     private volatile LinkCrawler            crawler;
 
@@ -541,8 +541,8 @@ public abstract class PluginForDecrypt extends Plugin {
         return null;
     }
 
-    public void setLinkCrawlerAbort(LinkCrawlerAbort linkCrawlerAbort) {
-        this.linkCrawlerAbort = linkCrawlerAbort;
+    public void setLinkCrawlerGeneration(LinkCrawlerGeneration generation) {
+        this.generation = generation;
     }
 
     /**
@@ -550,10 +550,10 @@ public abstract class PluginForDecrypt extends Plugin {
      *
      * @return
      */
-    public boolean isAbort() {
-        final LinkCrawlerAbort llinkCrawlerAbort = linkCrawlerAbort;
-        if (llinkCrawlerAbort != null) {
-            return llinkCrawlerAbort.isAbort() || Thread.currentThread().isInterrupted();
+    protected boolean isAbort() {
+        final LinkCrawlerGeneration generation = this.generation;
+        if (generation != null) {
+            return !generation.isValid() || Thread.currentThread().isInterrupted();
         }
         return super.isAbort();
     }

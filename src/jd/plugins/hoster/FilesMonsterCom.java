@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
 
     private static final String POSTTHATREGEX            = "\"((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.*?)\"";
@@ -413,22 +413,16 @@ public class FilesMonsterCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is banned. Please contact the filesmonster support.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                } else if (br.containsHTML("Your membership type: <[^<>]+>Regular<[^<>]+>")) {
+                    account.setType(AccountType.FREE);
                 } else if (!br.containsHTML("Your membership type: <[^<>]+>Premium<[^<>]+>")) {
-                    try {
-                        account.setType(AccountType.FREE);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 */
-                    }
+                    account.setType(AccountType.PREMIUM);
+                } else {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                }
-                try {
-                    account.setType(AccountType.PREMIUM);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 */
                 }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -451,17 +445,12 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
-            // Make sure account service updates do not login more than once every 4 hours? so we only use up to 6 logins a day?
-            if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 14400000 <= Long.parseLong(account.getStringProperty("lastlogin")))) {
-                login(account, false);
-            } else {
-                login(account, true);
-            }
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
+        // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
+        // Make sure account service updates do not login more than once every 4 hours? so we only use up to 6 logins a day?
+        if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 14400000 <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+            login(account, false);
+        } else {
+            login(account, true);
         }
         // needed because of cached login and we need to have a browser containing html to regex against!
         if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://filesmoster.com/")) {
@@ -478,6 +467,9 @@ public class FilesMonsterCom extends PluginForHost {
         } else {
             // picks up expired accounts.
             expires = br.getRegex("(?:<span.*?>Expire(?:s|d):|<span class=\"expire-date\\s*\">)\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
+            if (expires == null) {
+                expires = br.getRegex("Premium expired:\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
+            }
             if (expires != null) {
                 expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
             }
@@ -492,13 +484,10 @@ public class FilesMonsterCom extends PluginForHost {
                 trafficUpdate(ai, account);
             } catch (IOException e) {
             }
-            account.setValid(true);
             ai.setStatus("Valid Premium Account");
             return ai;
         } else {
-            account.setValid(false);
-            ai.setStatus("Expired Premium Account");
-            return ai;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Expired Premium Account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 

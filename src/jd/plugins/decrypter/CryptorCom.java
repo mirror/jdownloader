@@ -17,9 +17,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -30,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9]+" })
 public class CryptorCom extends PluginForDecrypt {
 
     public CryptorCom(PluginWrapper wrapper) {
@@ -40,7 +42,7 @@ public class CryptorCom extends PluginForDecrypt {
     private static final String html_passwordrequired = "\"folder_password_form\\[submit\\]\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -91,6 +93,27 @@ public class CryptorCom extends PluginForDecrypt {
 
         this.br.setFollowRedirects(false);
         final String fpName = br.getRegex("class=\"text\\-center\">[\t\n\r ]*?<h1>([^<>]+)</h1>").getMatch(0);
+        final String mirrors[][] = br.getRegex("option value=\"(\\d+)\"\\s*(selected)?\\s*>\\s*(.*?)\\s*<").getMatches();
+        if (mirrors == null || mirrors.length == 0) {
+            decryptedLinks.addAll(parsePage(br, param));
+        } else {
+            for (final String mirror[] : mirrors) {
+                if (!"selected".equals(mirror[1])) {
+                    br.getPage(parameter + "/" + mirror[0]);
+                }
+                decryptedLinks.addAll(parsePage(br, param));
+            }
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
+        return decryptedLinks;
+    }
+
+    private List<DownloadLink> parsePage(Browser br, CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String cnlSource = br.getRegex("'source'\\s*:\\s*'(.*?)'").getMatch(0);
         final String cnlJk = br.getRegex("'jk'\\s*:\\s*'(.*?)(?<!\\\\)'").getMatch(0);
         final String cnlCrypted = br.getRegex("'crypted'\\s*:\\s*'(.*?)'").getMatch(0);
@@ -107,21 +130,14 @@ public class CryptorCom extends PluginForDecrypt {
                     logger.info("Decryption aborted by user");
                     return decryptedLinks;
                 }
-                this.br.getPage(singleLink);
-                final String finallink = this.br.getRegex("iframe allowfullscreen=\"true\" noresize=\"\" src=\"(http[^\"]+)").getMatch(0);
-                if (finallink == null) {
-                    return null;
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(singleLink);
+                final String finallink = brc.getRegex("iframe allowfullscreen=\"true\" noresize=\"\" src=\"(http[^\"]+)").getMatch(0);
+                if (finallink != null) {
+                    decryptedLinks.add(createDownloadlink(finallink));
                 }
-                decryptedLinks.add(createDownloadlink(finallink));
             }
         }
-
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-
         return decryptedLinks;
     }
 }

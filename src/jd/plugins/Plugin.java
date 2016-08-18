@@ -365,13 +365,9 @@ public abstract class Plugin implements ActionListener {
         return false;
     }
 
-    public boolean isAbort() {
+    protected boolean isAbort() {
         final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof LinkCrawlerThread) {
-            final LinkCrawlerThread lct = (LinkCrawlerThread) currentThread;
-            final LinkCrawler lc = lct.getCurrentLinkCrawler();
-            return currentThread.isInterrupted() || lc != null && lc.isCrawlingAllowed();
-        } else if (currentThread instanceof SingleDownloadController) {
+        if (currentThread instanceof SingleDownloadController) {
             final SingleDownloadController sdc = (SingleDownloadController) currentThread;
             return sdc.isAborting() || currentThread.isInterrupted();
         }
