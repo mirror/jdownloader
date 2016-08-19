@@ -53,7 +53,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -74,6 +74,9 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final boolean VIDEOHOSTER_2                = true;
     private static final boolean VIDEOHOSTER_3                = true;
     private static final boolean SUPPORTSHTTPS                = false;
+
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK   = false;
+
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -191,12 +194,14 @@ public class TheVideoMe extends antiDDoSForHost {
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    if (fileInfo[1] == null) {
+                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    }
                 }
             }
         }
@@ -240,13 +245,16 @@ public class TheVideoMe extends antiDDoSForHost {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
+        boolean is_saved_directlink = false;
+        final String special_js_stuff = new Regex(correctedBR, "(https?://(?:www\\.)?thevideo\\.me/jwv/[A-Za-z0-9]+)").getMatch(0);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (dllink != null) {
+            is_saved_directlink = true;
+        }
         /* Second, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
         }
-        /* Do not use dllinks found right here - they won't work for this videohost!!! */
-        dllink = null;
         final Browser brv = br.cloneBrowser();
         /* Third, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
@@ -310,6 +318,16 @@ public class TheVideoMe extends antiDDoSForHost {
             } catch (final Throwable e) {
                 logger.warning("VIDEOHOSTER_3 handling failed");
             }
+        }
+        if (special_js_stuff != null && dllink != null && !is_saved_directlink) {
+            /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
+            getPage(brv, special_js_stuff);
+            final String extra_id = brv.getRegex("jwConfig\\|([A-Za-z0-9]+)").getMatch(0);
+            if (extra_id != null) {
+                dllink += "?direct=false&ua=1&vt=" + extra_id;
+            }
+        } else if (special_js_stuff == null && dllink != null && !is_saved_directlink) {
+            logger.info("JDownloader might have been blocked by this host");
         }
         /* Fourth, continue like normal */
         if (dllink == null) {

@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -36,6 +37,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -59,7 +61,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" })
 public class FlickrCom extends PluginForHost {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -221,28 +223,24 @@ public class FlickrCom extends PluginForHost {
         downloadLink.setProperty("custom_filenames_allowed", true);
         filename = getFormattedFilename(downloadLink);
         downloadLink.setFinalFileName(filename);
-        Browser br2 = br.cloneBrowser();
-        /* In case the link redirects to the finallink */
-        br2.setFollowRedirects(true);
+
+        this.br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                con = br.openHeadConnection(dllink);
-            } else {
-                con = br.openGetConnection(dllink);
-            }
+            con = br.openHeadConnection(dllink);
+            // con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -259,11 +257,32 @@ public class FlickrCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
+            /* Same as check below */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            /*
+             * 2016-08-19: Detect "TZemporarily unavailable" message inside downloaded picture via md5 hash of the file:
+             * https://board.jdownloader.org/showthread.php?t=70487"
+             */
+            boolean isTempUnavailable = false;
+            try {
+                isTempUnavailable = "e60b98765d26e34bfbb797c1a5f378f2".equalsIgnoreCase(JDHash.getMD5(new File(downloadLink.getFileOutput())));
+            } catch (final Throwable e) {
+            }
+            if (isTempUnavailable) {
+                /* Reset progress */
+                downloadLink.setDownloadCurrent(0);
+                /* Size unknown */
+                downloadLink.setDownloadSize(0);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+        }
     }
 
     @SuppressWarnings("deprecation")
