@@ -48,42 +48,52 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bdupload.net" }, urls = { "https?://(www\\.)?bdupload\\.net/(embed\\-)?[a-z0-9]{12}" }) 
-public class BduploadNet extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bdupload.info" }, urls = { "https?://(?:www\\.)?bdupload\\.(?:net|info)/(embed\\-)?[a-z0-9]{12}" })
+public class BduploadInfo extends antiDDoSForHost {
 
-    private String               correctedBR                  = "";
-    private String               passCode                     = null;
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                   = "";
+    private String               passCode                      = null;
+    private static final String  PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                  = "http://bdupload.net";
-    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                   = "http://bdupload.net";
+    private static final String  NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                      = "(bdupload\\.net|indifiles\\.com)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean VIDEOHOSTER_2                = false;
-    private static final boolean SUPPORTSHTTPS                = false;
-    private static final boolean SUPPORTSHTTPS_FORCED         = false;
-    private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
+    private static final String  DOMAINS                       = "(bdupload\\.net|bdupload\\.info|indifiles\\.com)";
+    private static final String  MAINTENANCE                   = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT           = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String  ALLWAIT_SHORT                 = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                  = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                   = false;
+    private static final boolean VIDEOHOSTER_2                 = false;
+    private static final boolean SUPPORTSHTTPS                 = true;
+    private static final boolean SUPPORTSHTTPS_FORCED          = true;
+    private static final boolean SUPPORTS_ALT_AVAILABLECHECK   = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE = true;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload  = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private String               fuid                         = null;
+    private static AtomicInteger maxFree                       = new AtomicInteger(10);
+    private String               fuid                          = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
-    // mods:
+    // mods scanInfo:
     // limit-info:
     // protocol: no https
     // captchatype: null
     // other:
-    // TODO: Add case maintenance + alternative filesize check
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("bdupload.net".equals(getHost())) {
+            if (host == null || "bdupload.net".equals(host)) {
+                return "bdupload.info";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -102,7 +112,7 @@ public class BduploadNet extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public BduploadNet(PluginWrapper wrapper) {
+    public BduploadInfo(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -130,6 +140,17 @@ public class BduploadNet extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
+
+        /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            logger.warning("filename length is larrrge");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
+            logger.info("Failed to find filename, trying getFnameViaAbuseLink");
+            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+        }
+
         if (br.getURL().contains("/?op=login&redirect=") || fileInfo[0] == null) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
@@ -223,14 +244,20 @@ public class BduploadNet extends antiDDoSForHost {
                 }
             }
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+        }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?((?-i)B|(?i)KB|(?i)MB|(?i)GB))").getMatch(0);
-                }
-            }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "<b>Size:</b> ([^<>\"\\'/]+) \\|").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?((?-i)B|(?i)KB|(?i)MB|(?i)GB))").getMatch(0);
         }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -246,7 +273,7 @@ public class BduploadNet extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
