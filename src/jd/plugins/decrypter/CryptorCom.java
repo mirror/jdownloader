@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-]+" })
 public class CryptorCom extends PluginForDecrypt {
 
     public CryptorCom(PluginWrapper wrapper) {
@@ -123,7 +123,7 @@ public class CryptorCom extends PluginForDecrypt {
             }
             decryptedLinks.add(DummyCNL.createDummyCNL(cnlCrypted, cnlJk.replaceAll("\\\\", ""), null, cnlSource));
         }
-        final String[] links = br.getRegex("\"(/dl/[A-Za-z0-9]+)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(/dl/[A-Za-z0-9]+\\-)\"").getColumn(0);
         if (links != null) {
             for (final String singleLink : links) {
                 if (this.isAbort()) {

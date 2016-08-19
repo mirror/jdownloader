@@ -76,7 +76,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     iconKey = IconKey.ICON_ADD;
                     break;
                 default:
-                    iconKey = IconKey.ICON_WAIT;
+                    iconKey = IconKey.ICON_LINKGRABBER;
                     break;
                 }
             }

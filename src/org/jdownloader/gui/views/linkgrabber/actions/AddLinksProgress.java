@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
-import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,7 +16,6 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -29,10 +27,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class AddLinksProgress extends AbstractDialog<Object> {
 
@@ -152,18 +148,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
     protected void setReturnmask(boolean b) {
         if (b) {
             // Hide
-
-            new Thread("SimpleTextBallon") {
-                public void run() {
-                    IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
-                    Point loc = iconComp.getLocationOnScreen();
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.AddLinksProgress_setReturnmask_title_(), _GUI.T.AddLinksProgress_setReturnmask_msg_(), new AbstractIcon(IconKey.ICON_LINKGRABBER, 32));
-                    }
-
-                }
-            }.start();
-
         } else {
             // cancel
             final LinkCrawler lc = lcReference.get();

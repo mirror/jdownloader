@@ -137,13 +137,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private final WeakHashMap<JobLinkCrawler, Object> jobLinkCrawlers   = new WeakHashMap<JobLinkCrawler, Object>();
 
+    public static final class JobLinkChecker extends LinkChecker<CrawledLink> {
+
+        private final JobLinkCrawler jobLinkCrawler;
+
+        public final JobLinkCrawler getJobLinkCrawler() {
+            return jobLinkCrawler;
+        }
+
+        protected JobLinkChecker(JobLinkCrawler jobLinkCrawler) {
+            this.jobLinkCrawler = jobLinkCrawler;
+        }
+
+    }
+
     public static final class JobLinkCrawler extends LinkCollectorCrawler {
         private final LinkCollectingJob         job;
         private final LinkCollectingInformation collectingInfo;
         private final LinkCollector             linkCollector;
         private final AtomicBoolean             crawlerAdded   = new AtomicBoolean(false);
         private final long                      collectingID;
-        private final LinkChecker<CrawledLink>  linkChecker    = new LinkChecker<CrawledLink>();
+        private final JobLinkChecker            linkChecker;
 
         private final AtomicInteger             waitingInQueue = new AtomicInteger(0);
 
@@ -190,8 +204,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             this.collectingID = linkCollector.getCollectingID();
             this.job = job;
             this.linkCollector = linkCollector;
-            this.linkChecker.setLinkCheckHandler(linkCollector);
             this.collectingInfo = new LinkCollectingInformation(this);
+            this.linkChecker = new JobLinkChecker(this);
+            this.linkChecker.setLinkCheckHandler(linkCollector);
             final LinkCrawlerHandler defaultHandler = defaulHandlerFactory();
             setHandler(new LinkCrawlerHandler() {
 
@@ -1314,9 +1329,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
