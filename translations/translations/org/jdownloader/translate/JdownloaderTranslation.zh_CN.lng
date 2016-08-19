@@ -312,12 +312,15 @@ jd_controlling_reconnect_Reconnector_progress_failed2=重新连接失败太频�
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未选择重新连接</u></b><br/><p>重新连接是跳过某些强制免费用户长时间等待的高级方式。<br>在使用付费账户时这个没什么用途。</p><p>在<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>这里</a>阅读更多关于重新连接的信息</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=无重新连接
 jd_plugins_PluginUtils_askPassword=请输入 %s1 的密码
+lit_add_subtitles=添加字幕
 lit_audio_bitrate=音频位率
 lit_audio_codec=音频编码解码器
 lit_file_container=文件类型
 lit_hide=隐藏
 lit_please_wait=请稍等....
 lit_resolution=分辨率
+lit_unlimited=无限
+lit_username=用户名
 lit_video_codec=视频编码解码器
 lit_video_framerate=视频帧速
 literally_offline=离线
