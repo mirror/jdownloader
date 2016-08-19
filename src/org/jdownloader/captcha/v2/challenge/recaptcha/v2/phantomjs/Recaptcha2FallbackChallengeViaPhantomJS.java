@@ -18,6 +18,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 
+import jd.captcha.gui.BasicWindow;
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.Request;
+import jd.plugins.Account;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -59,15 +68,6 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
-
-import jd.captcha.gui.BasicWindow;
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.plugins.Account;
 
 public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2FallbackChallenge {
     private static LogSource LOGGER;
@@ -256,14 +256,17 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     public boolean breakIfTrue() throws InterruptedException, IOException {
                         Thread.sleep(500);
                         phantom.switchFrameToMain();
+                        // String mainHtml = (String) phantom.get("page.frameContent");
                         phantom.switchFrameToChild(0);
-                        token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
+                        // String childHtml = (String) phantom.get("page.frameContent");
+                        final String token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
                         if (StringUtils.isNotEmpty(token)) {
+                            Recaptcha2FallbackChallengeViaPhantomJS.this.token = token;
                             StatsManager.I().track("direct", CollectionName.PJS);
                             logger.info("Wow");
                             return true;
                         } else {
-                            token = null;
+                            Recaptcha2FallbackChallengeViaPhantomJS.this.token = null;
                         }
                         phantom.switchFrameToMain();
                         if (phantom.evalInPageContext("document.getElementsByTagName('iframe').length>1") == Boolean.TRUE) {
@@ -438,7 +441,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             setExplain(decs);
             subChallenge.setSearchKey(explain.get().get("tag"));
             // String exampleDataUrl = (String) initData.get("explainUrl");
-            String html = phantom.getFrameHtml();
+            // String html = phantom.getFrameHtml();
             final Object mainPayloadUrl = phantom.evalInPageContext("document.getElementsByClassName('rc-image-tile-wrapper')[0].getElementsByTagName('img')[0].src");
             // wait until the payload image has been loaded
             logger.info("Wait until Payload has been loaded: " + mainPayloadUrl);
@@ -587,7 +590,6 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                             return true;
                         }
                     });
-                    return true;
                 } else {
                     // int ret = 0;
                     // sc.get
@@ -642,7 +644,9 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 @Override
                 public boolean breakIfTrue() throws InterruptedException, IOException {
                     phantom.switchFrameToMain();
+                    // String mainHtml = (String) phantom.get("page.frameContent");
                     phantom.switchFrameToChild(1);
+                    // String childHtml = (String) phantom.get("page.frameContent");
                     sc.setErrorAnotherOneRequired(phantom.evalInPageContext("document.getElementsByClassName('rc-imageselect-error-select-more')[0].style.display!='none'") == Boolean.TRUE);
                     if (sc.isErrorAnotherOneRequired()) {
                         reloadErrorMessage = _GUI.T.RECAPTCHA_2_VERIFICATION_ERROR_MORE_REQUIRED();
@@ -659,15 +663,16 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                         return true;
                     }
                     phantom.switchFrameToMain();
-                    String html = (String) phantom.get("page.frameContent");
-                    token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
+                    // mainHtml = (String) phantom.get("page.frameContent");
+                    final String token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
                     if (StringUtils.isNotEmpty(token)) {
+                        Recaptcha2FallbackChallengeViaPhantomJS.this.token = token;
                         HashMap<String, String> infos = new HashMap<String, String>();
                         infos.put("reloadCount", sc.getReloudCounter() + "");
                         StatsManager.I().track("solved", infos, CollectionName.PJS);
                         return true;
                     } else {
-                        token = null;
+                        Recaptcha2FallbackChallengeViaPhantomJS.this.token = null;
                     }
                     phantom.switchFrameToChild(0);
                     error = (String) phantom.evalInPageContext("document.getElementsByClassName('rc-anchor-error-msg')[0].innerText");
@@ -706,6 +711,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
     public String getReloadErrorMessage() {
         return reloadErrorMessage;
     }
+
     // private void getVisibleError(String className) throws CancelException {
     //
     // boolean hidden = this.browser.executeJavaScriptAndReturnValue(this.frameFrame,
