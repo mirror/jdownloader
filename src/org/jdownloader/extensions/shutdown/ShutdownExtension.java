@@ -21,11 +21,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
-
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
@@ -61,6 +56,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.plugins.AddonPanel;
+import jd.utils.JDUtilities;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
@@ -362,7 +362,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             final boolean showDialog = getSettings().isShowWarningDialog();
             switch (getSettings().getShutdownMode()) {
             case SHUTDOWN:
-                /* try to shutdown */
+                /** try to shutdown */
                 if (showDialog) {
                     logger.info("ask user about shutdown");
                     final String message = T.interaction_shutdown_dialog_msg_shutdown();
