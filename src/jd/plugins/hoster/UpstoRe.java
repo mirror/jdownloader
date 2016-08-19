@@ -447,8 +447,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     // please note: this might cause cookies to go out of session and errors else where...
     // effectively 4 times a day!
-    private final long   useLoginIndividual = 6 * 3480000l;
-    private final String regexLoginCaptcha  = "/captcha/\\?\\d+";
+    private final String regexLoginCaptcha = "/captcha/\\?\\d+";
 
     private long getPremiumTill(Browser br) {
         String expire = br.getRegex("premium till\\s*(\\d{2}/\\d{2}/\\d{2})").getMatch(0);

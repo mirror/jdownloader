@@ -29,6 +29,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,10 +41,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downloader.guru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class DownloaderGuru extends PluginForHost {
 
     private static final String                            API_ENDPOINT         = "http://www.downloader.guru/";
@@ -383,9 +385,15 @@ public class DownloaderGuru extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            loginform.put("ctl00$MainContent$txt1", Encoding.urlEncode(this.currAcc.getUser()));
-            loginform.put("ctl00$MainContent$txt2", Encoding.urlEncode(this.currAcc.getPass()));
-            loginform.put("ctl00$MainContent$chkRememberME", "on");
+            for (InputField inputField : loginform.getInputFields()) {
+                if (StringUtils.containsIgnoreCase(inputField.getKey(), "txt1")) {
+                    inputField.setValue(Encoding.urlEncode(this.currAcc.getUser()));
+                } else if (StringUtils.containsIgnoreCase(inputField.getKey(), "txt2")) {
+                    inputField.setValue(Encoding.urlEncode(this.currAcc.getPass()));
+                } else if (StringUtils.containsIgnoreCase(inputField.getKey(), "chkRememberME")) {
+                    inputField.setValue("on");
+                }
+            }
             postAPIFormSafe(loginform);
             if (this.br.getCookie(this.getHost(), "AuthCookie") == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

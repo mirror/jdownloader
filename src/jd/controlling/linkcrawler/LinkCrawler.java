@@ -2379,13 +2379,9 @@ public class LinkCrawler {
             return true;
         }
         if (checkChildren) {
-            synchronized (children) {
-                if (children.size() > 0) {
-                    for (final LinkCrawler child : children.keySet()) {
-                        if (child.isRunning(true)) {
-                            return true;
-                        }
-                    }
+            for (final LinkCrawler child : getChildren()) {
+                if (child.isRunning(true)) {
+                    return true;
                 }
             }
         }
@@ -3043,17 +3039,19 @@ public class LinkCrawler {
                 if (br != null) {
                     br.setLoadLimit(limit);
                 }
-                final String contentType = urlConnection.getContentType();
-                if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(contentType, "text") || urlConnection.getCompleteContentLength() > limit)) {
-                    try {
-                        urlConnection.disconnect();
-                    } catch (Throwable e) {
+                final LinkCrawlerRule rule = link.getMatchingRule();
+                if (rule == null) {
+                    final String contentType = urlConnection.getContentType();
+                    if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(contentType, "text") || urlConnection.getCompleteContentLength() > limit)) {
+                        try {
+                            urlConnection.disconnect();
+                        } catch (Throwable e) {
+                        }
+                        return find(generation, "directhttp://" + urlConnection.getRequest().getUrl(), null, false, false);
                     }
-                    return find(generation, "directhttp://" + urlConnection.getRequest().getUrl(), null, false, false);
-                } else {
-                    br.followConnection();
-                    return null;
                 }
+                br.followConnection();
+                return null;
             }
         };
     }

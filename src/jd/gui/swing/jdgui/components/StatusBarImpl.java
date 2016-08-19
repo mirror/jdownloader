@@ -18,18 +18,15 @@ package jd.gui.swing.jdgui.components;
 
 import java.awt.Component;
 import java.awt.HeadlessException;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
@@ -45,10 +42,14 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerEvent;
-import jd.controlling.linkcrawler.LinkCrawlerListener;
+import jd.controlling.linkcollector.LinkCollector.JobLinkChecker;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
@@ -61,7 +62,6 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.bottombar.AutoConfirmProcessIndicator;
@@ -74,11 +74,10 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             throw new HeadlessException();
         }
     }
-    private static final long      serialVersionUID = 3676496738341246846L;
-    private ReconnectProgress      reconnectIndicator;
-    private IconedProcessIndicator linkGrabberIndicator;
-    private JLabel                 statusLabel;
-    private DelayedRunnable        updateDelayer;
+    private static final long serialVersionUID = 3676496738341246846L;
+    private ReconnectProgress reconnectIndicator;
+    private JLabel            statusLabel;
+    private DelayedRunnable   updateDelayer;
 
     public StatusBarImpl() {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -137,76 +136,87 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 };
             }
         });
-        // reconnectIndicator.setToolTipText("<html><img src=\"" +
-        // NewTheme.I().getImageUrl("reconnect") +
-        // "\"></img>Waiting for new IP - Reconnect in progress</html>");
 
-        linkGrabberIndicator = new IconedProcessIndicator(new AbstractIcon(IconKey.ICON_LINKGRABBER, 16));
+        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
 
-        linkGrabberIndicator.setTitle(_GUI.T.StatusBarImpl_initGUI_linkgrabber());
-        linkGrabberIndicator.setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
-        linkGrabberIndicator.setIndeterminate(false);
-        linkGrabberIndicator.setEnabled(false);
-        linkGrabberIndicator.addMouseListener(new MouseListener() {
-
-            public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                    final JPopupMenu popup = new JPopupMenu();
-
-                    popup.add(new AppAction() {
-                        /**
-                         *
-                         */
-                        private static final long serialVersionUID = -968768342263254431L;
-
-                        {
-                            this.setIconKey(IconKey.ICON_CANCEL);
-                            this.setName(_GUI.T.StatusBarImpl_initGUI_abort_linkgrabber());
-                            this.setEnabled(linkGrabberIndicator.isEnabled());
-                        }
-
-                        public void actionPerformed(ActionEvent e) {
-                            LinkCollector.getInstance().abort();
-                        }
-
-                    });
-
-                    popup.show(linkGrabberIndicator, e.getPoint().x, 0 - popup.getPreferredSize().height);
-                }
+            @Override
+            public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
             }
 
-            public void mousePressed(MouseEvent e) {
+            @Override
+            public void onLinkCrawlerStarted(LinkCollectorCrawler crawler) {
             }
 
-            public void mouseExited(MouseEvent e) {
+            @Override
+            public void onLinkCrawlerNewJob(LinkCollectingJob job) {
             }
 
-            public void mouseEntered(MouseEvent e) {
+            @Override
+            public void onLinkCrawlerFinished() {
             }
 
-            public void mouseClicked(MouseEvent e) {
-            }
-        });
-        LinkCrawler.getGlobalEventSender().addListener(new LinkCrawlerListener() {
-
-            public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
-                updateLinkGrabberIndicator();
-            }
-
-        });
-        LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
-
-            public void onLinkCheckerEvent(final LinkCheckerEvent event) {
-                if (event.getCaller() == LinkCollector.getInstance().getDefaultLinkChecker()) {
-                    updateLinkGrabberIndicator();
-                } else if (LinkCheckerEvent.Type.STARTED.equals(event.getType())) {
+            @Override
+            public void onLinkCrawlerAdded(final LinkCollectorCrawler crawler) {
+                if (crawler instanceof JobLinkCrawler) {
                     new EDTRunner() {
 
                         @Override
                         protected void runInEDT() {
-                            new LinkCheckerIndicator(StatusBarImpl.this, event.getCaller());
+                            new JobLinkCrawlerIndicator(StatusBarImpl.this, (JobLinkCrawler) crawler);
                         }
                     };
+                }
+            }
+
+            @Override
+            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+            }
+
+            @Override
+            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+            }
+
+            @Override
+            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorAbort(LinkCollectorEvent event) {
+            }
+        });
+        LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
+
+            public void onLinkCheckerEvent(final LinkCheckerEvent event) {
+                if (!(event.getCaller() instanceof JobLinkChecker)) {
+                    if (LinkCheckerEvent.Type.STARTED.equals(event.getType())) {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                new LinkCheckerIndicator(StatusBarImpl.this, event.getCaller());
+                            }
+                        };
+                    }
                 }
             }
 
@@ -245,7 +255,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         StringBuilder sb = new StringBuilder();
         sb.append("[left]0[grow,fill]");
         final ArrayList<JComponent> lprocessIndicators = new ArrayList<JComponent>(processIndicators);
-        for (int i = -2; i < lprocessIndicators.size(); i++) {
+        for (int i = -1; i < lprocessIndicators.size(); i++) {
             sb.append("1[fill,22!]");
         }
         sb.append("3");
@@ -258,7 +268,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         super.add(p);
         super.add(statusLabel, "height 22!,gapright 10!");
         super.add(reconnectIndicator, "");
-        super.add(linkGrabberIndicator, "");
         for (JComponent c : lprocessIndicators) {
             super.add(c, "");
         }
@@ -282,10 +291,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         }
     }
 
-    public IconedProcessIndicator getLinkGrabberIndicator() {
-        return linkGrabberIndicator;
-    }
-
     private CopyOnWriteArraySet<JComponent> processIndicators = new CopyOnWriteArraySet<JComponent>();
     private IconedProcessIndicator          downloadWatchdogIndicator;
 
@@ -299,40 +304,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     public Component add(Component comp) {
         throw new WTFException("Use #addProcessIndicator");
-    }
-
-    private final AtomicBoolean   linkgrabberIndicatorEnabled = new AtomicBoolean(false);
-    private final DelayedRunnable linkgrabberIndicatorUpdater = new DelayedRunnable(ToolTipController.EXECUTER, 500, 2000) {
-                                                                  @Override
-                                                                  public String getID() {
-                                                                      return "StatusBar:LinkGrabberIndicatorUpdater";
-                                                                  }
-
-                                                                  @Override
-                                                                  public void delayedrun() {
-                                                                      updateLinkGrabberIndicator();
-                                                                  }
-                                                              };
-
-    private void updateLinkGrabberIndicator() {
-        final boolean enabled = LinkCollector.getInstance().isCollecting();
-        if (enabled) {
-            linkgrabberIndicatorUpdater.resetAndStart();
-        }
-        if (linkgrabberIndicatorEnabled.compareAndSet(!enabled, enabled)) {
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    linkGrabberIndicator.setEnabled(enabled);
-                    linkGrabberIndicator.setIndeterminate(enabled);
-                    if (enabled) {
-                        linkGrabberIndicator.setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc());
-                    } else {
-                        linkGrabberIndicator.setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
-                    }
-                }
-            };
-        }
     }
 
     private JComponent lazyGetDownloadWatchdogIndicator() {
