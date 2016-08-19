@@ -21,6 +21,12 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,12 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -799,7 +799,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download is not
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, PluginJSonUtils.getJsonValue(iString, "errors"), true);
+                    handleErrors(account, PluginJSonUtils.getJsonArray(iString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
                 case 23:
@@ -836,7 +836,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, PluginJSonUtils.getJsonValue(iString, "errors"), true);
+                    handleErrors(account, PluginJSonUtils.getJsonArray(iString, "errors"), true);
                 case 70:
                 case 72:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
