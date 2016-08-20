@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://(?:kbagi\\.com|kumpulbagi\\(?:id|com))/[a-z0-9\\-_]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://(?:kbagi\\.com|kumpulbagi\\.(?:id|com))/[a-z0-9\\-_]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
 public class KumpulbagiId extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -52,7 +52,7 @@ public class KumpulbagiId extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("(?:kbagi\\.com|kumpulbagi\\(?:id|com))/", "kbagi.com/");
+        final String parameter = param.toString().replaceAll("(?:kbagi\\.com|kumpulbagi\\.(?:id|com))/", "kbagi.com/");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
