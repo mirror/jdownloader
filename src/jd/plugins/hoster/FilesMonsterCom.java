@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -367,7 +367,7 @@ public class FilesMonsterCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 // get login page first, that way we don't post twice in case
                 // captcha is already invoked!
-                br.getPage("http://filesmonster.com/login.php");
+                br.getPage("https://filesmonster.com/login.php");
                 final Form login = br.getFormbyProperty("name", "login");
                 final String lang = System.getProperty("user.language");
                 if (login == null) {
@@ -398,7 +398,7 @@ public class FilesMonsterCom extends PluginForHost {
                 /* Make sure that we have the correct language (English) */
                 final String lang_cookie = br.getCookie("http://filesmonster.com/", "yab_ulanguage");
                 if (!"en".equals(lang_cookie)) {
-                    br.getPage("http://filesmonster.com/?setlang=en");
+                    br.getPage("/?setlang=en");
                 }
 
                 if (br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by \\'Password reminder\\'")) {
@@ -444,7 +444,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
         // Make sure account service updates do not login more than once every 4 hours? so we only use up to 6 logins a day?
         if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 14400000 <= Long.parseLong(account.getStringProperty("lastlogin")))) {
@@ -453,24 +453,26 @@ public class FilesMonsterCom extends PluginForHost {
             login(account, true);
         }
         // needed because of cached login and we need to have a browser containing html to regex against!
-        if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://filesmoster.com/")) {
-            br.getPage("http://filesmonster.com/");
+        if (br.getURL() == null || !br.getURL().matches("https?://[^/]*filesmoster\\.com/?")) {
+            br.getPage("/");
         }
         ai.setUnlimitedTraffic();
+        // current premium
         String expires = br.getRegex("Valid until: <span class='[^<>]+'>([^<>\"]+)</span>").getMatch(0);
+        if (expires == null) {
+            expires = br.getRegex("Premium till\\s*<\\s*span\\s+class=\"expire-date\\s*\"\\s*>\\s*([^<>\"]+)\\s*</span>").getMatch(0);
+            if (expires == null) {
+                // picks up expired accounts.
+                expires = br.getRegex("(?:<span.*?>Expire(?:s|d):|<span class=\"expire-date\\s*\">)\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
+                if (expires == null) {
+                    expires = br.getRegex("Premium expired:\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
+                }
+            }
+        }
         long expireTimeStamp = -1;
         if (expires != null) {
             expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
             if (expireTimeStamp <= 0) {
-                expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
-            }
-        } else {
-            // picks up expired accounts.
-            expires = br.getRegex("(?:<span.*?>Expire(?:s|d):|<span class=\"expire-date\\s*\">)\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
-            if (expires == null) {
-                expires = br.getRegex("Premium expired:\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
-            }
-            if (expires != null) {
                 expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
             }
         }
