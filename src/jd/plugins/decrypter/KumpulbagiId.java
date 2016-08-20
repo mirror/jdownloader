@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://k(?:umpul)?bagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
 public class KumpulbagiId extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
