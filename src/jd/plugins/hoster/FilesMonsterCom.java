@@ -415,7 +415,7 @@ public class FilesMonsterCom extends PluginForHost {
                     }
                 } else if (br.containsHTML("Your membership type: <[^<>]+>Regular<[^<>]+>")) {
                     account.setType(AccountType.FREE);
-                } else if (!br.containsHTML("Your membership type: <[^<>]+>Premium<[^<>]+>")) {
+                } else if (br.containsHTML("Your membership type: <[^<>]+>Premium<[^<>]+>")) {
                     account.setType(AccountType.PREMIUM);
                 } else {
                     if ("de".equalsIgnoreCase(lang)) {
