@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,8 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
@@ -55,10 +55,8 @@ public class KumpulbagiId extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("kbagi.com".equals(getHost())) {
-            if (host == null || "kbagi.com".equals(host)) {
-                return "kumpulbagi.id";
-            }
+        if (host == null || "kbagi.com".equals(host) || "kumpulbagi.id".equals(host) || "kumpulbagi.com".equals(host)) {
+            return "kumpulbagi.id";
         }
         return super.rewriteHost(host);
     }

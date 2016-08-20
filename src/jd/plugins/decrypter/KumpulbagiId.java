@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://k(?:umpul)?bagi\\.(?:com|id)/[a-z0-9\\-_]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://(?:kbagi\\.com|kumpulbagi\\(?:id|com))/[a-z0-9\\-_]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
 public class KumpulbagiId extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -52,7 +52,7 @@ public class KumpulbagiId extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace(".id/", ".com/");
+        final String parameter = param.toString().replaceAll("(?:kbagi\\.com|kumpulbagi\\(?:id|com))/", "kbagi.com/");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -61,7 +61,7 @@ public class KumpulbagiId extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
-        /* No permission to see file/folder */{
+        /* No permission to see file/folder */ {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
