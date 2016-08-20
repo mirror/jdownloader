@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
 public class KumpulbagiId extends PluginForHost {
 
     public KumpulbagiId(PluginWrapper wrapper) {
@@ -50,13 +50,13 @@ public class KumpulbagiId extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://kumpulbagi.com/termosecondicoes.aspx";
+        return "http://kbagi.com/termosecondicoes.aspx";
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("kumpulbagi.com".equals(getHost())) {
-            if (host == null || "kumpulbagi.com".equals(host)) {
+        if ("kbagi.com".equals(getHost())) {
+            if (host == null || "kbagi.com".equals(host)) {
                 return "kumpulbagi.id";
             }
         }
@@ -189,7 +189,7 @@ public class KumpulbagiId extends PluginForHost {
         }
     }
 
-    private static final String MAINPAGE = "http://kumpulbagi.com";
+    private static final String MAINPAGE = "http://kbagi.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("deprecation")
