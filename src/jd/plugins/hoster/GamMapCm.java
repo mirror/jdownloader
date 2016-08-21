@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.util.HashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -26,18 +29,16 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamemaps.com" }, urls = { "http://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)\\d+" }) 
-public class GamMapCm extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamemaps.com" }, urls = { "http://(?:www\\.)?gamemaps\\.com/(?:details/|mirrors/|mirrors/mirror/(?:\\d+/)?)\\d+" })
+public class GamMapCm extends antiDDoSForHost {
 
     private String         fuid      = null;
     private String         ddlink    = null;
@@ -46,7 +47,7 @@ public class GamMapCm extends PluginForHost {
 
     /**
      * @author raztoki
-     * */
+     */
     public GamMapCm(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -94,14 +95,21 @@ public class GamMapCm extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        prepBrowser(br);
         correctDownloadLink(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(404 Not Found|This file could not be found on our system)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">File: <span class=\"content\">(.*?)</span>").getMatch(0);
+        if (filename == null) {
+            // down the bottom you get filename with extension
+            filename = br.getRegex("<span class=\"tag nohover\">(.*?)</span>").getMatch(0);
+        }
         String filesize = br.getRegex(">Size: <span class=\"content\">(.*?)</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<div class=\"filesize\">(.*?)</div>").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -110,11 +118,6 @@ public class GamMapCm extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
-    }
-
-    private Browser prepBrowser(final Browser prepBr) {
-        prepBr.setFollowRedirects(true);
-        return prepBr;
     }
 
     @Override
@@ -131,10 +134,10 @@ public class GamMapCm extends PluginForHost {
             // mirrors : first download page, choose a mirror
             // mirrors/mirror/\d+ : loading page, dl starts in x, if not dling click here...
             // mirrors/mirror/\d+/\d+ : redirect to dl server
-            br.getPage("/mirrors/" + fuid);
+            getPage("/mirrors/" + fuid);
             // prefer region over servers numbers?
             HashMap<String, String> d = new HashMap<String, String>();
-            final String[] filter = br.getRegex("<div class=\"mirror themecolor\".*?<div class=\"location\">.*?(</div>\\s*){3}").getColumn(-1);
+            final String[] filter = br.getRegex("<div class=\"mirror (?:themecolor\")?.*?<div class=\"location\">.*?(</div>\\s*){3}").getColumn(-1);
             if (filter != null) {
                 for (final String f : filter) {
                     final String location = new Regex(f, "<div class=\"location\">(.*?)</div>").getMatch(0);
@@ -167,8 +170,16 @@ public class GamMapCm extends PluginForHost {
                 logger.warning("Could not find location downloadlink");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(ddlink);
+            getPage(ddlink);
+            // no longer meta refresh, but form with delay over javascript > form submit > downloading....(javascript)
+            final Form f = br.getFormbyKey("ad_verif");
+            submitForm(f);
             ddlink = br.getRegex("<meta http-equiv=\"refresh\"[^\r\n]+url=([^\"]+)").getMatch(0);
+            if (ddlink == null) {
+                // link will be in the format of /mirrors/download/uid/mirrorid > redirects via standard 302 location header
+                ddlink = br.getRegex("/mirrors/download/" + fuid + "/\\d+").getMatch(0);
+            }
+
             if (ddlink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
