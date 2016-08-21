@@ -33,21 +33,22 @@ import jd.plugins.PluginForHost;
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spiegel.tv" }, urls = { "http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+|http://(?:www\\.)?spiegel\\.de/video/(?:embedurl/)?[a-z0-9\\-_]*?video\\-[a-z0-9\\-_]*?\\.html", "http://(?:www\\.)?spiegel\\.tv/(?:#/)?filme/[a-z0-9\\-]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spiegel.tv" }, urls = { "https?://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+|https?://(?:www\\.)?spiegel\\.de/video/(?:embedurl/)?[a-z0-9\\-_]*?video\\-[a-z0-9\\-_]*?\\.html", "https?://(?:www\\.)?spiegel\\.tv/.*?filme/[a-z0-9\\-]+/|https?://(?:www\\.)?spiegel\\.de/sptv/spiegeltv/[A-Za-z0-9\\-]+\\-\\d+\\.html" })
 public class SpiegelDe extends PluginForHost {
 
-    private final Pattern        pattern_supported_image          = Pattern.compile("http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+");
-    private final Pattern        pattern_supported_video          = Pattern.compile("http://(www\\.|m\\.)?spiegel\\.de/video/.+");
-    private final Pattern        pattern_supported_video_mobile   = Pattern.compile("http://m\\.spiegel\\.de/video/media/video\\-\\d+\\.html");
-    private final Pattern        pattern_supported_spiegeltvfilme = Pattern.compile("http://(www\\.)?spiegel\\.tv/(#/)?filme/[a-z0-9\\-]+/");
+    private final Pattern        pattern_supported_image                        = Pattern.compile("https?://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+");
+    private final Pattern        pattern_supported_video                        = Pattern.compile("https?://(www\\.|m\\.)?spiegel\\.de/video/.+");
+    private final Pattern        pattern_supported_video_mobile                 = Pattern.compile("https?://m\\.spiegel\\.de/video/media/video\\-\\d+\\.html");
+    private final Pattern        pattern_supported_spiegeltvfilme               = Pattern.compile("https?://(?:www\\.)?spiegel\\.tv/.+");
+    private final Pattern        pattern_supported_spiegelde_spiegeltv_embedded = Pattern.compile("https?://(?:www\\.)?spiegel\\.de/sptv/spiegeltv/[A-Za-z0-9\\-]+\\-\\d+\\.html");
 
-    private static final String  spiegeltvfilme_rtmp_app          = "schnee_vod/flashmedia/";
-    private static final String  spiegeltvfilme_apihost           = "http://spiegeltv-ivms2-restapi.s3.amazonaws.com";
+    private static final String  spiegeltvfilme_rtmp_app                        = "schnee_vod/flashmedia/";
+    private static final String  spiegeltvfilme_apihost                         = "http://spiegeltv-ivms2-restapi.s3.amazonaws.com";
 
-    private static final boolean rtmpe_supported                  = false;
-    private static final boolean prefer_hls                       = true;
+    private static final boolean rtmpe_supported                                = false;
+    private static final boolean prefer_hls                                     = true;
 
-    private String               DLLINK                           = null;
+    private String               DLLINK                                         = null;
 
     /* Tags: spiegel.tv, dctp.tv */
     /*
@@ -78,9 +79,7 @@ public class SpiegelDe extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (new Regex(link.getDownloadURL(), pattern_supported_spiegeltvfilme).matches()) {
-            link.setUrlDownload(link.getDownloadURL().replace("/#/", "/"));
-        } else if (new Regex(link.getDownloadURL(), pattern_supported_video).matches() || new Regex(link.getDownloadURL(), pattern_supported_video_mobile).matches()) {
+        if (new Regex(link.getDownloadURL(), pattern_supported_video).matches() || new Regex(link.getDownloadURL(), pattern_supported_video_mobile).matches()) {
             final String videoid = new Regex(link.getDownloadURL(), "video\\-(\\d+)").getMatch(0);
             link.setUrlDownload("http://www.spiegel.de/video/video-" + videoid + ".html");
         }
@@ -91,7 +90,8 @@ public class SpiegelDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         /* Offline urls should also have nice filenames! */
-        downloadLink.setName(getURLFilename(downloadLink));
+        String filename_url = getURLFilename(downloadLink);
+        downloadLink.setName(filename_url);
         String filename = null;
         if (new Regex(downloadLink.getDownloadURL(), pattern_supported_video).matches()) {
             /* pattern_supported_video links can redirect to pattern_supported_spiegeltvfilme */
@@ -105,10 +105,25 @@ public class SpiegelDe extends PluginForHost {
                 }
             }
         }
-        if (new Regex(downloadLink.getDownloadURL(), pattern_supported_spiegeltvfilme).matches()) {
+        if (new Regex(downloadLink.getDownloadURL(), pattern_supported_spiegeltvfilme).matches() || new Regex(downloadLink.getDownloadURL(), pattern_supported_spiegelde_spiegeltv_embedded).matches()) {
+            if (new Regex(downloadLink.getDownloadURL(), pattern_supported_spiegelde_spiegeltv_embedded).matches()) {
+                /* spiegel.tv movie embedded in spiegel.de - let's find the real spiegel.tv url. */
+                logger.info("Trying to find original spiegel.tv url from video embedded on spiegel.de");
+                this.br.getPage(downloadLink.getDownloadURL());
+                final String url_spiegeltv = this.br.getRegex("<iframe[^<>]+src=\"(https?://(?:www)?\\.spiegel\\.tv/filme/[a-z0-9\\-]+/)[^<>]+></iframe>").getMatch(0);
+                if (url_spiegeltv == null) {
+                    logger.info("Failed to find embedded spiegel.tv url on spiegel.de - either a plugin issue or there is no video --> Link offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                logger.info("Successfully found real spiegel.tv url");
+                /* Set the real spiegel.tv url and update filename_url for the next request! */
+                downloadLink.setUrlDownload(url_spiegeltv);
+                filename_url = getURLFilename(downloadLink);
+                downloadLink.setName(filename_url);
+            }
             /* More info e.g. here: http://spiegeltv-prod-static.s3.amazonaws.com/projectConfigs/projectConfig.json?cache=648123456s5 */
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage("http://www.spiegel.tv/filme/" + filename_url + "/");
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
@@ -208,6 +223,8 @@ public class SpiegelDe extends PluginForHost {
         } else if (new Regex(dl.getDownloadURL(), pattern_supported_video).matches() || new Regex(dl.getDownloadURL(), pattern_supported_video_mobile).matches()) {
             final String videoid = new Regex(dl.getDownloadURL(), "video\\-(\\d+)").getMatch(0);
             urlfilename = videoid;
+        } else if (new Regex(dl.getDownloadURL(), pattern_supported_spiegelde_spiegeltv_embedded).matches()) {
+            urlfilename = new Regex(dl.getDownloadURL(), "/spiegeltv/(.+)\\.html$").getMatch(0);
         } else {
             /* For type pattern_supported_image */
             urlfilename = new Regex(dl.getDownloadURL(), "spiegel\\.de/images/(image[^<>\"/]+)").getMatch(0);

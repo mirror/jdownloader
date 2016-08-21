@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/[A-Za-z0-9\\-_]+\\d+$" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/(?:uploads/)?[A-Za-z0-9\\-_]*?\\d+$" })
 public class ParteeeyDeGallery extends PluginForDecrypt {
 
     public ParteeeyDeGallery(PluginWrapper wrapper) {
@@ -41,14 +41,14 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String gal_ID = new Regex(param.toString(), "(\\d+)$").getMatch(0);
         if (gal_ID == null) {
             final DownloadLink offline = this.createOfflinelink(param.toString());
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("parteeey.de"));
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa == null) {
             return decryptedLinks;
         }
@@ -56,13 +56,14 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         try {
             jd.plugins.hoster.ParteeeyDe.login(this.br, aa, false);
         } catch (final Throwable e) {
+            logger.info("Login failure");
             return decryptedLinks;
         }
 
-        /* Show 1000 links per page --> Usually we'll only get one page */
+        /* Show 1000 links per page --> Usually we'll only get one page no matter how big a gallery is. */
         final String parameter = param.toString() + "?oF=f.date&oD=asc&eP=1000";
         br.getPage(parameter);
-        if (br.containsHTML(">Seite nicht gefunden<") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Seite nicht gefunden<")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -70,41 +71,49 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         final String url_name = new Regex(parameter, "parteeey\\.de/galerie/(.+)").getMatch(0);
         String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
+            /* Packagename fallback */
             fpName = url_name;
         }
-        int currentMaxPage = 1;
-        final String[] pages = br.getRegex("\\?p=(\\d+)").getColumn(0);
+        int page_int_max = 1;
+        final String[] pages = br.getRegex("\\?p=(\\d+)\">\\d+").getColumn(0);
         if (pages != null && pages.length != 0) {
-            for (final String page : pages) {
-                final int p = Integer.parseInt(page);
-                if (p > currentMaxPage) {
-                    currentMaxPage = p;
+            for (final String page_str : pages) {
+                final int page_int = Integer.parseInt(page_str);
+                if (page_int > page_int_max) {
+                    page_int_max = page_int;
                 }
             }
         }
-        /* TODO: Fix that: currentMaxPage */
-        currentMaxPage = 1;
 
         int counter = 1;
         final DecimalFormat df = new DecimalFormat("0000");
-        for (int i = 1; i <= currentMaxPage; i++) {
+        for (int i = 1; i <= page_int_max; i++) {
             if (this.isAbort()) {
                 logger.info("User aborted decryption for link: " + parameter);
                 return decryptedLinks;
             }
 
-            logger.info("Decrypting site " + i + " / " + currentMaxPage);
+            logger.info("Decrypting page " + i + " / " + page_int_max);
             if (i > 1) {
                 br.getPage(parameter + "&p=" + i);
             }
             /* Grab thumbnails and build finallinks --> Is very fast */
-            final String[] htmls = this.br.getRegex("<div class=\"thumbnail\">(.*?)</ul> </div> </div>").getColumn(0);
+            final String[] htmls = this.br.getRegex("<div class=\"thumbnail\">(.*?)page\\-list\\-thumb\\-info").getColumn(0);
             if (htmls == null || htmls.length == 0) {
                 break;
             }
             for (final String html : htmls) {
-                final String linkid = new Regex(html, "filId:[\t\n\r ]*?(\\d+)").getMatch(0);
-                final String url_thumb = new Regex(html, "img data\\-src=\"(tmp/[^<>\"]*?)\"").getMatch(0);
+                String linkid = new Regex(html, "filId:[\t\n\r ]*?(\\d+)").getMatch(0);
+                if (linkid == null) {
+                    linkid = new Regex(html, "handleClick\\((\\d+)").getMatch(0);
+                }
+                if (linkid == null) {
+                    linkid = new Regex(html, "datei\\?p=(\\d+)").getMatch(0);
+                }
+                String url_thumb = new Regex(html, "img data\\-src=\"(tmp/[^<>\"]*?)\"").getMatch(0);
+                if (url_thumb == null) {
+                    url_thumb = new Regex(html, "<img data\\-src=\"(http[^<>\"]+)\"").getMatch(0);
+                }
                 if (linkid == null) {
                     return null;
                 }
@@ -129,6 +138,7 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         }
 
         if (decryptedLinks.size() == 0) {
+            /* WTF */
             return null;
         }
 

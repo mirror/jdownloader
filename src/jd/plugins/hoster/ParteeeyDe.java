@@ -17,9 +17,9 @@
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/(?:#mulFile\\-|galerie/datei\\?p=)\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/(?:#mulFile\\-|galerie/datei\\?p=)\\d+" })
 public class ParteeeyDe extends PluginForHost {
 
     public ParteeeyDe(PluginWrapper wrapper) {
@@ -50,29 +50,30 @@ public class ParteeeyDe extends PluginForHost {
         return "https://www.parteeey.de/nutzungsbedingungen";
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    /* Connection stuff - disable resume & chunks to keep serverload low. */
+    private static final boolean FREE_RESUME       = false;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
+
+    public static final long     trust_cookie_age  = 300000l;
 
     private String               DLLINK            = null;
     private boolean              SERVER_ERROR      = false;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem           = new AtomicInteger(1);
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         DLLINK = null;
+        SERVER_ERROR = false;
         this.setBrowserExclusive();
-        /* 2015-12-12: Account not necessarily needed to download their content wirh the information we already got via decrypter. */
-        // final Account aa = AccountController.getInstance().getValidAccount(this);
-        // if (aa == null) {
-        // link.getLinkStatus().setStatusText("Cannot check/download without account");
-        // return AvailableStatus.UNCHECKABLE;
-        // }
         prepBR(this.br);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            link.getLinkStatus().setStatusText("Account needed for linkcheck- and download");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        login(this.br, aa, false);
+
         String url_thumb = link.getStringProperty("thumburl", null);
         String filename = null;
         String filename_decrypter = link.getStringProperty("decrypterfilename", null);
@@ -80,25 +81,37 @@ public class ParteeeyDe extends PluginForHost {
         if (linkid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.br.postPage("https://www.parteeey.de/Ajax/mulFileInfo", "filId=" + linkid + "&width=1119&height=690&filIdPrevious=&filIdNext=&_iconPath=images%2Ficons%2FLumina");
-        try {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            DLLINK = (String) entries.get("path");
-        } catch (final Throwable e) {
-        }
+        link.setLinkID(linkid);
+
+        /*
+         * 2016-08-21: Prefer download via official download function as this gives us the highest quality possible - usually a bit(some
+         * KBs) better than the image displayed in the gallery via browser.
+         */
+        DLLINK = "https://www." + this.getHost() + "/galerie/datei/herunterladen/" + linkid;
+        /* 2016-08-21: This if-statement is obsolete but let's keep it as it might comes in handy it in the future. */
         if (DLLINK == null) {
-            if (url_thumb != null && !url_thumb.startsWith("http")) {
-                url_thumb = "https://www.parteeey.de/" + url_thumb;
+            /* 2016-08-21: Set width & height to higher values so that we get the max quality possible. */
+            this.br.postPage("https://www." + this.getHost() + "/Ajax/mulFileInfo", "filId=" + linkid + "&width=5000&height=5000&filIdPrevious=&filIdNext=");
+            try {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                DLLINK = (String) entries.get("path");
+            } catch (final Throwable e) {
             }
-            DLLINK = url_thumb;
-        } else {
-            if (!DLLINK.startsWith("http") && !DLLINK.startsWith("/")) {
-                DLLINK = "https://www.parteeey.de/" + DLLINK;
+            if (DLLINK == null) {
+                if (url_thumb != null && !url_thumb.startsWith("http")) {
+                    url_thumb = "https://www." + this.getHost() + "/" + url_thumb;
+                }
+                DLLINK = url_thumb;
+            } else {
+                if (!DLLINK.startsWith("http") && !DLLINK.startsWith("/")) {
+                    DLLINK = "https://www." + this.getHost() + "/" + DLLINK;
+                }
+            }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+
         final String url_filename = getFilenameFromDirecturl(DLLINK);
         if (url_filename != null) {
             filename = url_filename;
@@ -107,11 +120,10 @@ public class ParteeeyDe extends PluginForHost {
         } else {
             filename = linkid + ".jpg";
         }
-        // DLLINK = "" + linkid;
         link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(DLLINK);
+            con = this.br.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
@@ -130,17 +142,17 @@ public class ParteeeyDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        /* Account needed to download. */
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (SERVER_ERROR) {
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (SERVER_ERROR) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -161,18 +173,29 @@ public class ParteeeyDe extends PluginForHost {
     private static final String MAINPAGE = "http://parteeey.de";
     private static Object       LOCK     = new Object();
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 prepBR(br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
-                    return;
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    br.getPage("https://www." + account.getHoster());
+                    if (br.containsHTML("class=\"navbar\\-user\\-info\"")) {
+                        /* Cookies refreshed/re-used successfully - let's save them again to refresh the timestamp. */
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
+                        return;
+                    }
+                    /* Something failed - reset Browser and perform a full login. */
+                    br = prepBR(new Browser());
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://www.parteeey.de/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www." + account.getHoster() + "/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || !br.containsHTML("/logout\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -201,7 +224,6 @@ public class ParteeeyDe extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(maxPrem.get());
         account.setConcurrentUsePossible(true);
         ai.setStatus("Registered (free) user");
         account.setValid(true);
@@ -210,7 +232,8 @@ public class ParteeeyDe extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        handleFree(link);
+        requestFileInformation(link);
+        doFree(link);
     }
 
     public static String getFilenameFromDirecturl(final String directurl) {
@@ -222,15 +245,14 @@ public class ParteeeyDe extends PluginForHost {
     }
 
     public static Browser prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0");
         br.setFollowRedirects(true);
         return br;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return -1;
     }
 
     @Override
