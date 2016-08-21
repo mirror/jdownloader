@@ -29,9 +29,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
 public class SpankBangCom extends antiDDoSForHost {
 
     public SpankBangCom(PluginWrapper wrapper) {
@@ -45,13 +46,24 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     /** Settings stuff */
-    private static String FASTLINKCHECK = "FASTLINKCHECK";
-    private static String ALLOW_BEST    = "ALLOW_BEST";
-    private static String ALLOW_240p    = "ALLOW_240p";
-    private static String ALLOW_480p    = "ALLOW_480p";
-    private static String ALLOW_720p    = "ALLOW_720p";
+    private final static String FASTLINKCHECK = "FASTLINKCHECK";
+    private final static String ALLOW_BEST    = "ALLOW_BEST";
+    private final static String ALLOW_240p    = "ALLOW_240p";
+    private final static String ALLOW_480p    = "ALLOW_480p";
+    private final static String ALLOW_720p    = "ALLOW_720p";
+    private final static String ALLOW_1080p   = "ALLOW_1080p";
 
-    private String        dllink        = null;
+    private String              dllink        = null;
+
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected BrowserName setBrowserName() {
+        return BrowserName.Chrome;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -97,6 +109,16 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     @Override
+    public void getPage(String page) throws Exception {
+        super.getPage(page);
+    }
+
+    @Override
+    public void setBrowser(Browser brr) {
+        super.setBrowser(brr);
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -117,9 +139,10 @@ public class SpankBangCom extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.SpankBangCom.ALLOW_BEST", "Always only grab best available resolution?")).setDefaultValue(true);
         getConfig().addEntry(cfg);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_240p", "Grab 240p?")).setDefaultValue(true).setEnabledCondidtion(cfg, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_480p", "Grab 480p?")).setDefaultValue(true).setEnabledCondidtion(cfg, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_720p", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(cfg, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_240p", "Grab 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_480p", "Grab 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_720p", "Grab 720p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_720p", "Grab 1080p?")).setDefaultValue(true));
     }
 
     @Override

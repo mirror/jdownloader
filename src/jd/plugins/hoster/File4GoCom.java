@@ -19,6 +19,10 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" })
 public class File4GoCom extends antiDDoSForHost {
 
     public File4GoCom(PluginWrapper wrapper) {
@@ -76,14 +76,8 @@ public class File4GoCom extends antiDDoSForHost {
     }
 
     @Override
-    protected Browser prepBrowser(Browser prepBr, String host) {
-        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            if (browserName == null) {
-                browserName = BrowserName.Firefox;
-            }
-            super.prepBrowser(prepBr, host);
-        }
-        return prepBr;
+    protected BrowserName setBrowserName() {
+        return BrowserName.Firefox;
     }
 
     @SuppressWarnings("deprecation")
