@@ -266,7 +266,7 @@ public class SharingZone extends PluginForHost {
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, link);
+                    final String c = getCaptchaCode("recaptcha", cf, link);
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
@@ -288,7 +288,7 @@ public class SharingZone extends PluginForHost {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, link);
+                    final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);

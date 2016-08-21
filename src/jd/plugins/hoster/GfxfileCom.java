@@ -223,7 +223,7 @@ public class GfxfileCom extends PluginForHost {
                         rc.setId(rcID);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode(cf, downloadLink);
+                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
@@ -240,7 +240,7 @@ public class GfxfileCom extends PluginForHost {
                             }
                             throw e;
                         }
-                        final String code = getCaptchaCode(cf, downloadLink);
+                        final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                         final String chid = sm.getChallenge(code);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                     } else {

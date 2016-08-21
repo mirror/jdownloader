@@ -38,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -58,8 +59,8 @@ public class TropicShareCom extends PluginForHost {
     private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     private void prepBR(final Browser br) {
-        while (userAgent.get() == null || !userAgent.get().contains(" Chrome/")) {
-            userAgent.set(UserAgents.stringUserAgent());
+        if (userAgent.get() == null) {
+            userAgent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         br.getHeaders().put("User-Agent", userAgent.get());
     }

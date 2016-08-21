@@ -99,7 +99,7 @@ public class DosyaTc extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.DaddyScriptsDaddysFileHostV2;
+        return SiteTemplate.DaddyScripts_FileHostV2;
     }
 
     @Override

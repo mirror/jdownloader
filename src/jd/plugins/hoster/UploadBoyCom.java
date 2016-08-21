@@ -375,7 +375,7 @@ public class UploadBoyCom extends antiDDoSForHost {
 
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
@@ -1052,7 +1052,7 @@ public class UploadBoyCom extends antiDDoSForHost {
             String code = "";
             String chid = sm.getChallenge();
             if (!captchaSkipableSolveMedia || captchaTries > 0) {
-                code = getCaptchaCode(cf, downloadLink);
+                code = getCaptchaCode("solvemedia", cf, downloadLink);
                 chid = sm.getChallenge(code);
             }
             form.put("adcopy_challenge", chid);

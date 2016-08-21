@@ -26,6 +26,13 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,14 +58,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filejoker.net" }, urls = { "https?://(?:www\\.)?filejoker\\.net/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class FileJokerNet extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -380,7 +380,7 @@ public class FileJokerNet extends antiDDoSForHost {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
@@ -845,11 +845,14 @@ public class FileJokerNet extends antiDDoSForHost {
     }
 
     private final long parseTime(final String input) {
+        String tmpdays = new Regex(input, "\\s+(\\d+)\\s*days?").getMatch(0);
         String tmphrs = new Regex(input, "\\s+(\\d+)\\s*hours?").getMatch(0);
         String tmpmin = new Regex(input, "\\s+(\\d+)\\s*minutes?").getMatch(0);
         String tmpsec = new Regex(input, "\\s+(\\d+)\\s*seconds?").getMatch(0);
-        String tmpdays = new Regex(input, "\\s+(\\d+)\\s*days?").getMatch(0);
         int minutes = 0, seconds = 0, hours = 0, days = 0;
+        if (tmpdays != null) {
+            days = Integer.parseInt(tmpdays);
+        }
         if (tmphrs != null) {
             hours = Integer.parseInt(tmphrs);
         }
@@ -858,9 +861,6 @@ public class FileJokerNet extends antiDDoSForHost {
         }
         if (tmpsec != null) {
             seconds = Integer.parseInt(tmpsec);
-        }
-        if (tmpdays != null) {
-            days = Integer.parseInt(tmpdays);
         }
         long waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000l;
         return waittime;

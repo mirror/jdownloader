@@ -239,7 +239,7 @@ public class ExpressLeechCom extends antiDDoSForHost {
                         rc.setId(rcID);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode(cf, downloadLink);
+                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else {
                         success = true;

@@ -168,7 +168,7 @@ public class LiveMixTapesCom extends PluginForHost {
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     sm.setChallengeKey(challengekey);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     // Usually we have a waittime here but it can be skipped
                     // int waittime = 40;

@@ -208,7 +208,7 @@ public class SpeedyShareCom extends PluginForHost {
                     }
                     throw e;
                 }
-                final String code = getCaptchaCode(cf, downloadLink);
+                final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                 final String chid = sm.getChallenge(code);
                 Browser captcha = br.cloneBrowser();
                 captcha.getHeaders().put("Accept", "*/*");

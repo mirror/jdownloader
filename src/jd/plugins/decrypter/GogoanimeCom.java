@@ -38,7 +38,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "animetoon.eu", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
+        return new String[] { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
     }
 
     /**
@@ -109,7 +109,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
         } else {
             String fpName = br.getRegex("<h1( class=\"generic\">|>[^\r\n]+)(.*?)</h1>").getMatch(1);
             if (fpName == null || fpName.length() == 0) {
-                fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub.*?)?</title>").getMatch(0);
+                fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub.*?|\\s*\\|\\s* Watch anime online, English anime online)?</title>").getMatch(0);
             }
 
             final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]+)\\1").getColumn(1);

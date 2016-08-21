@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,12 +50,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudlocker.biz" }, urls = { "https?://(?:www\\.)?cloudlocker\\.biz/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudlocker.biz" }, urls = { "https?://(?:www\\.)?cloudlocker\\.biz/[A-Za-z0-9]+" })
 public class CloudLockerBiz extends PluginForHost {
 
     public CloudLockerBiz(PluginWrapper wrapper) {
@@ -259,7 +259,7 @@ public class CloudLockerBiz extends PluginForHost {
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, link);
+                    final String c = getCaptchaCode("recaptcha", cf, link);
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
                     }
@@ -281,7 +281,7 @@ public class CloudLockerBiz extends PluginForHost {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, link);
+                    final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
                     if (!skipWaittime) {
                         waitTime(link, timeBeforeCaptchaInput);
@@ -467,7 +467,7 @@ public class CloudLockerBiz extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;

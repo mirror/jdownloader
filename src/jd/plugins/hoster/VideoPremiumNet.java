@@ -27,6 +27,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,10 +55,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", })
 public class VideoPremiumNet extends antiDDoSForHost {
@@ -741,7 +741,7 @@ public class VideoPremiumNet extends antiDDoSForHost {
 
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode(cf, dummyLink);
+                    final String code = getCaptchaCode("solvemedia", cf, dummyLink);
                     loginform.put("adcopy_response", code);
                     loginform.put("adcopy_challenge", sm.getChallenge(code));
                 }

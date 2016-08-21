@@ -37,9 +37,11 @@ public class GeneralFilesCom extends PluginForDecrypt {
     @Override
     public String[] siteSupportedNames() {
         // working domains
-        return new String[] { "general-fil.es", "generalfil.es" };
-        // all the following are parked, "general-files.com, generalfiles.org generalfiles.me , generalfiles.org general-files.org ,
-        // "general-files.org"
+        return new String[] { "generalfil.es" };
+        /*
+         * all the following are parked, "general-files.com, generalfiles.org generalfiles.me , generalfiles.org general-files.org ,
+         * general-files.org, general-fil.es"
+         */
     }
 
     public GeneralFilesCom(PluginWrapper wrapper) {

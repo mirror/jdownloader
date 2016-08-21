@@ -20,6 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,11 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dirrtyshar.es" }, urls = { "https?://(www\\.)?dirrtyshar\\.es/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dirrtyshar.es" }, urls = { "https?://(www\\.)?dirrtyshar\\.es/[A-Za-z0-9]+" })
 public class DirrtysharEs extends PluginForHost {
 
     public DirrtysharEs(PluginWrapper wrapper) {
@@ -221,7 +221,7 @@ public class DirrtysharEs extends PluginForHost {
                         rc.setId(rcID);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode(cf, downloadLink);
+                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
@@ -238,7 +238,7 @@ public class DirrtysharEs extends PluginForHost {
                             }
                             throw e;
                         }
-                        final String code = getCaptchaCode(cf, downloadLink);
+                        final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                         final String chid = sm.getChallenge(code);
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                     } else {
@@ -399,7 +399,7 @@ public class DirrtysharEs extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -460,11 +460,15 @@ public class DirrtysharEs extends PluginForHost {
     // if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
     // if ("de".equalsIgnoreCase(lang)) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your
+    // password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without
+    // copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -478,11 +482,15 @@ public class DirrtysharEs extends PluginForHost {
     // if (!br.containsHTML("\"login_status\":\"success\"")) {
     // if ("de".equalsIgnoreCase(lang)) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your
+    // password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without
+    // copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -536,7 +544,8 @@ public class DirrtysharEs extends PluginForHost {
     // br.getPage("http://" + this.getHost() + "/upgrade." + type);
     // /* If the premium account is expired we'll simply accept it as a free account. */
     // final String expire =
-    // br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+    // br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4}
+    // \\d{2}:\\d{2}:\\d{2})").getMatch(0);
     // if (expire == null) {
     // account.setValid(false);
     // return ai;

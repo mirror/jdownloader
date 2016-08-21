@@ -1446,7 +1446,7 @@ public class HulkLoadCom extends PluginForHost {
             String code = "";
             String chid = sm.getChallenge();
             if (!captchaSkipableSolveMedia || captchaTries > 0) {
-                code = getCaptchaCode(cf, downloadLink);
+                code = getCaptchaCode("solvemedia", cf, downloadLink);
                 chid = sm.getChallenge(code);
             }
             form.put("adcopy_challenge", Encoding.urlEncode(chid));

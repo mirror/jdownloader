@@ -24,6 +24,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -39,9 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(?:www\\.)?binbox\\.io/\\w+(?:#\\w+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(?:www\\.)?binbox\\.io/\\w+(?:#\\w+)?" })
 public class BinBoxIo extends PluginForDecrypt {
 
     private String sjcl, uid, salt, token, paste;
@@ -77,7 +77,7 @@ public class BinBoxIo extends PluginForDecrypt {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, param);
+                    final String code = getCaptchaCode("solvemedia", cf, param);
                     if ("".equals(code)) {
                         // refresh (f5) button returns "", but so does a empty response by the user (send button)
                         continue;
