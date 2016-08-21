@@ -122,7 +122,7 @@ public class TusFilesNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 1; // max total cons = 10
+            chunks = -10; // max total cons = 10
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -814,7 +814,7 @@ public class TusFilesNet extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
             account.setProperty("totalMaxSim", 20);
         } else {
             long expire = 0, expireD = 0, expireS = 0;
@@ -863,7 +863,7 @@ public class TusFilesNet extends PluginForHost {
             }
             account.setProperty("totalMaxSim", ACCOUNT_PREMIUM_MAXDOWNLOADS);
             ai.setValidUntil(expire);
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
@@ -1495,7 +1495,7 @@ public class TusFilesNet extends PluginForHost {
             String code = "";
             String chid = sm.getChallenge();
             if (!captchaSkipableSolveMedia || captchaTries > 0) {
-                code = getCaptchaCode(cf, downloadLink);
+                code = getCaptchaCode("solvemedia", cf, downloadLink);
                 chid = sm.getChallenge(code);
             }
             form.put("adcopy_challenge", chid);

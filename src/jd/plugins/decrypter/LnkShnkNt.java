@@ -38,7 +38,7 @@ import jd.plugins.PluginException;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=(?:https?|ftp)://.+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(?:www\\.)?linkshrink\\.net/([A-Za-z0-9]{5,6}|[A-Za-z0-9]{4}=(?:https?|ftp)://.+)" })
 public class LnkShnkNt extends antiDDoSForDecrypt {
 
     public LnkShnkNt(PluginWrapper wrapper) {
@@ -90,7 +90,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, param);
+                    final String code = getCaptchaCode("solvemedia", cf, param);
                     final String chid = sm.getChallenge(code);
                     postPage(br.getURL(), "adcopy_response=manual_challenge&adcopy_challenge=" + Encoding.urlEncode(chid));
                     if (br.containsHTML("api\\.solvemedia\\.com/papi")) {

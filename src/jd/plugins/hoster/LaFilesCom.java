@@ -364,7 +364,7 @@ public class LaFilesCom extends PluginForHost {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");

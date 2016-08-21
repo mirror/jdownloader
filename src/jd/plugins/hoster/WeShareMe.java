@@ -276,7 +276,7 @@ public class WeShareMe extends antiDDoSForHost {
                         }
                         throw e;
                     }
-                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String code = getCaptchaCode("solvemedia", cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     postData += "&adcopy_challenge=" + chid + "&adcopy_response=" + Encoding.urlEncode(code);
                 } else {

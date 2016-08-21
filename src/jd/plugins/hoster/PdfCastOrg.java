@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DecrypterException;
@@ -29,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pdfcast.org" }, urls = { "http://(www\\.)?pdfcast\\.org/(pdf|download)/[A-Za-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pdfcast.org" }, urls = { "http://(www\\.)?pdfcast\\.org/(pdf|download)/[A-Za-z0-9\\-]+" })
 public class PdfCastOrg extends PluginForHost {
 
     public PdfCastOrg(PluginWrapper wrapper) {
@@ -81,7 +81,7 @@ public class PdfCastOrg extends PluginForHost {
                 }
                 throw e;
             }
-            final String code = getCaptchaCode(cf, downloadLink);
+            final String code = getCaptchaCode("solvemedia", cf, downloadLink);
             final String chid = sm.getChallenge(code);
             final String postdata = "adcopy_response=" + code + "&adcopy_challenge=" + chid;
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), postdata, false, 1);

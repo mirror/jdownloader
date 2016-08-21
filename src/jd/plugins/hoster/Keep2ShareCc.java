@@ -22,6 +22,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,11 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  *
@@ -70,9 +70,19 @@ public class Keep2ShareCc extends K2SApi {
     private final String DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
     @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "keep2share.cc", "k2s.cc", "keep2s.cc", "keep2.cc", "k2share.cc", "keep2share.com" };
+    }
+
+    @Override
     public String rewriteHost(String host) {
-        if (host == null || "keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host) || "keep2share.com".equals(host)) {
+        if (host == null) {
             return "keep2share.cc";
+        }
+        for (final String supportedName : siteSupportedNames()) {
+            if (supportedName.equals(host)) {
+                return "keep2share.cc";
+            }
         }
         return super.rewriteHost(host);
     }

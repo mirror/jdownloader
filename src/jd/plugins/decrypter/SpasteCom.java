@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.jdownloader.controlling.PasswordUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,9 +38,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.controlling.PasswordUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  * NOTE: <br />
  * - UID case sensitive.<br />
@@ -46,7 +46,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" }) 
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" })
 public class SpasteCom extends antiDDoSForDecrypt {
 
     public SpasteCom(PluginWrapper wrapper) {
@@ -92,7 +92,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
                 }
                 throw e;
             }
-            final String code = getCaptchaCode(cf, param);
+            final String code = getCaptchaCode("solvemedia", cf, param);
             final String chid = sm.getChallenge(code);
             form.put("adcopy_response", "manual_challenge");
             form.put("adcopy_challenge", Encoding.urlEncode(chid));
