@@ -64,13 +64,17 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         return false;
     }
 
+    protected BrowserName setBrowserName() {
+        return null;
+    }
+
     private static final String                   cfRequiredCookies     = "__cfduid|cf_clearance";
     private static final String                   icRequiredCookies     = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
     private static final String                   suRequiredCookies     = "sucuri_cloudproxy_uuid_[a-f0-9]+";
     private static final String                   bfRequiredCookies     = "rcksid|BLAZINGFAST-WEB-PROTECT";
     protected static HashMap<String, Cookies>     antiDDoSCookies       = new HashMap<String, Cookies>();
     protected static AtomicReference<String>      userAgent             = new AtomicReference<String>(null);
-    protected static BrowserName                  browserName           = null;
+    private static AtomicReference<BrowserName>   browserName           = new AtomicReference<BrowserName>(null);
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
 
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
@@ -95,9 +99,12 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 }
             }
         }
+        if (setBrowserName() != null && browserName.get() == null) {
+            browserName.set(setBrowserName());
+        }
         if (useRUA()) {
             if (userAgent.get() == null) {
-                userAgent.set(browserName != null ? UserAgents.stringUserAgent(browserName) : UserAgents.stringUserAgent());
+                userAgent.set(browserName.get() != null ? UserAgents.stringUserAgent(browserName.get()) : UserAgents.stringUserAgent());
             }
             prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
