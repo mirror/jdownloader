@@ -6,7 +6,6 @@ AccountNew_AccountNew_title=Enter Logins
 AccountNew_layoutDialogContent_accountname=Username
 AccountNew_layoutDialogContent_password=Password
 AccountNew_layoutDialogContent_save=Remember
-AppWorkUtils_Graph_getAverageSpeedString=Ø %s1/s |
 AppWorkUtils_Graph_getSpeedString=Current: %s1/s
 COMMANDLINEAPP_COMMAND=Command -> -
 COPYCUTPASTE_COPY=Copy
