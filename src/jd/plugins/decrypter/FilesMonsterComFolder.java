@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/folders\\.php\\?fid=([0-9a-zA-Z_-]{22}|\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/folders\\.php\\?fid=([0-9a-zA-Z_-]{22}|\\d+)" })
 public class FilesMonsterComFolder extends PluginForDecrypt {
 
     // DEV NOTES:
@@ -80,7 +80,7 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
             lastPage = br.getRegex("<a href='(/?folders\\.php\\?fid=" + uid + "&s=" + s + ")").getMatch(0);
         }
 
-        String[] links = br.getRegex("<a class=\"green\" href=\"(https?://[\\w\\.\\d]*?filesmonster\\.com/(download|folders)\\.php.*?)\">").getColumn(0);
+        String[] links = br.getRegex("<a.*?href=\"(https?://[\\w\\.\\d]*?filesmonster\\.com/(download|folders)\\.php.*?)\">").getColumn(0);
 
         if (links == null || links.length == 0) {
             return;
