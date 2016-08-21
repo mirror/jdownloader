@@ -19,7 +19,7 @@ public class SiteType {
          * Open source image board: <a href="https://github.com/r888888888/danbooru">danbooru github project</a><br />
          * example: <a href="http://danbooru.donmai.us/">danbooru.donmai.us</a>
          */
-        DaddyScriptsDaddysFileHostV2,
+        DaddyScripts_FileHostV2,
         /**
          * File host script: <a href="http://www.daddyscripts.com/products.php?name=daddys_file_host">Daddy's File Host</a><br />
          * example: <a href="http://dosya.tc/">dosya.tc</a>
@@ -35,15 +35,6 @@ public class SiteType {
         GemPixel_PremiumURLShortener,
 
         /**
-         * Script for link anonymizers.<br />
-         * <b>Example that suits main decrypter class:</b> <a href="http:/l.moapi.net/">l.moapi.net</a><br />
-         * <b>Main decrypter class:</b> GeneralLinkAnonymizer<br />
-         * <b>Requirements to be added to main class:</b> CryptedLink must NOT be accessed - final links can be build using the information
-         * we have in the urls which the user added.<br />
-         */
-        GeneralLinkAnonymizer,
-
-        /**
          * Script used by some video/porn hosting sites.<br />
          * Can be bought e.g. from here: <a href="http://www.kernel-video-sharing.com/en/"</a> >kernel-video-sharing.com</a>.<br />
          * Demo: <a href="http://www.kvs-demo.com/">kvs-demo.com</a>
@@ -52,11 +43,13 @@ public class SiteType {
 
         /**
          * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
-         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
-         * >http://codecanyon.net/item/imgshot-image-hosting- script/2558257</a>.<br />
+         * Can be bought e.g. from here:
+         * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
+         * script/2558257</a>.<br />
          * <b>Main decrypter class:</b> ImgShotDecrypt<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
-         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a> <br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a>
+         * <br />
          * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
@@ -86,8 +79,8 @@ public class SiteType {
         MFScripts_Wurlie,
 
         /**
-         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by <a
-         * href="http://pimproll.com/">pimproll.com</a>
+         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by
+         * <a href="http://pimproll.com/">pimproll.com</a>
          */
         PimpRoll_HostedTube,
 
