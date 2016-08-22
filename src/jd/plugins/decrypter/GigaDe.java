@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "giga.de" }, urls = { "http://(www\\.)?giga\\.de/tv/(?!live|alle\\-videos|downloads)[a-z0-9\\-]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "giga.de" }, urls = { "http://(www\\.)?giga\\.de/tv/(?!live|alle\\-videos|downloads)[a-z0-9\\-]+/" })
 public class GigaDe extends PluginForDecrypt {
 
     public GigaDe(PluginWrapper wrapper) {
@@ -110,10 +110,7 @@ public class GigaDe extends PluginForDecrypt {
                             if (url != null && !url.equals("") && quali != null) {
                                 url = url.replace("\\", "");
                                 final DownloadLink dl = createDownloadlink("directhttp://" + url);
-                                String ext = url.substring(url.lastIndexOf("."));
-                                if (ext == null || ext.length() > 5) {
-                                    ext = ".mp4";
-                                }
+                                final String ext = getFileNameExtensionFromString(url, ".mp4");
                                 dl.setFinalFileName(fpName + "_" + api_link + "_" + quali + ext);
                                 decryptedLinks.add(dl);
                             }
@@ -128,10 +125,7 @@ public class GigaDe extends PluginForDecrypt {
                             if (url != null && !url.equals("") && quali != null) {
                                 url = url.replace("\\", "");
                                 final DownloadLink dl = createDownloadlink("directhttp://" + url);
-                                String ext = url.substring(url.lastIndexOf("."));
-                                if (ext == null || ext.length() > 5) {
-                                    ext = ".mp4";
-                                }
+                                final String ext = getFileNameExtensionFromString(url, ".mp4");
                                 dl.setFinalFileName(fpName + "_" + api_link + "_" + quali + ext);
                                 decryptedLinks.add(dl);
                             }

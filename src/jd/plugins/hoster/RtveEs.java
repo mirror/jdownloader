@@ -23,6 +23,8 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -37,8 +39,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.JDHexUtils;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" })
 public class RtveEs extends PluginForHost {
 
@@ -46,7 +46,7 @@ public class RtveEs extends PluginForHost {
     private static final String TYPE_SERIES  = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
     private static final String TYPE_RIO2016 = "https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html";
 
-    private String              DLURL        = null;
+    private String              dllink        = null;
     private String              BLOWFISHKEY  = "eWVMJmRhRDM=";
     private String              dl_now_now   = null;
 
@@ -101,12 +101,12 @@ public class RtveEs extends PluginForHost {
         if (dl_now_now != null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + dl_now_now);
         }
-        if (DLURL == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (DLURL.contains("/manifest")) {
+        if (dllink.contains("/manifest")) {
             /* HLS download */
-            this.br.getPage(DLURL);
+            this.br.getPage(dllink);
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
             }
@@ -120,7 +120,7 @@ public class RtveEs extends PluginForHost {
             dl.startDownload();
         } else {
             /* HTTP download */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLURL, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,9 +136,9 @@ public class RtveEs extends PluginForHost {
         if (dl_now_now != null) {
             return AvailableStatus.TRUE;
         }
-        if (!DLURL.contains("/manifest")) {
+        if (!dllink.contains("/manifest")) {
             try {
-                if (!br.openGetConnection(DLURL).getContentType().contains("html")) {
+                if (!br.openGetConnection(dllink).getContentType().contains("html")) {
                     downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
                     br.getHttpConnection().disconnect();
                 } else {
@@ -180,7 +180,7 @@ public class RtveEs extends PluginForHost {
                 /* Fallback */
                 filename = videoid;
             }
-            DLURL = this.br.getRegex("<videoSource format=\"HLS\" offset=\"\\d+:\\d+:\\d+\">[+\t\n\r ]*?<uri>(http[^<>\"]*?)</uri>").getMatch(0);
+            dllink = this.br.getRegex("<videoSource format=\"HLS\" offset=\"\\d+:\\d+:\\d+\">[+\t\n\r ]*?<uri>(http[^<>\"]*?)</uri>").getMatch(0);
         } else {
             if (downloadLink.getDownloadURL().matches(TYPE_SERIES)) {
                 final Regex finfo = new Regex(downloadLink.getDownloadURL(), "rtve.es/infantil/serie/([^/]+)/video/([^/]+)/");
@@ -216,14 +216,13 @@ public class RtveEs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* decrypt response body */
-            DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
+            dllink = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
         }
 
-        if (DLURL == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String ext = DLURL.substring(DLURL.lastIndexOf("."));
-        ext = ext == null || ext.length() > 4 ? ".mp4" : ext;
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setName(filename + ext);
         return AvailableStatus.TRUE;
     }

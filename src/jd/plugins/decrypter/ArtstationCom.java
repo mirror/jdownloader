@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -31,9 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/(?:artist|artwork)/[^/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/(?:artist|artwork)/[^/]+" })
 public class ArtstationCom extends PluginForDecrypt {
 
     public ArtstationCom(PluginWrapper wrapper) {
@@ -161,7 +161,7 @@ public class ArtstationCom extends PluginForDecrypt {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
                 filename = encodeUnicode(filename);
-                String ext = url.substring(url.lastIndexOf("."));
+                String ext = getFileNameExtensionFromString(url, jd.plugins.hoster.ArtstationCom.default_Extension);
                 /* Make sure that we get a correct extension */
                 if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
                     ext = jd.plugins.hoster.ArtstationCom.default_Extension;

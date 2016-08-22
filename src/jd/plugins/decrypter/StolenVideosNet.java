@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(?:www\\.)?stolenvideos\\.net/(tube/video/[a-z0-9\\-]+\\-[A-Za-z0-9]+\\.html|\\d+/[A-Za-z0-9\\-_]+\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(?:www\\.)?stolenvideos\\.net/(tube/video/[a-z0-9\\-]+\\-[A-Za-z0-9]+\\.html|\\d+/[A-Za-z0-9\\-_]+\\.html)" })
 public class StolenVideosNet extends PluginForDecrypt {
 
     public StolenVideosNet(PluginWrapper wrapper) {
@@ -87,7 +87,7 @@ public class StolenVideosNet extends PluginForDecrypt {
             tempID = br.getRegex("\\('(https?://(\\w+\\.)?stolenvideos\\.net/[^'\\)]+)'\\)").getMatch(0);
         }
         if (tempID != null) {
-            filename = filename + tempID.substring(tempID.lastIndexOf("."));
+            filename = filename + getFileNameExtensionFromString(tempID, ".flv");
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             dl.setFinalFileName(filename);
             decryptedLinks.add(dl);

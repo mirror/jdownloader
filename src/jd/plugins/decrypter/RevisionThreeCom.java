@@ -27,7 +27,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+" })
 public class RevisionThreeCom extends PluginForDecrypt {
 
     public RevisionThreeCom(PluginWrapper wrapper) {
@@ -94,7 +94,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
             finallink = finallink.replace("\\", "");
             final DownloadLink fina = createDownloadlink("directhttp://" + finallink);
             if (fpName != null) {
-                String ext = finallink.substring(finallink.lastIndexOf("."));
+                String ext = getFileNameExtensionFromString(finallink);
                 if (ext != null && ext.length() < 5) {
                     fina.setFinalFileName(fpName + ext);
                 }

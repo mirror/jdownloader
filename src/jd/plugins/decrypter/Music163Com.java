@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -33,9 +35,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" })
 public class Music163Com extends PluginForDecrypt {
 
     public Music163Com(PluginWrapper wrapper) {
@@ -179,10 +179,7 @@ public class Music163Com extends PluginForDecrypt {
             }
             if (cfg.getBooleanProperty(GRAB_COVER, false) && coverurl != null) {
                 final DownloadLink dlcover = createDownloadlink("decrypted://music.163.comcover" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                String ext = coverurl.substring(coverurl.lastIndexOf("."));
-                if (ext.length() > 5) {
-                    ext = ".jpg";
-                }
+                final String ext = getFileNameExtensionFromString(coverurl, ".jpg");
                 if (fastcheck) {
                     dlcover.setAvailable(true);
                 }

@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(www\\.)?submanga\\.com/(c/\\d+|[\\w_\\-\\[\\]]+/\\d+/\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(www\\.)?submanga\\.com/(c/\\d+|[\\w_\\-\\[\\]]+/\\d+/\\d+)" })
 public class SubMangaCom extends PluginForDecrypt {
 
     public SubMangaCom(PluginWrapper wrapper) {
@@ -91,7 +91,7 @@ public class SubMangaCom extends PluginForDecrypt {
         pageNumber = 0;
         for (final String img : imgs) {
             pageNumber++;
-            String extension = img.substring(img.lastIndexOf("."));
+            String extension = getFileNameExtensionFromString(img, ".jpg");
             DownloadLink link = createDownloadlink("directhttp://" + img);
             link.setFinalFileName((useTitle + "_–_page_" + df_page.format(pageNumber) + extension).replace(" ", "_"));
             link.setAvailable(true); // fast add

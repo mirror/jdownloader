@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru(decrypted)?/[^<>/\"]+/[^<>/\"]+/photo(\\?album_id=[a-z0-9\\-_]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru(decrypted)?/[^<>/\"]+/[^<>/\"]+/photo(\\?album_id=[a-z0-9\\-_]+)?" })
 public class MyMailRu extends PluginForDecrypt {
 
     public MyMailRu(PluginWrapper wrapper) {
@@ -88,7 +88,7 @@ public class MyMailRu extends PluginForDecrypt {
                         final String url = new Regex(item, "style=\"background\\-image:url\\((http://content[a-z0-9\\-_\\.]+\\.my\\.mail\\.ru/[^<>\"]+p\\-\\d+\\.jpg)\\);").getMatch(0);
                         final String mainlink = new Regex(item, "\"(http://my\\.mail\\.ru/[^<>\"]+/photo/\\d+/\\d+\\.html)\"").getMatch(0);
                         if (url != null && mainlink != null) {
-                            final String ending = url.substring(url.lastIndexOf("."));
+                            final String ending = getFileNameExtensionFromString(url);
                             final DownloadLink dl = createDownloadlink("http://my.mail.ru/jdeatme" + System.currentTimeMillis() + new Random().nextInt(100000));
                             dl.setProperty("mainlink", mainlink);
                             dl.setProperty("ext", ending);

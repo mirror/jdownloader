@@ -25,6 +25,9 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -36,10 +39,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://(www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://(www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" })
 public class SwrMediathekDeDecrypter extends PluginForDecrypt {
 
     public SwrMediathekDeDecrypter(PluginWrapper wrapper) {
@@ -240,7 +240,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         DownloadLink dl = null;
         final String directlink = FOUNDQUALITIES.get(plain_qualityname);
         if (directlink != null) {
-            final String ext = directlink.substring(directlink.lastIndexOf("."));
+            final String ext = getFileNameExtensionFromString(directlink);
             final String ftitle = DATE_FORMATTED + "_swr_" + TITLE + "_" + plain_qualityname + ext;
             dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);

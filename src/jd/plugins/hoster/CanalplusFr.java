@@ -23,6 +23,10 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -35,11 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision: 32254 $", interfaceVersion = 3, names = { "canalplus.fr" }, urls = { "https?://(?:www\\.)?canalplus\\.fr/[^<>\"]+\\.html\\?vid=\\d+" }) 
+@HostPlugin(revision = "$Revision: 32254 $", interfaceVersion = 3, names = { "canalplus.fr" }, urls = { "https?://(?:www\\.)?canalplus\\.fr/[^<>\"]+\\.html\\?vid=\\d+" })
 public class CanalplusFr extends PluginForHost {
 
     public CanalplusFr(PluginWrapper wrapper) {
@@ -165,7 +165,7 @@ public class CanalplusFr extends PluginForHost {
                         link.setDownloadSize(con.getLongContentLength());
                     }
                     /* They sometimes have .flv videos */
-                    ext = http_highest_quality.substring(http_highest_quality.lastIndexOf("."));
+                    ext = getFileNameExtensionFromString(http_highest_quality, default_Extension);
                 } else {
                     /* Fallback to hls if possible */
                     http_highest_quality = null;

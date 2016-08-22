@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,9 +51,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -761,14 +761,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String linkid = oid + "_" + id;
                     dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
                     dl.setContentUrl(getProtocol() + "vk.com/video" + linkid);
-                    String ext = finallink.substring(finallink.lastIndexOf("."));
-                    if (ext.length() > 5 && finallink.contains(".mp4")) {
-                        ext = ".mp4";
-                    } else if (ext.length() > 5 && finallink.contains(".flv")) {
-                        ext = ".flv";
-                    } else {
-                        ext = ".mp4";
-                    }
+                    final String ext = getFileNameExtensionFromString(finallink, ".mp4");
                     final String finalfilename = filename + "_" + selectedQualityValue + ext;
                     dl.setFinalFileName(finalfilename);
                     dl.setProperty("directfilename", finalfilename);

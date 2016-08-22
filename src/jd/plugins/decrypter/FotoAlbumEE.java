@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://(www\\.)?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets|/[0-9]+)?(/[0-9]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://(www\\.)?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets|/[0-9]+)?(/[0-9]+)?" })
 public class FotoAlbumEE extends PluginForDecrypt {
 
     public FotoAlbumEE(PluginWrapper wrapper) {
@@ -78,11 +78,15 @@ public class FotoAlbumEE extends PluginForDecrypt {
                     final Regex linkParts = new Regex(thumbnail, "(http://static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/)(.+)");
                     final DownloadLink dl = createDownloadlink("directhttp://" + linkParts.getMatch(0) + "0" + linkParts.getMatch(1));
                     dl.setAvailable(true);
-                    if (fp != null) fp.add(dl);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
                     decryptedLinks.add(dl);
                 }
                 nextPage = br.getRegex("class=\"active\">\\d+</a></li><li><a href=\"(\\?page=\\d+)").getMatch(0);
-                if (nextPage == null) break;
+                if (nextPage == null) {
+                    break;
+                }
                 br.getPage(parameter + nextPage);
             } while (true);
             return decryptedLinks;
@@ -103,12 +107,13 @@ public class FotoAlbumEE extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            String ext = pictureURL.substring(pictureURL.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) ext = ".jpg";
+            final String ext = getFileNameExtensionFromString(pictureURL, ".jpg");
             dlLink = createDownloadlink("directhttp://" + pictureURL);
             dlLink.setFinalFileName(filename + ext);
             dlLink.setAvailable(true);
-            if (fp != null) fp.add(dlLink);
+            if (fp != null) {
+                fp.add(dlLink);
+            }
             decryptedLinks.add(dlLink);
             progress.increase(1);
         }
