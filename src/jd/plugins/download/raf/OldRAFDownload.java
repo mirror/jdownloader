@@ -534,7 +534,7 @@ public class OldRAFDownload extends DownloadInterface {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
-            if (connection.getHeaderField("Location") != null) {
+            if (connection.getRequest().getLocation() != null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 

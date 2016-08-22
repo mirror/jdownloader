@@ -9,6 +9,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -21,12 +27,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.download.Downloadable;
 
 public class RAFChunk extends Thread {
     /**
@@ -194,7 +194,7 @@ public class RAFChunk extends Thread {
                     }
                     return null;
                 }
-                if (con.getHeaderField("Location") != null) {
+                if (con.getRequest().getLocation() != null) {
                     dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "Server: Redirect"));
                     return null;
                 }
