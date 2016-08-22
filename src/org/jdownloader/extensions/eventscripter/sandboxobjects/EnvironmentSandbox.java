@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.io.File;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 
@@ -54,6 +56,14 @@ public class EnvironmentSandbox {
 
     public String getNewLine() {
         return String.valueOf(CrossSystem.getNewLine());
+    }
+
+    public String getPathSeparator() {
+        return File.separatorChar + "";
+    }
+
+    public long getJavaVersion() {
+        return Application.getJavaVersion();
     }
 
 }
