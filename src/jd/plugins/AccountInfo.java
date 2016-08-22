@@ -303,9 +303,17 @@ public class AccountInfo extends Property {
      */
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport) {
-        final LogSource logSource = new LogSource("");
-        logSource.close();
-        setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder(logSource));
+        if (multiHostPlugin != null && multiHostPlugin.getLogger() != null) {
+            setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder(multiHostPlugin.getLogger()));
+        } else {
+            final LogSource logSource = LogController.getFastPluginLogger(Thread.currentThread().getName());
+            try {
+                setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder(logSource));
+            } finally {
+                logSource.close();
+            }
+        }
+
     }
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {

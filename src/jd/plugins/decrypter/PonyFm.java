@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pony.fm" }, urls = { "https?://(www\\.)?pony\\.fm/tracks/[a-z0-9\\-_]+" })
 public class PonyFm extends PluginForDecrypt {
@@ -47,7 +47,7 @@ public class PonyFm extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String song_name = PluginJSonUtils.getJson(br, "title");
+        final String song_name = PluginJSonUtils.getJsonValue(br, "title");
         final String linktext = br.getRegex("\"formats\":\\[(\\{.*?\\})\\]").getMatch(0);
         if (linktext == null || song_name == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -59,9 +59,9 @@ public class PonyFm extends PluginForDecrypt {
             return null;
         }
         for (final String linkinfo : links) {
-            final String url = PluginJSonUtils.getJson(linkinfo, "url");
-            final String fsize = PluginJSonUtils.getJson(linkinfo, "size");
-            final String ext = PluginJSonUtils.getJson(linkinfo, "extension");
+            final String url = PluginJSonUtils.getJsonValue(linkinfo, "url");
+            final String fsize = PluginJSonUtils.getJsonValue(linkinfo, "size");
+            final String ext = PluginJSonUtils.getJsonValue(linkinfo, "extension");
             final DownloadLink fina = createDownloadlink("directhttp://" + url.replace("\\", ""));
             fina.setFinalFileName(song_name + "." + ext);
             fina.setDownloadSize(SizeFormatter.getSize(fsize));

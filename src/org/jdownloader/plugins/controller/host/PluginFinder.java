@@ -7,7 +7,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
 public class PluginFinder {
@@ -15,13 +15,13 @@ public class PluginFinder {
     private final HashMap<String, String>        hostMappings = new HashMap<String, String>();
     private final HashMap<String, PluginForHost> pluginCaches = new HashMap<String, PluginForHost>();
 
-    private final LogSource                      logger;
+    private final LogInterface                   logger;
 
     public PluginFinder() {
         this(null);
     }
 
-    public PluginFinder(LogSource logger) {
+    public PluginFinder(LogInterface logger) {
         if (logger == null) {
             this.logger = LogController.CL(true);
         } else {
