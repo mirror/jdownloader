@@ -49,7 +49,7 @@ public class NitroFlareCom extends PluginForDecrypt {
             if (files != null && files.length > 0) {
                 for (String file : files) {
                     // for now just return uid, nitroflare mass linkcheck shows avialable status and other values we need!
-                    final String uid = PluginJSonUtils.getJson(file, "url");
+                    final String uid = PluginJSonUtils.getJsonValue(file, "url");
                     if (!inValidate(uid)) {
                         decryptedLinks.add(createDownloadlink("https://nitroflare.com/" + uid));
                     }

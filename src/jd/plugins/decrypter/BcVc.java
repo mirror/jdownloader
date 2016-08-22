@@ -35,7 +35,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,7}$|\\d+/.+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,7}$|\\d+/.+)" })
 public class BcVc extends antiDDoSForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
@@ -132,12 +132,12 @@ public class BcVc extends antiDDoSForDecrypt {
         data.put(Encoding.urlEncode("args[nok]"), "no");
         ajaxPostPage("/fly/ajax.fly.php", data);
 
-        String url = PluginJSonUtils.getJson(ajax, "url");
+        String url = PluginJSonUtils.getJsonValue(ajax, "url");
         if (url == null) {
             // maybe we have to wait even longer?
             sleep(2000, param);
             ajaxPostPage("/fly/ajax.fly.php", data);
-            url = PluginJSonUtils.getJson(ajax, "url");
+            url = PluginJSonUtils.getJsonValue(ajax, "url");
         }
         if (url != null) {
             decryptedLinks.add(createDownloadlink(url));

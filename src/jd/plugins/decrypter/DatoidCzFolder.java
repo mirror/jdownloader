@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/slozka/[A-Za-z0-9]+/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/slozka/[A-Za-z0-9]+/[A-Za-z0-9]+" })
 public class DatoidCzFolder extends PluginForDecrypt {
 
     public DatoidCzFolder(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
         final String parameter = param.toString().replace("datoid.sk/", "datoid.cz/");
         if (USE_API) {
             br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(parameter));
-            final String error = PluginJSonUtils.getJson(this.br, "error");
+            final String error = PluginJSonUtils.getJsonValue(this.br, "error");
             if (error != null || this.br.toString().length() < 30) {
                 if (error != null) {
                     logger.info("Cannot crawl anything because of error: " + error);

@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/external/[A-Za-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/external/[A-Za-z0-9]{12}" })
 public class MyStreamLa extends PluginForHost {
 
     public MyStreamLa(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class MyStreamLa extends PluginForHost {
         if (br.containsHTML(">File Not Found<|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "title");
+        String filename = PluginJSonUtils.getJsonValue(br, "title");
         final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -76,7 +76,7 @@ public class MyStreamLa extends PluginForHost {
         requestFileInformation(downloadLink);
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = PluginJSonUtils.getJson(br, "file");
+            dllink = PluginJSonUtils.getJsonValue(br, "file");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

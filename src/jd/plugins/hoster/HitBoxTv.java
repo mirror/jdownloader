@@ -33,7 +33,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitbox.tv" }, urls = { "https?://(?:www\\.)?hitbox\\.tv/video/(\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitbox.tv" }, urls = { "https?://(?:www\\.)?hitbox\\.tv/video/(\\d+)" })
 public class HitBoxTv extends PluginForHost {
 
     public HitBoxTv(PluginWrapper wrapper) {
@@ -59,10 +59,10 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getPage("https://www.hitbox.tv/api/media/video/" + vid + "?showHidden=true");
         // auth sig
-        final String auth = PluginJSonUtils.getJson(ajax, "media_file");
-        final String userId = PluginJSonUtils.getJson(ajax, "user_id");
-        final String userName = PluginJSonUtils.getJson(ajax, "user_name");
-        final String vidName = PluginJSonUtils.getJson(ajax, "media_title");
+        final String auth = PluginJSonUtils.getJsonValue(ajax, "media_file");
+        final String userId = PluginJSonUtils.getJsonValue(ajax, "user_id");
+        final String userName = PluginJSonUtils.getJsonValue(ajax, "user_name");
+        final String vidName = PluginJSonUtils.getJsonValue(ajax, "media_title");
 
         // not sure if this is needed, its done trying to get channel info, and then auths
         // Request URL:https://www.hitbox.tv/api/auth/media/video/88e235d7ffc3f79cf1de079646326890f8bcee4f-543bd5693d819
@@ -106,7 +106,7 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         ajax.getPage("http://www.hitbox.tv/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
-        url = PluginJSonUtils.getJson(ajax, "url");
+        url = PluginJSonUtils.getJsonValue(ajax, "url");
         if (url != null && !url.endsWith(".m3u8")) {
             // http dl
             // {"key":"#$54d46eaa112f0508979","play":null,"clip":{"autoPlay":true,"autoBuffering":true,"bufferLength":"2","eventCategory":"QueenBee\/video\/5900","baseUrl":"http:\/\/edge.vie.hitbox.tv\/static\/videos\/recordings","url":"queenbee-1394512729.flv.mp4","stopLiveOnPause":true,"live":false,"smoothing":true,"provider":"pseudo","scaling":"fit","bitrates":[{"url":"queenbee-1394512729.flv.mp4","bitrate":738,"label":"HD
@@ -114,8 +114,8 @@ public class HitBoxTv extends PluginForHost {
             // align=\"center\"><\/p>","width":"50%","height":30,"backgroundColor":"#1A1A1A","backgroundGradient":"none","opacity":"1","borderRadius":10,"borderColor":"#999999","border":0,"color":"#FFFFFF","bottom":60,"zIndex":"10","closeButton":true,"style":{"p":{"fontSize":16,"fontFamily":"verdana,arial,helvetica","fontWeight":"normal"}}},"gatracker":{"url":"flowplayer.analytics-3.2.9.1.swf","event":{"all":true},"debug":false,"accountId":"UA-42900118-2"},"ova":{"url":"flowplayer.liverail-3.2.7.4.swf","LR_PUBLISHER_ID":20341,"LR_SCHEMA":"vast2-vpaid","LR_ADUNIT":"in","LR_VIDEO_POSITION":0,"LR_AUTOPLAY":1,"LR_CONTENT":6,"LR_TITLE":"1d275b55e3d50ee88df280b1c2caa07704717dcb1_531f22770d2bf","LR_VIDEO_ID":"109880","LR_MUTED":0,"CACHEBUSTER":1422982983,"TIMESTAMP":1422982983,"LR_LAYOUT_SKIN_MESSAGE":"Advertisement:
             // Stream will resume in {COUNTDOWN}
             // seconds.","LR_LIVESTREAM":1,"LR_LAYOUT_SKIN_ID":2,"LR_LAYOUT_LINEAR_PAUSEONCLICKTHRU":0,"LR_BITRATE":"high","LR_VIDEO_URL":"http:\/\/www.hitbox.tv\/video\/109880","LR_DESCRIPTION":"1d275b55e3d50ee88df280b1c2caa07704717dcb1_531f22770d2bf","LR_IP":"203.161.76.166"}},"canvas":{"backgroundGradient":"none"},"log":{"level":"debug","filter":"org.osmf*"},"showErrors":false,"settings":{"media_id":"-1","max_buffer_count":"3","buffer_length":"2","max_roundtrips":"3","reset_timeout":"60000","play_timeout":"15000","start_timeout":"10000","ad_plugin":"liverail-off","default_br":null,"enabled":"1"},"playlist":[]}
-            final String server = PluginJSonUtils.getJson(ajax, "baseUrl");
-            final String label = PluginJSonUtils.getJson(ajax, "label");
+            final String server = PluginJSonUtils.getJsonValue(ajax, "baseUrl");
+            final String label = PluginJSonUtils.getJsonValue(ajax, "label");
             if (!"null".equalsIgnoreCase(server) && server != null) {
                 url = server + "/" + url;
             } else {

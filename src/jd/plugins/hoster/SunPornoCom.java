@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "http://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "http://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" })
 public class SunPornoCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -87,8 +87,8 @@ public class SunPornoCom extends PluginForHost {
         if (key != null) {
             /* Avoids 403 issues. */
             this.br.getPage("http://www.sunporno.com/?area=movieFilePather&callback=movieFileCallbackFunc&id=1135032&url=" + Encoding.urlEncode(key) + "&_=" + System.currentTimeMillis());
-            DLLINK = PluginJSonUtils.getJson(this.br, "path");
-            betterDllink = PluginJSonUtils.getJson(this.br, "path");
+            DLLINK = PluginJSonUtils.getJsonValue(this.br, "path");
+            betterDllink = PluginJSonUtils.getJsonValue(this.br, "path");
             if (betterDllink != null && betterDllink.startsWith("http")) {
                 DLLINK = betterDllink;
             } else {

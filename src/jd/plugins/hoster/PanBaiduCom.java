@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" })
 public class PanBaiduCom extends PluginForHost {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -391,8 +391,8 @@ public class PanBaiduCom extends PluginForHost {
                             final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
                             final String code = getCaptchaCode(captchaurl, dummyLink);
                             br.getPage("https://passport.baidu.com/v2/?checkvcode&token=" + token + "&tpl=netdisk&subpro=netdisk_web&apiver=v3&tt=" + System.currentTimeMillis() + "&verifycode=" + code + "&codestring=&callback=bd__cbs__j2n8lj");
-                            final String msg = PluginJSonUtils.getJson(this.br, "msg");
-                            if (msg.equals("")) {
+                            final String msg = PluginJSonUtils.getJsonValue(this.br, "msg");
+                            if ("".equals("")) {
                                 /* Captcha has been solved correctly! */
                                 captchaFailed = false;
                                 break;

@@ -41,7 +41,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:s\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:s\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -150,7 +150,7 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     private void handleErrors() throws PluginException {
-        final String error = PluginJSonUtils.getJson(br, "error");
+        final String error = PluginJSonUtils.getJsonValue(br, "error");
         if ("login fail".equals(br.toString()) || "login gailed".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong User Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if ("too mutch fail, blocked for 6 hour".equals(br.toString())) {

@@ -68,7 +68,7 @@ public class NinegagCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = PluginJSonUtils.getJson(this.br, "title");
+        String filename = PluginJSonUtils.getJsonValue(this.br, "title");
         if (filename == null) {
             filename = url_filename;
         }

@@ -40,7 +40,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class DebridLinkFr extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -80,8 +80,8 @@ public class DebridLinkFr extends PluginForHost {
 
         // account stats
         getPage(account, null, "/account/infos", true, null);
-        final String accountType = PluginJSonUtils.getJson(br, "accountType");
-        final String premiumLeft = PluginJSonUtils.getJson(br, "premiumLeft");
+        final String accountType = PluginJSonUtils.getJsonValue(br, "accountType");
+        final String premiumLeft = PluginJSonUtils.getJsonValue(br, "premiumLeft");
         boolean isFree = false;
         if ("0".equals(accountType)) {
             // free account
@@ -144,7 +144,7 @@ public class DebridLinkFr extends PluginForHost {
                 Browser br2 = new Browser();
                 prepBrowser(br2);
                 br2.setFollowRedirects(true);
-                final String validateToken = PluginJSonUtils.getJson(br, "validTokenUrl");
+                final String validateToken = PluginJSonUtils.getJsonValue(br, "validTokenUrl");
                 if (validateToken == null) {
                     logger.warning("Can't find validateToken!");
                     dump(account);
@@ -219,17 +219,17 @@ public class DebridLinkFr extends PluginForHost {
     private void updateSession(final Account account) {
         synchronized (accountInfo) {
             HashMap<String, String> accInfo = new HashMap<String, String>();
-            final String token = PluginJSonUtils.getJson(br, "token");
+            final String token = PluginJSonUtils.getJsonValue(br, "token");
             if (token != null) {
                 accInfo.put("token", token);
             }
-            final String key = PluginJSonUtils.getJson(br, "key");
+            final String key = PluginJSonUtils.getJsonValue(br, "key");
             if (key != null) {
                 accInfo.put("key", key);
             }
             final String loginTime = String.valueOf(System.currentTimeMillis());
             accInfo.put("loginTime", loginTime);
-            final String timestamp = PluginJSonUtils.getJson(br, "ts");
+            final String timestamp = PluginJSonUtils.getJsonValue(br, "ts");
             if (timestamp != null) {
                 // some simple math find the offset between user and server time, so we can use server time later. cheat way of synch time !
                 // server time is in seconds not milliseconds
@@ -317,7 +317,7 @@ public class DebridLinkFr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         } else {
-            final String error = PluginJSonUtils.getJson(br, "ERR");
+            final String error = PluginJSonUtils.getJsonValue(br, "ERR");
 
             if (error != null) {
                 // generic errors not specific to download routine!
@@ -487,8 +487,8 @@ public class DebridLinkFr extends PluginForHost {
         int maxChunks = 0;
         boolean resumes = true;
 
-        final String chunk = PluginJSonUtils.getJson(br, "chunk");
-        final String resume = PluginJSonUtils.getJson(br, "resume");
+        final String chunk = PluginJSonUtils.getJsonValue(br, "chunk");
+        final String resume = PluginJSonUtils.getJsonValue(br, "resume");
         if (chunk != null && !"0".equals(chunk)) {
             maxChunks = -Integer.parseInt(chunk);
         }
@@ -496,7 +496,7 @@ public class DebridLinkFr extends PluginForHost {
             resumes = Boolean.parseBoolean(resume);
         }
 
-        String dllink = PluginJSonUtils.getJson(br, "downloadLink");
+        String dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
         if (dllink == null) {
             logger.warning("Unhandled download error on debrid-link,fr:");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

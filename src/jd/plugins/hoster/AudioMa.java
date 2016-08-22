@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+))" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+))" })
 public class AudioMa extends PluginForHost {
 
     public AudioMa(PluginWrapper wrapper) {
@@ -54,8 +54,8 @@ public class AudioMa extends PluginForHost {
             if (br.containsHTML(">Did not find any music with url")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String artist = PluginJSonUtils.getJson(br, "author_name");
-            final String songname = PluginJSonUtils.getJson(br, "title");
+            final String artist = PluginJSonUtils.getJsonValue(br, "author_name");
+            final String songname = PluginJSonUtils.getJsonValue(br, "title");
             if (artist == null || songname == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -106,7 +106,7 @@ public class AudioMa extends PluginForHost {
                 }
                 br.getPage(apilink);
             }
-            dllink = PluginJSonUtils.getJson(br, "url");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

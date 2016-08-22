@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidivodo.com" }, urls = { "https?://(?:www\\.)?(?:en\\.)?vidivodo\\.com/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidivodo.com" }, urls = { "https?://(?:www\\.)?(?:en\\.)?vidivodo\\.com/.+" })
 public class VidiVodoCom extends PluginForHost {
 
     private String dllink = null;
@@ -87,7 +87,7 @@ public class VidiVodoCom extends PluginForHost {
                 filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
         }
-        dllink = PluginJSonUtils.getJson(this.br, "contentUrl");
+        dllink = PluginJSonUtils.getJsonValue(this.br, "contentUrl");
         String mediaID = br.getRegex("mediaid=(\\d+)").getMatch(0);
         if (mediaID == null) {
             /* For old urls we simply find the mediaID inside the url */

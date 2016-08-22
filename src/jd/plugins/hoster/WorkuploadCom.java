@@ -31,7 +31,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" })
 public class WorkuploadCom extends PluginForHost {
 
     public WorkuploadCom(PluginWrapper wrapper) {
@@ -107,7 +107,7 @@ public class WorkuploadCom extends PluginForHost {
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             this.br.getPage("/api/file/getDownloadServer/" + fid);
-            dllink = PluginJSonUtils.getJson(this.br, "url");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }

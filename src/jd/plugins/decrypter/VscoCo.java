@@ -33,7 +33,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[a-zA-Z0-9]+/grid/\\d+)" })
 public class VscoCo extends PluginForDecrypt {
 
     public VscoCo(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class VscoCo extends PluginForDecrypt {
         final String username = getUsername(parameter);
         br.getPage(parameter);
         final String cookie_vs = br.getCookie(this.getHost(), "vs");
-        final String siteid = PluginJSonUtils.getJson(br, "id");
+        final String siteid = PluginJSonUtils.getJsonValue(br, "id");
         long amount_total = 0;
         /* More than 500 possible */
         int max_count_per_page = 500;

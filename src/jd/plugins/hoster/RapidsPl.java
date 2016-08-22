@@ -41,7 +41,7 @@ import jd.plugins.components.UnavailableHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class RapidsPl extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
@@ -176,7 +176,7 @@ public class RapidsPl extends PluginForHost {
         if (dllink == null) {
             br.postPage("http://rapids.pl/api/check", "key=" + account.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
             handleAPIErrors(account, link);
-            dllink = PluginJSonUtils.getJson(br, "dlUrl");
+            dllink = PluginJSonUtils.getJsonValue(br, "dlUrl");
             showMessage(link, "Phase 1/2: Generating final downloadlink");
             if (dllink == null) {
                 handleErrorRetries(account, link, "dllink null", 5, 10 * 60 * 1000l);
@@ -222,9 +222,9 @@ public class RapidsPl extends PluginForHost {
     }
 
     private void handleAPIErrors(final Account acc, final DownloadLink dl) throws PluginException {
-        if ("Link nie został rozpoznany!".equals(PluginJSonUtils.getJson(br, "message"))) {
+        if ("Link nie został rozpoznany!".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
             tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l, "Link nie został rozpoznany");
-        } else if ("Brak dostępu do API".equals(PluginJSonUtils.getJson(br, "error"))) {
+        } else if ("Brak dostępu do API".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             // Maybe wrong API key
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }

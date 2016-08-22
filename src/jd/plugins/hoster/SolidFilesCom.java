@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+/?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+/?" })
 public class SolidFilesCom extends PluginForHost {
 
     public SolidFilesCom(PluginWrapper wrapper) {
@@ -83,7 +83,7 @@ public class SolidFilesCom extends PluginForHost {
         if (br.getURL().contains("/error/") || br.containsHTML(">404<|>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled|The file you are trying to download has|>File not available") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "name");
+        String filename = PluginJSonUtils.getJsonValue(br, "name");
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) (?:-|\\|) Solidfiles</title>").getMatch(0);
         }
@@ -91,7 +91,7 @@ public class SolidFilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        String filesize = PluginJSonUtils.getJson(br, "size");
+        String filesize = PluginJSonUtils.getJsonValue(br, "size");
         if (filesize == null) {
             filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
             if (filesize == null) {
@@ -216,7 +216,7 @@ public class SolidFilesCom extends PluginForHost {
                     }
                 }
                 br.postPage("/login", "csrfmiddlewaretoken=" + Encoding.urlEncode(token) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                bearertoken = PluginJSonUtils.getJson(this.br, "access_token");
+                bearertoken = PluginJSonUtils.getJsonValue(this.br, "access_token");
                 if (br.getCookie(this.br.getHost(), "sessionid") == null || bearertoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -246,7 +246,7 @@ public class SolidFilesCom extends PluginForHost {
         prepBRAjax(account);
         this.br.getPage("https://www." + this.getHost() + "/api/payments?limit=25&offset=0");
         ai.setUnlimitedTraffic();
-        final String subscriptioncount = PluginJSonUtils.getJson(this.br, "count");
+        final String subscriptioncount = PluginJSonUtils.getJsonValue(this.br, "count");
         if (subscriptioncount == null || subscriptioncount.equals("0")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */

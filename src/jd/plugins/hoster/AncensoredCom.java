@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "http://(www\\.)?ancensored\\.com/clip/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ancensored.com" }, urls = { "http://(www\\.)?ancensored\\.com/clip/.+" })
 public class AncensoredCom extends PluginForHost {
 
     public AncensoredCom(PluginWrapper wrapper) {
@@ -95,7 +95,7 @@ public class AncensoredCom extends PluginForHost {
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 br2.postPage("/video/get-link", "hash=" + Encoding.urlEncode(hash));
-                final String src = PluginJSonUtils.getJson(br2, "src");
+                final String src = PluginJSonUtils.getJsonValue(br2, "src");
                 if (src != null) {
                     dllink = src;
                 }

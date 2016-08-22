@@ -33,7 +33,7 @@ import jd.utils.JDHexUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
 
     private String hash   = null;
@@ -96,10 +96,10 @@ public class WeTransferCom extends PluginForHost {
         String filesize = br.getRegex("class='filename'>.*?</span>.*?([0-9,\\.]+\\s*(K|M|G)B)").getMatch(0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         br.getPage(mainpage + "api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
-        if ("invalid_transfer".equals(PluginJSonUtils.getJson(br, "error"))) {
+        if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = PluginJSonUtils.getJson(br, "direct_link");
+        dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
         if (dllink == null) {
             // 20160415-raztoki
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
@@ -119,7 +119,7 @@ public class WeTransferCom extends PluginForHost {
         if (dllink != null) {
             String filename = new Regex(Encoding.htmlDecode(dllink), "filename=([^&]+)").getMatch(0);
             if (filename == null) {
-                filename = PluginJSonUtils.getJson(br, "filename");
+                filename = PluginJSonUtils.getJsonValue(br, "filename");
             }
             if (filename == null) {
                 filename = filename1;

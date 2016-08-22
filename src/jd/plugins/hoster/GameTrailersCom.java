@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[0-9a-z\\.]+\\.mtvnservices\\.com/.*?\\?__gda__=\\d+_[0-9a-f]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[0-9a-z\\.]+\\.mtvnservices\\.com/.*?\\?__gda__=\\d+_[0-9a-f]+" })
 public class GameTrailersCom extends PluginForHost {
 
     public GameTrailersCom(PluginWrapper wrapper) {
@@ -61,9 +61,9 @@ public class GameTrailersCom extends PluginForHost {
                 br.getPage(page);
                 dllink = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
                 if (dllink == null) {
-                    dllink = PluginJSonUtils.getJson(br, "url");
+                    dllink = PluginJSonUtils.getJsonValue(br, "url");
                     if (dllink == null) {
-                        dllink = PluginJSonUtils.getJson(br, "videoUri");
+                        dllink = PluginJSonUtils.getJsonValue(br, "videoUri");
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }

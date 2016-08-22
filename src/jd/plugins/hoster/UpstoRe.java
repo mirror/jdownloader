@@ -107,7 +107,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * defines custom browser requirements
-     * 
+     *
      * @author raztoki
      */
     @Override
@@ -407,7 +407,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * saves cookies to HashMap from provided browser
-     * 
+     *
      * @author raztoki
      * @param br
      * @return
@@ -425,7 +425,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * returns true if provided Cookie contains keyname is contained within getLoginCookies()
-     * 
+     *
      * @author raztoki
      * @param c
      * @return
@@ -502,7 +502,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * Method to determine if current cookie session is still valid.
-     * 
+     *
      * @author raztoki
      * @param account
      * @return
@@ -541,7 +541,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /**
      * Array containing all required premium cookies!
-     * 
+     *
      * @return
      */
     private String[] getLoginCookies() {
@@ -552,7 +552,7 @@ public class UpstoRe extends antiDDoSForHost {
      * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
      * <br />
      * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
-     * 
+     *
      * @author raztoki
      */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {

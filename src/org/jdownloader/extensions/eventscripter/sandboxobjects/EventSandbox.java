@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import org.appwork.remoteapi.events.EventObject;
+import org.appwork.storage.JSonStorage;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 
 @ScriptAPI(description = "The Event Object")
@@ -18,8 +19,8 @@ public class EventSandbox {
         return id;
     }
 
-    public Object getData() {
-        return data;
+    public String getData() {
+        return JSonStorage.toString(data);
     }
 
     public String getPublisher() {

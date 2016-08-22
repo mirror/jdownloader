@@ -66,7 +66,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}(/[^/<>]+\\.html)?|\\d+(/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(final PluginWrapper wrapper) {
@@ -555,9 +555,9 @@ public class RapidGatorNet extends PluginForHost {
                 if (sid != null) {
                     account.setValid(true);
                     /* premium account */
-                    final String expire_date = PluginJSonUtils.getJson(br, "expire_date");
-                    final String traffic_left = PluginJSonUtils.getJson(br, "traffic_left");
-                    final String reset_in = PluginJSonUtils.getJson(br, "reset_in");
+                    final String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
+                    final String traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
+                    final String reset_in = PluginJSonUtils.getJsonValue(br, "reset_in");
                     if (expire_date != null && traffic_left != null) {
                         /*
                          * expire date and traffic left are available, so it is a premium account, add one day extra to prevent it from
@@ -804,11 +804,11 @@ public class RapidGatorNet extends PluginForHost {
                 handleErrors_api(null, null, account, con);
                 if (con.getResponseCode() == 200) {
                     br.followConnection();
-                    final String session_id = PluginJSonUtils.getJson(br, "session_id");
+                    final String session_id = PluginJSonUtils.getJsonValue(br, "session_id");
                     if (session_id != null) {
                         boolean isPremium = false;
-                        final String expire_date = PluginJSonUtils.getJson(br, "expire_date");
-                        final String traffic_left = PluginJSonUtils.getJson(br, "traffic_left");
+                        final String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
+                        final String traffic_left = PluginJSonUtils.getJsonValue(br, "traffic_left");
                         if (expire_date != null && traffic_left != null) {
                             /*
                              * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
@@ -1026,9 +1026,9 @@ public class RapidGatorNet extends PluginForHost {
                 handleErrors_api(session_id, link, account, con);
                 if (con.getResponseCode() == 200) {
                     br.followConnection();
-                    fileName = PluginJSonUtils.getJson(br, "filename");
-                    final String fileSize = PluginJSonUtils.getJson(br, "size");
-                    final String fileHash = PluginJSonUtils.getJson(br, "hash");
+                    fileName = PluginJSonUtils.getJsonValue(br, "filename");
+                    final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
+                    final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
                     if (fileName != null) {
                         link.setFinalFileName(fileName);
                     }
@@ -1058,7 +1058,7 @@ public class RapidGatorNet extends PluginForHost {
             handleErrors_api(session_id, link, account, con);
             if (con.getResponseCode() == 200) {
                 br.followConnection();
-                url = PluginJSonUtils.getJson(br, "url");
+                url = PluginJSonUtils.getJsonValue(br, "url");
                 if (url != null) {
                     url = url.replace("\\", "");
                     url = url.replace("//?", "/?");
@@ -1076,9 +1076,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {

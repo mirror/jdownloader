@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multcloud.com" }, urls = { "https?://(www\\.)?multcloud\\.com/download/[A-Z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multcloud.com" }, urls = { "https?://(www\\.)?multcloud\\.com/download/[A-Z0-9\\-]+" })
 public class MultCloudCom extends PluginForHost {
 
     public MultCloudCom(PluginWrapper wrapper) {
@@ -62,7 +62,7 @@ public class MultCloudCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 10) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        filename = PluginJSonUtils.getJson(this.br, "name");
+        filename = PluginJSonUtils.getJsonValue(this.br, "name");
         if (filename != null && !filename.equals("")) {
             link.setFinalFileName(filename);
         } else {
@@ -74,9 +74,9 @@ public class MultCloudCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String cloudType = PluginJSonUtils.getJson(this.br, "cloudType");
-        final String tokenId = PluginJSonUtils.getJson(this.br, "tokenId");
-        final String fileId = PluginJSonUtils.getJson(this.br, "fileId");
+        final String cloudType = PluginJSonUtils.getJsonValue(this.br, "cloudType");
+        final String tokenId = PluginJSonUtils.getJsonValue(this.br, "tokenId");
+        final String fileId = PluginJSonUtils.getJsonValue(this.br, "fileId");
         if (filename == null || cloudType == null || tokenId == null || fileId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

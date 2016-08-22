@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,7 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision: 27628 $", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" }) 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision: 27628 $", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" })
 public class LnkTl extends antiDDoSForDecrypt {
 
     public LnkTl(PluginWrapper wrapper) {
@@ -114,12 +114,12 @@ public class LnkTl extends antiDDoSForDecrypt {
         data.put(Encoding.urlEncode("args[aid]"), matches[0]);
         ajaxPostPage(post[post.length - 1], data);
 
-        String url = PluginJSonUtils.getJson(ajax, "url");
+        String url = PluginJSonUtils.getJsonValue(ajax, "url");
         if (url == null) {
             // maybe we have to wait even longer?
             sleep(2000, param);
             ajaxPostPage(post[post.length - 1], data);
-            url = PluginJSonUtils.getJson(ajax, "url");
+            url = PluginJSonUtils.getJsonValue(ajax, "url");
         }
         if (url.contains("link.tl/fly/go.php?")) {
             getPage(url);

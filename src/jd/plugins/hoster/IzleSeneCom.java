@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "izlesene.com" }, urls = { "https?://(?:www\\.)?izlesene\\.com/video/[a-z0-9\\-]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "izlesene.com" }, urls = { "https?://(?:www\\.)?izlesene\\.com/video/[a-z0-9\\-]+/\\d+" })
 public class IzleSeneCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -89,7 +89,7 @@ public class IzleSeneCom extends PluginForHost {
              * NEEDED!)
              */
             this.br.getPage(downloadLink.getDownloadURL());
-            DLLINK = PluginJSonUtils.getJson(this.br, "streamurl");
+            DLLINK = PluginJSonUtils.getJsonValue(this.br, "streamurl");
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

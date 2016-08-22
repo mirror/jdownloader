@@ -39,7 +39,7 @@ import jd.utils.JDHexUtils;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" })
 public class RtveEs extends PluginForHost {
 
     private static final String TYPE_NORMAL  = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
@@ -167,9 +167,9 @@ public class RtveEs extends PluginForHost {
         }
         String filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE_RIO2016)) {
-            String videoid = PluginJSonUtils.getJson(this.br, "VideoID");
+            String videoid = PluginJSonUtils.getJsonValue(this.br, "VideoID");
             if (videoid == null) {
-                videoid = PluginJSonUtils.getJson(this.br, "s.forgeid");
+                videoid = PluginJSonUtils.getJsonValue(this.br, "s.forgeid");
             }
             if (videoid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

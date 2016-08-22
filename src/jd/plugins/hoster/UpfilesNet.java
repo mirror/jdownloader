@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfiles.net" }, urls = { "https?://(?:www\\.)?upfiles\\.net/f/[a-z0-9]+(?:[^/]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfiles.net" }, urls = { "https?://(?:www\\.)?upfiles\\.net/f/[a-z0-9]+(?:[^/]+)?" })
 public class UpfilesNet extends PluginForHost {
 
     public UpfilesNet(PluginWrapper wrapper) {
@@ -161,8 +161,8 @@ public class UpfilesNet extends PluginForHost {
     }
 
     private String getDllinkFree() throws PluginException {
-        final String token = PluginJSonUtils.getJson(this.br, "token");
-        final String ip = PluginJSonUtils.getJson(this.br, "ip");
+        final String token = PluginJSonUtils.getJsonValue(this.br, "token");
+        final String ip = PluginJSonUtils.getJsonValue(this.br, "ip");
         if (token == null || token.equals("") || ip == null || ip.equals("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -171,8 +171,8 @@ public class UpfilesNet extends PluginForHost {
     }
 
     private String getDllinkPremium() throws PluginException {
-        final String token = PluginJSonUtils.getJson(this.br, "token");
-        final String ip = PluginJSonUtils.getJson(this.br, "ip");
+        final String token = PluginJSonUtils.getJsonValue(this.br, "token");
+        final String ip = PluginJSonUtils.getJsonValue(this.br, "ip");
         if (token == null || token.equals("") || ip == null || ip.equals("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

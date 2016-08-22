@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
 
     private final String         SERVERERROR                  = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -209,10 +209,10 @@ public class FShareVn extends PluginForHost {
                 ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 final String postdata = "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&DownloadForm%5Blinkcode%5D=" + getUID(downloadLink) + "&ajax=download-form&undefined=undefined";
                 ajax.postPage("/download/get", postdata);
-                if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJson(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(PluginJSonUtils.getJson(ajax, "msg"), "please try again later")) {
+                if (StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "msg"), "please try again later")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                 }
-                dllink = PluginJSonUtils.getJson(ajax, "url");
+                dllink = PluginJSonUtils.getJsonValue(ajax, "url");
                 if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
                     final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
                     logger.info("Next download: " + nextDl);
@@ -240,7 +240,7 @@ public class FShareVn extends PluginForHost {
                 }
                 logger.info("downloadURL = " + dllink);
                 // Waittime
-                String wait = PluginJSonUtils.getJson(ajax, "wait_time");
+                String wait = PluginJSonUtils.getJsonValue(ajax, "wait_time");
                 if (wait == null) {
                     br.getRegex("var count = \"(\\d+)\";").getMatch(0);
                     if (wait == null) {

@@ -31,7 +31,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileload\\.io/[A-Za-z0-9]+(/[^/]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileload\\.io/[A-Za-z0-9]+(/[^/]+)?" })
 public class FileloadIo extends PluginForDecrypt {
 
     public FileloadIo(PluginWrapper wrapper) {
@@ -67,7 +67,7 @@ public class FileloadIo extends PluginForDecrypt {
 
         int counter = 0;
         br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folder_url_part);
-        final String error = PluginJSonUtils.getJson(this.br, "error");
+        final String error = PluginJSonUtils.getJsonValue(this.br, "error");
         if (error != null) {
             logger.info("Folder seems to be offline for reason: " + error);
             decryptedLinks.add(this.createOfflinelink(parameter));

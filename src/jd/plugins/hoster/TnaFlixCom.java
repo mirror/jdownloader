@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)|https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)|https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+" })
 public class TnaFlixCom extends PluginForHost {
 
     public TnaFlixCom(PluginWrapper wrapper) {
@@ -189,7 +189,7 @@ public class TnaFlixCom extends PluginForHost {
         if (dllink == null && videoid != null) {
             logger.info("Fallback to ajax method");
             this.br.getPage("https://dyn.tnaflix.com/ajax/info.php?action=video&vid=" + videoid);
-            dllink = PluginJSonUtils.getJson(this.br, "flv");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "flv");
             if (dllink != null && dllink.startsWith("//")) {
                 dllink = "https:" + dllink;
             }
@@ -197,6 +197,9 @@ public class TnaFlixCom extends PluginForHost {
 
         if (dllink == null) {
             dllink = dllink1;
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
         Browser brc = br.cloneBrowser();

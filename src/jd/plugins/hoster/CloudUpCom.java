@@ -35,7 +35,7 @@ import jd.plugins.components.PluginJSonUtils;
  *
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/i[a-zA-Z0-9_]{10}" }) 
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "cloudup.com" }, urls = { "https://(www\\.)?cloudup\\.com/i[a-zA-Z0-9_]{10}" })
 public class CloudUpCom extends PluginForHost {
 
     private String  csrfToken      = null;
@@ -87,15 +87,15 @@ public class CloudUpCom extends PluginForHost {
 
         ajaxGetPage("/files/" + new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0) + "?mydb=1");
         // is file
-        final String file = PluginJSonUtils.getJson(ajax, "type");
+        final String file = PluginJSonUtils.getJsonValue(ajax, "type");
         if (!"file".equals(file)) {
             // we don't support non file entries
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // filename
-        final String filename = PluginJSonUtils.getJson(ajax, "filename");
+        final String filename = PluginJSonUtils.getJsonValue(ajax, "filename");
         // filesize
-        final String filesize = PluginJSonUtils.getJson(ajax, "size");
+        final String filesize = PluginJSonUtils.getJsonValue(ajax, "size");
         // error handling
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,7 +105,7 @@ public class CloudUpCom extends PluginForHost {
             downloadLink.setDownloadSize(Long.parseLong(filesize));
         }
         // removed?
-        final String removed = PluginJSonUtils.getJson(ajax, "removed");
+        final String removed = PluginJSonUtils.getJsonValue(ajax, "removed");
         if (PluginJSonUtils.parseBoolean(removed)) {
             return AvailableStatus.FALSE;
         }
@@ -116,9 +116,9 @@ public class CloudUpCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // to download we need to remote
-        final String remote = PluginJSonUtils.getJson(ajax, "remote");
-        final String filename = PluginJSonUtils.getJson(ajax, "filename");
-        if (remote == null) {
+        final String remote = PluginJSonUtils.getJsonValue(ajax, "remote");
+        final String filename = PluginJSonUtils.getJsonValue(ajax, "filename");
+        if (remote == null || filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String dllink = "https://cldup.com/" + remote + "?download=" + Encoding.urlEncode(filename);
