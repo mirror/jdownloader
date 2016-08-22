@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,11 +35,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videobox\\.com/(movie\\-details\\?contentId=|flashPage/)\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videobox\\.com/(movie\\-details\\?contentId=|flashPage/)\\d+" })
 public class VideoBoxComDecrypter extends PluginForDecrypt {
 
     public VideoBoxComDecrypter(PluginWrapper wrapper) {
@@ -65,7 +66,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         final String sessionID = br.getCookie("http://videobox.com/", "JSESSIONID");
         br.getPage("http://www.videobox.com/content/details/generate/" + new Regex(parameter, "(\\d+)$").getMatch(0) + "/content-column.json?x-user-name=" + encodedUsername + "&x-session-key=" + sessionID + "&callback=metai.buildMovieDetails");
-        final String fpName = getJson("name", br.toString());
+        final String fpName = PluginJSonUtils.getJson(br, "name");
         if (fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -76,15 +77,15 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
             for (final String quality : qualities) {
                 final String qualityInfo = br.getRegex("(\"res\" : \"" + quality + "\".*?)\\}").getMatch(0);
                 if (qualityInfo != null) {
-                    String directLink = getJson("url", qualityInfo);
-                    final String downloadSize = getJson("size", qualityInfo);
+                    String directLink = PluginJSonUtils.getJson(qualityInfo, "url");
+                    final String downloadSize = PluginJSonUtils.getJson(qualityInfo, "size");
                     if (directLink == null || downloadSize == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     directLink = directLink.replace("\\", "");
                     final DownloadLink dl = createDownloadlink("http://videoboxdecrypted.com/decryptedscene/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                    final String finalfilename = fpName + "_" + quality + directLink.substring(directLink.lastIndexOf("."));
+                    final String finalfilename = fpName + "_" + quality + getFileNameExtensionFromString(directLink, "");
                     dl.setAvailable(true);
                     dl.setDownloadSize(SizeFormatter.getSize(downloadSize));
                     dl.setFinalFileName(finalfilename);
@@ -111,8 +112,8 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
 
             int currentSceneNumber = 1;
             for (final String scene : scenes) {
-                final String sceneName = getJson("name", scene);
-                final String sceneID = getJson("id", scene);
+                final String sceneName = PluginJSonUtils.getJson(scene, "name");
+                final String sceneID = PluginJSonUtils.getJson(scene, "id");
                 if (sceneName == null || sceneID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -121,15 +122,14 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
                 for (final String quality : qualities) {
                     final String qualityInfo = br.getRegex("(\"res\" : \"" + quality + "\".*?)\\}").getMatch(0);
                     if (qualityInfo != null) {
-                        String directLink = getJson("url", qualityInfo);
-                        final String downloadSize = getJson("size", qualityInfo);
+                        String directLink = PluginJSonUtils.getJson(qualityInfo, "url");
+                        final String downloadSize = PluginJSonUtils.getJson(qualityInfo, "size");
                         if (directLink == null || downloadSize == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;
                         }
-                        directLink = directLink.replace("\\", "");
                         final DownloadLink dl = createDownloadlink("http://videoboxdecrypted.com/decryptedscene/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                        final String finalfilename = fpName + "_scene_" + currentSceneNumber + "_" + quality + directLink.substring(directLink.lastIndexOf("."));
+                        final String finalfilename = fpName + "_scene_" + currentSceneNumber + "_" + quality + getFileNameExtensionFromString(directLink, "");
                         dl.setAvailable(true);
                         dl.setDownloadSize(SizeFormatter.getSize(downloadSize));
                         dl.setFinalFileName(finalfilename);
@@ -150,14 +150,6 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
-    }
-
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?(\\d+)").getMatch(2);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?\"([^<>\"]*?)\"").getMatch(2);
-        }
-        return result;
     }
 
     private boolean getUserLogin() throws Exception {

@@ -25,6 +25,12 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,17 +44,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.plugins.download.DownloadInterface;
 
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 /*
  * vrt.be network
  * new content handling --> data-video-src
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactiedecrypted\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporzadecrypted\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactiedecrypted\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporzadecrypted\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" })
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {
@@ -108,7 +108,7 @@ public class DeredactieBe extends PluginForHost {
             /* Therefore a decrypter would be needed! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String ext = finalurl.substring(finalurl.lastIndexOf("."));
+        String ext = getFileNameExtensionFromString(finalurl, ".mp4");
         if (ext == null || ext.length() > 5 || ext.equals(".m3u8")) {
             ext = ".mp4";
         }

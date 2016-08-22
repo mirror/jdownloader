@@ -16,6 +16,10 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,10 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitbox.tv" }, urls = { "https?://(?:www\\.)?hitbox\\.tv/video/(\\d+)" })
 public class HitBoxTv extends PluginForHost {
@@ -121,7 +121,7 @@ public class HitBoxTv extends PluginForHost {
             } else {
                 url = "http://edge.vie.hitbox.tv/static/videos/recordings/" + url;
             }
-            String ext = url.substring(url.lastIndexOf("."));
+            String ext = getFileNameExtensionFromString(url, ".mp4");
             if (ext == null || ext.length() > 5) {
                 ext = ".mp4";
             }

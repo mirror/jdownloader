@@ -22,6 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,14 +38,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|ifcfilms|lions_gate|lucasfilm|magnolia|marvel|mgm|oscilloscope|paramount|picturehouse|relativity|roadsideattractions|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|ifcfilms|lions_gate|lucasfilm|magnolia|marvel|mgm|oscilloscope|paramount|picturehouse|relativity|roadsideattractions|sony|sony_pictures|summit|(universial|universal)|wb|(weinstein|weinstien))/[a-zA-Z0-9_]+/" })
 public class AppleTrailer extends PluginForDecrypt {
 
     public AppleTrailer(PluginWrapper wrapper) {
@@ -122,7 +122,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         /* get format */
                         String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
                         /* get filename */
-                        String fname = title + "-" + clipTitle + " (" + p_q(format) + ")" + url.substring(url.lastIndexOf("."));
+                        String fname = title + "-" + clipTitle + " (" + p_q(format) + ")" + getFileNameExtensionFromString(url, ".mov");
                         if (fname == null || format == null) {
                             continue;
                         }

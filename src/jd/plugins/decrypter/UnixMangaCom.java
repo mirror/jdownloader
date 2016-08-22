@@ -16,19 +16,23 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.http.Request;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unixmanga.com" }, urls = { "http://(www\\.)?unixmanga\\.com/onlinereading/[^\\?]*?/.*?(c|ch)\\d+.*" }) 
-public class UnixMangaCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unixmanga.com" }, urls = { "http://(www\\.)?unixmanga\\.(?:com|nl|net)/onlinereading/[^\\?]*?/.*?(c|ch)\\d+.*" })
+public class UnixMangaCom extends antiDDoSForDecrypt {
 
     public UnixMangaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,83 +47,80 @@ public class UnixMangaCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> tempList = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> tempList = new ArrayList<String>();
         br.setFollowRedirects(true);
         String url = parameter.toString();
-        try {
-            br.getPage(url);
-        } catch (final Exception e) {
-            logger.info("Server error -> Decrypt failed for link: " + parameter);
-            return decryptedLinks;
-        }
+        getPage(url);
         if (!br.containsHTML(">Select A Link To Start Reading<")) {
             logger.info("Unsupported link: " + parameter);
             return decryptedLinks;
         }
 
         // We get the title
-        String title = br.getRegex("<TITLE>READ\\-\\->\\.\\.([^<>\"]*?)\\.\\.<\\-\\-ONLINE ACCESS</TITLE>").getMatch(0);
+        final String title = br.getRegex("<TITLE>READ(?:-->\\.\\.)?\\s*([^<>\"]*?)\\s*(?:\\.\\.<--ONLINE ACCESS|ONLINE)</TITLE>").getMatch(0);
         if (title == null) {
             logger.warning("Title not found! : " + parameter);
             return null;
         }
-        // set sub + domain used, used later in page views
-        String Url = new Regex(br.getURL(), "(?i)(https?://[^/]+)").getMatch(0);
         // We load each page and retrieve the URL of the picture
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
 
-        // Grab all available images
-        final String[] allImages = br.getRegex("<A class=\"td2\" rel=\"nofollow\" HREF=\"(http://[^<>\"]*?)\\&server=").getColumn(0);
-        if (allImages == null || allImages.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        {
+            // Grab all available images. onlinereading/ only shows the first x images.
+            final String[] allImages = br.getRegex("<A class=\"td2\" rel=\"nofollow\" HREF=\"(https?://[^<>\"]+)").getColumn(0);
+            if (allImages == null || allImages.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            tempList.addAll(Arrays.asList(allImages));
         }
-        for (final String img : allImages) {
-            tempList.add(img);
-        }
-        int counter = 1;
-        for (final String img : tempList) {
-            // remove unnecessary images from saving
-            if (!img.contains("xxxhomeunixxxx.png")) {
-                String extension = img.substring(img.lastIndexOf("."));
-                final DownloadLink link = createDownloadlink("directhttp://" + img.replace("?image=", ""));
-                link.setFinalFileName(title + "–page_" + counter + extension);
-                fp.add(link);
-                try {
-                    distribute(link);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
+        // opening this url will show total pages.
+        getPage(tempList.get(tempList.size() - 1));
+        // We look for next page and load it ready for the 'for' loop.
+        final String currentPage = br.getRegex("<a class=\"current\">(\\d+)</a>").getMatch(0);
+        if (currentPage != null) {
+            int i = Integer.parseInt(currentPage);
+            String result = null;
+            do {
+                result = br.getRegex("<a href=\"([^\"]+)\">" + (++i) + "</a>").getMatch(0);
+                if (result != null) {
+                    result = Request.getLocation(result, br.getRequest());
+                    tempList.add(result);
+                } else {
+                    getPage(tempList.get(tempList.size() - 1));
+                    // already been added.
+                    result = br.getRegex("<a href=\"([^\"]+)\">" + i + "</a>").getMatch(0);
+                    if (result != null) {
+                        result = Request.getLocation(result, br.getRequest());
+                        tempList.add(result);
+                    }
                 }
+            } while (result != null);
+        }
+
+        // decrypt all pages, it only
+        final DecimalFormat df = new DecimalFormat(tempList.size() < 100 ? "00" : "000");
+        boolean containsCredits = false;
+        int counter = 1;
+        final String imghost = "http://nas.unixmanga.net/onlinereading/";
+        for (String img : tempList) {
+            if (!containsCredits && counter == 1 && StringUtils.containsIgnoreCase(img, "credits")) {
+                counter = 0;
+                containsCredits = true;
+            }
+            img = img.replaceFirst("(?:&|\\?)server=.+", "").replaceFirst("https?://.*?/\\?image=", imghost);
+            // remove unnecessary images from saving
+            if (!img.contains("xxxhomeunixxxx.png") && !img.endsWith("homeunix.png")) {
+                final String extension = getFileNameExtensionFromString(img, ".jpg");
+                final DownloadLink link = createDownloadlink("directhttp://" + img.replace("?image=", ""));
+                link.setFinalFileName(title + "–page_" + df.format(counter) + extension);
+                fp.add(link);
+                distribute(link);
                 decryptedLinks.add(link);
             }
             counter++;
-        }
-        br.getPage(tempList.get(counter - 2));
-        while (true) {
-            // We look for next page and load it ready for the 'for' loop.
-            String nextPage = br.getRegex("document\\.write\\(\\'<a href =\"(\\?image=[^<>\"]*?)\"><b>\\[NEXT PAGE\\]<").getMatch(0);
-            if (nextPage != null) {
-                nextPage = "http://nas.homeunix.com/onlinereading/" + nextPage;
-                br.getPage(nextPage);
-                if (!nextPage.contains("xxxhomeunixxxx.png")) {
-                    String extension = nextPage.substring(nextPage.lastIndexOf("."));
-                    final DownloadLink link = createDownloadlink("directhttp://" + nextPage.replace("?image=", ""));
-                    link.setFinalFileName(title + "–page_" + counter + extension);
-                    fp.add(link);
-                    try {
-                        distribute(link);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
-                    decryptedLinks.add(link);
-                }
-                continue;
-            } else {
-                break;
-            }
-
         }
         return decryptedLinks;
     }

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?crackeddecrypted\\.com/video_\\d+.*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?crackeddecrypted\\.com/video_\\d+.*?\\.html" })
 public class CrackedCom extends PluginForHost {
 
     @Override
@@ -79,7 +79,7 @@ public class CrackedCom extends PluginForHost {
         }
         ddlink = Encoding.htmlDecode(ddlink);
         filename = filename.trim();
-        String ext = ddlink.substring(ddlink.lastIndexOf("."));
+        String ext = getFileNameExtensionFromString(ddlink, ".mp4");
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }

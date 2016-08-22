@@ -28,6 +28,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -41,10 +43,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(programs?|topic)/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(programs?|topic)/.+" })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
@@ -231,7 +231,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         fileName = fileName.replaceAll("\"", "");
                         fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
 
-                        final String ext_from_directurl = url.substring(url.lastIndexOf("."));
+                        final String ext_from_directurl = getFileNameExtensionFromString(url);
                         if (ext_from_directurl.length() == 4) {
                             extension = ext_from_directurl;
                         }

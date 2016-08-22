@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://(www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\d+(\\-\\d+)?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://(www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\d+(\\-\\d+)?\\.html" })
 public class SpglD extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORED_FOTOSTRECKE         = Pattern.compile("http://(www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\.html", Pattern.CASE_INSENSITIVE);
@@ -80,7 +80,7 @@ public class SpglD extends PluginForDecrypt {
                 if (imgLink == null) {
                     break;
                 }
-                final String ending = imgLink.substring(imgLink.lastIndexOf("."));
+                final String ending = getFileNameExtensionFromString(imgLink);
                 if (imgLink != null) {
                     final String finalname = title + "-" + count + ending;
                     final DownloadLink dlLink = this.createDownloadlink(imgLink);

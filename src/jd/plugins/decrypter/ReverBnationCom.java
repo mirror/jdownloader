@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reverbnation.com" }, urls = { "https?://(?:www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reverbnation.com" }, urls = { "https?://(?:www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" })
 public class ReverBnationCom extends antiDDoSForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -67,7 +67,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             final String[] pictures = br.getRegex("id=\"photo_\\d+\">[\t\n\r ]+<img data\\-crop=\"\\d+x\\d+\" data\\-full\\-size=\"(//[^<>\"]*?)\"").getColumn(0);
             for (String picture : pictures) {
                 DownloadLink fina = createDownloadlink("directhttp://http:" + picture);
-                String ext = picture.substring(picture.lastIndexOf("."));
+                String ext = getFileNameExtensionFromString(picture);
                 if (ext != null && ext.length() < 5 && fpName != null) {
                     fina.setFinalFileName("Photo " + df.format(counter) + ext);
                     counter++;

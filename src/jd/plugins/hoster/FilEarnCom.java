@@ -24,6 +24,11 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,12 +49,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filearn.com" }, urls = { "http://(www\\.)?filearn\\.com/files/get/[A-Za-z0-9_\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filearn.com" }, urls = { "http://(www\\.)?filearn\\.com/files/get/[A-Za-z0-9_\\-]+" })
 public class FilEarnCom extends PluginForHost {
 
     private static final String TOOMANYSIMLUTANDOWNLOADS = ">Only premium users can download more than one file at a time";
@@ -314,7 +314,7 @@ public class FilEarnCom extends PluginForHost {
         // Check if decrypter also gave us a filename
         String videarnName = link.getStringProperty("videarnname");
         if (videarnName != null) {
-            String ext = filename.substring(filename.lastIndexOf("."));
+            String ext = getFileNameExtensionFromString(filename, "");
             if (ext == null) {
                 ext = "";
             }

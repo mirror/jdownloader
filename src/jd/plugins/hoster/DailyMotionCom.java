@@ -43,7 +43,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
     private static String getQuality(final String quality, final String videosource) {
         return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
@@ -420,7 +420,7 @@ public class DailyMotionCom extends PluginForHost {
     public static String correctFilename(String filename) {
         // Cut filenames if they're too long
         if (filename.length() > 240) {
-            final String ext = filename.substring(filename.lastIndexOf("."));
+            final String ext = getFileNameExtensionFromString(filename, "");
             int extLength = ext.length();
             filename = filename.substring(0, 240 - extLength);
             filename += ext;
