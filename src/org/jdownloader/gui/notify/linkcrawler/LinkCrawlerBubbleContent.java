@@ -185,7 +185,13 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 final boolean isCollecting = jlc.isCollecting();
                 final long createdTime = jlc.getCreated();
                 if (queue != null) {
-                    queue.setText(String.valueOf(jlc.getQueueSize()));
+                    final int queueSize = jlc.getQueueSize();
+                    if (queueSize > 0) {
+                        queue.setVisible(true);
+                        queue.setText(String.valueOf(queueSize));
+                    } else {
+                        queue.setVisible(false);
+                    }
                 }
                 if (status != null) {
                     if (jlc.isRunning()) {
