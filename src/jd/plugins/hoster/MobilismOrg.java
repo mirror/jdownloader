@@ -16,8 +16,10 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,7 +52,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class MobilismOrg extends antiDDoSForHost {
 
     /* Tags: Script vinaget.us */
@@ -345,19 +347,24 @@ public class MobilismOrg extends antiDDoSForHost {
         br = new Browser();
         final AccountInfo ai = new AccountInfo();
         setConstants(account, null);
-
         br.setFollowRedirects(true);
         login(account, true);
-
         final String url = PluginJSonUtils.getJsonValue(br, "url");
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         getPage(url);
-        final String[] supportedHosts = br.getRegex("td>\\-([A-Za-z0-9\\-\\.]+)").getColumn(0);
-        if (url != null) {
-            ai.setMultiHostSupport(this, Arrays.asList(supportedHosts));
+        final HashSet<String> supported = new HashSet<String>();
+        String[] supportedHosts = br.getRegex("td>\\-([A-Za-z0-9\\-\\.]+)").getColumn(0);
+        if (supportedHosts != null) {
+            supported.addAll(Arrays.asList(supportedHosts));
         }
+        br.getPage("http://forum.mobilism.org/filehosts.xml");
+        supportedHosts = br.getRegex("host url=\"([A-Za-z0-9\\-\\.]+)\"").getColumn(0);
+        if (supportedHosts != null) {
+            supported.addAll(Arrays.asList(supportedHosts));
+        }
+        ai.setMultiHostSupport(this, new ArrayList<String>(supported));
         account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium Account");
         ai.setUnlimitedTraffic();
