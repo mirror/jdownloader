@@ -1,5 +1,8 @@
 ChatExtensionGuiToggleAction_deselected=打开聊天
+ChatExtensionGuiToggleAction_selected=关闭聊天
+ChatExtensionGuiToggleAction_selected_tt=关闭聊天面板
 gui_tab_title=%s1 通道
+jd_plugins_optional_jdchat_closeTab=关闭面板
 jd_plugins_optional_jdchat_jdchat=聊天
 plugins_optional_jdchat_enternick=你想要的昵称？
 settings_nick=你的名字

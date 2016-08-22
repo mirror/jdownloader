@@ -9,6 +9,7 @@ action_stopDownload=停止下载
 action_unpauseDownload=不暂停下载
 addScheduleEntryDialog_account=账户
 addScheduleEntryDialog_actionParameters=操作 & 参数
+addScheduleEntryDialog_chunks=块
 addScheduleEntryDialog_date=日期
 addScheduleEntryDialog_days=天
 addScheduleEntryDialog_downloads=下载
