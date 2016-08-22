@@ -327,7 +327,6 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 logger.info("Link was changed!");
                 logger.info("Old link: " + CRYPTEDLINK_FUNCTIONAL);
-                logger.info("New link: " + newLink);
                 logger.info("Continuing with: " + newLink);
                 CRYPTEDLINK_FUNCTIONAL = newLink;
             }
@@ -842,9 +841,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
         fp.setProperty("CLEANUP_NAME", false);
-        final String[][] regexesPage1 = { { "<a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
-        final String[][] regexesAllOthers = { { "><a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
+        final String[] regexesPage1 = { "<a href=\"/photo(-?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" };
+        final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesPage1, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album.+)").getMatch(0);
         for (final String content_id : decryptedData) {
             if (albumID == null) {
@@ -891,7 +889,7 @@ public class VKontakteRu extends PluginForDecrypt {
             /* not needed as we already have requested this page */
             // getPage(br,parameter);
         }
-        String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
+        String numberOfEntrys = br.getRegex("(?:\\||&#8211;|-) (\\d+) albums?</title>").getMatch(0);
         // Language independent
         if (numberOfEntrys == null) {
             numberOfEntrys = br.getRegex("class=\"summary\">(\\d+)").getMatch(0);
@@ -903,8 +901,8 @@ public class VKontakteRu extends PluginForDecrypt {
             return;
         }
         /** Photos are placed in different locations, find them all */
-        final String[][] regexesPage1 = { { "class=\"photo_row\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" } };
-        final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album-?\\d+_\\d+)", "1" } };
+        final String[] regexesPage1 = { "class=\"photo_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
+        final String[] regexesAllOthers = { "class=\"photo(?:_album)?_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         if (decryptedData != null && decryptedData.size() != 0) {
             for (String element : decryptedData) {
@@ -1357,7 +1355,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** NOT using API - general method --> NEVER change a running system! */
-    private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
+    private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[] regexesPageOne, final String[] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
         int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);
@@ -1375,9 +1373,8 @@ public class VKontakteRu extends PluginForDecrypt {
             if (i > 0) {
                 postPageSafe(postPage, postData + offset);
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
-                for (String regex[] : regexesAllOthers) {
-                    String correctedBR = br.toString().replace("\\", "");
-                    String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
+                    final String correctedBR = br.toString().replace("\\", "");
+                    final String[] theData = new Regex(correctedBR, regexesAllOthers[0]).getColumn(Integer.parseInt(regexesAllOthers[1]));
                     if (theData == null || theData.length == 0) {
                         addedLinks = 0;
                         break;
@@ -1386,13 +1383,11 @@ public class VKontakteRu extends PluginForDecrypt {
                     for (String data : theData) {
                         decryptedData.add(data);
                     }
-                }
                 offset += increase;
             } else {
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
-                for (String regex[] : regexesPageOne) {
                     String correctedBR = br.toString().replace("\\", "");
-                    String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
+                    String[] theData = new Regex(correctedBR, regexesPageOne[0]).getColumn(Integer.parseInt(regexesPageOne[1]));
                     if (theData == null || theData.length == 0) {
                         addedLinks = 0;
                         break;
@@ -1400,7 +1395,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     addedLinks = theData.length;
                     for (String data : theData) {
                         decryptedData.add(data);
-                    }
                 }
             }
             if (addedLinks < increase || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
