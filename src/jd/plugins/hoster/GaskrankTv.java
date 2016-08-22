@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "http://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "http://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" })
 public class GaskrankTv extends PluginForHost {
 
     public GaskrankTv(PluginWrapper wrapper) {
@@ -42,8 +42,6 @@ public class GaskrankTv extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -92,11 +90,7 @@ public class GaskrankTv extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

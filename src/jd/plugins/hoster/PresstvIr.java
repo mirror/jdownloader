@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "presstv.ir" }, urls = { "http://(www\\.)?presstv\\.ir/detail/\\d{4}/\\d{2}/\\d{2}/\\d+/[A-Za-z0-9\\-]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "presstv.ir" }, urls = { "http://(www\\.)?presstv\\.ir/detail/\\d{4}/\\d{2}/\\d{2}/\\d+/[A-Za-z0-9\\-]+/" })
 public class PresstvIr extends PluginForHost {
 
     public PresstvIr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -64,24 +64,18 @@ public class PresstvIr extends PluginForHost {
         }
         /* Decide between video and photo */
         if (br.containsHTML("property=\"og:video\"")) {
-            DLLINK = br.getRegex("\\(\\'file\\', \\'(presstv[^<>\"]*?)\\'\\)").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("\\(\\'file\\', \\'(presstv[^<>\"]*?)\\'\\)").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = "http://64.150.186.181/" + Encoding.htmlDecode(DLLINK).replace("/mp4:", "/");
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".mp4";
-            }
+            dllink = "http://64.150.186.181/" + Encoding.htmlDecode(dllink).replace("/mp4:", "/");
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         } else {
-            DLLINK = br.getRegex("id=\\'imgMain\\' src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("id=\\'imgMain\\' src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".jpg";
-            }
+            ext = getFileNameExtensionFromString(dllink, ".jpg");
         }
         filename = filename.trim();
         downloadLink.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename)) + ext);
@@ -90,7 +84,7 @@ public class PresstvIr extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -108,7 +102,7 @@ public class PresstvIr extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

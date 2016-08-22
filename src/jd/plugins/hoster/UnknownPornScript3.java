@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me", "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "http://(?:www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?vid2c\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?pornper\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?fantasy8\\.com/video/\\d+/[a-z0-9\\-]+",
-        "http://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bestporntube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvideo\\.me/video/\\d+/[a-z0-9\\-]+" }) 
+        "http://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bestporntube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvideo\\.me/video/\\d+/[a-z0-9\\-]+" })
 public class UnknownPornScript3 extends PluginForHost {
 
     public UnknownPornScript3(PluginWrapper wrapper) {
@@ -44,10 +44,8 @@ public class UnknownPornScript3 extends PluginForHost {
     /* Porn_plugin */
     /* V0.5 */
     /* Tags: Script, template */
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".flv";
 
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -70,25 +68,21 @@ public class UnknownPornScript3 extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("class=\"heading\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'file\\': \\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("\\'file\\': \\'(http[^<>\"]*?)\\'").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("var videoFile=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("var videoFile=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".flv");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -99,7 +93,7 @@ public class UnknownPornScript3 extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -112,7 +106,7 @@ public class UnknownPornScript3 extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -125,7 +119,7 @@ public class UnknownPornScript3 extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

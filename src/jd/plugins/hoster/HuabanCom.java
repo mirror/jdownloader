@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,9 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/pins/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/pins/\\d+" })
 public class HuabanCom extends PluginForHost {
 
     public HuabanCom(PluginWrapper wrapper) {
@@ -96,10 +96,7 @@ public class HuabanCom extends PluginForHost {
             }
             link.setProperty("free_directlink", dllink);
         }
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = default_extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, default_extension);
         filename = pin_id;
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -188,11 +185,13 @@ public class HuabanCom extends PluginForHost {
     // if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
+    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
+    // password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -201,11 +200,13 @@ public class HuabanCom extends PluginForHost {
     // if (br.containsHTML("jax CsrfErrorPage Module") || br.getCookie(MAINPAGE, "_b") == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
+    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
+    // password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }

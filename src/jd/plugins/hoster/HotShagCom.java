@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotshag.com" }, urls = { "http://(www\\.)?hotshag\\.com/video/\\d+/[a-z0-9\\-_]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotshag.com" }, urls = { "http://(www\\.)?hotshag\\.com/video/\\d+/[a-z0-9\\-_]+\\.html" })
 public class HotShagCom extends PluginForHost {
 
     public HotShagCom(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class HotShagCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -53,15 +53,15 @@ public class HotShagCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"vd7\">([^<>\"]*?)</h1>").getMatch(0);
-        DLLINK = br.getRegex("\"(http://[a-z0-9]+\\.hotshag\\.com/videos/[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(http://[a-z0-9]+\\.hotshag\\.com/videos/[^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         String ext = null;
-        if (DLLINK != null) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, ".flv");
         }
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
@@ -74,10 +74,10 @@ public class HotShagCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

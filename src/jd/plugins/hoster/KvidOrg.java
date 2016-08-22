@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "http://(www\\.)?kvid\\.org/(?:watch|embed|v2/vid)\\-[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "http://(www\\.)?kvid\\.org/(?:watch|embed|v2/vid)\\-[A-Za-z0-9]+" })
 public class KvidOrg extends PluginForHost {
 
     public KvidOrg(PluginWrapper wrapper) {
@@ -45,14 +45,12 @@ public class KvidOrg extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -67,7 +65,7 @@ public class KvidOrg extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.setCustomCharset("utf-8");
@@ -79,26 +77,22 @@ public class KvidOrg extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         }
-        DLLINK = br.getRegex("document\\.write\\(\\'([^<>\"]*?)\\'\\);").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("document\\.write\\(\\'([^<>\"]*?)\\'\\);").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
         }
 
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         if (downloadLink.getDownloadURL().contains("/watch")) {
-            DLLINK = "http://www.kvid.org/stream/" + DLLINK;
+            dllink = "http://www.kvid.org/stream/" + dllink;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -109,7 +103,7 @@ public class KvidOrg extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -118,7 +112,7 @@ public class KvidOrg extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -131,7 +125,7 @@ public class KvidOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

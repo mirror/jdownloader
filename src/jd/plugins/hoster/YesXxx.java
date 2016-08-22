@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" })
 public class YesXxx extends PluginForHost {
 
     public YesXxx(PluginWrapper wrapper) {
@@ -70,7 +70,7 @@ public class YesXxx extends PluginForHost {
         String ext = null;
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
-            ext = dllink.substring(dllink.lastIndexOf("."));
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,9 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9" })
 public class AventertainmentsCom extends PluginForHost {
 
     public AventertainmentsCom(PluginWrapper wrapper) {
@@ -51,22 +51,19 @@ public class AventertainmentsCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    private final String         TYPE_IMAGE              = "https?://imgs\\.aventertainments\\.com/.+";
-    private final String         TYPE_VIDEO_HTTP         = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
-    private final String         TYPE_VIDEO_HLS          = "https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
+    private final String         TYPE_IMAGE        = "https?://imgs\\.aventertainments\\.com/.+";
+    private final String         TYPE_VIDEO_HTTP   = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
+    private final String         TYPE_VIDEO_HLS    = "https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
 
-    public static String         html_loggedin           = "aventertainments.com/logout\\.aspx";
+    public static String         html_loggedin     = "aventertainments.com/logout\\.aspx";
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension_Video = ".mp4";
-    private static final String  default_Extension_Image = ".jpg";
     /* Connection stuff */
-    private static final boolean free_resume             = true;
-    private static final int     free_maxchunks          = 0;
-    private static final int     free_maxdownloads       = -1;
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
 
-    private String               dllink                  = null;
-    private boolean              server_issues           = false;
+    private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -113,15 +110,7 @@ public class AventertainmentsCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
-            String ext = dllink.substring(dllink.lastIndexOf("."));
-            /* Make sure that we get a correct extension */
-            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                if (link.getDownloadURL().matches(TYPE_IMAGE)) {
-                    ext = default_Extension_Image;
-                } else {
-                    ext = default_Extension_Video;
-                }
-            }
+            final String ext = getFileNameExtensionFromString(dllink, link.getDownloadURL().matches(TYPE_IMAGE) ? ".mp4" : ".jpg");
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }

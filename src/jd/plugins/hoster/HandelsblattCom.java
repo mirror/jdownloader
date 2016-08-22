@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "handelsblatt.com" }, urls = { "http://(www\\.)?handelsblatt\\.com/[^<>\"]*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "handelsblatt.com" }, urls = { "http://(www\\.)?handelsblatt\\.com/[^<>\"]*?\\.html" })
 public class HandelsblattCom extends PluginForHost {
 
     public HandelsblattCom(PluginWrapper wrapper) {
@@ -40,14 +40,12 @@ public class HandelsblattCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -57,7 +55,7 @@ public class HandelsblattCom extends PluginForHost {
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* UA not necessarily needed */
@@ -92,17 +90,13 @@ public class HandelsblattCom extends PluginForHost {
         if (bestBrightcoveVersion == null || bestBrightcoveVersion.creationDate == -1 || filename == null || bestBrightcoveVersion.downloadurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = bestBrightcoveVersion.downloadurl;
+        dllink = bestBrightcoveVersion.downloadurl;
         final String date_formatted = formatDate(bestBrightcoveVersion.creationDate);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
         filename = date_formatted + "_handelsblatt_" + filename;
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -114,7 +108,7 @@ public class HandelsblattCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

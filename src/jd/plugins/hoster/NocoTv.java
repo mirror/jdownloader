@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -40,12 +42,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noco.tv" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noco.tv" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" })
 public class NocoTv extends PluginForHost {
 
-    private String              DLLINK              = null;
+    private String              dllink              = null;
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
     private boolean             notDownloadable     = false;
     private static Object       LOCK                = new Object();
@@ -133,7 +133,7 @@ public class NocoTv extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -145,7 +145,7 @@ public class NocoTv extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(DLLINK), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -248,22 +248,19 @@ public class NocoTv extends PluginForHost {
                 downloadLink.setName(filename + ".mp4");
                 return AvailableStatus.TRUE;
             }
-            DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = filename.trim();
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null) {
-                ext = ".mp4";
-            }
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
             downloadLink.setFinalFileName(filename + ext);
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {

@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -34,9 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deraktionaer.tv" }, urls = { "https?://(?:www\\.)?(?:daf\\.fm|deraktionaer\\.tv)/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deraktionaer.tv" }, urls = { "https?://(?:www\\.)?(?:daf\\.fm|deraktionaer\\.tv)/video/[^<>\"/]+\\.html|http://www\\d+\\.anleger\\-fernsehen\\.de/[a-z0-9\\-_]+\\.html\\?id=\\d+" })
 public class DeraktionaerTv extends PluginForHost {
 
     public DeraktionaerTv(PluginWrapper wrapper) {
@@ -48,14 +48,12 @@ public class DeraktionaerTv extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -75,7 +73,7 @@ public class DeraktionaerTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -93,22 +91,18 @@ public class DeraktionaerTv extends PluginForHost {
         }
         final String date_formatted = formatDate(date);
         this.br.getPage(iframe);
-        DLLINK = br.getRegex("\"(https?://vcast\\.daf\\.tmt\\.de/video/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("\"(https?://vcast\\.daf\\.tmt\\.de/video/[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || dllink == null) {
             if (this.br.containsHTML("Dieses Video ist nicht mehr")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -120,7 +114,7 @@ public class DeraktionaerTv extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -141,7 +135,7 @@ public class DeraktionaerTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

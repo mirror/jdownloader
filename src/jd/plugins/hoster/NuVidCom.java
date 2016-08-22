@@ -31,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nuvid.com" }, urls = { "http://(www\\.)?nuvid\\.com/(video|embed)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nuvid.com" }, urls = { "http://(www\\.)?nuvid\\.com/(video|embed)/\\d+" })
 public class NuVidCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public NuVidCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -52,9 +52,9 @@ public class NuVidCom extends PluginForHost {
     private void getDllink(final String linkPart) throws IOException {
         final String vkey = new Regex(Encoding.htmlDecode(linkPart), "vkey=([0-9a-f]+)").getMatch(0);
         br.getPage("http://www.nuvid.com" + Encoding.htmlDecode(linkPart) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("aHlyMTRUaTFBYVB0OHhS")));
-        DLLINK = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
+        dllink = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
         }
     }
 
@@ -66,7 +66,7 @@ public class NuVidCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -97,25 +97,22 @@ public class NuVidCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         getDllink(linkPart);
-        if (DLLINK == null && br.containsHTML("Invalid video key")) {
+        if (dllink == null && br.containsHTML("Invalid video key")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated, key has changed!");
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

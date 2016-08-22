@@ -41,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xyou.com" }, urls = { "http://(?:www\\.|members\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xyou.com" }, urls = { "http://(?:www\\.|members\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" })
 public class XyouCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -56,8 +56,6 @@ public class XyouCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension         = ".mp4";
     /* Connection stuff */
     private static final boolean FREE_RESUME               = false;
     private static final int     FREE_MAXCHUNKS            = 1;
@@ -69,7 +67,7 @@ public class XyouCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
-    private String               DLLINK                    = null;
+    private String               dllink                    = null;
 
     @Override
     public String getAGBLink() {
@@ -79,7 +77,7 @@ public class XyouCom extends PluginForHost {
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         /* Offline links should also have nice filenames */
         downloadLink.setName(fid + ".mp4");
@@ -100,28 +98,24 @@ public class XyouCom extends PluginForHost {
         if (filename == null) {
             filename = fid;
         }
-        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -134,7 +128,7 @@ public class XyouCom extends PluginForHost {
         try {
             try {
                 // con = openConnection(br2, DLLINK);
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -143,7 +137,7 @@ public class XyouCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -160,7 +154,7 @@ public class XyouCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -170,7 +164,7 @@ public class XyouCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, DLLINK);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

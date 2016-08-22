@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?winporn\\.com/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?winporn\\.com/video/\\d+" })
 public class WinpornCom extends PluginForHost {
 
     public WinpornCom(PluginWrapper wrapper) {
@@ -39,8 +39,7 @@ public class WinpornCom extends PluginForHost {
     }
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -82,11 +81,7 @@ public class WinpornCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

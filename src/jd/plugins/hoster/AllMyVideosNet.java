@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net" }, urls = { "https?://(www\\.)?allmyvideos\\.net/((?:embed-)?[a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net" }, urls = { "https?://(www\\.)?allmyvideos\\.net/((?:embed-)?[a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)" })
 public class AllMyVideosNet extends PluginForHost {
 
     public AllMyVideosNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -71,11 +71,7 @@ public class AllMyVideosNet extends PluginForHost {
             final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
-            try {
-                link.setContentUrl(url_embed);
-            } catch (final Throwable e) {
-                /* Not available in 0.9.581 Stable */
-            }
+            link.setContentUrl(url_embed);
             link.setUrlDownload(corrected_downloadurl);
         }
     }
@@ -114,23 +110,20 @@ public class AllMyVideosNet extends PluginForHost {
         if (download1 != null) {
             br.submitForm(download1);
         }
-        DLLINK = br.getRegex("\"file\" : \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
+        dllink = br.getRegex("\"file\" : \"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -148,7 +141,7 @@ public class AllMyVideosNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

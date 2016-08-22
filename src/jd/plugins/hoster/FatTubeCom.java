@@ -31,17 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fat-tube.com" }, urls = { "http://(www\\.)?fat\\-tube\\.com/view/\\d+/[a-z0-9\\-_]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fat-tube.com" }, urls = { "http://(www\\.)?fat\\-tube\\.com/view/\\d+/[a-z0-9\\-_]+/" })
 public class FatTubeCom extends PluginForHost {
 
     public FatTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -61,22 +58,18 @@ public class FatTubeCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>FAT\\-TUBE\\.COM \\- ([^<>]*?)</title>").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://(www\\.)?fat\\-tube\\.com/flvideo/[^<>\"]*?)\"").getMatch(0);
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://(www\\.)?fat\\-tube\\.com/flvideo/[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -87,7 +80,7 @@ public class FatTubeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -96,7 +89,7 @@ public class FatTubeCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -109,7 +102,7 @@ public class FatTubeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

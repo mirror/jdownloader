@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?vidxporn\\.com/\\d+/[a-z0-9\\-]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "vidxporn.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?vidxporn\\.com/\\d+/[a-z0-9\\-]+/" })
 public class UnknownPornScript8 extends PluginForHost {
 
     public UnknownPornScript8(PluginWrapper wrapper) {
@@ -43,11 +43,9 @@ public class UnknownPornScript8 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     /* Tags: Script, template */
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
 
-    private String              DLLINK            = null;
-    private boolean             serverissue       = false;
+    private String  dllink      = null;
+    private boolean serverissue = false;
 
     @Override
     public String getAGBLink() {
@@ -69,19 +67,15 @@ public class UnknownPornScript8 extends PluginForHost {
         if (filename == null) {
             filename = filename_url;
         }
-        DLLINK = br.getRegex("<source src=\"(http[^<>\"]+)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("<source src=\"(http[^<>\"]+)\"").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -92,13 +86,13 @@ public class UnknownPornScript8 extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setProperty("directlink", DLLINK);
+                downloadLink.setProperty("directlink", dllink);
             } else {
                 serverissue = true;
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,7 +112,7 @@ public class UnknownPornScript8 extends PluginForHost {
         if (serverissue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

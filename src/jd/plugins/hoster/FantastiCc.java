@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fantasti.cc" }, urls = { "http://(?:www\\.)?fantasti\\.cc/user/[^/]+/videos/upload/[^/]+/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fantasti.cc" }, urls = { "http://(?:www\\.)?fantasti\\.cc/user/[^/]+/videos/upload/[^/]+/\\d+/" })
 public class FantastiCc extends PluginForHost {
 
     public FantastiCc(PluginWrapper wrapper) {
@@ -43,8 +43,6 @@ public class FantastiCc extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -99,11 +97,7 @@ public class FantastiCc extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

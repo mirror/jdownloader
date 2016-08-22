@@ -22,6 +22,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -41,9 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "220.ro" }, urls = { "http://(www\\.)?220\\.ro/(embi/[A-Za-z0-9]+|[a-z0-9\\-]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+/)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "220.ro" }, urls = { "http://(www\\.)?220\\.ro/(embi/[A-Za-z0-9]+|[a-z0-9\\-]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+/)" })
 public class TwoHundredTwentyRo extends PluginForHost {
 
     public TwoHundredTwentyRo(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class TwoHundredTwentyRo extends PluginForHost {
         this.enablePremium("http://www.220.ro/fara-publicitate/");
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -102,26 +102,23 @@ public class TwoHundredTwentyRo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("videoSrc[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("videoSrc[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -143,10 +140,10 @@ public class TwoHundredTwentyRo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final String directlinkproperty) throws Exception, PluginException {
-        if (DLLINK == null) {
-            DLLINK = checkDirectLink(downloadLink, directlinkproperty);
+        if (dllink == null) {
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (br.containsHTML(HTML_AGE_RESTRICTED)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -159,7 +156,7 @@ public class TwoHundredTwentyRo extends PluginForHost {
             }
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -169,7 +166,7 @@ public class TwoHundredTwentyRo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, DLLINK);
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

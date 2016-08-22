@@ -29,14 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "http://(www\\.)?photoshare\\.ru/photo\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "http://(www\\.)?photoshare\\.ru/photo\\d+\\.html" })
 public class PhotoShareRu extends PluginForHost {
 
     public PhotoShareRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -48,26 +48,32 @@ public class PhotoShareRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Ошибка 404: файл не найден<") || br.getURL().contains("/login/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Ошибка 404: файл не найден<") || br.getURL().contains("/login/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("\\'title\\': \\'([^<>\"]*?)\\'").getMatch(0);
-        DLLINK = br.getRegex("src=\"/images/full\\.gif\" .*?<a href=\"(http://\\d+\\.[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (filename == null) {
+            filename = br.getRegex("\\'title\\': \\'([^<>\"]*?)\\'").getMatch(0);
+        }
+        dllink = br.getRegex("src=\"/images/full\\.gif\" .*?<a href=\"(http://\\d+\\.[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".jpg";
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -81,7 +87,7 @@ public class PhotoShareRu extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Disable chunks for photos (technically probably possible)
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

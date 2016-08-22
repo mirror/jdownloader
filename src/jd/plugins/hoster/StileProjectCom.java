@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileprojectdecrypted\\.com/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileprojectdecrypted\\.com/video/\\d+" })
 public class StileProjectCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public StileProjectCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,21 +65,18 @@ public class StileProjectCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
         getdllink();
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -97,7 +94,7 @@ public class StileProjectCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -107,8 +104,8 @@ public class StileProjectCom extends PluginForHost {
 
     // Same code as for CelebrityCuntNet
     private void getdllink() throws PluginException, IOException {
-        DLLINK = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
+        dllink = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
             final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
             final String type = videoMETA.getMatch(0);
             final String id = videoMETA.getMatch(1);
@@ -118,7 +115,7 @@ public class StileProjectCom extends PluginForHost {
             }
             final String postData = "cacheBuster=" + System.currentTimeMillis() + "&jsonRequest=%7B%22path%22%3A%22" + type + "%5F" + id + "%22%2C%22cb%22%3A%22" + cb + "%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + type + "%5F" + id + "%22%2C%22htmlHostDomain%22%3A%22www%2Estileproject%2Ecom%22%2C%22height%22%3A%22508%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Estileproject%2Ecom%2Fgetcdnurl%2F%22%2C%22playerOnly%22%3A%22true%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22640%22%7D";
             br.postPage("http://www.stileproject.com/getcdnurl/", postData);
-            DLLINK = br.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
         }
     }
 

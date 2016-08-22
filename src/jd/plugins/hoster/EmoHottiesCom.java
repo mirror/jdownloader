@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(?:www\\.)?decryptedemohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(?:www\\.)?decryptedemohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class EmoHottiesCom extends PluginForHost {
 
     public EmoHottiesCom(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class EmoHottiesCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -54,7 +54,7 @@ public class EmoHottiesCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -64,27 +64,24 @@ public class EmoHottiesCom extends PluginForHost {
         String filename = getTitle(this.br);
         // DLLINK = br.getRegex("(http://emohotties\\.com/playerConfig\\.php\\?[^<>\"/]+\\.(flv|mp4)(\\|\\d+)?)\"").getMatch(0);
         /* Important: Remember that: http://jdownloader.net:8081/pastebin/123271 */
-        DLLINK = br.getRegex("itemprop=\"contentURL\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("clip: \\{\\s+url: \\'([^\\']+)\\'").getMatch(0);
+        dllink = br.getRegex("itemprop=\"contentURL\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("clip: \\{\\s+url: \\'([^\\']+)\\'").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -117,7 +114,7 @@ public class EmoHottiesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/[^/]+/[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/[^/]+/[^/]+" })
 public class HearthisAt extends PluginForHost {
 
     public HearthisAt(PluginWrapper wrapper) {
@@ -42,14 +42,12 @@ public class HearthisAt extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp3";
     /* Connection stuff */
-    private boolean             free_resume       = false;
-    private int                 free_maxchunks    = 1;
-    private static final int    free_maxdownloads = -1;
+    private boolean          free_resume       = false;
+    private int              free_maxchunks    = 1;
+    private static final int free_maxdownloads = -1;
 
-    private String              dllink            = null;
+    private String           dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -98,11 +96,7 @@ public class HearthisAt extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

@@ -31,17 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[^<>/\"]+/songs/[^<>/\"]+/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[^<>/\"]+/songs/[^<>/\"]+/\\d+/" })
 public class BaseShareCom extends PluginForHost {
 
     public BaseShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp3";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -59,26 +56,22 @@ public class BaseShareCom extends PluginForHost {
         String artist = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         String title = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
         String filename = null;
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(/uploads/(songs|zips)/[^<>\"]*?\\.mp3)\"").getMatch(0);
-            if (DLLINK != null) {
-                DLLINK = "http://baseshare.com" + DLLINK;
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("(/uploads/(songs|zips)/[^<>\"]*?\\.mp3)\"").getMatch(0);
+            if (dllink != null) {
+                dllink = "http://baseshare.com" + dllink;
             }
         }
-        if (artist == null || title == null || DLLINK == null) {
+        if (artist == null || title == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         artist = encodeUnicode(Encoding.htmlDecode(artist).trim());
         title = encodeUnicode(Encoding.htmlDecode(title).trim());
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = artist + " - " + title;
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -89,7 +82,7 @@ public class BaseShareCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -98,7 +91,7 @@ public class BaseShareCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -111,7 +104,7 @@ public class BaseShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

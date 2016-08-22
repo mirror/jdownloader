@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -32,16 +34,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "http://(www\\.)?mais\\.uol\\.com\\.br/view/[a-z0-9]+/[A-Za-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "http://(www\\.)?mais\\.uol\\.com\\.br/view/[a-z0-9]+/[A-Za-z0-9\\-]+" })
 public class MaisUolComBr extends PluginForHost {
 
     public MaisUolComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -81,29 +81,26 @@ public class MaisUolComBr extends PluginForHost {
                 final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) o;
                 final int id = ((Number) format.get("id")).intValue();
                 if (id == 9 || id == 2) {
-                    DLLINK = (String) format.get("url");
+                    dllink = (String) format.get("url");
                     break;
                 }
             }
         } else {
-            DLLINK = "http://storage.mais.uol.com.br/" + mediaID + ".mp3?ver=0";
+            dllink = "http://storage.mais.uol.com.br/" + mediaID + ".mp3?ver=0";
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = openConnection(br2, DLLINK);
+            con = openConnection(br2, dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -121,7 +118,7 @@ public class MaisUolComBr extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

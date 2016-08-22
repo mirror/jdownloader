@@ -29,14 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyandfunny.com" }, urls = { "http://(www\\.)?sexyandfunny\\.com/watch_video/[a-z0-9\\-_]+_\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyandfunny.com" }, urls = { "http://(www\\.)?sexyandfunny\\.com/watch_video/[a-z0-9\\-_]+_\\d+\\.html" })
 public class SexyAndFunnyCom extends PluginForHost {
 
     public SexyAndFunnyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -56,26 +56,23 @@ public class SexyAndFunnyCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\- Sexy Videos \\- SexyAndFunny\\.com</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("\"flv\", \"(http://[^<>\"]*?)\"\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://files\\.sexyandfunny\\.com/usr_[a-z0-9]+\\.flv)\"").getMatch(0);
+        dllink = br.getRegex("\"flv\", \"(http://[^<>\"]*?)\"\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://files\\.sexyandfunny\\.com/usr_[a-z0-9]+\\.flv)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -93,7 +90,7 @@ public class SexyAndFunnyCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

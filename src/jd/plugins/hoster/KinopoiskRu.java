@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/(film/\\d+|player/[a-z0-9]+/f/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kinopoisk.ru" }, urls = { "http://(www\\.)?kinopoisk\\.ru/(film/\\d+|player/[a-z0-9]+/f/\\d+)" })
 public class KinopoiskRu extends PluginForHost {
 
     public KinopoiskRu(PluginWrapper wrapper) {
@@ -42,14 +42,12 @@ public class KinopoiskRu extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -66,7 +64,7 @@ public class KinopoiskRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         correctDownloadLink(downloadLink);
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setLoadLimit(3123000);
@@ -78,23 +76,19 @@ public class KinopoiskRu extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>Видео:([^<>\"]*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("\"trailerFile\"[\t\n\r ]*?:[\t\n\r ]*?\"(\\d+/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'trailerFile\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(\\d+/[^<>\"\\']*?)\\'").getMatch(0);
+        dllink = br.getRegex("\"trailerFile\"[\t\n\r ]*?:[\t\n\r ]*?\"(\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'trailerFile\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(\\d+/[^<>\"\\']*?)\\'").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Other way: http://www.kinopoisk.ru/gettrailer.php?trid=76182&film=724758&from_src=vk&tid=blablabla.mp4 */
-        DLLINK = "http://kp.cdn.yandex.net/" + Encoding.htmlDecode(DLLINK);
+        dllink = "http://kp.cdn.yandex.net/" + Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -105,10 +99,10 @@ public class KinopoiskRu extends PluginForHost {
                 this.br.getHeaders().put("Referer", "http://yandex.st/swf/kinoplayer/13_101/v-13.101-176/kinoplayer.swf");
                 if (isJDStable()) {
                     /* @since JD2 */
-                    con = this.br.openHeadConnection(DLLINK);
+                    con = this.br.openHeadConnection(dllink);
                 } else {
                     /* Not supported in old 0.9.581 Stable */
-                    con = this.br.openGetConnection(DLLINK);
+                    con = this.br.openGetConnection(dllink);
                 }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,7 +112,7 @@ public class KinopoiskRu extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -131,7 +125,7 @@ public class KinopoiskRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

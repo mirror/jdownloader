@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://((www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\s+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://((www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\s+)" })
 public class AhMeCom extends PluginForHost {
 
     private String dllink = null;
@@ -75,10 +75,7 @@ public class AhMeCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

@@ -31,14 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultsforsex.com" }, urls = { "http://(www\\.)?adultsforsex\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultsforsex.com" }, urls = { "http://(www\\.)?adultsforsex\\.com/\\d+" })
 public class AdultsForSexCom extends PluginForHost {
 
     public AdultsForSexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -58,16 +58,13 @@ public class AdultsForSexCom extends PluginForHost {
             filename = new Regex(br.getURL(), "adultsforsex\\.com/\\d+/([A-Za-z0-9\\-]+)/").getMatch(0);
         }
         br.getPage("http://adultsforsex.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        DLLINK = br.getRegex("<file><\\!\\[CDATA\\[(https?://[^<>\"]*?)\\]\\]></file>").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("<file><\\!\\[CDATA\\[(https?://[^<>\"]*?)\\]\\]></file>").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -75,7 +72,7 @@ public class AdultsForSexCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -96,7 +93,7 @@ public class AdultsForSexCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

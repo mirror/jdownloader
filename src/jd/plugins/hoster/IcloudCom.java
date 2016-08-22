@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,9 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icloud.com" }, urls = { "http://iclouddecrypted\\.com/[A-Z0-9\\-]+_[a-f0-9]{42}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icloud.com" }, urls = { "http://iclouddecrypted\\.com/[A-Z0-9\\-]+_[a-f0-9]{42}" })
 public class IcloudCom extends PluginForHost {
 
     public IcloudCom(PluginWrapper wrapper) {
@@ -98,15 +98,7 @@ public class IcloudCom extends PluginForHost {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
                 filename = encodeUnicode(filename);
-                String ext = dllink.substring(dllink.lastIndexOf("."));
-                /* Make sure that we get a correct extension */
-                if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                    if ("video".equalsIgnoreCase(type)) {
-                        ext = default_ExtensionVideo;
-                    } else {
-                        ext = default_ExtensionImage;
-                    }
-                }
+                String ext = getFileNameExtensionFromString(dllink, "video".equalsIgnoreCase(type) ? default_ExtensionVideo : default_ExtensionImage);
                 if (!filename.endsWith(ext)) {
                     filename += ext;
                 }

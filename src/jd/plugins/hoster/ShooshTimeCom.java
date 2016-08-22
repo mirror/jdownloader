@@ -32,17 +32,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "http://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "http://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
 public class ShooshTimeCom extends PluginForHost {
 
     public ShooshTimeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -65,28 +62,24 @@ public class ShooshTimeCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)/?$").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("class=\"download\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\"file\"[\t\n\r]*?:[\t\n\r]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("class=\"download\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"file\"[\t\n\r]*?:[\t\n\r]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -99,10 +92,10 @@ public class ShooshTimeCom extends PluginForHost {
             try {
                 try {
                     /* @since JD2 */
-                    con = br2.openHeadConnection(DLLINK);
+                    con = br2.openHeadConnection(dllink);
                 } catch (final Throwable t) {
                     /* Not supported in old 0.9.581 Stable */
-                    con = br2.openGetConnection(DLLINK);
+                    con = br2.openGetConnection(dllink);
                 }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -112,7 +105,7 @@ public class ShooshTimeCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -125,7 +118,7 @@ public class ShooshTimeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

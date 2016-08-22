@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com" }, urls = { "http://uptostream\\.comdecrypted/[a-z0-9]{12}_\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com" }, urls = { "http://uptostream\\.comdecrypted/[a-z0-9]{12}_\\d+" })
 public class UpToStreamCom extends PluginForHost {
 
     public UpToStreamCom(PluginWrapper wrapper) {
@@ -49,14 +49,12 @@ public class UpToStreamCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -65,26 +63,24 @@ public class UpToStreamCom extends PluginForHost {
 
     @SuppressWarnings("serial")
     public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                              {
-                                                                  /*
-                                                                   * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-                                                                   * audioBitrate
-                                                                   */
-                                                                  /*
-                                                                   * Video-bitrates and resultions here are not exact as they vary. Correct
-                                                                   * values will be in the filenames!
-                                                                   */
-                                                                  put("360", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
-                                                                  put("480", new String[] { "AVC", "600", "640x480", "AAC LC", "64" });
-                                                                  put("720", new String[] { "AVC", "900", "1280x720", "AAC LC", "64" });
-                                                                  put("1080", new String[] { "AVC", "1370", "1920x1080", "AAC LC", "128" });
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video-bitrates and resultions here are not exact as they vary. Correct values will be in the filenames!
+             */
+            put("360", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
+            put("480", new String[] { "AVC", "600", "640x480", "AAC LC", "64" });
+            put("720", new String[] { "AVC", "900", "1280x720", "AAC LC", "64" });
+            put("1080", new String[] { "AVC", "1370", "1920x1080", "AAC LC", "128" });
 
-                                                              }
-                                                          });
+        }
+    });
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String getlink = downloadLink.getStringProperty("mainlink", null);
@@ -98,19 +94,15 @@ public class UpToStreamCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = downloadLink.getFinalFileName();
-        DLLINK = downloadLink.getStringProperty("directlink", null);
-        if (filename == null || DLLINK == null) {
+        dllink = downloadLink.getStringProperty("directlink", null);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -121,7 +113,7 @@ public class UpToStreamCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -130,7 +122,7 @@ public class UpToStreamCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -150,7 +142,7 @@ public class UpToStreamCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

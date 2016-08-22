@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" })
 public class EroProfileCom extends PluginForHost {
 
     public EroProfileCom(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class EroProfileCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -81,41 +81,32 @@ public class EroProfileCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText("This file is only available to premium members");
                 return AvailableStatus.TRUE;
             }
-            DLLINK = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = Encoding.htmlDecode(DLLINK);
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".m4v";
-            }
+            dllink = Encoding.htmlDecode(dllink);
+            final String ext = getFileNameExtensionFromString(dllink, ".m4v");
             downloadLink.setFinalFileName(filename + ext);
         } else {
             if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = getFilename();
-            DLLINK = br.getRegex("<div class=\"viewPhotoContainer\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("<div class=\"viewPhotoContainer\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!DLLINK.startsWith("http")) {
-                DLLINK = "http://www.eroprofile.com" + DLLINK;
-            }
-            DLLINK = Encoding.htmlDecode(DLLINK);
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".jpg";
-            }
+            dllink = Encoding.htmlDecode(dllink);
+            final String ext = getFileNameExtensionFromString(dllink, ".jpg");
             downloadLink.setFinalFileName(filename + ext);
         }
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -157,7 +148,7 @@ public class EroProfileCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception {
         // Resume & chunks works but server will only send 99% of the data if used
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

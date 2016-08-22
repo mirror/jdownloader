@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
 public class NewgroundsCom extends PluginForHost {
 
     public NewgroundsCom(PluginWrapper wrapper) {
@@ -45,14 +45,12 @@ public class NewgroundsCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -66,7 +64,7 @@ public class NewgroundsCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -76,7 +74,7 @@ public class NewgroundsCom extends PluginForHost {
 
         String filename = null;
         if (downloadLink.getDownloadURL().matches(ARTLINK)) {
-            DLLINK = br.getRegex("id=\"dim_the_lights\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("id=\"dim_the_lights\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else {
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -84,31 +82,27 @@ public class NewgroundsCom extends PluginForHost {
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename).trim() + "_" + fid + ".mp3";
                 }
-                DLLINK = "http://www.newgrounds.com/audio/download/" + fid;
+                dllink = "http://www.newgrounds.com/audio/download/" + fid;
             } else {
                 if (br.containsHTML("requires a Newgrounds account to play\\.<")) {
                     accountneeded = true;
                     return AvailableStatus.TRUE;
                 }
-                DLLINK = br.getRegex("\"src\":[\t\n\r ]+\"(http:[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"src\":[\t\n\r ]+\"(http:[^<>\"]*?)\"").getMatch(0);
                 // Maybe video or .swf
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
                 }
-                if (DLLINK != null) {
-                    DLLINK = DLLINK.replace("\\", "");
+                if (dllink != null) {
+                    dllink = dllink.replace("\\", "");
                 }
             }
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        dllink = Encoding.htmlDecode(dllink);
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -116,7 +110,7 @@ public class NewgroundsCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
                 }
@@ -135,7 +129,7 @@ public class NewgroundsCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -151,7 +145,7 @@ public class NewgroundsCom extends PluginForHost {
         if (accountneeded) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

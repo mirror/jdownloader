@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://video\\.online\\.uadecrypted/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://video\\.online\\.uadecrypted/\\d+" })
 public class VideoOnlineUa extends PluginForHost {
 
     public VideoOnlineUa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -77,14 +77,14 @@ public class VideoOnlineUa extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
         if (hash != null) {
-            DLLINK = "http://video.online.ua/playlist/" + fid + ".xml?o=t&" + hash;
+            dllink = "http://video.online.ua/playlist/" + fid + ".xml?o=t&" + hash;
         } else {
-            DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("video\\s*?:\\s*?(?:\\'|\")(https?://[^<>\"\\']+)(?:\\'|\")").getMatch(0);
+            dllink = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("video\\s*?:\\s*?(?:\\'|\")(https?://[^<>\"\\']+)(?:\\'|\")").getMatch(0);
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Browser br2 = br.cloneBrowser();
@@ -92,22 +92,22 @@ public class VideoOnlineUa extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (con.getResponseCode() == 404) {
                 /* Offline - video is officially available but will fail to play via browser as well! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (con.getContentType().contains("html")) {
-                br2.getPage(DLLINK);
+                br2.getPage(dllink);
                 if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                DLLINK = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
-                if (DLLINK == null) {
+                dllink = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                DLLINK = Encoding.htmlDecode(DLLINK);
-                con = br2.openHeadConnection(DLLINK);
+                dllink = Encoding.htmlDecode(dllink);
+                con = br2.openHeadConnection(dllink);
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -115,10 +115,7 @@ public class VideoOnlineUa extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = Encoding.htmlDecode(filename).trim();
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".mp4";
-            }
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
             downloadLink.setFinalFileName(filename + ext);
             return AvailableStatus.TRUE;
         } finally {
@@ -132,7 +129,7 @@ public class VideoOnlineUa extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

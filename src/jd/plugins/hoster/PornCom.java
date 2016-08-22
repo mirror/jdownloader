@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,9 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(?:www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(?:\\.html)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(?:www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(?:\\.html)?" })
 public class PornCom extends antiDDoSForHost {
 
     /* DEV NOTES */
@@ -60,7 +60,7 @@ public class PornCom extends antiDDoSForHost {
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
     private String               vq                = null;
 
     /* don't touch the following! */
@@ -110,23 +110,23 @@ public class PornCom extends antiDDoSForHost {
         filename = Encoding.htmlDecode(filename.trim());
         if (q != null) {
             final HashMap<String, String> matches = jd.plugins.decrypter.PornCom.getQualities(this.br);
-            DLLINK = matches.get(q);
+            dllink = matches.get(q);
         } else {
             get_dllink(this.br);
         }
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
-        if (DLLINK == null) {
+        if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
             brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
             if (q != null) {
-                DLLINK = brc.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
+                dllink = brc.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
             } else {
                 get_dllink(brc);
             }
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (br.containsHTML(">Sorry, this video is only available to members")) {
                 if (q == null) {
                     downloadLink.setName(filename + ".mp4");
@@ -136,12 +136,9 @@ public class PornCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
+        dllink = Encoding.htmlDecode(dllink).replace("\\", "");
         if (q == null) {
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".mp4";
-            }
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
             if (vq == null) {
                 downloadLink.setFinalFileName(filename + ext);
             } else {
@@ -153,7 +150,7 @@ public class PornCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -176,26 +173,26 @@ public class PornCom extends antiDDoSForHost {
         boolean q480 = cfg.getBooleanProperty("480p", false);
         boolean q720 = cfg.getBooleanProperty("720p", false);
         if (q720) {
-            DLLINK = brc.getRegex("720p\",url:\"(http:.*?)\"").getMatch(0);
+            dllink = brc.getRegex("720p\",url:\"(http:.*?)\"").getMatch(0);
             vq = "720p";
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (q480) {
-                DLLINK = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
+                dllink = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
                 vq = "480p";
             }
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             if (q360) {
-                DLLINK = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
+                dllink = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
                 vq = "360p";
             }
         }
-        if (DLLINK == null) {
-            DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0); // Default
+        if (dllink == null) {
+            dllink = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0); // Default
             vq = "240p";
         }
-        if (DLLINK != null) {
+        if (dllink != null) {
             return;
         }
         logger.info("Video quality selection failed.");
@@ -217,7 +214,7 @@ public class PornCom extends antiDDoSForHost {
                     }
                 }
             }
-            DLLINK = bestUrl;
+            dllink = bestUrl;
         }
     }
 
@@ -228,10 +225,10 @@ public class PornCom extends antiDDoSForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        if (DLLINK == null && br.containsHTML(">Sorry, this video is only available to members")) {
+        if (dllink == null && br.containsHTML(">Sorry, this video is only available to members")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -324,7 +321,7 @@ public class PornCom extends antiDDoSForHost {
 
     @Override
     public void reset() {
-        DLLINK = null;
+        dllink = null;
     }
 
     @Override

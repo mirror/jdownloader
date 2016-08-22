@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toypics.net" }, urls = { "http://(www\\.)?videos\\.toypics\\.net/view/\\d+/[a-z0-9\\-_]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toypics.net" }, urls = { "http://(www\\.)?videos\\.toypics\\.net/view/\\d+/[a-z0-9\\-_]+/" })
 public class ToyPicsNet extends PluginForHost {
 
     public ToyPicsNet(PluginWrapper wrapper) {
@@ -64,10 +64,7 @@ public class ToyPicsNet extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

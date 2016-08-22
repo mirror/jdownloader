@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaxtube.com" }, urls = { "http://(www\\.)?xaxtube\\.com/\\d+/[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaxtube.com" }, urls = { "http://(www\\.)?xaxtube\\.com/\\d+/[a-z0-9\\-]+\\.html" })
 public class XaxTubeCom extends PluginForHost {
 
     public static class XBase64 {
@@ -84,14 +84,16 @@ public class XaxTubeCom extends PluginForHost {
 
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public XaxTubeCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private String decodeExtendedBase64(final String s) {
-        if (s == null || s.length() < 10) { return null; }
+        if (s == null || s.length() < 10) {
+            return null;
+        }
         return XBase64.decode(s.substring(4), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(s.substring(3, 4)) + 2);
     }
 
@@ -108,7 +110,7 @@ public class XaxTubeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -121,24 +123,25 @@ public class XaxTubeCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://xaxtube.com/") || br.containsHTML("<title>Free Porn Videos, Sex Tube Clips, XXX Porn Movies \\- XaXTube\\.com</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getURL().equals("http://xaxtube.com/") || br.containsHTML("<title>Free Porn Videos, Sex Tube Clips, XXX Porn Movies \\- XaXTube\\.com</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1>([^<>\"\\'/]+)</h1>").getMatch(0);
         br.getPage("http://xaxtube.com/data/" + new Regex(downloadLink.getDownloadURL(), "xaxtube\\.com/(\\d+)/").getMatch(0));
-        DLLINK = new Regex(decodeExtendedBase64(br.toString().trim()), "vid=\'(.*?)\'").getMatch(0);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
+        dllink = new Regex(decodeExtendedBase64(br.toString().trim()), "vid=\'(.*?)\'").getMatch(0);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = Encoding.htmlDecode(dllink);
+        filename = filename.trim();
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

@@ -30,11 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "http://(www\\.)?tokyo\\-tube\\.com/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "http://(www\\.)?tokyo\\-tube\\.com/video/\\d+" })
 public class TokyoTubeCom extends PluginForHost {
 
     /** DEVNOTES: this hoster has broken gzip, which breaks stable support, that's why we disable it */
-    private String DLLINK = null;
+    private String dllink = null;
 
     public TokyoTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class TokyoTubeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -96,12 +96,12 @@ public class TokyoTubeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             for (String type : types) {
-                DLLINK = br.getRegex("<" + type + ">(http://[^<>]+)</" + type + ">").getMatch(0);
-                if (DLLINK != null) {
-                    DLLINK = DLLINK.trim();
+                dllink = br.getRegex("<" + type + ">(http://[^<>]+)</" + type + ">").getMatch(0);
+                if (dllink != null) {
+                    dllink = dllink.trim();
                     // DLLINK = Encoding.htmlDecode(DLLINK);
-                    DLLINK = DLLINK.replaceAll("%0D%0A", "").trim();
-                    con = br2.openGetConnection(DLLINK);
+                    dllink = dllink.replaceAll("%0D%0A", "").trim();
+                    con = br2.openGetConnection(dllink);
                     if (!con.getContentType().contains("html")) {
                         downloadLink.setDownloadSize(con.getLongContentLength());
                         break;
@@ -114,16 +114,13 @@ public class TokyoTubeCom extends PluginForHost {
                     }
                 }
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (con.getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null) {
-                ext = ".flv";
-            }
+            final String ext = getFileNameExtensionFromString(dllink, ".flv");
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         } finally {
             try {

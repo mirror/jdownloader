@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,9 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/pin/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/pin/\\d+/" })
 public class PinterestCom extends PluginForHost {
 
     public PinterestCom(PluginWrapper wrapper) {
@@ -68,11 +68,10 @@ public class PinterestCom extends PluginForHost {
     }
 
     /* Site constants */
-    public static final String x_app_version     = "6cedd5c";
-    public static final String default_extension = ".jpg";
+    public static final String x_app_version = "6cedd5c";
 
     /* don't touch the following! */
-    private String             dllink            = null;
+    private String             dllink        = null;
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
@@ -165,10 +164,7 @@ public class PinterestCom extends PluginForHost {
         if (site_title != null && link.getComment() == null) {
             link.setComment(site_title);
         }
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = default_extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         filename = pin_id;
         final String picture_description = getPictureDescription(link);
         if (this.getPluginConfig().getBooleanProperty(ENABLE_DESCRIPTION_IN_FILENAMES, defaultENABLE_DESCRIPTION_IN_FILENAMES) && picture_description != null) {

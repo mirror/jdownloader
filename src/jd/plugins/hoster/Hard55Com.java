@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "http://(?:www\\.)?hard55\\.com/post/view/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hard55.com" }, urls = { "http://(?:www\\.)?hard55\\.com/post/view/\\d+" })
 public class Hard55Com extends PluginForHost {
 
     public Hard55Com(PluginWrapper wrapper) {
@@ -45,8 +45,6 @@ public class Hard55Com extends PluginForHost {
     // advertising
     // websites instead of hard55.com! This site contains hentai stuff!
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpeg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
@@ -89,11 +87,7 @@ public class Hard55Com extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

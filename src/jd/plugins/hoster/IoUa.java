@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "io.ua" }, urls = { "https?://(?:www\\.)?io\\.ua/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "io.ua" }, urls = { "https?://(?:www\\.)?io\\.ua/\\d+" })
 public class IoUa extends PluginForHost {
 
     public IoUa(PluginWrapper wrapper) {
@@ -43,14 +43,12 @@ public class IoUa extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -60,7 +58,7 @@ public class IoUa extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String imageID = new Regex(downloadLink.getDownloadURL(), "/(\\d+)").getMatch(0);
@@ -90,16 +88,12 @@ public class IoUa extends PluginForHost {
         if (filename == null || imageURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = imageURL;
+        dllink = imageURL;
         if (downloadLink.getFinalFileName() == null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            /* Make sure that we get a correct extension */
-            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                ext = default_Extension;
-            }
+            final String ext = getFileNameExtensionFromString(dllink, ".jpg");
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
@@ -112,7 +106,7 @@ public class IoUa extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = br2.openHeadConnection(DLLINK);
+                    con = br2.openHeadConnection(dllink);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -135,7 +129,7 @@ public class IoUa extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {

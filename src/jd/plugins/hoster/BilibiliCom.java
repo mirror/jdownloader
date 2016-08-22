@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "http://www\\.bilibilidecrypted\\.com/video/av\\d+/index_\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "http://www\\.bilibilidecrypted\\.com/video/av\\d+/index_\\d+\\.html" })
 public class BilibiliCom extends PluginForHost {
 
     public BilibiliCom(PluginWrapper wrapper) {
@@ -43,8 +43,6 @@ public class BilibiliCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -100,11 +98,7 @@ public class BilibiliCom extends PluginForHost {
         filename = encodeUnicode(filename);
         String ext = null;
         if (dllink != null) {
-            ext = dllink.substring(dllink.lastIndexOf("."));
-        }
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+            ext = getFileNameExtensionFromString(dllink, ".flv");
         }
         if (!filename.endsWith(ext)) {
             filename += ext;

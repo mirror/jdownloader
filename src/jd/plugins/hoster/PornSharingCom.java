@@ -28,6 +28,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
@@ -43,16 +45,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" })
 public class PornSharingCom extends PluginForHost {
 
     public PornSharingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -73,8 +73,8 @@ public class PornSharingCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
             br.getPage("http://pornsharing.com/videoplayer/nvplaylist_ps_beta.php?hq=1&autoplay=0&id=" + lid);
             final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(decrypted);
@@ -84,26 +84,23 @@ public class PornSharingCom extends PluginForHost {
             for (final String currentqual : qualities) {
                 final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
                 if (quality_info != null) {
-                    DLLINK = (String) quality_info.get("fileUrl");
+                    dllink = (String) quality_info.get("fileUrl");
                     break;
                 }
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = Encoding.htmlDecode(DLLINK);
+            dllink = Encoding.htmlDecode(dllink);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -115,7 +112,7 @@ public class PornSharingCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

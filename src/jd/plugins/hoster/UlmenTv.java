@@ -26,10 +26,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulmen.tv" }, urls = { "http://(www\\.)?ulmen\\.tv/[\\w\\-]+/\\d+/[\\w\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulmen.tv" }, urls = { "http://(www\\.)?ulmen\\.tv/[\\w\\-]+/\\d+/[\\w\\-]+" })
 public class UlmenTv extends PluginForHost {
 
-    private String DLLINK;
+    private String dllink;
 
     public UlmenTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +62,8 @@ public class UlmenTv extends PluginForHost {
 
     private void download(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String[] stream = DLLINK.split("@");
-        if (DLLINK.startsWith("rtmp")) {
+        String[] stream = dllink.split("@");
+        if (dllink.startsWith("rtmp")) {
             downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, stream[0] + stream[1]);
             setupRTMPConnection(stream, dl);
@@ -79,23 +79,29 @@ public class UlmenTv extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML(">Diese Wurst existiert leider nicht\\.") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Diese Wurst existiert leider nicht\\.") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String fNameA[] = br.getRegex("<\\!\\-\\- Folge \\-\\->[\\r\\n\\s]+<span class=\"grey\">([^<]+)</span>[\\r\\n\\s]+<\\!\\-\\- Headline \\-\\->[\\r\\n\\s]+<h1>([^<]+)</h1>").getRow(0);
-        DLLINK = br.getRegex("data\\-url=\"([^\"]+)\"").getMatch(0);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        dllink = br.getRegex("data\\-url=\"([^\"]+)\"").getMatch(0);
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         String next = br.getRegex("<script src=\"(/assets/application\\-[0-9a-f]+\\.js)\"").getMatch(0);
-        if (fNameA == null || DLLINK == null || ext == null || next == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fNameA == null || dllink == null || ext == null || next == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         String fileName = fNameA[0].replaceAll("\\|", "").replaceAll("\\s+", "_") + "__" + fNameA[1].replaceAll("[\t\r\n]+", "") + ext;
         fileName = Encoding.htmlDecode(fileName.trim());
         br.getPage(next);
         String flashUrl = br.getRegex("flowplayer\\(\"player\",\"/?([^\"]+)\"").getMatch(0);
         String rtmpUrl = br.getRegex("netConnectionUrl:\"(rtmp[^\"]+)\"\\},").getMatch(0);
-        if (flashUrl == null || rtmpUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (flashUrl == null || rtmpUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         flashUrl = "http://www.ulmen.tv/" + flashUrl;
-        DLLINK = rtmpUrl + "@" + DLLINK + "@" + flashUrl + "@" + dllink;
+        dllink = rtmpUrl + "@" + dllink + "@" + flashUrl + "@" + dllink;
 
         downloadLink.setName(fileName);
         return AvailableStatus.TRUE;

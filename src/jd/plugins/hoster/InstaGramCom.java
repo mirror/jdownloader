@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,9 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" })
 public class InstaGramCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -56,7 +56,7 @@ public class InstaGramCom extends PluginForHost {
         this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -116,20 +116,20 @@ public class InstaGramCom extends PluginForHost {
             /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = PluginJSonUtils.getJson(this.br, "video_url");
+        dllink = PluginJSonUtils.getJson(this.br, "video_url");
         // Maybe we have a picture
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-            String remove = new Regex(DLLINK, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
+        if (dllink == null) {
+            dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            String remove = new Regex(dllink, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
             if (remove != null) {
-                DLLINK = DLLINK.replace(remove, "/");
+                dllink = dllink.replace(remove, "/");
             }
-            downloadLink.setContentUrl(DLLINK);
+            downloadLink.setContentUrl(dllink);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK.replace("\\", ""));
+        dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
         final String username = br.getRegex("\"owner\".*?\"username\": ?\"([^<>\"]*?)\"").getMatch(0);
         final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_-]+)$").getMatch(0);
         String filename = null;
@@ -139,20 +139,14 @@ public class InstaGramCom extends PluginForHost {
             filename = linkid;
         }
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
-        if (ext.length() < 3) {
-            ext = ".jpg";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -181,7 +175,7 @@ public class InstaGramCom extends PluginForHost {
         if (downloadLink.getFinalFileName().contains(".mp4")) {
             maxchunks = MAXCHUNKS_videos;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, RESUME, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
