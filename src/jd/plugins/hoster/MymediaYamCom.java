@@ -31,14 +31,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymediadecrypted\\.yam\\.com/m/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymediadecrypted\\.yam\\.com/m/\\d+" })
 public class MymediaYamCom extends PluginForHost {
 
     public MymediaYamCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -87,28 +87,23 @@ public class MymediaYamCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://mymedia.yam.com/api/a/?pID=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        String preferredExt = ".mp3";
-        DLLINK = br.getRegex("mp3file=(http://[^<>\"]*?\\.mp3)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("furl=(http://[^<>\"]*?\\.flv)").getMatch(0);
-            preferredExt = ".flv";
+        dllink = br.getRegex("mp3file=(http://[^<>\"]*?\\.mp3)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("furl=(http://[^<>\"]*?\\.flv)").getMatch(0);
         }
-        if (DLLINK == null || DLLINK.length() > 200) {
+        if (dllink == null || dllink.length() > 200) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = preferredExt;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -132,7 +127,7 @@ public class MymediaYamCom extends PluginForHost {
         if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links aren't supported yet. Please contact our support!");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

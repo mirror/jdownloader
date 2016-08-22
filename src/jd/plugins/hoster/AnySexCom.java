@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anysex.com" }, urls = { "http://(www\\.)?anysex\\.com/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anysex.com" }, urls = { "http://(www\\.)?anysex\\.com/\\d+/" })
 public class AnySexCom extends PluginForHost {
 
     public AnySexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -57,25 +57,22 @@ public class AnySexCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("video_url\\s*:\\s*\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("video_url\\s*:\\s*\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
 
         String ext = null;
-        if (DLLINK != null) {
+        if (dllink != null) {
             final SimpleDateFormat formatter = new SimpleDateFormat("YYYYMMddhhmmss");
             final Date date = new Date();
             final String formattedDate = formatter.format(date);
             final String ahv = ahv(formattedDate);
-            DLLINK += "?time=" + formattedDate + "&ahv=" + ahv;
+            dllink += "?time=" + formattedDate + "&ahv=" + ahv;
 
-            DLLINK = Encoding.htmlDecode(DLLINK);
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        }
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+            dllink = Encoding.htmlDecode(dllink);
+            ext = getFileNameExtensionFromString(dllink, ".flv");
         }
         downloadLink.setFinalFileName(filename + ext);
         return AvailableStatus.TRUE;
@@ -111,10 +108,10 @@ public class AnySexCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -123,7 +120,7 @@ public class AnySexCom extends PluginForHost {
     }
 
     private String ahv(final String date) {
-        return JDHash.getMD5(DLLINK + date + Encoding.Base64Decode("ZDMwMTUyOTk1YWU4NzlmZTE1MWVkYWNiZjYwNWM3Nzk="));
+        return JDHash.getMD5(dllink + date + Encoding.Base64Decode("ZDMwMTUyOTk1YWU4NzlmZTE1MWVkYWNiZjYwNWM3Nzk="));
     }
 
     @Override

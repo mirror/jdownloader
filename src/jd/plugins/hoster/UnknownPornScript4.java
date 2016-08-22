@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mygirlfriendporn.com", "pornyeah.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mygirlfriendporn.com", "pornyeah.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
 
     public UnknownPornScript4(PluginWrapper wrapper) {
@@ -117,10 +117,7 @@ public class UnknownPornScript4 extends PluginForHost {
         if (dllink != null && dllink.startsWith("http")) {
             dllink = Encoding.htmlDecode(dllink);
             filename = filename.trim();
-            ext = dllink.substring(dllink.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = default_Extension;
-            }
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
             /* Set final filename! */
             downloadLink.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;

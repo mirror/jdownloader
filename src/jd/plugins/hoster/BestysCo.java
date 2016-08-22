@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestys.co" }, urls = { "https?://(?:www\\.)?bestys\\.co/image/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestys.co" }, urls = { "https?://(?:www\\.)?bestys\\.co/image/[A-Za-z0-9]+" })
 public class BestysCo extends PluginForHost {
 
     public BestysCo(PluginWrapper wrapper) {
@@ -42,14 +42,12 @@ public class BestysCo extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -59,7 +57,7 @@ public class BestysCo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
 
@@ -76,22 +74,18 @@ public class BestysCo extends PluginForHost {
         } else {
             filename = fid + "_" + filename;
         }
-        DLLINK = br.getRegex("<link rel=\"image_src\" href=\"(https?://[^<>\"]+)\">").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = "http://bestys.co/images/" + fid + ".jpg";
+        dllink = br.getRegex("<link rel=\"image_src\" href=\"(https?://[^<>\"]+)\">").getMatch(0);
+        if (dllink == null) {
+            dllink = "http://bestys.co/images/" + fid + ".jpg";
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -101,13 +95,13 @@ public class BestysCo extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setProperty("directlink", DLLINK);
+            link.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -120,7 +114,7 @@ public class BestysCo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

@@ -33,7 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?chan\\.sankakucomplex\\.com/post/show/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?chan\\.sankakucomplex\\.com/post/show/\\d+" })
 public class SankakucomplexCom extends antiDDoSForHost {
 
     public SankakucomplexCom(PluginWrapper wrapper) {
@@ -92,7 +92,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         filename = encodeUnicode(filename);
         String ext = new Regex(DLLINK, "[a-z0-9]+(\\.[a-z]+)\\?\\d+$").getMatch(0);
         if (ext == null) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            ext = getFileNameExtensionFromString(DLLINK, default_Extension);
         }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {

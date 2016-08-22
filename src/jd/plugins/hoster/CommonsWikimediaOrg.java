@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -31,10 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+:.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+:.+" })
 public class CommonsWikimediaOrg extends PluginForHost {
 
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
@@ -46,14 +46,12 @@ public class CommonsWikimediaOrg extends PluginForHost {
     // protocol: https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -64,7 +62,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         long filesize = -1;
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(400);
@@ -89,33 +87,29 @@ public class CommonsWikimediaOrg extends PluginForHost {
         if (filesize_str == null) {
             filesize_str = this.br.getRegex("(?-i)class=\"fileInfo\">[^<]*?(\\d+(\\.\\d+)?\\s*[KMGT]B)").getMatch(0);
         }
-        DLLINK = br.getRegex("id=\"file\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
+        dllink = br.getRegex("id=\"file\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
             /* E.g. https://commons.wikimedia.org/wiki/File:BBH_gravitational_lensing_of_gw150914.webm */
-            DLLINK = br.getRegex("<a href=\"(https?://[^<>\"]+)\"[^<>]+>Original file</a>").getMatch(0);
+            dllink = br.getRegex("<a href=\"(https?://[^<>\"]+)\"[^<>]+>Original file</a>").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* E.g. https://commons.wikimedia.org/wiki/File:Sintel_movie_720x306.ogv */
-            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]+)\"[^<>]+data\\-title=\"Original").getMatch(0);
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\"[^<>]+data\\-title=\"Original").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* E.g. https://zh.wikipedia.org/wiki/File:%E9%84%AD%E7%A7%80%E6%96%87_%E5%8E%BB%E6%84%9B%E5%90%A7.jpg */
-            DLLINK = br.getRegex("\"fullImageLink\"\\s*id=\"file\"><a href=\"((https?)?:?//.*?)\"").getMatch(0);
+            dllink = br.getRegex("\"fullImageLink\"\\s*id=\"file\"><a href=\"((https?)?:?//.*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!DLLINK.startsWith("http")) {
-            DLLINK = URLHelper.parseLocation(br._getURL(), DLLINK);
+        if (!dllink.startsWith("http")) {
+            dllink = URLHelper.parseLocation(br._getURL(), dllink);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -129,7 +123,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = br2.openHeadConnection(DLLINK);
+                    con = br2.openHeadConnection(dllink);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -138,7 +132,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                link.setProperty("directlink", DLLINK);
+                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -153,7 +147,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

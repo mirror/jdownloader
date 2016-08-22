@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -31,9 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/\\d+" })
 public class YandeRe extends PluginForHost {
 
     public YandeRe(PluginWrapper wrapper) {
@@ -45,8 +45,6 @@ public class YandeRe extends PluginForHost {
     // protocol: https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -96,12 +94,8 @@ public class YandeRe extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (ext == null && DLLINK.contains(".")) {
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        }
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+        if (ext == null) {
+            ext = getFileNameExtensionFromString(DLLINK, ".jpg");
         }
         if (!filename.endsWith(ext)) {
             filename += ext;

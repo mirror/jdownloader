@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,9 +34,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https://viddecrypted\\.me/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https://viddecrypted\\.me/[A-Za-z0-9]+" })
 public class VidMe extends PluginForHost {
 
     public VidMe(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class VidMe extends PluginForHost {
     public static final String   default_Extension = ".mp4";
 
     public static final String   API_ENDPOINT      = "https://api.vid.me/";
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     private static final boolean api_use_api       = true;
 
@@ -70,7 +70,7 @@ public class VidMe extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
@@ -88,7 +88,7 @@ public class VidMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = getVideoTitle(this, entries);
-            DLLINK = (String) entries.get("complete_url");
+            dllink = (String) entries.get("complete_url");
         } else {
             website_prepBR(this.br);
             br.getPage(downloadLink.getDownloadURL());
@@ -96,23 +96,19 @@ public class VidMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            DLLINK = checkDirectLink(downloadLink, "directlink");
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?/videos/[^<>\"]*?)\"").getMatch(0);
+            dllink = checkDirectLink(downloadLink, "directlink");
+            if (dllink == null) {
+                dllink = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?/videos/[^<>\"]*?)\"").getMatch(0);
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, default_Extension);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -123,7 +119,7 @@ public class VidMe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -132,7 +128,7 @@ public class VidMe extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -145,7 +141,7 @@ public class VidMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

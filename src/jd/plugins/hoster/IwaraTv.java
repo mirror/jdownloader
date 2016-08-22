@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
 public class IwaraTv extends PluginForHost {
 
     public IwaraTv(PluginWrapper wrapper) {
@@ -51,20 +51,17 @@ public class IwaraTv extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_ExtensionVideo = ".mp4";
-    private static final String  default_ExtensionImage = ".png";
     /* Connection stuff */
-    private static final boolean free_resume            = true;
-    private static final int     free_maxchunks         = 0;
-    private static final int     free_maxdownloads      = -1;
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
 
-    private final String         html_privatevideo      = ">This video is only available for users that|>Private video<";
-    public static final String   html_loggedin          = "/user/logout";
-    private static final String  type_image             = "https?://(?:www\\.)?iwara\\.tv/images/.+";
+    private final String         html_privatevideo = ">This video is only available for users that|>Private video<";
+    public static final String   html_loggedin     = "/user/logout";
+    private static final String  type_image        = "https?://(?:www\\.)?iwara\\.tv/images/.+";
 
-    private String               dllink                 = null;
-    private boolean              serverIssue            = false;
+    private String               dllink            = null;
+    private boolean              serverIssue       = false;
 
     @Override
     public String getAGBLink() {
@@ -152,15 +149,7 @@ public class IwaraTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            if (isVideo) {
-                ext = default_ExtensionVideo;
-            } else {
-                ext = default_ExtensionImage;
-            }
-        }
+        final String ext = getFileNameExtensionFromString(dllink, isVideo ? ".mp4" : ".png");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

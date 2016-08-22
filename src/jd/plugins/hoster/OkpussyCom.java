@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussydecrypted\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussydecrypted\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" })
 public class OkpussyCom extends PluginForHost {
 
     public OkpussyCom(PluginWrapper wrapper) {
@@ -42,14 +42,12 @@ public class OkpussyCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = 1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -64,7 +62,7 @@ public class OkpussyCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -75,31 +73,27 @@ public class OkpussyCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
         }
-        DLLINK = br.getRegex("encodeURIComponent\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("encodeURIComponent\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -110,7 +104,7 @@ public class OkpussyCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

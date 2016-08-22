@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "web.de" }, urls = { "https?://(www\\.)?web\\.de/magazine/nachrichten/[a-z]+/\\d+[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "web.de" }, urls = { "https?://(www\\.)?web\\.de/magazine/nachrichten/[a-z]+/\\d+[a-z0-9\\-]+\\.html" })
 public class WebDe extends PluginForHost {
 
     public WebDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -54,22 +54,24 @@ public class WebDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>([^<>\"]*?) \\- WEB\\.DE</title>").getMatch(0);
-        DLLINK = "http://v.web.de/" + new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?web\\.de/magazine/nachrichten/[a-z]+/(\\d+)[a-z0-9\\-]+\\.html").getMatch(1) + "_MD.mp4";
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://v.web.de/" + new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?web\\.de/magazine/nachrichten/[a-z]+/(\\d+)[a-z0-9\\-]+\\.html").getMatch(1) + "_MD.mp4";
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -82,7 +84,7 @@ public class WebDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

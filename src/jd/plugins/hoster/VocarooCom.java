@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vocaroo.com" }, urls = { "http://(?:www\\.)?vocaroo\\.com/i/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vocaroo.com" }, urls = { "http://(?:www\\.)?vocaroo\\.com/i/[A-Za-z0-9]+" })
 public class VocarooCom extends PluginForHost {
 
     public VocarooCom(PluginWrapper wrapper) {
@@ -42,8 +42,6 @@ public class VocarooCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp3";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
@@ -82,11 +80,7 @@ public class VocarooCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".mp3");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

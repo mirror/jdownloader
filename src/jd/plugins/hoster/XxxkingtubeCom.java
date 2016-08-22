@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxkingtube.com" }, urls = { "http://(?:www\\.)?xxxkingtube\\.com/video/[a-z0-9\\-_]+\\-\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxkingtube.com" }, urls = { "http://(?:www\\.)?xxxkingtube\\.com/video/[a-z0-9\\-_]+\\-\\d+\\.html" })
 public class XxxkingtubeCom extends PluginForHost {
 
     public XxxkingtubeCom(PluginWrapper wrapper) {
@@ -42,8 +42,6 @@ public class XxxkingtubeCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* 2016-08-02: Do not use more then 1 chunk - download will work but videofiles will be broken!! */
@@ -91,11 +89,7 @@ public class XxxkingtubeCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

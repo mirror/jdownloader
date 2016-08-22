@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snag.gy" }, urls = { "https?://(?:(?:www|i)\\.)?snag\\.gy/[A-Za-z0-9]+\\.jpg" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snag.gy" }, urls = { "https?://(?:(?:www|i)\\.)?snag\\.gy/[A-Za-z0-9]+\\.jpg" })
 public class SnagGy extends PluginForHost {
 
     public SnagGy(PluginWrapper wrapper) {
@@ -39,8 +39,6 @@ public class SnagGy extends PluginForHost {
     /* DEV NOTES */
     // protocol: https
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
@@ -70,11 +68,7 @@ public class SnagGy extends PluginForHost {
         url_filename = Encoding.htmlDecode(url_filename);
         url_filename = url_filename.trim();
         String ext_header = null;
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!url_filename.endsWith(ext)) {
             url_filename += ext;
         }

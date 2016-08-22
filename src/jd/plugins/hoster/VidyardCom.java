@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,9 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidyard.com" }, urls = { "http://(?:www\\.)?[A-Za-z0-9]+\\.vidyard\\.com/watch/[A-Za-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidyard.com" }, urls = { "http://(?:www\\.)?[A-Za-z0-9]+\\.vidyard\\.com/watch/[A-Za-z0-9\\-_]+" })
 public class VidyardCom extends PluginForHost {
 
     public VidyardCom(PluginWrapper wrapper) {
@@ -46,8 +46,6 @@ public class VidyardCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -131,11 +129,7 @@ public class VidyardCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

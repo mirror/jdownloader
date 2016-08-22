@@ -32,13 +32,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornerbros.com" }, urls = { "http://(www\\.)?pornerbros\\.com/videos/[a-z0-9\\-_]+" })
 public class PornerBrosCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public PornerBrosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,7 +66,7 @@ public class PornerBrosCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -77,7 +77,7 @@ public class PornerBrosCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -98,29 +98,29 @@ public class PornerBrosCom extends PluginForHost {
         String paramJs = br.getRegex("<script type=\"text/javascript\" src=\"(/content/\\d+\\.js([^\"]+)?)\"></script>").getMatch(0);
         if (paramJs != null) {
             br.getPage("http://www.pornerbros.com" + paramJs);
-            DLLINK = br.getRegex("url:escape\\(\\'(.*?)\\'\\)").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("url:escape\\(\\'(.*?)\\'\\)").getMatch(0);
+            if (dllink == null) {
                 // confirmed 16. March 2014
-                DLLINK = br.getRegex("hwurl=\\'([^']+)").getMatch(0);
+                dllink = br.getRegex("hwurl=\\'([^']+)").getMatch(0);
 
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 // confirmed 16. March 2014
-                DLLINK = br.getRegex("file:\\'([^']+)").getMatch(0);
+                dllink = br.getRegex("file:\\'([^']+)").getMatch(0);
 
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 logger.warning("Null download link, reverting to secondary method. Continuing....");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String fileExtension = new Regex(DLLINK, "https?://[\\w\\/\\-\\.]+(\\.[a-zA-Z0-9]{0,4})\\?.*").getMatch(0);
+            String fileExtension = new Regex(dllink, "https?://[\\w\\/\\-\\.]+(\\.[a-zA-Z0-9]{0,4})\\?.*").getMatch(0);
             if (fileExtension == ".") {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename + ".flv"));
             } else if (fileExtension != "." && fileExtension != null) {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename + fileExtension));
             }
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             final String[] qualities = { "1080", "720", "480", "360", "240" };
             String availablequalities = br.getRegex("\\}\\)\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
             String lid = br.getRegex("id=\"download\\d+p\" data\\-id=\"(\\d+)\"").getMatch(0);
@@ -155,13 +155,13 @@ public class PornerBrosCom extends PluginForHost {
             this.br.getHeaders().put("Origin", "http://www.pornerbros.com");
             br.postPage("http://tkn.pornerbros.com/" + lid + "/desktop/" + availablequalities, "");
             for (final String quality : qualities) {
-                DLLINK = br.getRegex("\"" + quality + "\".*?\"token\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (DLLINK != null) {
+                dllink = br.getRegex("\"" + quality + "\".*?\"token\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                if (dllink != null) {
                     break;
                 }
             }
-            if (DLLINK == null) {
-                DLLINK = PluginJSonUtils.getJson(this.br, "token");
+            if (dllink == null) {
+                dllink = PluginJSonUtils.getJson(this.br, "token");
             }
             // String paramXml = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
             // if (paramXml == null) {
@@ -174,15 +174,12 @@ public class PornerBrosCom extends PluginForHost {
             // }
             //
             // DLLINK = decryptUrl(urlCipher);
-            if (DLLINK == null || !DLLINK.startsWith("http")) {
+            if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String ext = new Regex(DLLINK, "\\&format=([A-Za-z0-9]{1,5})").getMatch(0);
+            String ext = new Regex(dllink, "\\&format=([A-Za-z0-9]{1,5})").getMatch(0);
             if (ext == null) {
-                ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-                if (ext == null || ext.length() > 5) {
-                    ext = ".mp4";
-                }
+                ext = getFileNameExtensionFromString(dllink, ".mp4");
             }
             if (!ext.startsWith(".")) {
                 ext = "." + ext;
@@ -194,7 +191,7 @@ public class PornerBrosCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

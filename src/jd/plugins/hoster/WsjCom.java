@@ -23,6 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -36,10 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wsj.com" }, urls = { "https?://(?:www\\.)?((?:wsj|barrons)\\.com/video/[^/]+/[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12}\\.html|allthingsd\\.com/video/\\?video_id=[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12})" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wsj.com" }, urls = { "https?://(?:www\\.)?((?:wsj|barrons)\\.com/video/[^/]+/[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12}\\.html|allthingsd\\.com/video/\\?video_id=[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12})" })
 public class WsjCom extends PluginForHost {
 
     public WsjCom(PluginWrapper wrapper) {
@@ -59,18 +59,16 @@ public class WsjCom extends PluginForHost {
      * http://m.wsj.net/video/20130305/030513ptechroku/030513ptechroku_v2_ec2564k.mp4
      *
      *
-     * http://wsjvod-i.akamaihd.net/i/video/20130305/030513ptechroku/030513ptechroku_v2_ec,464,174,264,664,1264,1864,2564,k.mp4.csmil/master.
-     * m3u8
+     * http://wsjvod-i.akamaihd.net/i/video/20130305/030513ptechroku/030513ptechroku_v2_ec,464,174,264,664,1264,1864,2564,k.mp4.csmil/
+     * master. m3u8
      */
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -82,7 +80,7 @@ public class WsjCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         final String vid = getVIDEOID(downloadLink);
         final String domain = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([^/]+)\\.com/").getMatch(0);
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         downloadLink.setLinkID(vid);
@@ -108,28 +106,24 @@ public class WsjCom extends PluginForHost {
                 dllink_temp = (String) ipentry.getValue();
                 if (bitrate_temp > bitrate_max) {
                     bitrate_max = bitrate_temp;
-                    DLLINK = dllink_temp;
+                    dllink = dllink_temp;
                 }
             }
 
         }
 
-        if (filename == null || DLLINK == null || date == null) {
+        if (filename == null || dllink == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String date_formatted = formatDate(date);
         if (downloadLink.getComment() == null && description != null) {
             downloadLink.setComment(description);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = date_formatted + "_" + domain + "_" + encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -140,7 +134,7 @@ public class WsjCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -149,7 +143,7 @@ public class WsjCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -162,7 +156,7 @@ public class WsjCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

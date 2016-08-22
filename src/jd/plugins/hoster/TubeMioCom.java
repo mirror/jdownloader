@@ -32,17 +32,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubemio.com" }, urls = { "http://(?:www\\.)?tubemio\\.com/view/\\d+/[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubemio.com" }, urls = { "http://(?:www\\.)?tubemio\\.com/view/\\d+/[a-z0-9\\-]+\\.html" })
 public class TubeMioCom extends PluginForHost {
 
     public TubeMioCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".flv";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -63,26 +60,22 @@ public class TubeMioCom extends PluginForHost {
             /* Fallback to url-filename */
             filename = new Regex(downloadLink.getDownloadURL(), "tubemio\\.com/view/(\\d+/[a-z0-9\\-]+)\\.html").getMatch(0).replace("/", "_");
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
             br.getPage("http://www.tubemio.com/fetch/" + new Regex(downloadLink.getDownloadURL(), "/view/(\\d+)/").getMatch(0));
-            DLLINK = br.getRegex("<enclosure url=\"([^<>\"]*?)\"/>").getMatch(0);
+            dllink = br.getRegex("<enclosure url=\"([^<>\"]*?)\"/>").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (!DLLINK.startsWith("http")) {
+        } else if (!dllink.startsWith("http")) {
             /* Player will show 'Video not found' */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -93,7 +86,7 @@ public class TubeMioCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -102,7 +95,7 @@ public class TubeMioCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -115,7 +108,7 @@ public class TubeMioCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

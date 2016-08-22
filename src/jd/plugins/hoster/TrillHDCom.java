@@ -29,14 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trillhd.com" }, urls = { "https?://(www\\.)?trillhd\\.com/(?:video|embed)/\\d{4}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trillhd.com" }, urls = { "https?://(www\\.)?trillhd\\.com/(?:video|embed)/\\d{4}" })
 public class TrillHDCom extends PluginForHost {
 
     public TrillHDCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -70,32 +70,29 @@ public class TrillHDCom extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("\"720p\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"480p\":\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"720p\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"480p\":\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"480p\": \\[\"(http[^<>\"]*?)\"\\]").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"480p\": \\[\"(http[^<>\"]*?)\"\\]").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = DLLINK.replace("\\", "");
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        dllink = dllink.replace("\\", "");
+        dllink = Encoding.htmlDecode(dllink);
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -116,7 +113,7 @@ public class TrillHDCom extends PluginForHost {
         if (br.containsHTML("id=\"unreleased_clicker\"")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet released", 12 * 60 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

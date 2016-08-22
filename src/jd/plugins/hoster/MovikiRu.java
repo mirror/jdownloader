@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+(.+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+(.+)?" })
 public class MovikiRu extends PluginForHost {
 
     public MovikiRu(PluginWrapper wrapper) {
@@ -82,11 +82,7 @@ public class MovikiRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
-        ext = ext.replace("/", "");
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundrydecrypted\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+|http://www\\.hentai\\-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundrydecrypted\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+|http://www\\.hentai\\-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf" })
 public class HentaiFoundryCom extends PluginForHost {
 
     public HentaiFoundryCom(PluginWrapper wrapper) {
@@ -94,11 +94,7 @@ public class HentaiFoundryCom extends PluginForHost {
             filename = encodeUnicode(filename);
         }
         if (ext == null) {
-            ext = dllink.substring(dllink.lastIndexOf("."));
-        }
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = ".png";
+            ext = getFileNameExtensionFromString(dllink, ".png");
         }
         if (!filename.endsWith(ext)) {
             filename += ext;

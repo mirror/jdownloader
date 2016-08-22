@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -34,9 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://skaidecrypted\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://skaidecrypted\\d+" })
 public class SkaiGr extends PluginForHost {
 
     public SkaiGr(PluginWrapper wrapper) {
@@ -48,14 +48,12 @@ public class SkaiGr extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp3";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -65,7 +63,7 @@ public class SkaiGr extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setLinkID(fid);
         downloadLink.setName(fid);
@@ -79,8 +77,8 @@ public class SkaiGr extends PluginForHost {
         final String title = getXML("Title");
         final String date = getXML("Date");
         final String description = getXML("Description");
-        DLLINK = getXML("File");
-        if (show == null || title == null || date == null || DLLINK == null) {
+        dllink = getXML("File");
+        if (show == null || title == null || date == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String date_formatted = formatDate(date);
@@ -90,15 +88,11 @@ public class SkaiGr extends PluginForHost {
         }
 
         String filename = date_formatted + "_skaigr_" + show + " - " + title;
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -109,7 +103,7 @@ public class SkaiGr extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -118,7 +112,7 @@ public class SkaiGr extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -131,7 +125,7 @@ public class SkaiGr extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

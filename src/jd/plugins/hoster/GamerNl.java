@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamer.nl" }, urls = { "http://(www\\.)?gamer\\.nl/(video/|game/[a-z0-9\\-]+/[a-z0-9\\-]+/videos/)\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamer.nl" }, urls = { "http://(www\\.)?gamer\\.nl/(video/|game/[a-z0-9\\-]+/[a-z0-9\\-]+/videos/)\\d+" })
 public class GamerNl extends PluginForHost {
 
     public GamerNl(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class GamerNl extends PluginForHost {
 
     private final String DATE_IN_FILENAME = "DATE_IN_FILENAME";
     private final String FID_IN_FILENAME  = "FID_IN_FILENAME";
-    private String       DLLINK           = null;
+    private String       dllink           = null;
 
     @Override
     public String getAGBLink() {
@@ -66,18 +66,15 @@ public class GamerNl extends PluginForHost {
         }
         br.getPage("http://www.gamer.nl" + xml);
         String filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("<media:content url=\"(https?://[^<>\"]*?)\" />").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("<media:content url=\"(https?://[^<>\"]*?)\" />").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (this.getPluginConfig().getBooleanProperty(DATE_IN_FILENAME, false)) {
             filename = encodeUnicode(date) + "_" + filename + ext;
         } else {
@@ -93,7 +90,7 @@ public class GamerNl extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -114,7 +111,7 @@ public class GamerNl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

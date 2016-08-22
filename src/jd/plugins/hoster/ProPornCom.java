@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?proporn\\.com/(video|embed)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?proporn\\.com/(video|embed)/\\d+" })
 public class ProPornCom extends PluginForHost {
 
     public ProPornCom(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class ProPornCom extends PluginForHost {
     }
 
     private static final String SKEY   = "VjN0NlJLRlkxMU9RNEo0Ug==";
-    private String              DLLINK = null;
+    private String              dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -69,19 +69,16 @@ public class ProPornCom extends PluginForHost {
         final String t = br.getRegex("t=(\\d+)\\'").getMatch(0);
         final String vkey = br.getRegex("vkey=\\' \\+ \\'([a-z0-9]+)\\';").getMatch(0);
         br.getPage("http://www.proporn.com/player_config/?h=" + h + "&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");
-        DLLINK = br.getRegex("<video_file>(http://[^<>\"]*?)</video_file>").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></video_file>").getMatch(0);
+        dllink = br.getRegex("<video_file>(http://[^<>\"]*?)</video_file>").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></video_file>").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -89,7 +86,7 @@ public class ProPornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
                 /*
                  * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com
                  */
@@ -115,7 +112,7 @@ public class ProPornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

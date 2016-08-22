@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:tube|videos)\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:tube|videos)\\.rampant\\.tv/videos/[A-Za-z0-9\\-_]+\\.html" })
 public class TubeRampantTv extends PluginForHost {
 
     public TubeRampantTv(PluginWrapper wrapper) {
@@ -96,11 +96,7 @@ public class TubeRampantTv extends PluginForHost {
         }
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
-            ext = dllink.substring(dllink.lastIndexOf("."));
-            /* Make sure that we get a correct extension */
-            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                ext = default_Extension;
-            }
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }

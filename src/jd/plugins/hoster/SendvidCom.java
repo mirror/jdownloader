@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendvid.com" }, urls = { "https?://(?:www\\.)?sendvid\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendvid.com" }, urls = { "https?://(?:www\\.)?sendvid\\.com/[A-Za-z0-9]+" })
 public class SendvidCom extends PluginForHost {
 
     public SendvidCom(PluginWrapper wrapper) {
@@ -42,14 +42,12 @@ public class SendvidCom extends PluginForHost {
     // protocol: https possible
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -59,7 +57,7 @@ public class SendvidCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -74,19 +72,15 @@ public class SendvidCom extends PluginForHost {
         if (filename == null) {
             filename = videoid;
         }
-        DLLINK = "http://sendvid.com/" + videoid + ".mp4";
-        if (filename == null || DLLINK == null) {
+        dllink = "http://sendvid.com/" + videoid + ".mp4";
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -97,7 +91,7 @@ public class SendvidCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -106,7 +100,7 @@ public class SendvidCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -119,7 +113,7 @@ public class SendvidCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

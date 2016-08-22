@@ -29,14 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "funonly.net" }, urls = { "http://(www\\.)?funonly\\.net/funny_videos\\.aspx/funny_video~[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/video_type~flash/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "funonly.net" }, urls = { "http://(www\\.)?funonly\\.net/funny_videos\\.aspx/funny_video~[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/video_type~flash/" })
 public class FunOnlyNet extends PluginForHost {
 
     public FunOnlyNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -48,26 +48,32 @@ public class FunOnlyNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.funonly.net/default.aspx")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.funonly.net/default.aspx")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<strong>Title:</strong>([^<>\"]*?) video<br").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) video \\- Funny videos \\- Fun only[\t\n\r ]+</title>").getMatch(0);
-        DLLINK = br.getRegex("file:\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) video \\- Funny videos \\- Fun only[\t\n\r ]+</title>").getMatch(0);
+        }
+        dllink = br.getRegex("file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -80,7 +86,7 @@ public class FunOnlyNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

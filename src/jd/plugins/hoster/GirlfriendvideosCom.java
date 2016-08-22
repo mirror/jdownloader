@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "http://(www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/\\d+\\.php" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "http://(www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/\\d+\\.php" })
 public class GirlfriendvideosCom extends PluginForHost {
 
     public GirlfriendvideosCom(PluginWrapper wrapper) {
@@ -42,10 +42,7 @@ public class GirlfriendvideosCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -63,29 +60,25 @@ public class GirlfriendvideosCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>Girlfriend Videos \\- ([^<>\"]*?)</title>").getMatch(0);
         /* Avoid rtmp streams */
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
             if (br.containsHTML("file=[a-z]/[a-z0-9\\-_]+/\\d+\\.flv\"")) {
-                DLLINK = "http://girlfriendvideos.com/videos/" + new Regex(downloadLink.getDownloadURL(), "members/([a-z]/[a-z0-9\\-_]+/\\d+)").getMatch(0) + ".flv";
+                dllink = "http://girlfriendvideos.com/videos/" + new Regex(downloadLink.getDownloadURL(), "members/([a-z]/[a-z0-9\\-_]+/\\d+)").getMatch(0) + ".flv";
             } else {
-                DLLINK = br.getRegex("\"(/videos/[a-z]/[a-z0-9\\-_]+/\\d+\\.mp4)").getMatch(0);
-                if (DLLINK != null) {
-                    DLLINK = "http://girlfriendvideos.com" + DLLINK;
+                dllink = br.getRegex("\"(/videos/[a-z]/[a-z0-9\\-_]+/\\d+\\.mp4)").getMatch(0);
+                if (dllink != null) {
+                    dllink = "http://girlfriendvideos.com" + dllink;
                 }
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -96,7 +89,7 @@ public class GirlfriendvideosCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -105,7 +98,7 @@ public class GirlfriendvideosCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -118,7 +111,7 @@ public class GirlfriendvideosCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

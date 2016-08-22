@@ -29,14 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobashdecrypted\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobashdecrypted\\.com/video_show/[a-z0-9\\-]+\\-\\d+" })
 public class VideoBashCom extends PluginForHost {
 
     public VideoBashCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -52,7 +52,9 @@ public class VideoBashCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Page Not Found<|exist or has been moved\\.<|>If you think you have found this page in error|>Please make sure you have the right URL|<title>Videobash:Funny Videos Tube,Viral Clips,Free Jokes \\& Funny Pictures</title>|>Video was removed due to violation of our terms|>Video no longer exists)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Page Not Found<|exist or has been moved\\.<|>If you think you have found this page in error|>Please make sure you have the right URL|<title>Videobash:Funny Videos Tube,Viral Clips,Free Jokes \\& Funny Pictures</title>|>Video was removed due to violation of our terms|>Video no longer exists)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\" itemprop=\"itemreviewed\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("var title = \\'(.*?)\\';").getMatch(0);
@@ -60,35 +62,39 @@ public class VideoBashCom extends PluginForHost {
                 filename = br.getRegex("act\\.setTitle\\(\\'(.*?)\\'\\)").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML(">You must be logged in to view this video")) {
             downloadLink.setName(filename + ".mp4");
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users");
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("\\&video_url=(http://[^\"\\']+)\\&related_url").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("file=\".*?'(http://.*?)';").getMatch(0);
-            if (DLLINK != null) {
-                DLLINK = DLLINK.replaceAll("'| |\\+", "");
+        dllink = br.getRegex("\\&video_url=(http://[^\"\\']+)\\&related_url").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("file=\".*?'(http://.*?)';").getMatch(0);
+            if (dllink != null) {
+                dllink = dllink.replaceAll("'| |\\+", "");
             }
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -105,11 +111,13 @@ public class VideoBashCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

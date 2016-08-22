@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" })
 public class XShareCom extends PluginForHost {
 
     public XShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -66,35 +66,32 @@ public class XShareCom extends PluginForHost {
         if (videoid == null || filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             final String[] quals = { "video-hd", "video-high" };
             for (final String qual : quals) {
-                DLLINK = br.getRegex("id=\"" + qual + "\" href=\"(http://[^<>\"]*?/mp4/[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
-                if (DLLINK != null) {
+                dllink = br.getRegex("id=\"" + qual + "\" href=\"(http://[^<>\"]*?/mp4/[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
+                if (dllink != null) {
                     break;
                 }
             }
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
-            DLLINK = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
+            dllink = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = new Browser();
         // In case the link redirects to the finallink
@@ -103,7 +100,7 @@ public class XShareCom extends PluginForHost {
         try {
             br2.getHeaders().put("Accept-Encoding", "identity");
             br2.getHeaders().put("Referer", "http://xshare.com/swf/flowplayer.commercial.flash9-3.2.15.swf");
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -121,7 +118,7 @@ public class XShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

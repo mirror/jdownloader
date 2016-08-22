@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" })
 public class UflashTv extends PluginForHost {
 
     public UflashTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -49,9 +49,13 @@ public class UflashTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("uflash.tv/error/video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("uflash.tv/error/video_missing")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("VIDEO \\| ([^<>\"]*?) \\| UFLASH\\.TV").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML(">This is a private video")) {
             downloadLink.getLinkStatus().setStatusText("Private videos are only downloadable via account");
@@ -59,22 +63,24 @@ public class UflashTv extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         br.getPage("http://www.uflash.tv/media/player/config.b74x.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        DLLINK = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        dllink = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -91,11 +97,13 @@ public class UflashTv extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private videos are only downloadable via account");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

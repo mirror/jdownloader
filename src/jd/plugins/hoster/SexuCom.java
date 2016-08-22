@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -32,9 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "http://(?:www\\.)?sexu\\.com/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "http://(?:www\\.)?sexu\\.com/\\d+/" })
 public class SexuCom extends PluginForHost {
 
     public SexuCom(PluginWrapper wrapper) {
@@ -47,14 +47,12 @@ public class SexuCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -68,7 +66,7 @@ public class SexuCom extends PluginForHost {
         final String lid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
         downloadLink.setLinkID(lid);
         downloadLink.setName(lid);
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -89,7 +87,7 @@ public class SexuCom extends PluginForHost {
                 final HashMap<String, Object> qual_info = (HashMap<String, Object>) qualinfo;
                 final String currquality = (String) qual_info.get("label");
                 if (currquality.contains(quality)) {
-                    DLLINK = (String) qual_info.get("file");
+                    dllink = (String) qual_info.get("file");
                     done = true;
                     break;
                 }
@@ -99,19 +97,15 @@ public class SexuCom extends PluginForHost {
             }
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Sexu\\.Com</title>").getMatch(0);
-        if (filename == null || DLLINK == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -122,7 +116,7 @@ public class SexuCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -131,7 +125,7 @@ public class SexuCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -144,7 +138,7 @@ public class SexuCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

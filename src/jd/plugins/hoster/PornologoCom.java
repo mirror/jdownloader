@@ -31,15 +31,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornologo.com" }, urls = { "http://(www\\.)?pornologo\\.com/videos/\\d+/[a-z0-9\\-,\\.']+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornologo.com" }, urls = { "http://(www\\.)?pornologo\\.com/videos/\\d+/[a-z0-9\\-,\\.']+\\.html" })
 public class PornologoCom extends PluginForHost {
 
     public PornologoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -82,11 +80,7 @@ public class PornologoCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".flv");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

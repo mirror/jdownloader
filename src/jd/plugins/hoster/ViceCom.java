@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -31,10 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vice.com" }, urls = { "https?://([A-Za-z0-9]+\\.)?vicedecrypted\\.com/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vice.com" }, urls = { "https?://([A-Za-z0-9]+\\.)?vicedecrypted\\.com/.+" })
 public class ViceCom extends PluginForHost {
 
     public ViceCom(PluginWrapper wrapper) {
@@ -51,8 +51,8 @@ public class ViceCom extends PluginForHost {
     // protocol: no https
     /*
      * other: 2nd way to get video urls: Access http://player.ooyala.com/player.js?embedCode=<video_id> --> Get the mobile js URL and access
-     * it:
-     * http://player.ooyala.com/mobile_player.js?embedCodes=BmZ21sZTpx1K8pFKz_hat0Dq5zap77Xs&expires=1431993600&height=360&locale=de&playerId
+     * it: http://player.ooyala.com/mobile_player.js?embedCodes=BmZ21sZTpx1K8pFKz_hat0Dq5zap77Xs&expires=1431993600&height=360&locale=de&
+     * playerId
      * =ooyalaPlayer243936600_us5e93k235&rootItemEmbedCode=BmZ21sZTpx1K8pFKz_hat0Dq5zap77Xs&signature=VFus8riyCPBCsXeAuiXwFZElPFWpw0d%2
      * BSFIFMQtxD8s&video_pcode=JqcWY6ikg5nwtXilzVurvI-vU6Ik&width=480&device="+device+"&domain="
      *
@@ -80,8 +80,7 @@ public class ViceCom extends PluginForHost {
     /**
      * TODO: If in the future, other plugins also need the ooyala player handling, make generic handling for it!
      */
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -89,7 +88,7 @@ public class ViceCom extends PluginForHost {
 
     public static final String   HTML_VIDEO_EXISTS = "class=\"video\\-wrapper\"";
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -100,7 +99,7 @@ public class ViceCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         String ext = null;
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -135,38 +134,34 @@ public class ViceCom extends PluginForHost {
         br.getPage("http://player.ooyala.com/sas/player_api/v1/authorization/embed_code/" + playerid + "/" + videoid + "?device=android_html&domain=www.ooyala.com&supportedFormats=mp4");
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final String walk_string = "authorization_data/" + videoid + "/streams/{0}/url/data";
-        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, walk_string);
-        if (DLLINK == null) {
+        dllink = (String) JavaScriptEngineFactory.walkJson(entries, walk_string);
+        if (dllink == null) {
             /* No HTTP url available --> must be HLS.only */
             br.getPage("http://player.ooyala.com/sas/player_api/v1/authorization/embed_code/" + playerid + "/" + videoid + "?device=android_html&domain=www.ooyala.com&supportedFormats=m3u8");
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, walk_string);
-            if (DLLINK != null) {
-                if (!DLLINK.startsWith("http")) {
-                    DLLINK = Encoding.Base64Decode(DLLINK);
+            dllink = (String) JavaScriptEngineFactory.walkJson(entries, walk_string);
+            if (dllink != null) {
+                if (!dllink.startsWith("http")) {
+                    dllink = Encoding.Base64Decode(dllink);
                 }
-                if (!DLLINK.startsWith("http")) {
+                if (!dllink.startsWith("http")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getPage(DLLINK);
-                DLLINK = br.getRegex("(https?://player\\.ooyala\\.com/player/iphone/[^<>\"]*?\\.m3u8)").getMatch(0);
+                br.getPage(dllink);
+                dllink = br.getRegex("(https?://player\\.ooyala\\.com/player/iphone/[^<>\"]*?\\.m3u8)").getMatch(0);
             }
             ext = ".mp4";
         } else {
             /* HTTP url available --> Decrypt it */
-            if (!DLLINK.startsWith("http")) {
-                DLLINK = Encoding.Base64Decode(DLLINK);
+            if (!dllink.startsWith("http")) {
+                dllink = Encoding.Base64Decode(dllink);
             }
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            /* Make sure that we get a correct extension */
-            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                ext = default_Extension;
-            }
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         }
-        if (DLLINK == null || !DLLINK.startsWith("http")) {
+        if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -176,14 +171,14 @@ public class ViceCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(filename);
         /* We cannot check the filesize for HLS urls */
-        if (!DLLINK.endsWith(".m3u8")) {
+        if (!dllink.endsWith(".m3u8")) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = openConnection(br2, DLLINK);
+                    con = openConnection(br2, dllink);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -192,7 +187,7 @@ public class ViceCom extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setProperty("directlink", DLLINK);
+                downloadLink.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -206,14 +201,14 @@ public class ViceCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK.endsWith(".m3u8")) {
+        if (dllink.endsWith(".m3u8")) {
             /* HLS handling */
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, DLLINK);
+            dl = new HLSDownloader(downloadLink, br, dllink);
             dl.startDownload();
         } else {
             /* HTTP handling */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

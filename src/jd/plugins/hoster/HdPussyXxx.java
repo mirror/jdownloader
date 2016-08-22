@@ -28,14 +28,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-f0-9]{32}/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdpussy.xxx" }, urls = { "http://(www\\.)?hdpussy\\.xxx/video/[a-f0-9]{32}/" })
 public class HdPussyXxx extends PluginForHost {
 
     public HdPussyXxx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -59,18 +59,18 @@ public class HdPussyXxx extends PluginForHost {
             /* Fallback to URL-filename */
             filename = new Regex(downloadLink.getDownloadURL(), "([a-f0-9]{32})/$").getMatch(0);
         }
-        DLLINK = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String ext = null;
-        if (DLLINK != null) {
-            DLLINK = Encoding.htmlDecode(DLLINK);
-            if (!DLLINK.startsWith("http")) {
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            if (!dllink.startsWith("http")) {
                 /* E.g. missing videosource, player will show error 'No playable sources found' --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            ext = getFileNameExtensionFromString(dllink, ".flv");
         }
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
@@ -84,10 +84,10 @@ public class HdPussyXxx extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             final long responsecode = dl.getConnection().getResponseCode();
             if (responsecode == 403) {

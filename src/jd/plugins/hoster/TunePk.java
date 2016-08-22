@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,9 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tune.pk" }, urls = { "https?://(?:www\\.)?tune\\.pk/player/embed_player\\.php\\?vid=\\d+|https?://embed\\.tune\\.pk/play/\\d+|https?(?:www\\.)?://tune\\.pk/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tune.pk" }, urls = { "https?://(?:www\\.)?tune\\.pk/player/embed_player\\.php\\?vid=\\d+|https?://embed\\.tune\\.pk/play/\\d+|https?(?:www\\.)?://tune\\.pk/video/\\d+" })
 public class TunePk extends PluginForHost {
 
     public TunePk(PluginWrapper wrapper) {
@@ -113,7 +113,7 @@ public class TunePk extends PluginForHost {
         filename = encodeUnicode(filename);
         String ext = null;
         if (dllink != null) {
-            ext = dllink.substring(dllink.lastIndexOf("."));
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {

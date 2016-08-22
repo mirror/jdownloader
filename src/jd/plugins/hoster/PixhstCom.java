@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" }) 
+@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(?:www\\.)?(?:pixhst\\.com|pxhst\\.co|avxhome\\.se)/pictures/\\d+" })
 public class PixhstCom extends antiDDoSForHost {
 
     public PixhstCom(PluginWrapper wrapper) {
@@ -81,12 +81,7 @@ public class PixhstCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            // default extension
-            ext = ".jpeg";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

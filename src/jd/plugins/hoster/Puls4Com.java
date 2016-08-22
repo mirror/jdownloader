@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,17 +33,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "http://(www\\.)?puls4\\.com/video/[a-z0-9\\-]+/play/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "http://(www\\.)?puls4\\.com/video/[a-z0-9\\-]+/play/\\d+" })
 public class Puls4Com extends PluginForHost {
 
     public Puls4Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Nice API, usually only available for mobile devices. */
     private static final boolean use_mobile_api    = true;
     /* Connection stuff */
@@ -119,17 +117,13 @@ public class Puls4Com extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         if (dllink == null) {
-            filename = filename + default_Extension;
+            filename = filename + ".mp4";
             downloadLink.setName(filename);
         } else {
             downloadLink.setFinalFileName(filename);
             dllink = dllink.replace("\\", "");
             dllink = Encoding.htmlDecode(dllink);
-            String ext = dllink.substring(dllink.lastIndexOf("."));
-            /* Make sure that we get a correct extension */
-            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                ext = default_Extension;
-            }
+            String ext = getFileNameExtensionFromString(dllink, ".mp4");
             filename += ext;
             downloadLink.setFinalFileName(filename);
             final Browser br2 = br.cloneBrowser();

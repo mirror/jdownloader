@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "palcomix.com" }, urls = { "http://(www\\.)?palcomix\\.com/[^/]+/imagepages/image\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "palcomix.com" }, urls = { "http://(www\\.)?palcomix\\.com/[^/]+/imagepages/image\\d+\\.html" })
 public class PalcomixCom extends PluginForHost {
 
     public PalcomixCom(PluginWrapper wrapper) {
@@ -45,14 +45,12 @@ public class PalcomixCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -62,7 +60,7 @@ public class PalcomixCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -74,26 +72,22 @@ public class PalcomixCom extends PluginForHost {
         final String imagenumber = finfo.getMatch(1);
         final DecimalFormat df = new DecimalFormat("00");
         String filename = galleryname + " - image" + imagenumber;
-        DLLINK = this.br.getRegex("<img src=\"\\.\\.(/images/page\\d+[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK != null) {
+        dllink = this.br.getRegex("<img src=\"\\.\\.(/images/page\\d+[^<>\"]*?)\"").getMatch(0);
+        if (dllink != null) {
             /* final URL via html */
-            DLLINK = "http://palcomix.com/" + galleryname + DLLINK;
+            dllink = "http://palcomix.com/" + galleryname + dllink;
         } else {
             /* Final URL custom-built! */
-            DLLINK = "http://palcomix.com/" + galleryname + "/images/page" + df.format(Long.parseLong(imagenumber)) + ".jpg";
+            dllink = "http://palcomix.com/" + galleryname + "/images/page" + df.format(Long.parseLong(imagenumber)) + ".jpg";
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -104,7 +98,7 @@ public class PalcomixCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -113,7 +107,7 @@ public class PalcomixCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -126,7 +120,7 @@ public class PalcomixCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

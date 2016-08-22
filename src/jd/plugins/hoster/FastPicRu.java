@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.ru" }, urls = { "https?://(www\\.)?fastpic\\.ru/view/[^<>\"]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.ru" }, urls = { "https?://(www\\.)?fastpic\\.ru/view/[^<>\"]+\\.html" })
 public class FastPicRu extends PluginForHost {
 
     public FastPicRu(PluginWrapper wrapper) {
@@ -43,8 +43,6 @@ public class FastPicRu extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* We're only downloading small files so 1 chunk is enough. */
@@ -80,11 +78,7 @@ public class FastPicRu extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(DLLINK, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

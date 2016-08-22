@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wi.to" }, urls = { "https?://(?:www\\.)?wi\\.to/i/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wi.to" }, urls = { "https?://(?:www\\.)?wi\\.to/i/[A-Za-z0-9]+" })
 public class WiTo extends PluginForHost {
 
     public WiTo(PluginWrapper wrapper) {
@@ -86,7 +86,7 @@ public class WiTo extends PluginForHost {
         filename = encodeUnicode(filename);
         String ext = null;
         if (dllink != null) {
-            ext = dllink.substring(dllink.lastIndexOf("."));
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {

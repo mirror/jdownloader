@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mvpdj.com" }, urls = { "https?://(?:www\\.)?mvpdj\\.com/song/player/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mvpdj.com" }, urls = { "https?://(?:www\\.)?mvpdj\\.com/song/player/\\d+" })
 public class MvpdjCom extends PluginForHost {
 
     public MvpdjCom(PluginWrapper wrapper) {
@@ -87,7 +87,9 @@ public class MvpdjCom extends PluginForHost {
             this.br.postPage("https://www.mvpdj.com/song/download", "id=" + fid);
             filename_html = this.br.getRegex("class=\"dt_tc_big\"[^<>]*?>([^<>]+)<").getMatch(0);
             if (this.br.containsHTML(">账户余额不足，请先充值")) {
-                /* Hmm something like "No traffic left" --> But let's not temp-disable the account - let's simply download the stream then! */
+                /*
+                 * Hmm something like "No traffic left" --> But let's not temp-disable the account - let's simply download the stream then!
+                 */
                 logger.info("Account traffic exhausted or track not downloadable!");
             } else {
                 /* Number at the end seems to be a server/mirror number. Possibilities: 1,2 */
@@ -112,10 +114,7 @@ public class MvpdjCom extends PluginForHost {
             }
             dllink = Encoding.htmlDecode(dllink);
             filename = filename.trim();
-            String ext = dllink.substring(dllink.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".mp3";
-            }
+            final String ext = getFileNameExtensionFromString(dllink, ".mp3");
             if (!filename.endsWith(ext)) {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
             } else {

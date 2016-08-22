@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.com" }, urls = { "http://(www\\.)?yobtdecrypted\\.com/content/\\d+/[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yobt.com" }, urls = { "http://(www\\.)?yobtdecrypted\\.com/content/\\d+/[a-z0-9\\-]+\\.html" })
 public class YobtCom extends PluginForHost {
 
     private String dllink = null;
@@ -71,10 +71,7 @@ public class YobtCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

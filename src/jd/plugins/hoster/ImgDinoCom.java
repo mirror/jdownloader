@@ -31,14 +31,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgdino.com" }, urls = { "http://(www\\.)?imgdino\\.com/viewer\\.php\\?file=[^<>\"/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgdino.com" }, urls = { "http://(www\\.)?imgdino\\.com/viewer\\.php\\?file=[^<>\"/]+" })
 public class ImgDinoCom extends PluginForHost {
 
     public ImgDinoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -54,19 +54,26 @@ public class ImgDinoCom extends PluginForHost {
         } catch (final SocketTimeoutException e) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("<h1>Error</h1><br>|does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h1>Error</h1><br>|does not exist or has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = new Regex(downloadLink.getDownloadURL(), "file=(.+)").getMatch(0);
         // Downloadlink
-        DLLINK = br.getRegex("\"(http://(www\\.)?imgdino\\.com/download\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, DLLINK);
+        dllink = br.getRegex("\"(http://(www\\.)?imgdino\\.com/download\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        dllink = checkDirectLink(downloadLink, dllink);
         // Or directlink -> The same
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?(img\\d+\\.)?imgdino\\.com/images/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".jpg";
-        DLLINK = checkDirectLink(downloadLink, DLLINK);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?(img\\d+\\.)?imgdino\\.com/images/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
+        dllink = checkDirectLink(downloadLink, dllink);
         filename = filename.trim();
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         return AvailableStatus.TRUE;
     }
@@ -74,7 +81,7 @@ public class ImgDinoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

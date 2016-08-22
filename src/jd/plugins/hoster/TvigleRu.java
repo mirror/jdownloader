@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,23 +34,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvigle.ru" }, urls = { "http://cloud\\.tvigle\\.ru/video/\\d+|http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvigle.ru" }, urls = { "http://cloud\\.tvigle\\.ru/video/\\d+|http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/" })
 public class TvigleRu extends PluginForHost {
 
     public TvigleRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     private static final String  type_embedded     = "http://cloud\\.tvigle\\.ru/video/\\d+";
     private static final String  type_normal       = "http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/";
@@ -66,7 +64,7 @@ public class TvigleRu extends PluginForHost {
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
         LinkedHashMap<String, Object> api_data;
         String videoID = downloadLink.getStringProperty("videoID", null);
-        DLLINK = null;
+        dllink = null;
 
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -116,22 +114,18 @@ public class TvigleRu extends PluginForHost {
         final LinkedHashMap<String, Object> video_files_size = (LinkedHashMap<String, Object>) api_data.get("video_files_size");
         final LinkedHashMap<String, Object> video_files_size_map = (LinkedHashMap<String, Object>) video_files_size.get("mp4");
         for (final String quality : qualities) {
-            DLLINK = (String) videolinks_map.get(quality);
-            if (DLLINK != null) {
+            dllink = (String) videolinks_map.get(quality);
+            if (dllink != null) {
                 filesize = ((Number) video_files_size_map.get(quality)).longValue();
                 break;
             }
         }
         filename = (String) api_data.get("title");
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -144,7 +138,7 @@ public class TvigleRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

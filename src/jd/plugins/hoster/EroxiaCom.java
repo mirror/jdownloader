@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxiadecrypted\\.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxiadecrypted\\.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" })
 public class EroxiaCom extends PluginForHost {
 
     public EroxiaCom(PluginWrapper wrapper) {
@@ -87,10 +87,7 @@ public class EroxiaCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".flv");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

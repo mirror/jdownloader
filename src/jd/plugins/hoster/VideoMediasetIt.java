@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,16 +36,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?\\d+/?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?\\d+/?" })
 public class VideoMediasetIt extends PluginForHost {
 
     public VideoMediasetIt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -138,33 +138,30 @@ public class VideoMediasetIt extends PluginForHost {
         if (dllinks != null && dllinks.length != 0) {
             final int length = dllinks.length;
             if (length >= 3) {
-                DLLINK = dllinks[2];
+                dllink = dllinks[2];
             } else if (length >= 2) {
-                DLLINK = dllinks[1];
+                dllink = dllinks[1];
             } else {
-                DLLINK = dllinks[0];
+                dllink = dllinks[0];
             }
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
+        if (dllink.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
             downloadLink.getLinkStatus().setStatusText("JDownloader can't download this video (either blocked in your country or MS Silverlight)");
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
+        dllink = Encoding.htmlDecode(dllink);
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 if (con.getLongContentLength() < 200) {
                     dlImpossible = true;
@@ -189,13 +186,13 @@ public class VideoMediasetIt extends PluginForHost {
         if (br.containsHTML(HTML_MS_SILVERLIGHT)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download MS Silverlight videos!");
         }
-        if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
+        if (dllink.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download this video (either blocked in your country or MS Silverlight)");
         }
         if (dlImpossible) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, try again later", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
