@@ -248,7 +248,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
                     br3.getHeaders().put("Accept", "*/*");
                     br3.getHeaders().put("Cache-Control", null);
                     getPage(br3, "/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
-                    link = PluginJSonUtils.getJson(br3, "Url");
+                    link = PluginJSonUtils.getJsonValue(br3, "Url");
                     if ("awe".equalsIgnoreCase(link)) {
                         // more steps y0!
                         getPage("/awe");

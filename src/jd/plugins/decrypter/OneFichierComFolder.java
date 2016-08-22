@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/((en|cn)/)?dir/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/((en|cn)/)?dir/[A-Za-z0-9]+" })
 public class OneFichierComFolder extends PluginForDecrypt {
 
     public OneFichierComFolder(PluginWrapper wrapper) {
@@ -43,6 +43,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = "https://www.1fichier.com/dir/" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         prepareBrowser(br);
+        br.setLoadLimit(Integer.MAX_VALUE);
         br.getPage(parameter + "?e=1");
         if (br.toString().equals("bad") || br.containsHTML("No htmlCode read")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);

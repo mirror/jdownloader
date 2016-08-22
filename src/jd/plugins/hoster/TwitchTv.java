@@ -52,7 +52,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" })
 public class TwitchTv extends PluginForHost {
 
     public TwitchTv(PluginWrapper wrapper) {
@@ -404,7 +404,7 @@ public class TwitchTv extends PluginForHost {
                 // json now!
                 ajaxSubmitForm(f);
                 // correct will redirect, with no cookies until following redirect; incorrect has error message && no cookies.
-                final String redirect = PluginJSonUtils.getJson(ajax, "redirect");
+                final String redirect = PluginJSonUtils.getJsonValue(ajax, "redirect");
                 if (redirect != null) {
                     // not with json headers
                     br.getPage(redirect);

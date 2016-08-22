@@ -311,7 +311,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
                     return null;
                 }
-                final String type = PluginJSonUtils.getJson(br, "type");
+                final String type = PluginJSonUtils.getJsonValue(br, "type");
                 if (type == null) {
                     logger.warning("Failed to find type for link: " + CRYPTEDLINK_FUNCTIONAL);
                     return null;
@@ -929,12 +929,12 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?\\d+)$").getMatch(0);
-        String numberofentries = PluginJSonUtils.getJson(br, "videoCount");
+        String numberofentries = PluginJSonUtils.getJsonValue(br, "videoCount");
         if (numberofentries == null) {
             numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
         }
         if (numberofentries == null) {
-            numberofentries = PluginJSonUtils.getJson(br, "count");
+            numberofentries = PluginJSonUtils.getJsonValue(br, "count");
         }
         final int numberOfEntrys = Integer.parseInt(numberofentries);
         int totalCounter = 0;
@@ -1627,7 +1627,7 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_API_UNKNOWN);
         case 17:
             logger.info("Validation required");
-            String redirectUri = PluginJSonUtils.getJson(br, "redirect_uri");
+            String redirectUri = PluginJSonUtils.getJsonValue(br, "redirect_uri");
             logger.info("Redirect URI: " + redirectUri);
             if (redirectUri != null) {
                 boolean success = siteHandleSecurityCheck(redirectUri);
@@ -1743,7 +1743,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Returns current API 'error_code', returns -1 if there is none */
     private int getCurrentAPIErrorcode() {
-        final String errcodeSTR = PluginJSonUtils.getJson(br, "error_code");
+        final String errcodeSTR = PluginJSonUtils.getJsonValue(br, "error_code");
         if (errcodeSTR == null) {
             return -1;
         }
@@ -1788,7 +1788,7 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private String resolveScreenName_API(final String screenname) throws Exception {
         apiGetPageSafe("https://api.vk.com/method/resolveScreenName?screen_name=" + screenname);
-        final String ownerID = PluginJSonUtils.getJson(br, "object_id");
+        final String ownerID = PluginJSonUtils.getJsonValue(br, "object_id");
         return ownerID;
     }
 

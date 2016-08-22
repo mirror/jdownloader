@@ -225,8 +225,8 @@ public class FlickrCom extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        final int totalimgs = Integer.parseInt(PluginJSonUtils.getJson(br, "total"));
-        final int totalpages = Integer.parseInt(PluginJSonUtils.getJson(br, "pages"));
+        final int totalimgs = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "total"));
+        final int totalpages = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "pages"));
         for (int i = 1; i <= totalpages; i++) {
             logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
             if (this.isAbort()) {
@@ -307,8 +307,8 @@ public class FlickrCom extends PluginForDecrypt {
         }
         String apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.photosets.getList&csrf=&api_key=" + api_apikey + "&format=json&hermes=1&hermesClient=1&reqId=9my34ua&nojsoncallback=1";
         api_getPage(apilink.replace("GETJDPAGE", "1"));
-        final int totalimgs = Integer.parseInt(PluginJSonUtils.getJson(br, "total"));
-        final int totalpages = Integer.parseInt(PluginJSonUtils.getJson(br, "pages"));
+        final int totalimgs = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "total"));
+        final int totalpages = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "pages"));
         for (int i = 1; i <= totalpages; i++) {
             logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
             if (this.isAbort()) {
@@ -352,7 +352,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
         final String user_url = "https://www.flickr.com/photos/" + username + "/";
         api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.urls.lookupUser&url=" + Encoding.urlEncode(user_url));
-        return PluginJSonUtils.getJson(br, "id");
+        return PluginJSonUtils.getJsonValue(br, "id");
     }
 
     private void api_getPage(final String url) throws IOException, DecrypterException {
@@ -363,9 +363,9 @@ public class FlickrCom extends PluginForDecrypt {
 
     /** Check for errorcode and set it if existant */
     private void updatestatuscode() {
-        String errorcode = PluginJSonUtils.getJson(br, "error");
+        String errorcode = PluginJSonUtils.getJsonValue(br, "error");
         if (errorcode == null) {
-            errorcode = PluginJSonUtils.getJson(br, "code");
+            errorcode = PluginJSonUtils.getJsonValue(br, "code");
         }
         if (errorcode != null) {
             statuscode = Integer.parseInt(errorcode);
@@ -428,7 +428,7 @@ public class FlickrCom extends PluginForDecrypt {
         String api_apikey = br.getRegex("root\\.YUI_config\\.flickr\\.api\\.site_key\\s*?=\\s*?\"(.*?)\"").getMatch(0);
         /* Handle API decryption for GROUPS and complete users here */
         if (api_apikey == null) {
-            api_apikey = PluginJSonUtils.getJson(br, "api_key");
+            api_apikey = PluginJSonUtils.getJsonValue(br, "api_key");
         }
         if (api_apikey == null) {
             api_apikey = "80bd84ccc43c9992edf04205340abe2f";

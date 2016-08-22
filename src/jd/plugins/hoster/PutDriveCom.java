@@ -41,7 +41,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 3, names = { "putdrive.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 3, names = { "putdrive.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PutDriveCom extends PluginForHost {
 
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
@@ -96,9 +96,9 @@ public class PutDriveCom extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         api_loginJson(account);
         // login(account);
-        final String trafficleft = PluginJSonUtils.getJson(br, "ExtraTrafficLeftInMBytes");
+        final String trafficleft = PluginJSonUtils.getJsonValue(br, "ExtraTrafficLeftInMBytes");
         ac.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
-        final String expiredate = PluginJSonUtils.getJson(br, "ExpirationDate");
+        final String expiredate = PluginJSonUtils.getJsonValue(br, "ExpirationDate");
         ac.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH));
         // now let's get a list of all supported hosts:
         br.getPage("http://putdrive.com/jdownloader.ashx?cmd=gethosters");

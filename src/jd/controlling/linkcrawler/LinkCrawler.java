@@ -1545,13 +1545,16 @@ public class LinkCrawler {
                             if (httpPlugin != null && url.startsWith("http")) {
                                 /* now we will check for normal http links */
                                 final String newURL;
+                                final String matchURL;
                                 if (isHttpJD) {
                                     newURL = url;
+                                    matchURL = url.replaceFirst("https?viajd://", (url.startsWith("httpsviajd://") ? "https://" : "http://"));
                                 } else {
+                                    matchURL = url;
                                     newURL = url.replaceFirst("https?://", (url.startsWith("https://") ? "httpsviajd://" : "httpviajd://"));
                                 }
                                 try {
-                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink) && getFirstMatchingRule(possibleCryptedLink, newURL, LinkCrawlerRule.RULE.SUBMITFORM, LinkCrawlerRule.RULE.FOLLOWREDIRECT, LinkCrawlerRule.RULE.DEEPDECRYPT) == null) {
+                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink) && getFirstMatchingRule(possibleCryptedLink, matchURL, LinkCrawlerRule.RULE.SUBMITFORM, LinkCrawlerRule.RULE.FOLLOWREDIRECT, LinkCrawlerRule.RULE.DEEPDECRYPT) == null) {
                                         if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission)) {
                                             /* create new CrawledLink that holds the modified CrawledLink */
                                             final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);

@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,6 +35,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
@@ -110,7 +110,7 @@ public class KumpulbagiId extends PluginForHost {
             if (req_token != null) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("/action/DownloadFile?location=fi&f=" + fid, "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
-                dllink = PluginJSonUtils.getJson(br, "DownloadUrl");
+                dllink = PluginJSonUtils.getJsonValue(br, "DownloadUrl");
             }
             if (dllink == null) {
                 /* Try fallback to stream-url. Usually needed if a file is only downloadable via account. */

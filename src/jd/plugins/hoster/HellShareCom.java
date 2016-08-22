@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hellshare.com" }, urls = { "http://(download\\.|www\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/[a-z0-9\\-/]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hellshare.com" }, urls = { "http://(download\\.|www\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/[a-z0-9\\-/]+/\\d+" })
 public class HellShareCom extends PluginForHost {
 
     /*
@@ -388,7 +388,7 @@ public class HellShareCom extends PluginForHost {
                     br.followConnection();
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
-                        dllink = PluginJSonUtils.getJson(br, "redirect");
+                        dllink = PluginJSonUtils.getJsonValue(br, "redirect");
                     }
                     if (dllink == null) {
                         if (br.containsHTML("button-download-full-nocredit")) {

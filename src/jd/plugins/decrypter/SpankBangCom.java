@@ -127,16 +127,16 @@ public class SpankBangCom extends PluginForDecrypt {
         }
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, true);
         // needs to be in reverse order
-        if ((best && selectedQualities.isEmpty() && q1080p) || (!best && q1080p)) {
+        if (q1080p) {
             selectedQualities.add("1080p");
         }
-        if ((best && selectedQualities.isEmpty() && q720p) || (!best && q720p)) {
+        if (q720p) {
             selectedQualities.add("720p");
         }
-        if ((best && selectedQualities.isEmpty() && q480p) || (!best && q480p)) {
+        if (q480p) {
             selectedQualities.add("480p");
         }
-        if ((best && selectedQualities.isEmpty() && q240p) || (!best && q240p)) {
+        if (q240p) {
             selectedQualities.add("240p");
         }
         String predefinedVariant = new Regex(param.getCryptedUrl(), "\\?quality=([\\w\\d]+)").getMatch(0);
@@ -160,6 +160,9 @@ public class SpankBangCom extends PluginForDecrypt {
                 dl.setProperty("mainlink", parameter);
                 fp.add(dl);
                 decryptedLinks.add(dl);
+                if (best) {
+                    break;
+                }
             }
         }
         if (decryptedLinks.size() == 0) {

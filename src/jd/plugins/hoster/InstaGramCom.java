@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +43,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" })
 public class InstaGramCom extends PluginForHost {
@@ -116,7 +116,7 @@ public class InstaGramCom extends PluginForHost {
             /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = PluginJSonUtils.getJson(this.br, "video_url");
+        dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
         // Maybe we have a picture
         if (dllink == null) {
             dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
@@ -223,10 +223,10 @@ public class InstaGramCom extends PluginForHost {
                     br.setHeader("X-CSRFToken", null);
                     br.setHeader("X-Requested-With", null);
                 }
-                if ("fail".equals(PluginJSonUtils.getJson(br, "status"))) {
+                if ("fail".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                     // 2 factor (Coded semi blind).
-                    if ("checkpoint_required".equals(PluginJSonUtils.getJson(br, "message"))) {
-                        final String page = PluginJSonUtils.getJson(br, "checkpoint_url");
+                    if ("checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
+                        final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
                         br.getPage(page);
                         // verify by email.
                         Form f = br.getFormBySubmitvalue("Verify+by+Email");

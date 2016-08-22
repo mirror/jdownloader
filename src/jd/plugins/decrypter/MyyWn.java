@@ -39,7 +39,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 33828 $", interfaceVersion = 3, names = { "myegy.win" }, urls = { "https?://(?:www\\.)?myegy\\.win/link/(\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision: 33828 $", interfaceVersion = 3, names = { "myegy.win" }, urls = { "https?://(?:www\\.)?myegy\\.win/link/(\\d+)" })
 public class MyyWn extends antiDDoSForDecrypt {
 
     public MyyWn(PluginWrapper wrapper) {
@@ -85,7 +85,7 @@ public class MyyWn extends antiDDoSForDecrypt {
                 cbr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 postPageRaw(cbr, "/!/link/" + uid + (i > 1 ? "?incorrect=true" : ""), json, false);
                 // result is singular
-                final String link = PluginJSonUtils.getJson(cbr, "result");
+                final String link = PluginJSonUtils.getJsonValue(cbr, "result");
                 // if incorrect
                 if ("false".equals(link)) {
                     if (i + 1 >= repeat) {
@@ -94,7 +94,7 @@ public class MyyWn extends antiDDoSForDecrypt {
                     // reload
                     getPage(br.getURL() + "?incorrect=true");
                     continue;
-                } else {
+                } else if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
                     break;
                 }

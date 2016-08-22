@@ -34,7 +34,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|my\\.pcloud\\.com/publink/show\\?code=|pc\\.cd/)[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|my\\.pcloud\\.com/publink/show\\?code=|pc\\.cd/)[A-Za-z0-9]+" })
 public class PCloudComFolder extends PluginForDecrypt {
 
     public PCloudComFolder(PluginWrapper wrapper) {
@@ -57,7 +57,7 @@ public class PCloudComFolder extends PluginForDecrypt {
 
         prepBR();
         br.getPage("http://api.pcloud.com/showpublink?code=" + getFID(parameter));
-        final String result = PluginJSonUtils.getJson(this.br, "result");
+        final String result = PluginJSonUtils.getJsonValue(this.br, "result");
         /* 7002 = deleted by the owner, 7003 = abused */
         if (br.containsHTML("\"error\": \"Invalid link") || "7002".equals(result) || "7003".equals(result)) {
             main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));

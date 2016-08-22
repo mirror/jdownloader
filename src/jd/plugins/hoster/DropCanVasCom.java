@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,7 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropcanvas.com" }, urls = { "https?://(?:www\\.)?dropcanvas\\.com/[a-z0-9]+/\\d+" }) 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropcanvas.com" }, urls = { "https?://(?:www\\.)?dropcanvas\\.com/[a-z0-9]+/\\d+" })
 public class DropCanVasCom extends antiDDoSForHost {
 
     public DropCanVasCom(PluginWrapper wrapper) {
@@ -109,7 +109,7 @@ public class DropCanVasCom extends antiDDoSForHost {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     final Regex dlInfo = new Regex(downloadLink.getDownloadURL(), "dropcanvas\\.com/([a-z0-9]+)/(\\d+)");
                     br.postPage("http://dropcanvas.com/download/getDownloadLink", "albumId=" + dlInfo.getMatch(0) + "&indx=" + dlInfo.getMatch(1));
-                    dllink = PluginJSonUtils.getJson(br, "downloadLink");
+                    dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

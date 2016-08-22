@@ -32,7 +32,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+/.{1}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+/.{1}" })
 public class DatoidCz extends PluginForHost {
 
     public DatoidCz(PluginWrapper wrapper) {
@@ -62,8 +62,8 @@ public class DatoidCz extends PluginForHost {
             logger.info("Password protected links are not yet supported (via API)!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "filename");
-        final String filesize = PluginJSonUtils.getJson(br, "filesize_bytes");
+        String filename = PluginJSonUtils.getJsonValue(br, "filename");
+        final String filesize = PluginJSonUtils.getJsonValue(br, "filesize_bytes");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -99,7 +99,7 @@ public class DatoidCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
         }
         // final int wait = Integer.parseInt(getJson("wait"));
-        String dllink = PluginJSonUtils.getJson(br, "download_link");
+        String dllink = PluginJSonUtils.getJsonValue(br, "download_link");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -122,7 +122,10 @@ public class DatoidCz extends PluginForHost {
         if (br.containsHTML("\\{\"success\":false\\}")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        TOKEN = PluginJSonUtils.getJson(br, "token");
+        TOKEN = PluginJSonUtils.getJsonValue(br, "token");
+        if (TOKEN == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         account.setProperty("logintoken", TOKEN);
     }
 
@@ -137,7 +140,7 @@ public class DatoidCz extends PluginForHost {
         }
         br.getPage("http://api.datoid.cz/v1/get-user-details?token=" + TOKEN);
         /** 1 Credit = 1 MB */
-        final String credits = PluginJSonUtils.getJson(br, "credits");
+        final String credits = PluginJSonUtils.getJsonValue(br, "credits");
         ai.setTrafficLeft(SizeFormatter.getSize(credits + " MB"));
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -156,7 +159,7 @@ public class DatoidCz extends PluginForHost {
         if (br.containsHTML("\"error\":\"File not found\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String dllink = PluginJSonUtils.getJson(br, "download_link");
+        String dllink = PluginJSonUtils.getJsonValue(br, "download_link");
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

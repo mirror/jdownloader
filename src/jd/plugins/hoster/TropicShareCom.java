@@ -42,8 +42,7 @@ import jd.plugins.components.UserAgents.BrowserName;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tropicshare.com" }, urls = { "http://(www\\.)?tropicshare\\.com/files/\\d+" }) 
-
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tropicshare.com" }, urls = { "http://(www\\.)?tropicshare\\.com/files/\\d+" })
 public class TropicShareCom extends PluginForHost {
 
     public TropicShareCom(PluginWrapper wrapper) {
@@ -103,7 +102,7 @@ public class TropicShareCom extends PluginForHost {
         if (br.containsHTML("\"status\":\"Please wait, while downloading\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        final String uid = PluginJSonUtils.getJson(br, "uid");
+        final String uid = PluginJSonUtils.getJsonValue(br, "uid");
         if (uid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

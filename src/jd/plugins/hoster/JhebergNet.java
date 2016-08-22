@@ -42,7 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jheberg.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jheberg.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class JhebergNet extends PluginForHost {
 
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = false;
@@ -174,7 +174,7 @@ public class JhebergNet extends PluginForHost {
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.postAPISafe("/profile/get/debrid/links/", "csrfmiddlewaretoken=" + token + "&links=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJson(br, "destination");
+            dllink = PluginJSonUtils.getJsonValue(br, "destination");
             if (dllink == null) {
                 handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);
             }

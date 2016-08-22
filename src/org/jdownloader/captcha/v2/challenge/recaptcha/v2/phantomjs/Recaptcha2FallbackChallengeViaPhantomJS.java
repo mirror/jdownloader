@@ -590,6 +590,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                             return true;
                         }
                     });
+                    return true;
                 } else {
                     // int ret = 0;
                     // sc.get

@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "generalfil.es" }, urls = { "http://(www\\.)?(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "generalfil.es" }, urls = { "http://(www\\.)?(general-files\\.com|generalfiles\\.org|generalfiles\\.me|general-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general-file\\.com|general-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" })
 public class GeneralFilesCom extends PluginForDecrypt {
 
     @Override
@@ -111,7 +111,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
             br.getPage(goLink);
         }
         /* First try ajax regex */
-        String finallink = PluginJSonUtils.getJson(br, "link");
+        String finallink = PluginJSonUtils.getJsonValue(br, "link");
         if (finallink == null) {
             finallink = br.getRegex("window\\.location\\.replace\\('(http[^<>\"]*?)'\\)").getMatch(0);
             if (finallink == null) {

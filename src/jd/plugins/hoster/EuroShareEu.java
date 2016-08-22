@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" })
 public class EuroShareEu extends PluginForHost {
 
     /** API documentation: http://euroshare.eu/euroshare-api/ */
@@ -95,13 +95,13 @@ public class EuroShareEu extends PluginForHost {
         }
         // end of password handling
 
-        filename = PluginJSonUtils.getJson(this.br, "file_name");
-        final String description = PluginJSonUtils.getJson(this.br, "file_description");
+        filename = PluginJSonUtils.getJsonValue(this.br, "file_name");
+        final String description = PluginJSonUtils.getJsonValue(this.br, "file_description");
         if (description != null && downloadLink.getComment() == null) {
             downloadLink.setComment(description);
         }
-        final String filesize = PluginJSonUtils.getJson(this.br, "file_size");
-        final String md5 = PluginJSonUtils.getJson(this.br, "md5_hash");
+        final String filesize = PluginJSonUtils.getJsonValue(this.br, "file_size");
+        final String md5 = PluginJSonUtils.getJsonValue(this.br, "md5_hash");
         downloadLink.setFinalFileName(filename);
         downloadLink.setDownloadSize(Long.parseLong(filesize));
         downloadLink.setMD5Hash(md5);
@@ -145,10 +145,10 @@ public class EuroShareEu extends PluginForHost {
             return ai;
         }
         account.setValid(true);
-        final String expire = PluginJSonUtils.getJson(this.br, "unlimited_download_until");
+        final String expire = PluginJSonUtils.getJsonValue(this.br, "unlimited_download_until");
         // Not sure if this behaviour is correct
-        final String availableTraffic = PluginJSonUtils.getJson(this.br, "credit");
-        if (expire.equals("0") && availableTraffic.equals("0")) {
+        final String availableTraffic = PluginJSonUtils.getJsonValue(this.br, "credit");
+        if (expire == null || expire.equals("0") && availableTraffic == null || availableTraffic.equals("0")) {
             ai.setStatus("Registered User");
             maxPrem.set(1);
             account.setMaxSimultanDownloads(1);
@@ -199,7 +199,7 @@ public class EuroShareEu extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        final String dllink = PluginJSonUtils.getJson(this.br, "free_link");
+        final String dllink = PluginJSonUtils.getJsonValue(this.br, "free_link");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -246,7 +246,7 @@ public class EuroShareEu extends PluginForHost {
             doFree(link);
         } else {
             br.getPage("http://euroshare.eu/euroshare-api/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
-            final String dllink = PluginJSonUtils.getJson(this.br, "link");
+            final String dllink = PluginJSonUtils.getJsonValue(this.br, "link");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileloaddecrypted\\.io/[A-Za-z0-9]+/[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileload.io" }, urls = { "https?://(?:www\\.)?fileloaddecrypted\\.io/[A-Za-z0-9]+/[^/]+" })
 public class FileloadIo extends PluginForHost {
 
     public FileloadIo(PluginWrapper wrapper) {
@@ -102,14 +102,14 @@ public class FileloadIo extends PluginForHost {
         prepBRAPI(this.br);
         final String folder_url_part = folderid + "/" + Encoding.urlEncode(getFilenameProperty(link));
         br.getPage("https://api." + this.getHost() + "/onlinestatus/" + folder_url_part);
-        final String error = PluginJSonUtils.getJson(this.br, "error");
+        final String error = PluginJSonUtils.getJsonValue(this.br, "error");
         if (error != null) {
             /* E.g. "{"error":"unknown_transfer_id","action":"You must enter a valid transfer_id"}" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String sha1 = PluginJSonUtils.getJson(this.br, "");
-        final String filesize_bytes = PluginJSonUtils.getJson(this.br, "filesize_bytes");
-        final String status = PluginJSonUtils.getJson(this.br, "status");
+        final String sha1 = PluginJSonUtils.getJsonValue(this.br, "");
+        final String filesize_bytes = PluginJSonUtils.getJsonValue(this.br, "filesize_bytes");
+        final String status = PluginJSonUtils.getJsonValue(this.br, "status");
         if (filesize_bytes == null || status == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -130,11 +130,11 @@ public class FileloadIo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         this.br.getPage("https://" + this.getHost() + "/index.php?id=5&f=attemptDownload&transfer_id=" + folderid + "&file_id=" + linkid + "&download=true");
-        final String status = PluginJSonUtils.getJson(this.br, "status");
+        final String status = PluginJSonUtils.getJsonValue(this.br, "status");
         if ("too_many_requests".equalsIgnoreCase(status)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Too many requests'", 3 * 60 * 1000l);
         }
-        dllink = PluginJSonUtils.getJson(this.br, "link");
+        dllink = PluginJSonUtils.getJsonValue(this.br, "link");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -244,13 +244,13 @@ public class FileloadIo extends PluginForHost {
             getAuthToken(account);
             if (this.account_auth_token != null) {
                 br.getPage(API_BASE + "accountinfo/" + Encoding.urlEncode(this.account_auth_token));
-                if (PluginJSonUtils.getJson(this.br, "email") != null) {
+                if (PluginJSonUtils.getJsonValue(this.br, "email") != null) {
                     /* Saved account_auth_token is still valid! */
                     return;
                 }
             }
             br.getPage(API_BASE + "login/" + Encoding.urlEncode(account.getUser()) + "/" + JDHash.getMD5(account.getPass()));
-            account_auth_token = PluginJSonUtils.getJson(this.br, "login_token");
+            account_auth_token = PluginJSonUtils.getJsonValue(this.br, "login_token");
             if (br.containsHTML("login_failed") || account_auth_token == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -281,7 +281,7 @@ public class FileloadIo extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        final boolean isPremium = "1".equals(PluginJSonUtils.getJson(this.br, "premium"));
+        final boolean isPremium = "1".equals(PluginJSonUtils.getJsonValue(this.br, "premium"));
         if (!isPremium) {
             account.setType(AccountType.FREE);
             /* Free accounts can still have captcha */
@@ -289,7 +289,7 @@ public class FileloadIo extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            final String valid_millisecs = PluginJSonUtils.getJson(this.br, "valid_millisecs");
+            final String valid_millisecs = PluginJSonUtils.getJsonValue(this.br, "valid_millisecs");
             ai.setValidUntil(Long.parseLong(valid_millisecs));
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -329,7 +329,7 @@ public class FileloadIo extends PluginForHost {
             }
             api_download_url_call += this.folderid + "/" + Encoding.urlEncode(getFilenameProperty(link));
             br.getPage(api_download_url_call);
-            dllink = PluginJSonUtils.getJson(this.br, "download_link");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "download_link");
             if (dllink == null || !dllink.startsWith("http")) {
                 handleErrorsAPI();
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -352,8 +352,8 @@ public class FileloadIo extends PluginForHost {
     }
 
     private void handleErrorsAPI() throws PluginException {
-        final String error = PluginJSonUtils.getJson(this.br, "error");
-        final String status = PluginJSonUtils.getJson(this.br, "status");
+        final String error = PluginJSonUtils.getJsonValue(this.br, "error");
+        final String status = PluginJSonUtils.getJsonValue(this.br, "status");
         if (error != null) {
             if (error.equalsIgnoreCase("file_not_found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

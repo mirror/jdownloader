@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" })
 public class CloudMailRu extends PluginForHost {
 
     public CloudMailRu(PluginWrapper wrapper) {
@@ -199,7 +199,7 @@ public class CloudMailRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(dl.getName()) + "&cp866=false&api=2&build=" + BUILD);
-                dllink = PluginJSonUtils.getJson(br, "body");
+                dllink = PluginJSonUtils.getJsonValue(br, "body");
             } else if (dl.getBooleanProperty("noapi", false)) {
                 br.getPage(getMainlink(dl));
                 final String json = br.getRegex("(\\{\\s*\"tree\":.*?)\\);").getMatch(0);
@@ -252,7 +252,7 @@ public class CloudMailRu extends PluginForHost {
                 }
 
                 br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid);
-                final String token = PluginJSonUtils.getJson(br, "token");
+                final String token = PluginJSonUtils.getJsonValue(br, "token");
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

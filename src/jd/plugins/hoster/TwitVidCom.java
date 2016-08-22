@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?tellydecrypted\\.com/[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?tellydecrypted\\.com/[A-Z0-9]+" })
 public class TwitVidCom extends PluginForHost {
 
     private String dllink = null;
@@ -60,7 +60,7 @@ public class TwitVidCom extends PluginForHost {
         if (!br.containsHTML("video_path")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "title");
+        String filename = PluginJSonUtils.getJsonValue(br, "title");
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -74,7 +74,7 @@ public class TwitVidCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String vPath = PluginJSonUtils.getJson(br, "video_path");
+        final String vPath = PluginJSonUtils.getJsonValue(br, "video_path");
         if (vPath == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

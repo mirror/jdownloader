@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?(facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+|facebook\\.com/download/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.)?(facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+|facebook\\.com/download/\\d+)" })
 public class FaceBookComVideos extends PluginForHost {
 
     private String              FACEBOOKMAINPAGE      = "http://www.facebook.com";
@@ -367,12 +367,12 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String getHigh() {
-        final String result = PluginJSonUtils.getJson(br, "hd_src");
+        final String result = PluginJSonUtils.getJsonValue(br, "hd_src");
         return result;
     }
 
     private String getLow() {
-        final String result = PluginJSonUtils.getJson(br, "sd_src");
+        final String result = PluginJSonUtils.getJsonValue(br, "sd_src");
         return result;
     }
 
@@ -681,7 +681,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String getajaxpipeToken() {
-        return PluginJSonUtils.getJson(br, "ajaxpipe_token");
+        return PluginJSonUtils.getJsonValue(br, "ajaxpipe_token");
     }
 
     private void checkFeatureDialog() {

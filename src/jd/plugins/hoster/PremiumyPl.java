@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,7 +36,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumy.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumy.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class PremiumyPl extends PluginForHost {
 
     private static final String                            API_ENDPOINT        = "http://premiumy.pl/jd,%s.html";
@@ -115,7 +115,7 @@ public class PremiumyPl extends PluginForHost {
         if (dllink == null) {
             /* Create downloadlink */
             this.postAPISafe("checkLink", "url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJson(this.br, "downloadLink");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "downloadLink");
             if (dllink == null || this.statuscode != 1) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
@@ -215,7 +215,7 @@ public class PremiumyPl extends PluginForHost {
         login(true);
         this.postAPISafe("accountInfo", "");
 
-        final String trafficleft_str = PluginJSonUtils.getJson(this.br, "transfer");
+        final String trafficleft_str = PluginJSonUtils.getJsonValue(this.br, "transfer");
 
         // final String validuntil = PluginJSonUtils.getJson(this.br, "premium");
         // long trafficleft = 0;
@@ -249,7 +249,7 @@ public class PremiumyPl extends PluginForHost {
         // premium = 0 for not Multi packages
         // so for now until is not corected in API - Hoster package won't be supported
         // because API returns: {"premium":0,"transfer":0} for Hoster package and free account
-        final String premium = PluginJSonUtils.getJson(this.br, "premium");
+        final String premium = PluginJSonUtils.getJsonValue(this.br, "premium");
         long trafficleft = 0;
         long timestamp_validuntil = 0;
         if (trafficleft_str != null) {
@@ -280,7 +280,7 @@ public class PremiumyPl extends PluginForHost {
         /* TODO: Maybe find a way that does not always require a full login! */
         this.br.postPage(String.format(API_ENDPOINT, "accountLogin"), "login=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
         this.updatestatuscode();
-        currLogintoken = PluginJSonUtils.getJson(this.br, "session");
+        currLogintoken = PluginJSonUtils.getJsonValue(this.br, "session");
         if (this.statuscode == 0 || currLogintoken == null || currLogintoken.equals("")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -332,7 +332,7 @@ public class PremiumyPl extends PluginForHost {
      */
     private void updatestatuscode() {
         /* First look for errorcode */
-        String error = PluginJSonUtils.getJson(this.br, "status");
+        String error = PluginJSonUtils.getJsonValue(this.br, "status");
         if (inValidate(error)) {
             error = null;
         }

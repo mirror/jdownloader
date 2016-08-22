@@ -21,8 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?\\d+/?" })
 public class VideoMediasetIt extends PluginForHost {
@@ -95,8 +95,8 @@ public class VideoMediasetIt extends PluginForHost {
         String filename;
         if (use_player_json) {
             this.br.getPage("http://plr.video.mediaset.it/html/metainfo.sjson?id=" + streamID);
-            filename = PluginJSonUtils.getJson(this.br, "title");
-            date = PluginJSonUtils.getJson(this.br, "production-date");
+            filename = PluginJSonUtils.getJsonValue(this.br, "title");
+            date = PluginJSonUtils.getJsonValue(this.br, "production-date");
         } else {
             br.getPage(downloadLink.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Il video che stai cercando non")) {

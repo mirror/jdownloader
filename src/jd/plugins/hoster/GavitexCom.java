@@ -34,7 +34,7 @@ import org.appwork.utils.StringUtils;
  *
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "gavitex.com" }, urls = { "https?://(?:www\\.)?gavitex\\.com/share/(?-i)([a-z0-9]{9})" }) 
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "gavitex.com" }, urls = { "https?://(?:www\\.)?gavitex\\.com/share/(?-i)([a-z0-9]{9})" })
 public class GavitexCom extends PluginForHost {
 
     public GavitexCom(PluginWrapper wrapper) {
@@ -61,16 +61,16 @@ public class GavitexCom extends PluginForHost {
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getPage("/api/sharedlinks/download?share_id=" + getFuid(downloadLink));
         // error handling
-        if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJson(ajax, "status"), "error")) {
-            if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJson(ajax, "error_code"), "210")) {
+        if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "status"), "error")) {
+            if (StringUtils.equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "error_code"), "210")) {
                 // {"status":"Error","status_code":0,"error":"FileNotFound","error_code":210}
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // unknown error
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String filename = PluginJSonUtils.getJson(ajax, "name");
-        final String filesize = PluginJSonUtils.getJson(ajax, "size");
+        final String filename = PluginJSonUtils.getJsonValue(ajax, "name");
+        final String filesize = PluginJSonUtils.getJsonValue(ajax, "size");
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

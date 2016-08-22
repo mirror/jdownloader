@@ -25,13 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +45,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * Note: prem.link redirects to grab8
@@ -219,13 +219,13 @@ public class Grab8Com extends antiDDoSForHost {
         if (dllink == null) {
             getPage("https://" + getHost() + "/");
             postAPISafe("/ajax/action.php", "action=getlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJson(ajax, "linkdown");
-            final boolean transload = StringUtils.containsIgnoreCase(PluginJSonUtils.getJson(ajax, "message"), "Transloading in progress") || PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(ajax, "use_transload"));
+            dllink = PluginJSonUtils.getJsonValue(ajax, "linkdown");
+            final boolean transload = StringUtils.containsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "message"), "Transloading in progress") || PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(ajax, "use_transload"));
             if (transload || StringUtils.isEmpty(dllink)) {
                 if (transload) {
                     // TODO: transload/api error handling.
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported Feature");
-                } else if ("captcha".equalsIgnoreCase(PluginJSonUtils.getJson(ajax, "status"))) {
+                } else if ("captcha".equalsIgnoreCase(PluginJSonUtils.getJsonValue(ajax, "status"))) {
                     // {"status":"captcha","message":"","cid":17021,"src":"http:\/\/p7.grab8.com\/new\/images\/depfile.com_captcha.png?rand=4137","server":"http:\/\/p7.grab8.com\/new\/","link":"https:\/\/depfile.com\/uid","runtime":3.5580089092255}
                     // the multihoster is trying to pass the captcha back to this user.... we don't want a bar of that
                     handleErrorRetries("captcha", 10, 5 * 60 * 1000l);
@@ -370,7 +370,7 @@ public class Grab8Com extends antiDDoSForHost {
             }
             if (md5 != null) {
                 postAPISafe(del, "/ajax/action.php", "action=delete-files&sel_files%5B%5D=" + md5);
-                if ("File deleted!".equals(PluginJSonUtils.getJson(ajax, "message"))) {
+                if ("File deleted!".equals(PluginJSonUtils.getJsonValue(ajax, "message"))) {
                     logger.info("Successfully deleted file from server");
                     return true;
                 }
@@ -667,12 +667,14 @@ public class Grab8Com extends antiDDoSForHost {
      * @throws PluginException
      */
     private void handleErrors(final Browser br) throws PluginException {
-        final String error = "error".equals(PluginJSonUtils.getJson(br, "status")) ? PluginJSonUtils.getJson(br, "message") : br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
+        final String error = "error".equals(PluginJSonUtils.getJsonValue(br, "status")) ? PluginJSonUtils.getJsonValue(br, "message") : br.getRegex("class=\"htmlerror\"><b>(.*?)</b></span>").getMatch(0);
         if (error != null) {
-            if (StringUtils.containsIgnoreCase(error, "No premium account working")) {
+            if (StringUtils.containsIgnoreCase(error, "Wrong captcha")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (StringUtils.containsIgnoreCase(error, "No premium account working")) {
                 logger.warning("'No premium account working' --> Host is temporarily disabled");
                 tempUnavailableHoster(1 * 60 * 60 * 1000l);
-            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid") || StringUtils.containsIgnoreCase(error, "Wrong captcha")) {
+            } else if (StringUtils.containsIgnoreCase(error, "username or password is incorrect") || StringUtils.containsIgnoreCase(error, "Username or Password is invalid")) {
                 /* Invalid logindata */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

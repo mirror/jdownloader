@@ -42,7 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehost.eu" }, urls = { "https?://(www\\.)?sharehost\\.eu/[^<>\"]*?/(.*)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehost.eu" }, urls = { "https?://(www\\.)?sharehost\\.eu/[^<>\"]*?/(.*)" })
 public class ShareHostEu extends PluginForHost {
 
     public ShareHostEu(PluginWrapper wrapper) {
@@ -342,16 +342,16 @@ public class ShareHostEu extends PluginForHost {
             // filePasswordNotMatch - podane hasło dostępu do pliku jest niepoprawne
             // userAccountNotPremium - konto użytkownika nie posiada dostępu premium
             // userCanNotDownload - użytkownik nie może pobrać pliku z innych powodów (np. brak transferu)
-            String success = PluginJSonUtils.getJson(br, "success");
+            String success = PluginJSonUtils.getJsonValue(br, "success");
             if ("false".equals(success)) {
-                if ("userCanNotDownload".equals(PluginJSonUtils.getJson(br, "error"))) {
+                if ("userCanNotDownload".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No traffic left!");
-                } else if (("fileNotFound".equals(PluginJSonUtils.getJson(br, "error")))) {
+                } else if (("fileNotFound".equals(PluginJSonUtils.getJsonValue(br, "error")))) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
 
-            String finalDownloadLink = PluginJSonUtils.getJson(br, "fileUrlDownload");
+            String finalDownloadLink = PluginJSonUtils.getJsonValue(br, "fileUrlDownload");
             setLoginData(account);
 
             String dllink = finalDownloadLink.replace("\\", "");
@@ -418,35 +418,35 @@ public class ShareHostEu extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("PREMIUM", "Premium User");
-            put("FREE", "Free (Registered) User");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-            put("LOGIN_ERROR", "ShareHost.Eu: Login Error");
-            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-            put("NO_TRAFFIC", "No traffic left");
-            put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
-            put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
-            put("NO_FREE_SLOTS", "No free slots for downloading this file");
-        }
-    };
+                                                  {
+                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("FREE", "Free (Registered) User");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+                                                      put("LOGIN_ERROR", "ShareHost.Eu: Login Error");
+                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+                                                      put("NO_TRAFFIC", "No traffic left");
+                                                      put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
+                                                      put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
+                                                      put("NO_FREE_SLOTS", "No free slots for downloading this file");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-            put("PREMIUM", "Użytkownik Premium");
-            put("FREE", "Użytkownik zarejestrowany (darmowy)");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-            put("LOGIN_ERROR", "ShareHost.Eu: Błąd logowania");
-            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-            put("NO_TRAFFIC", "Brak dostępnego transferu");
-            put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
-            put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
-            put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
+                                                  {
+                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("FREE", "Użytkownik zarejestrowany (darmowy)");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+                                                      put("LOGIN_ERROR", "ShareHost.Eu: Błąd logowania");
+                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
+                                                      put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
+                                                      put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
+                                                      put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
 
-        }
-    };
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

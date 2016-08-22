@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|reviews)/\\w+/[\\w\\-]+|videos/view/[\\w\\-]+/\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|reviews)/\\w+/[\\w\\-]+|videos/view/[\\w\\-]+/\\d+)" })
 public class GameTrailersCom extends PluginForDecrypt {
 
     private static String ua = RandomUserAgent.generate();
@@ -71,9 +71,9 @@ public class GameTrailersCom extends PluginForDecrypt {
                 return null;
             }
             br.getPage(iframe);
-            videoTitle = PluginJSonUtils.getJson(br, "contentName");
-            contentId = PluginJSonUtils.getJson(br, "contentId");
-            final String videoURI = PluginJSonUtils.getJson(br, "videoUri");
+            videoTitle = PluginJSonUtils.getJsonValue(br, "contentName");
+            contentId = PluginJSonUtils.getJsonValue(br, "contentId");
+            final String videoURI = PluginJSonUtils.getJsonValue(br, "videoUri");
             if (videoTitle != null && contentId != null && videoURI != null) {
                 final DownloadLink dl = createDownloadlink(videoURI);
                 dl.setFinalFileName(getVideoTitle(videoTitle));

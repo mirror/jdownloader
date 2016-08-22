@@ -161,7 +161,7 @@ public class PornerBrosCom extends PluginForHost {
                 }
             }
             if (dllink == null) {
-                dllink = PluginJSonUtils.getJson(this.br, "token");
+                dllink = PluginJSonUtils.getJsonValue(this.br, "token");
             }
             // String paramXml = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
             // if (paramXml == null) {

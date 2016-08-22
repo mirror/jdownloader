@@ -41,7 +41,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class TransloadMe extends PluginForHost {
 
     private static final String                            API_BASE                     = "http://transload.me/api/";
@@ -137,7 +137,7 @@ public class TransloadMe extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null || !dllink.startsWith("http")) {
             this.getAPISafe("action=getdirectlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJson(this.br, "link");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "link");
             if (dllink == null) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 30, 2 * 60 * 1000l);
@@ -210,8 +210,8 @@ public class TransloadMe extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         /* Balance left in USD */
-        final String balance = PluginJSonUtils.getJson(this.br, "balance");
-        final String reg_date = PluginJSonUtils.getJson(this.br, "reg_date");
+        final String balance = PluginJSonUtils.getJsonValue(this.br, "balance");
+        final String reg_date = PluginJSonUtils.getJsonValue(this.br, "reg_date");
         if (reg_date != null) {
             ai.setCreateTime(TimeFormatter.getMilliSeconds(reg_date, "yyyy-MM-dd", Locale.ENGLISH));
         }
@@ -275,7 +275,7 @@ public class TransloadMe extends PluginForHost {
 
     /* Please do not remove this function - future usage!! */
     private void updatestatuscode() {
-        final String errorcode = PluginJSonUtils.getJson(this.br, "error");
+        final String errorcode = PluginJSonUtils.getJsonValue(this.br, "error");
         if (errorcode != null && errorcode.matches("\\d+")) {
             statuscode = Integer.parseInt(errorcode);
         } else if (errorcode != null) {

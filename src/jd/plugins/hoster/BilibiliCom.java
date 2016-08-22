@@ -135,7 +135,7 @@ public class BilibiliCom extends PluginForHost {
         requestFileInformation(downloadLink);
         /* Use their mobile function to avoid the encryption stuff of the PC-website! */
         this.br.getPage("/m/html5?aid=" + fid + "&page=1");
-        dllink = PluginJSonUtils.getJson(this.br, "src");
+        dllink = PluginJSonUtils.getJsonValue(this.br, "src");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

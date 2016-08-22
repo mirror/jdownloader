@@ -48,7 +48,7 @@ import jd.plugins.hoster.SaveTv;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:Horizontal)?VideoArchive\\.cfm" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:Horizontal)?VideoArchive\\.cfm" })
 public class SaveTvDecrypter extends PluginForDecrypt {
 
     public SaveTvDecrypter(PluginWrapper wrapper) {
@@ -342,7 +342,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         getPageSafe(acc, "https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?" + "iEntriesPerPage=1&iCurrentPage=1&dStartdate=0");
         is_groups_enabled = !br.containsHTML("\"IGROUPCOUNT\":1\\.0");
         groups_enabled_by_user = is_groups_enabled;
-        final String totalLinksInsideCurrentAccount = PluginJSonUtils.getJson(this.br, "ITOTALENTRIES");
+        final String totalLinksInsideCurrentAccount = PluginJSonUtils.getJsonValue(this.br, "ITOTALENTRIES");
         if (totalLinksInsideCurrentAccount == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return;

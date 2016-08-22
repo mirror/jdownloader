@@ -33,11 +33,11 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
         // , _GUI.T.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
 
         add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_duration())));
-        add(duration = new JLabel(""));
+        add(duration = new JLabel("-"));
         add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_old())));
-        add(old = new JLabel("?"));
+        add(old = new JLabel("??.??.??.??"));
         add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_currentip())));
-        add(newIP = new JLabel("?"));
+        add(newIP = new JLabel("??.??.??.??"));
         progressCircle.setIndeterminate(true);
         progressCircle.setValue(0);
         new Thread(getClass().getName()) {

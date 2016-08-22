@@ -56,7 +56,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|ondemand/[A-Za-z0-9\\-_]+)" })
 public class VimeoCom extends PluginForHost {
 
     private static final String MAINPAGE           = "http://vimeo.com";
@@ -158,7 +158,7 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (usePrivateHandling(downloadLink)) {
             br.getPage("http://player.vimeo.com/video/" + ID);
-            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJson(br, "message"))) {
+            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
@@ -439,7 +439,7 @@ public class VimeoCom extends PluginForHost {
         String configURL = ibr.getRegex("data-config-url=\"(https?://player\\.vimeo\\.com/(v2/)?video/\\d+/config.*?)\"").getMatch(0);
         if (configURL == null) {
             // can be within json on the given page now.. but this is easy to just request again raz20151215
-            configURL = PluginJSonUtils.getJson(ibr, "config_url");
+            configURL = PluginJSonUtils.getJsonValue(ibr, "config_url");
         }
         final ArrayList<String[]> results = new ArrayList<String[]>();
         if (ibr.containsHTML("download_config\"\\s*?:\\s*?\\[")) {
