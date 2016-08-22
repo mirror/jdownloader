@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunkerdecrypted\\.com/[a-z0-9_\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunkerdecrypted\\.com/[a-z0-9_\\-]+" })
 public class XxxBunkerCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -43,14 +43,12 @@ public class XxxBunkerCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -65,7 +63,7 @@ public class XxxBunkerCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0");
@@ -99,31 +97,27 @@ public class XxxBunkerCom extends PluginForHost {
             /* E.g. http://xxxbunker.com/3568499 pornhub direct */
             externID_extern = Encoding.htmlDecode(externID_extern);
             externID_extern = Encoding.htmlDecode(externID_extern);
-            DLLINK = Encoding.Base64Decode(externID_extern);
+            dllink = Encoding.Base64Decode(externID_extern);
             // this.sleep(3000, downloadLink);
         } else if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
-            DLLINK = br.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
+            dllink = br.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
             externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = externID;
+            if (dllink == null) {
+                dllink = externID;
             }
         } else {
             br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID3 + "&autoplay=true&ageconfirm=true&title=true&html5=false&hasflash=true&r=" + System.currentTimeMillis());
-            DLLINK = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
+            dllink = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -160,7 +154,7 @@ public class XxxBunkerCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

@@ -32,17 +32,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shots.com" }, urls = { "https?://(www\\.)?shots\\.com/[A-Za-z0-9\\-]+/p/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shots.com" }, urls = { "https?://(www\\.)?shots\\.com/[A-Za-z0-9\\-]+/p/[A-Za-z0-9]+" })
 public class ShotsCom extends PluginForHost {
 
     public ShotsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".jpg";
-
-    private String              DLLINK            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -61,22 +58,18 @@ public class ShotsCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         }
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("class=\"resource [a-z0-9]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("class=\"resource [a-z0-9]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
+        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -87,7 +80,7 @@ public class ShotsCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -96,7 +89,7 @@ public class ShotsCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -110,7 +103,7 @@ public class ShotsCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /** Disable chunks/resume as we re only dwonloading small files here */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

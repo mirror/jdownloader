@@ -54,11 +54,11 @@ public class PimpRollHostedTube extends PluginForHost {
             "lethalmobile.com", "letsbangthebabysitter.com", "likepussytube.com", "littlesexthings.com", "livesexhq.com", "loadedbox.com", "lolylporno.com", "lopussy.com", "loveinjection.com", "lubebucket.com", "makingaporno.com", "maleorgy.xxx", "malepornxxx.com", "mamacitavideos.com", "mangaporno.us", "maturehot.com", "maturesexfreaks.com", "maximumpussy.com", "maximumsexxx.com", "mediastoragemadeeasy.com", "menandmen.com", "milfboard.com", "milfphoneporn.com", "milfsporn.net", "milftuba.com", "milftube4u.com", "milftubeporn.com", "milfucker.com", "milfvideos.eu", "milfvideotube.com", "misiko.com", "mobile-hentai-tube.com", "mobileanimepass.com", "mobilecartoontube.com", "mobilemilfpass.com", "mofoscasting.com", "mofoshub.com", "momsfuckteens.com", "momspimptheirdaughter.com", "momvids.com", "mostporno.com", "motherporno.com", "movies-portal.com", "moviesex.xxx", "moviesexcams.com",
             "moviesxxx.xxx", "mphoneporn.com", "mr-xxx.com", "mupp.se", "mys.xxx", "myxxxplay.com", "n-u-d-e.com", "nakedmovienews.com", "nashvilleporn.com", "nastyblog.com", "nastyhub.com", "nastyporntube.net", "nausty.com", "ninjaxxx.com", "nobotv.com", "nudenakedindianwomen.com", "nutten.ru", "nxsnacksvip.com", "ogrishvideos.com", "ogrishxxx.com", "ohsluts.com", "onlypornclips.com", "orientalpornsearch.com", "paris-porn.net", "parishilten.com", "pcgn.com", "penisaurus.com", "perfectplatinum.com", "persiankittyvidz.com", "pigyporn.com", "pimptrailers.com", "pimpvod.com", "pinksvisual.com", "pipeporno.com", "playwithmyforeskin.com", "pleasure.net", "pleasureporn.net", "plexiglas.name", "plumppass.com", "porm.com", "porn-18.xxx", "porn-rabbit.com", "porn-tube.com", "porn69tube.com", "pornadult.xxx", "porndada.com", "porndl.com", "porneez.com", "pornfeed.com", "porngayhd.com",
             "porngoldmine.com", "porninfo.com", "pornmegaplex.com", "pornmilf.xxx", "pornoactual.com", "pornoextra.com", "pornohoes.com", "pornostartryouts.com", "pornotube.xxx", "pornotube21.com", "pornpalazzo.com", "pornpeer.com", "pornporky.com", "pornrss.com", "pornsexlinks.com", "pornsitepros.com", "pornstargalore.net", "pornstarpassion.com", "pornstarsawards.com", "porntoonz.com", "porntube10.com", "pornvideon.com", "pornvideos10.com", "pornvie.com", "porrfilmer.biz", "porrfilmer.mobi", "porrfilmgratis.se", "primalsexvideos.com", "privatepornlinks.com", "pron.co", "pronhubltd.com", "pussyblog.com", "pussyfights.com", "pussyof.com", "qualitypink.com", "r89.com", "ratedpornpremium.com", "ratedx.eu", "ratedxmoney.com", "realitylist.com", "realitystation.com", "reallywildteens.com", "redgayporntube.com", "redhotdudes.com", "redtube-com.info", "redtubedb.com", "redzonetube.com",
-            "reet.com", "rubguide.com", "rudeboobies.com", "safesextube.com", "sarahpalinsextape.org", "screwmyspouse.com", "screwshack.com", "sergeantstiffy.com", "sessovideo.us", "sex-cake.com", "sex-film.se", "sex-porno-pics.com", "sex-videos.se", "sex.biz", "sexadult.xxx", "sexbyfood.com", "sexclicks.com", "sexdgbbw.com", "sexernet.com", "sexfilmer.nu", "sexfilmer.se", "sexfilmsxxx.us", "sexfreevideos.xxx", "sexgratis.se", "sexgratisxxx.us", "sexhamster.co", "sexkate.com", "sexlifetube.com", "sexmom.org", "sexmovielibrary.com", "sexmovieporn.com", "sexmovieshd.com", "sexmoviesxxx.com", "sexmum.com", "sexmys.com", "sexostube.com", "sexparty.tv", "sexpc.com", "sexroots.com", "sexstarclub.com", "sextapexxx.com", "sexthings.com", "sextube-6.com", "sextubestv.com", "sextvnews.com", "sexualexploits.com", "sexualnews.com", "sexualurges.net", "sexvidmovs.com", "sexviedos.com",
-        "sexwebs.com", "sexxxx.xxx", "sexyandold.com", "sexyanimevideos.com", "sexyboytube.com", "sexyenema.com", "sexyrhino.com", "shafty.com", "shaftytube.com", "sharmota.com", "simplybabes.com", "sinfultoons.com", "skullfucktube.com", "slutloads.us", "smalldickbanger.com", "smalldickfucker.com", "smalldickfuckers.com", "smutboss.com", "smuthouse.com", "smutshelf.com", "soyouthinkyoucanscrew.com", "spanktank.xxx", "strapon.se", "straponlesbians.us", "stream-online-porn.com", "sugarmanga.com", "super-porno.com", "superpene.tv", "superxvideos.net", "swedexxx.com", "sweetchocolatepussy.com", "swesex.se", "swingersex.ca", "swingersmag.com", "swingerstube.net", "swingersx.com", "syntheticheroin.com", "tastyblackpussy.com", "teabaggingpov.com", "teamforbidden.com", "teenbdtube.com", "teenporn2u.info", "teenpornocity.com", "teensteam.com", "teenvideos.com", "thefreeadult.com",
-        "thefreeasian.com", "thefreepornotube.com", "thefreepornreport.com", "thehotbabes.net", "themeatmen.com", "themostgay.com", "thepornlegacy.com", "thesexlotto.com", "thestagparty.com", "throatpokers.com", "thumblordstube.com", "ticklingpov.com", "tnaflix.eu", "toonfucksluts.com", "topfemales.com", "topsecretporn.net", "totalfetish.com", "totallytastelessvideos.com", "traileraddicts.com", "tramplepov.com", "trashymoms.com", "tube4jizz.com", "tube75.com", "tubegalorexxx.com", "tubesmack.com", "tubewetlook.com", "ultimatestripoff.com", "ultporn.com", "ultramoviemadness.com", "ultvid.com", "undercoverpussy.com", "urbansexvideos.com", "usagirlfriends.com", "vid.xxx", "videez.com", "video-porn.us", "video18.com", "videofetish.com", "videolivesex.com", "videosp.com", "videoxxxltd.com", "vids.xxx", "vidsvidsvids.com", "vidxpose.com", "vidz.info", "vidzmobile.com",
-        "vietnamsextube.com", "vip-babes-world.com", "vodporn.eu", "voyeurxxxtube.com", "vudutube.com", "wankbucket.com", "watchbooty.com", "watchpornvideos.com", "watchsex.net", "wetandsticky.com", "whackov.com", "whoores.com", "whorebrowser.com", "wltube.com", "worldsbestpornmovies.com", "x-movies.xxx", "x-video.xxx", "xblacktube.com", "xcon3.com", "xfree.xxx", "xhamsterporno.com", "xmovielove.com", "xnxxltd.com", "xnxxx.eu", "xnxxxltd.com", "xpoko.com", "xpornografia.us", "xpornohd.com", "xporntube.us", "xsex.xxx", "xtube.mobi", "xtubegaysex.com", "xxnxltd.com", "xxx-18.xxx", "xxx-con.com", "xxxbfs.com", "xxxcartoonz.com", "xxxcebu.com", "xxxcreampie.org", "xxxdn.com", "xxxfilms.xxx", "xxxgaytube.com", "xxxhardcore.us", "xxxhardcorexxx.com", "xxxhelp.com", "xxxin3d.com", "xxxlesbiansexvideos.org", "xxxlinkshunter.com", "xxxmobiletubes.com", "xxxpornvideos.us", "xxxpornx.xxx",
-        "xxxpromos.com", "xxxslutty.com", "xxxthailand.net", "xxxvidz.org", "xxxxn.com", "youjizz.net", "youjizz66.com", "youjizzltd.com", "youlorn.com", "youpronltd.com", "yourcocktube.com", "yourfreepornsex.com", "yoursmutpass.com", "yozjizz.com", "yufap.com", "zadmo.com", "zippyporn.com", "zmaster.com", "wankz.com" };
+            "reet.com", "rubguide.com", "rudeboobies.com", "safesextube.com", "sarahpalinsextape.org", "screwmyspouse.com", "screwshack.com", "sergeantstiffy.com", "sessovideo.us", "sex-cake.com", "sex-film.se", "sex-porno-pics.com", "sex-videos.se", "sex.biz", "sexadult.xxx", "sexbyfood.com", "sexclicks.com", "sexdgbbw.com", "sexernet.com", "sexfilmer.nu", "sexfilmer.se", "sexfilmsxxx.us", "sexfreevideos.xxx", "sexgratis.se", "sexgratisxxx.us", "sexhamster.co", "sexkate.com", "sexlifetube.com", "sexmom.org", "sexmovielibrary.com", "sexmovieporn.com", "sexmovieshd.com", "sexmoviesxxx.com", "sexmum.com", "sexmys.com", "sexostube.com", "sexparty.tv", "sexpc.com", "sexroots.com", "sexstarclub.com", "sextapexxx.com", "sexthings.com", "sextube-6.com", "sextubestv.com", "sextvnews.com", "sexualexploits.com", "sexualnews.com", "sexualurges.net", "sexvidmovs.com", "sexviedos.com", "sexwebs.com",
+            "sexxxx.xxx", "sexyandold.com", "sexyanimevideos.com", "sexyboytube.com", "sexyenema.com", "sexyrhino.com", "shafty.com", "shaftytube.com", "sharmota.com", "simplybabes.com", "sinfultoons.com", "skullfucktube.com", "slutloads.us", "smalldickbanger.com", "smalldickfucker.com", "smalldickfuckers.com", "smutboss.com", "smuthouse.com", "smutshelf.com", "soyouthinkyoucanscrew.com", "spanktank.xxx", "strapon.se", "straponlesbians.us", "stream-online-porn.com", "sugarmanga.com", "super-porno.com", "superpene.tv", "superxvideos.net", "swedexxx.com", "sweetchocolatepussy.com", "swesex.se", "swingersex.ca", "swingersmag.com", "swingerstube.net", "swingersx.com", "syntheticheroin.com", "tastyblackpussy.com", "teabaggingpov.com", "teamforbidden.com", "teenbdtube.com", "teenporn2u.info", "teenpornocity.com", "teensteam.com", "teenvideos.com", "thefreeadult.com", "thefreeasian.com",
+            "thefreepornotube.com", "thefreepornreport.com", "thehotbabes.net", "themeatmen.com", "themostgay.com", "thepornlegacy.com", "thesexlotto.com", "thestagparty.com", "throatpokers.com", "thumblordstube.com", "ticklingpov.com", "tnaflix.eu", "toonfucksluts.com", "topfemales.com", "topsecretporn.net", "totalfetish.com", "totallytastelessvideos.com", "traileraddicts.com", "tramplepov.com", "trashymoms.com", "tube4jizz.com", "tube75.com", "tubegalorexxx.com", "tubesmack.com", "tubewetlook.com", "ultimatestripoff.com", "ultporn.com", "ultramoviemadness.com", "ultvid.com", "undercoverpussy.com", "urbansexvideos.com", "usagirlfriends.com", "vid.xxx", "videez.com", "video-porn.us", "video18.com", "videofetish.com", "videolivesex.com", "videosp.com", "videoxxxltd.com", "vids.xxx", "vidsvidsvids.com", "vidxpose.com", "vidz.info", "vidzmobile.com", "vietnamsextube.com",
+            "vip-babes-world.com", "vodporn.eu", "voyeurxxxtube.com", "vudutube.com", "wankbucket.com", "watchbooty.com", "watchpornvideos.com", "watchsex.net", "wetandsticky.com", "whackov.com", "whoores.com", "whorebrowser.com", "wltube.com", "worldsbestpornmovies.com", "x-movies.xxx", "x-video.xxx", "xblacktube.com", "xcon3.com", "xfree.xxx", "xhamsterporno.com", "xmovielove.com", "xnxxltd.com", "xnxxx.eu", "xnxxxltd.com", "xpoko.com", "xpornografia.us", "xpornohd.com", "xporntube.us", "xsex.xxx", "xtube.mobi", "xtubegaysex.com", "xxnxltd.com", "xxx-18.xxx", "xxx-con.com", "xxxbfs.com", "xxxcartoonz.com", "xxxcebu.com", "xxxcreampie.org", "xxxdn.com", "xxxfilms.xxx", "xxxgaytube.com", "xxxhardcore.us", "xxxhardcorexxx.com", "xxxhelp.com", "xxxin3d.com", "xxxlesbiansexvideos.org", "xxxlinkshunter.com", "xxxmobiletubes.com", "xxxpornvideos.us", "xxxpornx.xxx", "xxxpromos.com",
+            "xxxslutty.com", "xxxthailand.net", "xxxvidz.org", "xxxxn.com", "youjizz.net", "youjizz66.com", "youjizzltd.com", "youlorn.com", "youpronltd.com", "yourcocktube.com", "yourfreepornsex.com", "yoursmutpass.com", "yozjizz.com", "yufap.com", "zadmo.com", "zippyporn.com", "zmaster.com", "wankz.com" };
 
     /**
      * Returns the annotations names array
@@ -101,7 +101,7 @@ public class PimpRollHostedTube extends PluginForHost {
 
     private static final String HTML_PREMIUMONLY = "<h3>Access Denied</h3>";
 
-    private String              DLLINK           = null;
+    private String              dllink           = null;
 
     @Override
     public String getAGBLink() {
@@ -126,29 +126,6 @@ public class PimpRollHostedTube extends PluginForHost {
         return prepBr;
     }
 
-    public String extFromLink(String ext) {
-        // Trimming query_string
-        int extEnd = ext.indexOf("?");
-        if (extEnd > 0) {
-            ext = ext.substring(0, extEnd);
-        }
-        // Trimming fragment_id
-        extEnd = ext.indexOf("#");
-        if (extEnd > 0) {
-            ext = ext.substring(0, extEnd);
-        }
-        // Trimming main part
-        ext = ext.substring(ext.lastIndexOf("."));
-        // Trimming whitespace
-        ext = ext.trim();
-        // Checking resulting length
-        int resultLength = ext.length();
-        if (resultLength < 2 || resultLength > 5) {
-            ext = null;
-        }
-        return ext;
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -170,20 +147,20 @@ public class PimpRollHostedTube extends PluginForHost {
         // DLLINK on desktop page
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         for (final String quality : qualities) {
-            DLLINK = br.getRegex("\"" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("\"" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
                 /* In most cases e.g.: "name":"480p" */
-                DLLINK = br.getRegex("\"[a-z]+\":\"" + quality + "\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"[a-z]+\":\"" + quality + "\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             }
-            if (DLLINK != null) {
+            if (dllink != null) {
                 break;
             }
         }
         // DLLINK on mobile page
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://[a-z0-9\\-\\.]+movies\\.hostedtube\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://[a-z0-9\\-\\.]+movies\\.hostedtube\\.com/[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             // premium only content.
             if (br.containsHTML(HTML_PREMIUMONLY)) {
                 // we can set filename
@@ -198,12 +175,9 @@ public class PimpRollHostedTube extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = extFromLink(DLLINK);
-        if (ext == null) {
-            ext = ".mp4";
-        }
+        final String ext = getFileNameExtensionFromString(dllink);
         while (filename.endsWith(".")) {
             filename = filename.substring(0, filename.length() - 1);
         }
@@ -213,7 +187,7 @@ public class PimpRollHostedTube extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -231,10 +205,10 @@ public class PimpRollHostedTube extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null && br.containsHTML(HTML_PREMIUMONLY)) {
+        if (dllink == null && br.containsHTML(HTML_PREMIUMONLY)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

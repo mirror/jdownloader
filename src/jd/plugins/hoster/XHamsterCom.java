@@ -25,6 +25,9 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,10 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -370,10 +370,7 @@ public class XHamsterCom extends PluginForHost {
         dllink = getDllink();
         String ext;
         if (dllink != null) {
-            ext = dllink.substring(dllink.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) {
-                ext = ".mp4";
-            }
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
         } else {
             ext = ".flv";
         }

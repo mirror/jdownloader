@@ -28,14 +28,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgtiger.com" }, urls = { "http://(www\\.)?imgtiger\\.com/viewer\\.php\\?file=\\d+\\.(?:jpe?g|png|gif)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgtiger.com" }, urls = { "http://(www\\.)?imgtiger\\.com/viewer\\.php\\?file=\\d+\\.(?:jpe?g|png|gif)" })
 public class ImgTigerCom extends PluginForHost {
 
     public ImgTigerCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -56,16 +56,13 @@ public class ImgTigerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "file=(\\d+.+)").getMatch(0);
-        DLLINK = br.getRegex("\"(http://img\\d+\\.imgtiger\\.com/images/\\d+\\.[a-z]+)\"").getMatch(0);
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("\"(http://img\\d+\\.imgtiger\\.com/images/\\d+\\.[a-z]+)\"").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".jpg";
-        }
+        String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename = Encoding.htmlDecode(filename) + ext;
         }
@@ -79,7 +76,7 @@ public class ImgTigerCom extends PluginForHost {
         br.setFollowRedirects(true);
 
         // Limit to 1 chunk as we re only downloading pictures here
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
