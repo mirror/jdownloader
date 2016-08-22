@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.ru" }, urls = { "http://(www\\.)?uploads\\.ru/(?:\\?v=)?[A-Za-z0-9]+\\.[a-z]{3,4}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.ru" }, urls = { "http://(www\\.)?uploads\\.ru/(?:\\?v=)?[A-Za-z0-9]+\\.[a-z]{3,4}" })
 public class UploadsRu extends PluginForHost {
 
     public UploadsRu(PluginWrapper wrapper) {
@@ -43,8 +43,6 @@ public class UploadsRu extends PluginForHost {
     // protocol: no https
     // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 1;
@@ -77,24 +75,13 @@ public class UploadsRu extends PluginForHost {
             }
         }
         dllink = Encoding.htmlDecode(dllink);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                if (isJDStable()) {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(dllink);
-                } else {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(dllink);
-                }
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -136,11 +123,7 @@ public class UploadsRu extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -161,10 +144,6 @@ public class UploadsRu extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "borncash.org" }, urls = { "http://(www\\.)?borncash\\.org/(load/|download/\\?a=|dw/\\?a=)\\d+" }) 
 public class BornCashOrg extends PluginForHost {
@@ -53,21 +53,19 @@ public class BornCashOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        final String redirect = this.br.getRegex("<META HTTP\\-EQUIV=\\'Refresh\\' CONTENT=\\'\\d+; URL=(https?://(?:www\\.)?borncash\\.org/[^<>\"\\']+)\\'>").getMatch(0);
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
+        br.getPage(link.getDownloadURL() + "&lang=en");
         if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("file\"><b>([^<>]+)</b>").getMatch(0);
-        final String filesize = br.getRegex("file\"><b>[^<>]+</b> \\(([\\d\\.]+ [K|M|G]B)\\)<").getMatch(0);
-        if (filename == null) {
+        final String filesize = br.getRegex("file\"><b>[^<>]+</b>\\s*\\(([\\d\\.]+\\s*[KMG]B)\\)<").getMatch(0);
+        if (filename == null ) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) { 
+        	link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
