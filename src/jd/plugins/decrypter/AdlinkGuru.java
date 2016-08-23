@@ -20,36 +20,56 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camwhores.tv" }, urls = { "https?://(?:www\\.)?camwhores\\.tv/videos/\\d+/.+" })
-public class CamwhoresTv extends PornEmbedParser {
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-    public CamwhoresTv(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adlink.guru" }, urls = { "https?://(?:www\\.)?adlink\\.guru/[A-Za-z0-9]+" })
+public class AdlinkGuru extends PluginForDecrypt {
+
+    public AdlinkGuru(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    /* Porn_plugin */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        this.br.setCookiesExclusive(true);
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.size() == 0) {
-            /* Probably a selfhosted video. */
-            final DownloadLink dl = this.createDownloadlink(parameter.replace("camwhores.tv/", "camwhoresdecrypted.tv/"));
-            decryptedLinks.add(dl);
+        Form form = this.br.getForm(0);
+        if (form == null) {
+            return null;
         }
+        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+        form.put("g-recaptcha-response", recaptchaV2Response);
+
+        this.br.submitForm(form);
+
+        form = this.br.getForm(0);
+        if (form == null) {
+            return null;
+        }
+
+        /* Skip 8-10 seconds waittime */
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.br.submitForm(form);
+
+        /* E.g. {"status":"success","message":"Go without Earn because Adblock","url":"http:blablabla"} */
+        final String finallink = PluginJSonUtils.getJsonValue(this.br, "url");
+        if (finallink == null || !finallink.startsWith("http")) {
+            return null;
+        }
+
+        decryptedLinks.add(createDownloadlink(finallink));
+
         return decryptedLinks;
     }
 
