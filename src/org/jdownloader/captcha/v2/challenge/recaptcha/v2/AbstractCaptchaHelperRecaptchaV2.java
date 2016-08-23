@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 
@@ -27,7 +28,6 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         if (secureToken == null) {
             secureToken = new Regex(source, "data-stoken\\s*=\\s*\"([^\"]+)").getMatch(0);
         }
-
         return secureToken;
     }
 
@@ -52,12 +52,22 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         this.br = br.cloneBrowser();
         this.siteUrl = br.getURL();
         this.siteDomain = Browser.getHost(siteUrl, true);
-        logger = plugin.getLogger();
+        logger = plugin == null ? null : plugin.getLogger();
         if (logger == null) {
-            logger = LogController.getInstance().getLogger(getClass().getSimpleName());
+            createFallbackLogger();
         }
         this.siteKey = siteKey;
         this.secureToken = secureToken;
+    }
+
+    protected void createFallbackLogger() {
+        Class<?> cls = getClass();
+        String name = cls.getSimpleName();
+        while (StringUtils.isEmpty(name)) {
+            cls = cls.getSuperclass();
+            name = cls.getSimpleName();
+        }
+        logger = LogController.getInstance().getLogger(name);
     }
 
     protected void runDdosPrevention() throws InterruptedException {
@@ -134,5 +144,4 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         }
         return siteKey;
     }
-
 }

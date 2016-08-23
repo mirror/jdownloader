@@ -2,12 +2,6 @@ package jd.controlling.captcha;
 
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogInterface;
@@ -25,8 +19,13 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
-public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
+public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
     private DomainInfo            host;
     protected T                   captchaChallenge;
     private CaptchaSettings       config;
@@ -40,36 +39,28 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
         config = JsonConfig.create(CaptchaSettings.class);
         logger = JDGui.getInstance().getLogger();
         dialogHandler = new DialogHandler() {
-
             @Override
             public <T> T showDialog(final AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {
                 // synchronized (this) {
                 try {
-
                     dialog.forceDummyInit();
-
                     boolean silentModeActive = JDGui.getInstance().isSilentModeActive();
-
                     if (silentModeActive) {
-
                         // switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
                         // case WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT
                         // // Cancel dialog
                         // throw new DialogClosedException(Dialog.RETURN_CLOSED);
                         // }
-
                         // if this is the edt, we should not block it.. NEVER
                         if (!SwingUtilities.isEventDispatchThread()) {
                             // block dialog calls... the shall appear as soon as isSilentModeActive is false.
                             long countdown = -1;
-
                             if (dialog.isCountdownFlagEnabled()) {
                                 long countdownDif = dialog.getCountdown();
                                 countdown = System.currentTimeMillis() + countdownDif;
                             }
                             if (countdown < 0 && CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction() == CaptchaDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {
                                 countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
-
                             }
                             JDGui.getInstance().flashTaskbar();
                             while (JDGui.getInstance().isSilentModeActive()) {
@@ -89,16 +80,13 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
                     }
                 } catch (InterruptedException e) {
                     throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
-
                 } catch (DialogCanceledException e) {
                     throw e;
                 } catch (Exception e) {
                     logger.log(e);
                 }
                 dialog.resetDummyInit();
-
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         dialog.displayDialog();
@@ -106,15 +94,12 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
                 }.waitForEDT();
                 return null;
                 // }
-
             }
         };
     }
 
     protected void showDialog(AbstractDialog<?> dialog2) throws DialogClosedException, DialogCanceledException {
-
         dialogHandler.showDialog(dialog2);
-
     }
 
     public DomainInfo getHost() {
@@ -122,9 +107,7 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
     }
 
     public void run() throws InterruptedException, SkipException {
-
         viaGUI();
-
     }
 
     protected LogInterface getLogger() {
@@ -144,7 +127,7 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
     }
 
     private void viaGUI() throws InterruptedException, SkipException {
-        DialogType dialogType = null;
+        DialogType dialogType = DialogType.OTHER;
         try {
             int f = 0;
             int countdown = getTimeoutInMS();
@@ -155,7 +138,6 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
                 }
             } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
                 dialogType = DialogType.CRAWLER;
-
                 if (countdown > 0) {
                     f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
@@ -187,30 +169,23 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
     }
 
     protected int getTimeoutInMS() {
-
         int countdown = -1;
-
         if (captchaChallenge.getPlugin() instanceof PluginForHost) {
-
             if (config.isDialogCountdownForDownloadsEnabled()) {
                 countdown = config.getCaptchaDialogDefaultCountdown();
             }
         } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
-
             if (config.isDialogCountdownForCrawlerEnabled()) {
                 countdown = config.getCaptchaDialogDefaultCountdown();
             }
-
         }
         int pluginTimeout = captchaChallenge.getTimeout();
         if (pluginTimeout > 0) {
-
             if (countdown <= 0 || pluginTimeout < countdown) {
                 countdown = pluginTimeout;
             }
         }
-
-        int pluginCaptchaChallengeTimout = captchaChallenge.getPlugin().getChallengeTimeout(captchaChallenge);
+        int pluginCaptchaChallengeTimout = captchaChallenge.getPlugin() == null ? 0 : captchaChallenge.getPlugin().getChallengeTimeout(captchaChallenge);
         if (pluginCaptchaChallengeTimout > 0 && pluginCaptchaChallengeTimout < countdown) {
             countdown = pluginCaptchaChallengeTimout;
         }

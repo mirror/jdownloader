@@ -25,7 +25,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForDecrypt> {
-
     public CaptchaHelperCrawlerPluginRecaptchaV2(final PluginForDecrypt plugin, final Browser br, final String siteKey, final String secureToken) {
         super(plugin, br, siteKey, secureToken);
     }
@@ -54,9 +53,11 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             // non fatal if secureToken is null.
         }
         final PluginForDecrypt plugin = getPlugin();
-        final RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, secureToken, plugin, br, getSiteDomain(), getSiteUrl());
-        c.setTimeout(plugin.getCaptchaTimeout());
-        plugin.invalidateLastChallengeResponse();
+        final RecaptchaV2Challenge c = createChallenge(plugin);
+        c.setTimeout(plugin == null ? 60000 : plugin.getCaptchaTimeout());
+        if (plugin != null) {
+            plugin.invalidateLastChallengeResponse();
+        }
         final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
             logger.warning("Cancel. Blacklist Matching");
@@ -64,25 +65,19 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         }
         ArrayList<SolverJob<String>> jobs = new ArrayList<SolverJob<String>>();
         try {
-
             jobs.add(ChallengeResponseController.getInstance().handle(c));
             AbstractRecaptcha2FallbackChallenge rcFallback = null;
-
             while (jobs.size() <= 20) {
-
                 if (rcFallback == null && c.getResult() != null) {
                     for (AbstractResponse<String> r : c.getResult()) {
                         if (r.getChallenge() != null && r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
                             rcFallback = (AbstractRecaptcha2FallbackChallenge) r.getChallenge();
-
                             break;
-
                         }
                     }
                 }
                 if (rcFallback != null && StringUtils.isEmpty(rcFallback.getToken())) {
                     // retry
-
                     try {
                         rcFallback.reload(jobs.size() + 1);
                     } catch (Throwable e) {
@@ -100,28 +95,21 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                     break;
                 }
             }
-
             if (!c.isSolved()) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-
             if (c.getResult() != null) {
                 for (AbstractResponse<String> r : c.getResult()) {
                     if (r.getChallenge() instanceof AbstractRecaptcha2FallbackChallenge) {
                         String token = ((AbstractRecaptcha2FallbackChallenge) r.getChallenge()).getToken();
                         if (!RecaptchaV2Challenge.isValidToken(token)) {
                             for (int i = 0; i < jobs.size(); i++) {
-
                                 jobs.get(i).invalidate();
-
                             }
                             throw new DecrypterException(DecrypterException.CAPTCHA);
                         } else {
-
                             for (int i = 0; i < jobs.size(); i++) {
-
                                 jobs.get(i).validate();
-
                             }
                         }
                         return token;
@@ -132,7 +120,6 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate!");
             }
             return c.getResult().getValue();
-
         } catch (PluginException e) {
             for (int i = 0; i < jobs.size(); i++) {
                 jobs.get(i).invalidate();
@@ -171,4 +158,7 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         }
     }
 
+    protected RecaptchaV2Challenge createChallenge(final PluginForDecrypt plugin) {
+        return new RecaptchaV2Challenge(siteKey, secureToken, plugin, br, getSiteDomain(), getSiteUrl());
+    }
 }
