@@ -18,6 +18,8 @@ import java.util.Locale;
 
 import javax.imageio.ImageIO;
 
+import jd.controlling.captcha.SkipRequest;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -34,8 +36,6 @@ import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
-
-import jd.controlling.captcha.SkipRequest;
 
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
@@ -55,7 +55,11 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
 
     public ArrayList<SubChallenge> getSubChallenges() {
         synchronized (this) {
-            return new ArrayList<SubChallenge>(subChallenges);
+            if (subChallenges == null) {
+                return new ArrayList<SubChallenge>(0);
+            } else {
+                return new ArrayList<SubChallenge>(subChallenges);
+            }
         }
 
     }
@@ -67,12 +71,11 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     }
 
     protected SubChallenge createNewSubChallenge() {
-        SubChallenge sc = new SubChallenge();
+        final SubChallenge sc = new SubChallenge();
         synchronized (this) {
             if (subChallenges == null) {
                 subChallenges = new ArrayList<SubChallenge>();
             }
-
             subChallenges.add(sc);
             subChallenge = sc;
         }

@@ -64,18 +64,25 @@ public class JobLinkCrawlerIndicator extends IconedProcessIndicator implements A
         }
     }
 
+    private final int countDownMax = 5;
+
+    private int       countDown    = countDownMax;
+
     private void update() {
         if (jobLinkCrawler.isRunning()) {
+            countDown = countDownMax;
             if (!isIndeterminate()) {
                 setIndeterminate(true);
             }
             setDescription(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
         } else if (jobLinkCrawler.getLinkChecker().isRunning()) {
+            countDown = countDownMax;
             if (!isIndeterminate()) {
                 setIndeterminate(true);
             }
             setDescription(_GUI.T.LinkCrawlerBubbleContent_update_online());
         } else if (jobLinkCrawler.hasWaitingInQueue()) {
+            countDown = countDownMax;
             if (!isIndeterminate()) {
                 setIndeterminate(true);
             }
@@ -85,8 +92,10 @@ public class JobLinkCrawlerIndicator extends IconedProcessIndicator implements A
                 setIndeterminate(false);
             }
             setDescription(_GUI.T.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
-            timer.stop();
-            statusBar.removeProcessIndicator(this);
+            if (countDown-- == 0) {
+                timer.stop();
+                statusBar.removeProcessIndicator(this);
+            }
         }
     }
 
@@ -102,7 +111,7 @@ public class JobLinkCrawlerIndicator extends IconedProcessIndicator implements A
                 {
                     this.setIconKey(IconKey.ICON_CANCEL);
                     this.setName(_GUI.T.StatusBarImpl_initGUI_abort_linkgrabber());
-                    this.setEnabled(jobLinkCrawler.isRunning());
+                    this.setEnabled(jobLinkCrawler.isCollecting());
                 }
 
                 public void actionPerformed(ActionEvent e) {

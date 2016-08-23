@@ -32,7 +32,8 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
     private Pair             offline;
     private Pair             status;
-    private Pair             queue;
+    private Pair             statusQueue;
+    private Pair             listQueue;
 
     private Pair             packages;
     private Pair             online;
@@ -100,8 +101,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ONLINE_COUNT_VISIBLE.isEnabled()) {
             online = addPair(online, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundonline(), IconKey.ICON_OK);
         }
-        if (true) {// TODO: add config entry
-            queue = addPair(queue, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_queue(), IconKey.ICON_BATCH);
+        if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_CHECK_QUEUE_VISIBLE.isEnabled()) {
+            statusQueue = addPair(statusQueue, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_linkcheck_queue() + ":", IconKey.ICON_QUESTION);
+        }
+        if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_LIST_QUEUE_VISIBLE.isEnabled()) {
+            listQueue = addPair(listQueue, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_list_queue() + ":", IconKey.ICON_BATCH);
         }
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_STATUS_VISIBLE.isEnabled()) {
             status = addPair(status, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status(), IconKey.ICON_RUN);
@@ -184,13 +188,22 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 }
                 final boolean isCollecting = jlc.isCollecting();
                 final long createdTime = jlc.getCreated();
-                if (queue != null) {
-                    final int queueSize = jlc.getQueueSize();
-                    if (queueSize > 0) {
-                        queue.setVisible(true);
-                        queue.setText(String.valueOf(queueSize));
+                final int listQueueSize = jlc.getQueueSize();
+                if (listQueue != null) {
+                    if (listQueueSize > 0) {
+                        listQueue.setVisible(true);
+                        listQueue.setText(String.valueOf(listQueueSize));
                     } else {
-                        queue.setVisible(false);
+                        listQueue.setVisible(false);
+                    }
+                }
+                final long statusQueueSize = jlc.getLinkChecker().checksRequested();
+                if (statusQueue != null) {
+                    if (statusQueueSize > 0) {
+                        statusQueue.setVisible(true);
+                        statusQueue.setText(String.valueOf(statusQueueSize));
+                    } else {
+                        statusQueue.setVisible(false);
                     }
                 }
                 if (status != null) {
@@ -199,7 +212,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     } else {
                         if (jlc.getLinkChecker().isRunning()) {
                             status.setText(_GUI.T.LinkCrawlerBubbleContent_update_online());
-                        } else if (jlc.hasWaitingInQueue()) {
+                        } else if (listQueueSize > 0) {
                             status.setText(_GUI.T.LinkCrawlerBubbleContent_update_processing());
                         } else {
                             status.setText(_GUI.T.LinkCrawlerBubbleContent_update_finished());
@@ -273,6 +286,8 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_LINK_COUNT_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundlink(), IconKey.ICON_FILE));
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_PACKAGE_COUNT_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundpackages(), IconKey.ICON_PACKAGE_NEW));
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_OFFLINE_COUNT_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundoffline(), IconKey.ICON_ERROR));
+        elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_LIST_QUEUE_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_list_queue(), IconKey.ICON_BATCH));
+        elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_CHECK_QUEUE_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_linkcheck_queue(), IconKey.ICON_QUESTION));
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ONLINE_COUNT_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundonline(), IconKey.ICON_OK));
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_STATUS_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status(), IconKey.ICON_RUN));
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ANIMATED_ICON_VISIBLE, _GUI.T.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_icon(), IconKey.ICON_FIND));

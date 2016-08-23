@@ -47,13 +47,13 @@ public class SubChallenge {
         this.errorIncorrect = errorIncorrect;
     }
 
-    private boolean                       errorDynamicTileMore;
+    private boolean                        errorDynamicTileMore;
 
-    private boolean                       errorIncorrect;
+    private boolean                        errorIncorrect;
 
-    public final HashMap<String, Payload> payloads;
+    private final HashMap<String, Payload> payloads = new HashMap<String, Payload>();
 
-    private String                        mainImageUrl;
+    private volatile String                mainImageUrl;
 
     public String getMainImageUrl() {
         return mainImageUrl;
@@ -66,8 +66,6 @@ public class SubChallenge {
     private TileContent[][] grid;
 
     public SubChallenge() {
-
-        payloads = new HashMap<String, Payload>();
     }
 
     public String getSearchKey() {
@@ -96,9 +94,9 @@ public class SubChallenge {
         this.gridHeight = splitHeight;
     }
 
-    private int           gridHeight;
-    private ChallengeType challengeType;
-    private int           reloadCounter = 0;
+    private int                    gridHeight;
+    private volatile ChallengeType challengeType;
+    private int                    reloadCounter = 0;
 
     public void setType(String type) {
         this.type = type;
@@ -118,26 +116,25 @@ public class SubChallenge {
 
     public void fillGrid(String mainPayloadUrl) {
         synchronized (payloads) {
-
             this.mainImageUrl = mainPayloadUrl;
             for (int x = 0; x < getGridWidth(); x++) {
                 for (int y = 0; y < getGridHeight(); y++) {
                     grid[x][y] = new TileContent(x, y, payloads.get(mainPayloadUrl));
-
                 }
             }
         }
     }
 
     public int getDynamicRoundCount() {
-        return responses.size() + 1;
+        synchronized (responses) {
+            return responses.size() + 1;
+        }
     }
 
     public void resetErrors() {
         errorAnotherOneRequired = false;
         errorDynamicTileMore = false;
         errorIncorrect = false;
-
     }
 
     public TileContent getTile(int num) {
@@ -148,9 +145,20 @@ public class SubChallenge {
         return grid[x][y];
     }
 
+    public boolean containsPayload(Object key) {
+        synchronized (payloads) {
+            return payloads.containsKey(key);
+        }
+    }
+
+    public Payload putPayload(String tileUrl, Payload payload) {
+        synchronized (payloads) {
+            return payloads.put(tileUrl, payload);
+        }
+    }
+
     public Payload getPayloadByUrl(String tileUrl) {
         synchronized (payloads) {
-
             return payloads.get(tileUrl);
         }
     }
@@ -161,7 +169,6 @@ public class SubChallenge {
 
     public Payload getMainPayload() {
         synchronized (payloads) {
-
             return payloads.get(getMainImageUrl());
         }
     }
@@ -239,8 +246,8 @@ public class SubChallenge {
         return reloadCounter;
     }
 
-    private ArrayList<Response> responses = new ArrayList<Response>();
-    private HashSet<Integer>    annotatedIndices;
+    private final ArrayList<Response> responses = new ArrayList<Response>();
+    private HashSet<Integer>          annotatedIndices;
 
     public ArrayList<Response> getResponses() {
         synchronized (responses) {
@@ -250,7 +257,6 @@ public class SubChallenge {
 
     public void addResponse(Response resp) {
         synchronized (responses) {
-
             HashSet<Integer> remove = new HashSet<Integer>();
             for (Integer num : resp.getClickedIndices()) {
 
@@ -301,15 +307,15 @@ public class SubChallenge {
 
     private int staysUnselectedInFurtherResponses(int responseIndex, int tileIndex) {
         int unchanged = 0;
-        for (int i = responseIndex + 1; i < responses.size(); i++) {
-            Response old = responses.get(i);
-            if (old.getClickedIndices().contains(tileIndex)) {
-                return -1;
+        synchronized (responses) {
+            for (int i = responseIndex + 1; i < responses.size(); i++) {
+                final Response old = responses.get(i);
+                if (old.getClickedIndices().contains(tileIndex)) {
+                    return -1;
+                }
+                unchanged++;
             }
-            unchanged++;
-
         }
-
         return unchanged;
     }
 
@@ -336,7 +342,6 @@ public class SubChallenge {
     }
 
     private boolean isSlotAnnotatedInternal(int xslot, int yslot) {
-
         int num = xslot + yslot * getGridWidth();
         synchronized (responses) {
             int count = 0;
@@ -348,7 +353,6 @@ public class SubChallenge {
             if (count > 2) {
                 return false;
             }
-
         }
         return true;
     }
@@ -374,9 +378,7 @@ public class SubChallenge {
 
     public boolean hasPayload() {
         synchronized (payloads) {
-
             return payloads.size() > 0;
         }
     }
-
 }

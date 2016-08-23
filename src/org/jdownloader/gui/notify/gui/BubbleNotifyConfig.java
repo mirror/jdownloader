@@ -269,6 +269,18 @@ public interface BubbleNotifyConfig extends ConfigInterface {
 
     @AboutConfig()
     @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentListQueueVisible();
+
+    public void setCrawlerBubbleContentListQueueVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentCheckQueueVisible();
+
+    public void setCrawlerBubbleContentCheckQueueVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
     public boolean isCrawlerBubbleContentAnimatedIconVisible();
 
     public void setCrawlerBubbleContentAnimatedIconVisible(boolean b);

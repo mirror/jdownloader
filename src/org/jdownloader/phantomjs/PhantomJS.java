@@ -244,7 +244,6 @@ public class PhantomJS implements HttpRequestHandler {
                 try {
                     br.setKeepResponseContentBytes(true);
                     br.getPage(newRequest);
-
                 } finally {
                     br.setKeepResponseContentBytes(keepBytes);
                 }
