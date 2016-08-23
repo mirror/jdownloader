@@ -40,8 +40,10 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class ConexaomegaComBr extends PluginForHost {
+
+    /* Tags: conexaomega.com.br, megarapido.net */
 
     private static final String                            DOMAIN                       = "http://conexaomega.com.br/";
     private static final String                            NICE_HOST                    = "conexaomega.com.br";
