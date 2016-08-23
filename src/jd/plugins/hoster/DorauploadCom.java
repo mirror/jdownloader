@@ -246,7 +246,7 @@ public class DorauploadCom extends antiDDoSForHost {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(br, "File:?\\s*(<[^>]+>\\s*)+?([^<>\"\\']+)").getMatch(1);
+                        fileInfo[0] = new Regex(br, "File(?:name)?:?\\s*(<[^>]+>\\s*)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
                         if (fileInfo[0] == null) {
                             fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
