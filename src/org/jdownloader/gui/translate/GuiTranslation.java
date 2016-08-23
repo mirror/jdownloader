@@ -3696,8 +3696,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Crawling..." })
     String LinkCrawlerBubbleContent_update_runnning();
 
-    @Default(lngs = { "en" }, values = { "Queue:" })
-    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_queue();
+    @Default(lngs = { "en" }, values = { "List queue" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_list_queue();
+
+    @Default(lngs = { "en" }, values = { "Linkcheck queue" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_linkcheck_queue();
 
     @Default(lngs = { "en" }, values = { "Processing queue..." })
     String LinkCrawlerBubbleContent_update_processing();

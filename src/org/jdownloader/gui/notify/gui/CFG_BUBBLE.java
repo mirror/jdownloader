@@ -48,6 +48,9 @@ public class CFG_BUBBLE {
 
     public static final BooleanKeyHandler                  CRAWLER_BUBBLE_CONTENT_ONLINE_COUNT_VISIBLE      = SH.getKeyHandler("CrawlerBubbleContentOnlineCountVisible", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                  CRAWLER_BUBBLE_CONTENT_LIST_QUEUE_VISIBLE        = SH.getKeyHandler("CrawlerBubbleContentListQueueVisible", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                  CRAWLER_BUBBLE_CONTENT_CHECK_QUEUE_VISIBLE       = SH.getKeyHandler("CrawlerBubbleContentCheckQueueVisible", BooleanKeyHandler.class);
+
     /**
      * Animation Start Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
      **/

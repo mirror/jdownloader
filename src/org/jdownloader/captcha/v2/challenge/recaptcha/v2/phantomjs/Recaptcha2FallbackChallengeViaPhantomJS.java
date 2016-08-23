@@ -45,6 +45,7 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -55,6 +56,7 @@ import org.jdownloader.captcha.v2.ValidationResult;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptcha2FallbackChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.SubChallenge;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -119,6 +121,12 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
     @Override
     public void cleanup() {
         super.cleanup();
+        if (!googleLoggedIn) {
+            synchronized (GOOGLE) {
+                final Cookies google = phantom.getBr().getCookies("https://www.google.com");
+                GOOGLE.add(google);
+            }
+        }
         if (phantom != null) {
             phantom.kill();
         }
@@ -126,14 +134,20 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             debugger.dispose();
             debugger = null;
         }
-        long started = System.currentTimeMillis();
     }
+
+    private final static Cookies GOOGLE = new Cookies();
 
     @Override
     protected void load() {
         try {
             StatsManager.I().track("challenge", CollectionName.PJS);
-            final String dummyUrl = "http://" + this.owner.getSiteDomain() + "/rc2";
+            final String dummyUrl;
+            if (owner.getPluginBrowser().getRequest() != null) {
+                dummyUrl = URLHelper.getURL(owner.getPluginBrowser().getRequest().getURL(), false, false, false).toString();
+            } else {
+                dummyUrl = "http://" + owner.getSiteDomain() + "/rc" + UniqueAlltimeID.create();
+            }
             if (phantom != null) {
                 try {
                     // debug only63
@@ -211,9 +225,9 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 try {
                     for (Account acc : AccountController.getInstance().list("recaptcha.google.com")) {
                         if (acc.isEnabled()) {
-                            GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc);
+                            final GoogleAccountConfig cfg = (GoogleAccountConfig) AccountJsonConfig.get(acc);
                             if (cfg.isUsageRecaptchaV2Enabled()) {
-                                GoogleHelper helper = new GoogleHelper(br);
+                                final GoogleHelper helper = new GoogleHelper(br);
                                 helper.setCacheEnabled(true);
                                 googleLoggedIn = helper.login(acc);
                                 if (googleLoggedIn) {
@@ -224,6 +238,19 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                     }
                 } catch (Throwable e) {
                     logger.log(e);
+                }
+                if (!googleLoggedIn) {
+                    synchronized (GOOGLE) {
+                        if (GOOGLE.isEmpty()) {
+                            final Browser google = br.cloneBrowser();
+                            google.setFollowRedirects(true);
+                            google.getPage("https://www.google.com");
+                            google.getPage("https://consent.google.com/status?continue=https://www." + google.getHost() + "&pc=s&timestamp=" + System.currentTimeMillis());
+                            GOOGLE.add(google.getCookies("https://www.google.com"));
+                        } else {
+                            br.getCookies("https://www.google.com").add(GOOGLE);
+                        }
+                    }
                 }
                 for (Entry<String, Cookies> es : br.getCookies().entrySet()) {
                     for (Cookie c : es.getValue().getCookies()) {
@@ -334,22 +361,22 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         StatsManager.I().track(0, null, "exception/" + src.getFileName() + ":" + src.getLineNumber() + "/" + e.getMessage(), infos, CollectionName.PJS);
     }
 
-    protected void handlePayload(byte[] bytes, String url) {
+    protected synchronized void handlePayload(byte[] bytes, String url) {
         try {
             logger.info("New Payload: " + bytes.length + " - " + url.contains("&id") + " - " + url);
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
             if (getSubChallenge() == null || (!url.contains("&id=") && getSubChallenge().getMainPayload() != null)) {
                 createNewSubChallenge();
             }
+            getSubChallenge().putPayload(url, new Payload(img, url));
+            if (!url.contains("&id=")) {
+                // main image
+                // mainImageUrl = url;
+                ImageIO.write(img, "png", getImageFile());
+            } else if (!Application.isJared(null)) {
+                saveTile(bytes, url);
+            }
             synchronized (getSubChallenge()) {
-                getSubChallenge().payloads.put(url, new Payload(img, url));
-                if (!url.contains("&id=")) {
-                    // main image
-                    // mainImageUrl = url;
-                    ImageIO.write(img, "png", getImageFile());
-                } else if (!Application.isJared(null)) {
-                    saveTile(bytes, url);
-                }
                 getSubChallenge().notifyAll();
             }
             // BasicWindow.showImage(payloadImage);
@@ -448,12 +475,12 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
             waitFor(60000, subChallenge, new Condition() {
                 @Override
                 public boolean breakIfTrue() {
-                    return subChallenge.payloads.containsKey(mainPayloadUrl);
+                    return subChallenge.containsPayload(mainPayloadUrl);
                 }
             });
             subChallenge.fillGrid((String) mainPayloadUrl);
             if (!Application.isJared(null)) {
-                BufferedImage img = subChallenge.payloads.get(subChallenge.getMainImageUrl()).image;
+                BufferedImage img = subChallenge.getPayloadByUrl(subChallenge.getMainImageUrl()).image;
                 if (subChallenge.getChallengeType() == ChallengeType.TILESELECT) {
                     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     ImageIO.write(img, "png", bos);
