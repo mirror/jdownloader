@@ -185,7 +185,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (getThisPage != null) {
                 br.getPage(getThisPage.replace("\\", ""));
             }
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (this.br.getHttpConnection().getResponseCode() == 404 || isOffline(this.br)) {
                 link.setFinalFileName(link.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -309,6 +309,17 @@ public class FaceBookComVideos extends PluginForHost {
         }
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
+    }
+
+    /**
+     * Checks for offline html in all kinds of supported urls. Keep in mind that these "offline" message can also mean that access is
+     * restricted only for certain users. Basically user would at least need an account and even when he has one but not the rights to view
+     * the content we get the same message. in over 90% of all cases, content will be offline so we should simply treat it as offline.
+     */
+    public static boolean isOffline(final Browser br) {
+        /* TODO: Add support for more languages here */
+        /* Example: https://www.facebook.com/photo.php?fbid=624011957634791 */
+        return br.containsHTML(">The link you followed may have expired|>Leider ist dieser Inhalt derzeit nicht");
     }
 
     @SuppressWarnings("deprecation")
