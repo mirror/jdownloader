@@ -118,7 +118,7 @@ public class SolidFilesCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("class=\"direct-download regular-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("href\\s*=(\"|'|)(https?://s\\d+\\.solidfilesusercontent\\.com/[^\"' <>]+)").getMatch(1);
+                dllink = br.getRegex("(https?://s\\d+\\.solidfilesusercontent\\.com/[^\"' <>]+)").getMatch(0);
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
