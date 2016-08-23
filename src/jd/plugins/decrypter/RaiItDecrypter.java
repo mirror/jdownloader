@@ -35,14 +35,14 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}(?:\\&ch=\\d+)?|https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" })
 public class RaiItDecrypter extends PluginForDecrypt {
 
     public RaiItDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_DAY         = "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}(?:\\&ch=\\d+)?";
+    private static final String     TYPE_DAY         = "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
     private static final String     TYPE_CONTENTITEM = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
 
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
@@ -62,13 +62,18 @@ public class RaiItDecrypter extends PluginForDecrypt {
     }
 
     private void decryptWholeDay() throws Exception {
-        final String date = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-        String chnumber_str = new Regex(parameter, "ch=(\\d+)").getMatch(0);
+        final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
+        final String[] channels = new Regex(parameter, "ch=(\\d+)").getColumn(0);
+        final String date = dates[dates.length - 1];
+        final String date_underscore = date.replace("-", "_");
+        String chnumber_str = null;
+        if (channels != null && channels.length > 0) {
+            chnumber_str = channels[channels.length - 1];
+        }
         if (chnumber_str == null) {
             /* Small fallback */
             chnumber_str = "1";
         }
-        final String date_underscore = date.replace("-", "_");
         LinkedHashMap<String, Object> tempmap = null;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<Object> ressourcelist = null;
@@ -92,7 +97,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
             channel_name = "RaiUno";
         }
 
-        this.br.getPage("/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html?_=" + System.currentTimeMillis());
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.br.getPage("http://www.rai.tv/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return;
@@ -109,12 +115,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             final Entry<String, Object> entry = it.next();
             tempmap = (LinkedHashMap<String, Object>) entry.getValue();
-            final String title = (String) tempmap.get("t");
+            String title = (String) tempmap.get("t");
             final String relinker = (String) tempmap.get("r");
             final String description = (String) tempmap.get("d");
             if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
                 continue;
             }
+            title = date_underscore + "_raitv_" + title;
             decryptRelinker(relinker, title, null, description);
         }
     }
@@ -233,11 +240,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
         decryptRelinker(dllink, title, extension, description);
     }
 
-    private void decryptRelinker(final String relinker_url, final String title, final String extension, final String description) throws Exception {
+    private void decryptRelinker(final String relinker_url, final String title, String extension, final String description) throws Exception {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         String dllink = relinker_url;
-        if (extension.equalsIgnoreCase("wmv")) {
+        if (extension != null && extension.equalsIgnoreCase("wmv")) {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
             logger.info("Download http .wmv video");
         } else {
@@ -251,6 +258,14 @@ public class RaiItDecrypter extends PluginForDecrypt {
             dllink = jd.plugins.hoster.RaiTv.getDllink(this.br);
             if (dllink == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
+            if (extension == null && dllink.contains(".mp4")) {
+                extension = "mp4";
+            } else if (extension == null && dllink.contains(".wmv")) {
+                extension = "wmv";
+            } else if (extension == null) {
+                /* Final fallback */
+                extension = "mp4";
             }
             if (!jd.plugins.hoster.RaiTv.dllinkIsDownloadable(dllink)) {
                 logger.info("Unsupported streaming protocol");

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vitaminogretmen.com" }, urls = { "http://(www\\.)?vitaminogretmen\\.com/videolar/video\\-detay/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vitaminogretmen.com" }, urls = { "http://(www\\.)?vitaminogretmen\\.com/videolar/video\\-detay/\\d+" })
 public class VitaminoGretmenCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -64,12 +64,20 @@ public class VitaminoGretmenCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Kayıtlı video bulunmamaktadır\\.<|<title>Eğitim Videoları \\-  Vitamin Öğretmen Portalı </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\\-content\"") || br.containsHTML("(>Kayıtlı video bulunmamaktadır\\.<|<title>Eğitim Videoları \\-  Vitamin Öğretmen Portalı </title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"videoDetailTitle\">(.*?)<\\!").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Eğitim Videoları \\- (.*?) \\-  Vitamin Öğretmen Portalı </title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Eğitim Videoları \\- (.*?) \\-  Vitamin Öğretmen Portalı </title>").getMatch(0);
+        }
         DLLINK = br.getRegex("file: \\'(/.*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(/_docs/video/.*?\\.flv)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(/_docs/video/.*?\\.flv)\\'").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = "http://www.vitaminogretmen.com" + Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -79,10 +87,11 @@ public class VitaminoGretmenCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
