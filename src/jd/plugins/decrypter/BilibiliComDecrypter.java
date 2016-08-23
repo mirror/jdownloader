@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" })
 public class BilibiliComDecrypter extends PluginForDecrypt {
 
     public BilibiliComDecrypter(PluginWrapper wrapper) {
@@ -36,6 +36,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        jd.plugins.hoster.BilibiliCom.prepBR(this.br);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String vid = getFID(parameter);
@@ -70,7 +71,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
         try {
             /* Now let's decrypt the (ctdisk.com) downloadurls. */
             br.getPage(url_download_overview);
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 502) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }

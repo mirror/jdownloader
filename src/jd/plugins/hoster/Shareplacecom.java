@@ -41,7 +41,7 @@ import jd.plugins.components.UserAgents;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" })
 public class Shareplacecom extends PluginForHost {
 
     public Shareplacecom(final PluginWrapper wrapper) {
@@ -71,7 +71,9 @@ public class Shareplacecom extends PluginForHost {
         return br;
     }
 
-    private String correctedBR = null;
+    private static final String html_captcha = "/captcha\\.php";
+
+    private String              correctedBR  = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -130,6 +132,14 @@ public class Shareplacecom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = null;
+        /* 2016-08-23: Added captcha implementation */
+        if (this.br.containsHTML(html_captcha)) {
+            final String code = this.getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), downloadLink);
+            this.br.postPage(this.br.getURL(), "captchacode=" + Encoding.urlEncode(code));
+            if (this.br.containsHTML(html_captcha)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        }
         for (final String[] s : br.getRegex("<script language=\"Javascript\">(.*?)</script>").getMatches()) {
             if (!new Regex(s[0], "(vvvvvvvvv|teletubbies|zzipitime)").matches()) {
                 continue;

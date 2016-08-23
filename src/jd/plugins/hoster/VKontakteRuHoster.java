@@ -346,12 +346,27 @@ public class VKontakteRuHoster extends PluginForHost {
                                 // new.vk.com/
                                 albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
                                 if (albumID == null) {
+                                    /* New 2016-08-23 */
+                                    final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                    if (json != null) {
+                                        albumID = PluginJSonUtils.getJsonValue(json, "list");
+                                        if (albumID != null) {
+                                            /* Fix id */
+                                            albumID = albumID.replace("album", "");
+                                        }
+                                    }
+                                }
+                                if (albumID == null) {
                                     logger.info("vk.com: albumID is null");
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
                             }
                             link.setProperty("albumid", albumID);
                         }
+                        /*
+                         * TODO: 2016-08-23 It might be possible to skip this step by simply using the json which is inside the html - this
+                         * would save server capacity and speed up our plugin!
+                         */
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                         postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
