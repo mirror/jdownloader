@@ -112,11 +112,12 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         }
     }
 
-    private int              joblessCount = -1;
-    private int              offlineCount = -1;
-    private int              linksCount   = -1;
-    private int              onlineCount  = -1;
-    private final AtomicLong lastChange   = new AtomicLong(-1);
+    private int              joblessCount        = -1;
+    private int              offlineCount        = -1;
+    private int              linksCount          = -1;
+    private int              onlineCount         = -1;
+    private final AtomicLong lastChange          = new AtomicLong(-1);
+    private int              lastMaxStringLength = -1;
 
     public void update(final JobLinkCrawler jlc) {
         final List<CrawledLink> linklist = jlc.getCrawledLinks();
@@ -164,13 +165,18 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         new EDTRunner() {
             @Override
             protected void runInEDT() {
+                int maxStringLength = -1;
                 if (online != null) {
-                    online.setText(String.valueOf(onlineCount));
+                    final String string = String.valueOf(onlineCount);
+                    online.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 if (offlineCount > 0) {
                     if (offline != null) {
-                        offline.setText(String.valueOf(offlineCount));
+                        final String string = String.valueOf(offlineCount);
+                        offline.setText(string);
                         offline.setVisible(true);
+                        maxStringLength = Math.max(maxStringLength, string.length());
                     }
                     if (offlineCount >= linksCount) {
                         getWindow().setHighlightColor(LAFOptions.getInstance().getColorForErrorForeground());
@@ -181,18 +187,24 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     getWindow().setHighlightColor(null);
                 }
                 if (links != null) {
-                    links.setText(String.valueOf(linksCount));
+                    final String string = String.valueOf(linksCount);
+                    links.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 if (packages != null) {
-                    packages.setText(String.valueOf(dupe.size()));
+                    final String string = String.valueOf(dupe.size());
+                    packages.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 final boolean isCollecting = jlc.isCollecting();
                 final long createdTime = jlc.getCreated();
                 final int listQueueSize = jlc.getQueueSize();
                 if (listQueue != null) {
                     if (listQueueSize > 0) {
+                        final String string = String.valueOf(listQueueSize);
                         listQueue.setVisible(true);
-                        listQueue.setText(String.valueOf(listQueueSize));
+                        listQueue.setText(string);
+                        maxStringLength = Math.max(maxStringLength, string.length());
                     } else {
                         listQueue.setVisible(false);
                     }
@@ -201,41 +213,53 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 if (statusQueue != null) {
                     if (statusQueueSize > 0) {
                         statusQueue.setVisible(true);
-                        statusQueue.setText(String.valueOf(statusQueueSize));
+                        final String string = String.valueOf(statusQueueSize);
+                        statusQueue.setText(string);
+                        maxStringLength = Math.max(maxStringLength, string.length());
                     } else {
                         statusQueue.setVisible(false);
                     }
                 }
                 if (status != null) {
+                    final String string;
                     if (jlc.isRunning()) {
-                        status.setText(_GUI.T.LinkCrawlerBubbleContent_update_runnning());
+                        string = _GUI.T.LinkCrawlerBubbleContent_update_runnning();
                     } else {
                         if (jlc.getLinkChecker().isRunning()) {
-                            status.setText(_GUI.T.LinkCrawlerBubbleContent_update_online());
+                            string = _GUI.T.LinkCrawlerBubbleContent_update_online();
                         } else if (listQueueSize > 0) {
-                            status.setText(_GUI.T.LinkCrawlerBubbleContent_update_processing());
+                            string = _GUI.T.LinkCrawlerBubbleContent_update_processing();
                         } else {
-                            status.setText(_GUI.T.LinkCrawlerBubbleContent_update_finished());
+                            string = _GUI.T.LinkCrawlerBubbleContent_update_finished();
                         }
                     }
+                    status.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 if (duration != null) {
+                    final String string;
                     if (isCollecting) {
                         // still collecting
-                        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0));
+                        string = TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0);
                     } else {
                         // show complete duration
                         if (lastChange == -1) {
-                            duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0));
+                            string = TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0);
                         } else {
-                            duration.setText(TimeFormatter.formatMilliSeconds(lastChange - createdTime, 0));
+                            string = TimeFormatter.formatMilliSeconds(lastChange - createdTime, 0);
                         }
                     }
+                    duration.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 if (isCollecting) {
                     startProgressCircle();
                 } else {
                     stopProgressCircle();
+                }
+                if (lastMaxStringLength != maxStringLength) {
+                    lastMaxStringLength = maxStringLength;
+                    // updateLayout();
                 }
             }
         }.waitForEDT();
