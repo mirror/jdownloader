@@ -41,8 +41,10 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class MegarapidoNet extends PluginForHost {
+
+    /* Tags: conexaomega.com.br, megarapido.net */
 
     private static final String                            DOMAIN                       = "http://megarapido.net/";
     private static final String                            NICE_HOST                    = "megarapido.net";
@@ -142,19 +144,11 @@ public class MegarapidoNet extends PluginForHost {
         login(account);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            this.getAPISafe("http://megarapido.net/gerador");
-            final String userID = br.getRegex("name=\"user\" value=\"(\\d+)\"").getMatch(0);
-            if (userID == null) {
+            this.getAPISafe("http://" + this.getHost() + "/_gerar.php?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=1." + System.currentTimeMillis());
+            dllink = this.br.getRegex("(http[^<>\"\\|\\']+)").getMatch(0);
+            if (dllink == null || dllink.length() > 500) {
                 /* Should never happen */
-                handleErrorRetries("useridnull", 10);
-            }
-            final String dlurl = Encoding.urlEncode(link.getDownloadURL());
-            String postData = "urllist=" + dlurl + "&links=" + dlurl + "&exibir=normal&usar=premium&user=" + userID + "&autoreset=";
-            this.postAPISafe("/gerar.php?rand=0." + System.currentTimeMillis(), postData);
-            dllink = br.getRegex("('|\")(https?://[a-z0-9-\\.]+\\.megarapido\\.net/.*?)\\1").getMatch(1);
-            if (dllink == null) {
-                /* Should never happen */
-                handleErrorRetries("dllinknull", 50);
+                handleErrorRetries("dllinknull", 5);
             }
         }
         handleDL(account, link, dllink);
