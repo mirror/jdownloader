@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[A-Za-z0-9_\\-]+(/[^<>\"/]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "https?://(?:www\\.)?(?:hulkshare\\.com|hu\\.lk)/[A-Za-z0-9_\\-]+(?:/[^<>\"/]+)?" })
 public class HulkShareComFolder extends PluginForDecrypt {
 
     public HulkShareComFolder(PluginWrapper wrapper) {
@@ -47,8 +47,10 @@ public class HulkShareComFolder extends PluginForDecrypt {
         final String fid = new Regex(parameter, "hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
         if (fid != null) {
             parameter = "http://www.hulkshare.com/" + fid;
+        } else if (!parameter.matches(HULKSHAREDOWNLOADLINK) && !parameter.matches(TYPE_PLAYLIST)) {
+
         }
-        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
+        if (parameter.matches("https?://(?:www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
@@ -61,6 +63,23 @@ public class HulkShareComFolder extends PluginForDecrypt {
         // They can have huge pages, allow double of the normal load limit
         br.setLoadLimit(4194304);
         br.getPage(parameter);
+
+        final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
+
+        if ((new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink != null) {
+            /* We have a single mp3 link */
+            decryptedLinks.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            return decryptedLinks;
+        } else if (!(new Regex(parameter, Pattern.compile(TYPE_PLAYLIST, Pattern.CASE_INSENSITIVE)).matches()) && (new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink == null) {
+            /*
+             * Either an offline singleLink or a 'wrong' user-link e.g. http://www.hulkshare.com/any_user_name/followers --> Try to correct
+             * that - assume we have a user-link - if not it does not matter - it'll simply be offline then
+             */
+            final String username = new Regex(parameter, "http://[^/]+/([^/]+)").getMatch(0);
+            parameter = "http://www." + this.getHost() + "/" + username;
+            this.br.getPage(parameter);
+        }
+
         if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css") || this.br.getURL().contains("/404.php")) {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
@@ -77,7 +96,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
@@ -110,14 +129,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
-            return decryptedLinks;
-        } else if (new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) {
-            final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
-            if (longLink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }
         final String uid = br.getRegex("\\?uid=(\\d+)").getMatch(0);

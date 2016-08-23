@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api)#?[A-Za-z0-9]+(/v/\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api)#?[A-Za-z0-9]+(/v/\\d+)?" })
 public class GeTtDecrypter extends PluginForDecrypt {
 
     public GeTtDecrypter(PluginWrapper wrapper) {
@@ -38,10 +38,11 @@ public class GeTtDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString().replace("#", "");
 
+        br.setAllowedResponseCodes(410);
         br.getPage(parameter);
 
-        if (br.containsHTML("Page not found|The page you were looking for was not found|Files removed|These files have been removed by the owner")) {
-            logger.info("Link offline: " + parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|The page you were looking for was not found|Files removed|These files have been removed by the owner")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 

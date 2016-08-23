@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tu.tv" }, urls = { "http://(www\\.)?tu\\.tv/videos/[a-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tu.tv" }, urls = { "http://(www\\.)?tu\\.tv/videos/[a-z0-9\\-_]+" })
 public class TuTv extends PluginForHost {
 
     private String html_privatevideo = "class=\"videoprivado\"";
@@ -54,17 +54,25 @@ public class TuTv extends PluginForHost {
         return -1;
     }
 
+    private Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(410);
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        prepBR(this.br);
         downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         if (this.br.getURL() == null) {
             /* If user entered video password this requestFileInformation is called again - prevent double-accessing our downloadLink. */
             br.getPage(downloadLink.getDownloadURL());
         }
         final String url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/([a-z0-9\\-_]+)").getMatch(0);
-        if (br.containsHTML("(>El vídeo que intentas ver no existe o ha sido borrado de TU|>Afortunadamente, el sistema ha encontrado vídeos relacionados con tu petición|>El vídeo no existe<)") || br.getURL().contains("/noExisteVideo/")) {
+        if (this.br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("class=\"aviso_noexiste\"") || br.containsHTML("(>El vídeo que intentas ver no existe o ha sido borrado de TU|>Afortunadamente, el sistema ha encontrado vídeos relacionados con tu petición|>El vídeo no existe<)") || br.getURL().contains("/noExisteVideo/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(html_privatevideo)) {
             logger.info("Private videos are not yet supported - contact our support so that we can add support for them");

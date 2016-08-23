@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "https?://(?:www\\.)?vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+(?:/\\d+/\\d+)?" })
 public class VvvvidIt extends PluginForDecrypt {
 
     public VvvvidIt(PluginWrapper wrapper) {
@@ -82,11 +82,30 @@ public class VvvvidIt extends PluginForDecrypt {
         } else {
             /* season_id not given --> Get it */
             this.br.getPage("/vvvvid/ondemand/" + show_id + "/seasons/?conn_id=" + conn_id);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                logger.info("GEO-blocked");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             final Object season_id_o = JavaScriptEngineFactory.walkJson(entries, "data/{0}/season_id");
             season_id = JavaScriptEngineFactory.toLong(season_id_o, (show_id - 10));
         }
+
         this.br.getPage("/vvvvid/ondemand/" + show_id + "/info/" + "?conn_id=" + conn_id);
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            logger.info("GEO-blocked");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getHttpConnection().getContentType().contains("json")) {
             /* Offline or geo-blocked */
