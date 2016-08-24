@@ -28,11 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -59,6 +54,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daofile.com" }, urls = { "https?://(www\\.)?daofile\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class DaofileCom extends PluginForHost {
     private String                         correctedBR                  = "";
@@ -77,7 +77,7 @@ public class DaofileCom extends PluginForHost {
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
