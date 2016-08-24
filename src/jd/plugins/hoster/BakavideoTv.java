@@ -31,10 +31,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "http://www\\.bilibilidecrypted\\.com/video/av\\d+/index_\\d+\\.html" })
-public class BilibiliCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bakavideo.tv" }, urls = { "https?://(?:(?:beta|www)\\.)?bakavideo\\.tv/embed/[A-Za-z0-9]+" })
+public class BakavideoTv extends PluginForHost {
 
-    public BilibiliCom(PluginWrapper wrapper) {
+    public BakavideoTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -43,71 +43,58 @@ public class BilibiliCom extends PluginForHost {
     // protocol: no https
     // other:
 
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
-    private String               fid               = null;
-    private String               part              = null;
     private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://www.bilibili.com/";
-    }
-
-    public static Browser prepBR(final Browser br) {
-        br.setAllowedResponseCodes(502);
-        return br;
-    }
-
-    public void correctDownloadLink(final DownloadLink link) {
-        final String vid = getFID(link);
-        final String newurl = link.getDownloadURL().replace("bilibilidecrypted.com/", "bilibili.com/");
-        link.setUrlDownload(newurl);
-        link.setContentUrl(newurl);
-    }
-
-    private String getFID(final DownloadLink dl) {
-        String fid = new Regex(dl.getDownloadURL(), "/av(\\d+)").getMatch(0);
-        if (fid == null) {
-            fid = new Regex(dl.getDownloadURL(), "/av(\\d+)").getMatch(0);
-        }
-        return new Regex(dl.getDownloadURL(), "/av(\\d+)").getMatch(0);
+        return "https://bakavideo.tv/";
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        prepBR(this.br);
         dllink = null;
         server_issues = false;
-        fid = this.getFID(link);
-        part = new Regex(link.getDownloadURL(), "index_(\\d+)").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (isOffline(this.br)) {
+        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.br.getHeaders().put("Referer", link.getDownloadURL());
+        this.br.getPage("https://" + this.getHost() + "/get/files.embed?f=" + fid);
+
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = getTitle(this.br);
+
+        final String b64 = PluginJSonUtils.getJsonValue(this.br, "content");
+        final String json = Encoding.Base64Decode(b64);
+
+        if (json.contains("butwait.png") || json.contains("File does't exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        String filename = null;
         if (filename == null) {
             filename = fid;
         }
-        if (!filename.contains(part)) {
-            filename += " - part_" + part;
+        dllink = new Regex(json, "<source[^>]+src=\"(http[^<>\"]+)\"[^>]+/>").getMatch(0);
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = null;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, ".flv");
-        } else {
-            ext = ".flv";
-        }
+        final String ext = getFileNameExtensionFromString(dllink, default_Extension);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -141,13 +128,6 @@ public class BilibiliCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        /* Use their mobile function to avoid the encryption stuff of the PC-website! */
-        this.br.getPage("/m/html5?aid=" + fid + "&page=1");
-        dllink = PluginJSonUtils.getJsonValue(this.br, "src");
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -168,14 +148,6 @@ public class BilibiliCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 502 || br.containsHTML("对不起，你输入的参数有误");
-    }
-
-    public static final String getTitle(final Browser br) {
-        return br.getRegex("<title>([^<>]+)</title>").getMatch(0);
     }
 
     @Override

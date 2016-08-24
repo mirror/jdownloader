@@ -55,17 +55,19 @@ public class UdemyCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension    = ".mp4";
+    private static final String  default_Extension          = ".mp4";
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME          = true;
-    private static final int     FREE_MAXCHUNKS       = 0;
-    private static final int     FREE_MAXDOWNLOADS    = 20;
+    private static final boolean FREE_RESUME                = true;
+    private static final int     FREE_MAXCHUNKS             = 0;
+    private static final int     FREE_MAXDOWNLOADS          = 20;
 
-    private String               dllink               = null;
+    private String               dllink                     = null;
+    private boolean              invalidAssetType           = false;
+    private boolean              is_officially_downloadable = true;
 
-    private static final String  TYPE_SINGLE_FREE_OLD = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
-    public static final String   TYPE_SINGLE_PREMIUM  = ".+/lecture/\\d+$";
+    private static final String  TYPE_SINGLE_FREE_OLD       = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
+    public static final String   TYPE_SINGLE_PREMIUM        = ".+/lecture/\\d+$";
 
     @Override
     public String getAGBLink() {
@@ -81,6 +83,9 @@ public class UdemyCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
+        invalidAssetType = false;
+        is_officially_downloadable = true;
+
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
@@ -97,6 +102,7 @@ public class UdemyCom extends PluginForHost {
             }
         }
         String ext = null;
+        String asset_type = "Video";
         if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             downloadLink.setName(fid_accountneeded);
             downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
@@ -118,21 +124,33 @@ public class UdemyCom extends PluginForHost {
              * %5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False
              */
             this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + fid_accountneeded + "?fields%5Basset%5D=@min,download_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4");
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                /* E.g. {"detail": "You do not have permission to perform this action."} */
+                /* User tries to download content which he did not buy/subscribe to. */
+                logger.info("You need to have an account with permission (e.g. you need to buy this content) to download this content");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             // this.br.getPage("https://www.udemy.com/api-2.0/lectures/" + fid_accountneeded +
             // "/content?videoOnly=0&instructorPreviewMode=False");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+            is_officially_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
             final String title_cleaned = (String) entries.get("title_cleaned");
             description = (String) entries.get("description");
             String json_view_html = (String) entries.get("view_html");
             entries = (LinkedHashMap<String, Object>) entries.get("asset");
-            String asset_type = (String) entries.get("asset_type");
+            asset_type = (String) entries.get("asset_type");
             if (asset_type == null) {
                 asset_type = "Video";
+            } else if (asset_type.equalsIgnoreCase("Article")) {
+                /* 2016-08-24: Such Articles are not downloadable but we can at least set the correct extension! */
+                ext = ".txt";
+                invalidAssetType = true;
             } else {
                 if (!asset_type.equals("Video")) {
+                    /* We assume it is a PDF. */
                     ext = ".pdf";
                 }
             }
@@ -198,13 +216,11 @@ public class UdemyCom extends PluginForHost {
             this.br.getPage(url_embed);
             dllink = br.getRegex("\"file\":\"(http[^<>\"]*?)\",\"label\":\"720p").getMatch(0);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (ext == null && dllink.contains(".m3u8")) {
+        if (ext == null && dllink != null && dllink.contains(".m3u8")) {
             ext = default_Extension;
         }
         if (ext == null) {
@@ -217,7 +233,7 @@ public class UdemyCom extends PluginForHost {
         if (description != null && downloadLink.getComment() == null) {
             downloadLink.setComment(description);
         }
-        if (!dllink.contains(".m3u8")) {
+        if (dllink != null && !dllink.contains(".m3u8")) {
             final Browser br2 = new Browser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -249,6 +265,13 @@ public class UdemyCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (invalidAssetType) {
+            /* is_officially_downloadable might even have a "true" state here but download is not possible! */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This is neither a video nor a pdf - plain articles are not downloadable");
+        } else if (dllink == null && !is_officially_downloadable) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDownload(downloadLink);
     }

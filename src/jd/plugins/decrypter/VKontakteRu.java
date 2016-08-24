@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -51,6 +48,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -927,6 +927,9 @@ public class VKontakteRu extends PluginForDecrypt {
         if (numberofentries == null) {
             numberofentries = PluginJSonUtils.getJsonValue(br, "count");
         }
+        if (numberofentries == null) {
+            numberofentries = PluginJSonUtils.getJsonValue(br, "playlistsCount");
+        }
         final int numberOfEntrys = Integer.parseInt(numberofentries);
         int totalCounter = 0;
         while (totalCounter < numberOfEntrys) {
@@ -936,11 +939,13 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             String[] videos = null;
             if (totalCounter < 12) {
-                final String jsVideoArray = br.getRegex("\"all\":\\{\"silent\":1,\"list\":\\[(.*?)\\],\"count\"").getMatch(0);
+                /* 2016-08-24: Updated this RegEx */
+                final String jsVideoArray = br.getRegex("\"pageVideosList\"\\s*?:\\s*?(\\{.*?\\]\\}\\})").getMatch(0);
                 if (jsVideoArray != null) {
                     videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+,\\d+),\"").getColumn(0);
                 } else {
-                    videos = br.getRegex("class=\"video_row_info_name\">[\t\n\r ]+<a href=\"/video((\\-)?\\d+_\\d+)\"").getColumn(0);
+                    /* 2016 */
+                    videos = br.getRegex("class=\"video_item_title\" href=\"/video((?:\\-)?\\d+_\\d+)\"").getColumn(0);
                     if (videos == null || videos.length == 0) {
                         logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
                         decryptedLinks = null;
@@ -1373,28 +1378,28 @@ public class VKontakteRu extends PluginForDecrypt {
             if (i > 0) {
                 postPageSafe(postPage, postData + offset);
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
-                    final String correctedBR = br.toString().replace("\\", "");
-                    final String[] theData = new Regex(correctedBR, regexesAllOthers[0]).getColumn(Integer.parseInt(regexesAllOthers[1]));
-                    if (theData == null || theData.length == 0) {
-                        addedLinks = 0;
-                        break;
-                    }
-                    addedLinks = theData.length;
-                    for (String data : theData) {
-                        decryptedData.add(data);
-                    }
+                final String correctedBR = br.toString().replace("\\", "");
+                final String[] theData = new Regex(correctedBR, regexesAllOthers[0]).getColumn(Integer.parseInt(regexesAllOthers[1]));
+                if (theData == null || theData.length == 0) {
+                    addedLinks = 0;
+                    break;
+                }
+                addedLinks = theData.length;
+                for (String data : theData) {
+                    decryptedData.add(data);
+                }
                 offset += increase;
             } else {
                 logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
-                    String correctedBR = br.toString().replace("\\", "");
-                    String[] theData = new Regex(correctedBR, regexesPageOne[0]).getColumn(Integer.parseInt(regexesPageOne[1]));
-                    if (theData == null || theData.length == 0) {
-                        addedLinks = 0;
-                        break;
-                    }
-                    addedLinks = theData.length;
-                    for (String data : theData) {
-                        decryptedData.add(data);
+                String correctedBR = br.toString().replace("\\", "");
+                String[] theData = new Regex(correctedBR, regexesPageOne[0]).getColumn(Integer.parseInt(regexesPageOne[1]));
+                if (theData == null || theData.length == 0) {
+                    addedLinks = 0;
+                    break;
+                }
+                addedLinks = theData.length;
+                for (String data : theData) {
+                    decryptedData.add(data);
                 }
             }
             if (addedLinks < increase || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {

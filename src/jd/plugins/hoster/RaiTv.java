@@ -38,7 +38,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" })
 public class RaiTv extends PluginForHost {
 
     public RaiTv(PluginWrapper wrapper) {
@@ -208,8 +208,13 @@ public class RaiTv extends PluginForHost {
     }
 
     public static Browser prepVideoBrowser(final Browser br) {
+        /*
+         * 2016-08-24: Do NOT use the Apache User-Agent anymore - because of it we often got .ism MS Silverlight streams instead of http
+         * urls.
+         */
         /* Rai.tv android app User-Agent - not necessarily needed! */
-        br.getHeaders().put("User-Agent", "Apache-HttpClient/UNAVAILABLE (java 1.4)");
+        // br.getHeaders().put("User-Agent", "Apache-HttpClient/UNAVAILABLE (java 1.4)");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0");
         return br;
     }
 

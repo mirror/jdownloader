@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bilibili.com" }, urls = { "https?://(?:www\\.)?bilibili\\.com/(?:mobile/)?video/av\\d+/|https?://(?:www\\.)?bilibilijj\\.com/video/av\\d+/|https?://static\\.hdslb\\.com/miniloader\\.swf\\?aid=\\d+" })
 public class BilibiliComDecrypter extends PluginForDecrypt {
 
     public BilibiliComDecrypter(PluginWrapper wrapper) {
@@ -57,8 +57,9 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
         /* Find video-parts */
         String[] links = br.getRegex("<option value=\\'(/video/av" + vid + "/index_\\d+\\.html)\\'>").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            /* Probably a video with only one part */
+            links = new String[1];
+            links[0] = "/video/av" + vid + "/index_1.html";
         }
         for (String singleURL : links) {
             final String contenturl = "http://www.bilibili.com" + singleURL;
@@ -96,9 +97,16 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
                 this.br.setFollowRedirects(false);
                 this.br.getPage(continue_url);
                 /* Usually finallink is a ctdisk.com downloadurl. */
-                final String finallink = this.br.getRedirectLocation();
+                String finallink = this.br.getRedirectLocation();
                 if (finallink == null) {
                     return null;
+                }
+                /*
+                 * Make sure directlinks with endings and parameters get added correctly. TODO: Maybe find a better way o identify
+                 * directlinks!
+                 */
+                if ((finallink.contains(".mp4") || finallink.contains(".flv")) && finallink.contains("?")) {
+                    finallink = "directhttp://" + finallink;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
