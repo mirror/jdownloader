@@ -52,7 +52,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
 public class EHentaiOrg extends PluginForHost {
 
     @Override
@@ -120,7 +120,7 @@ public class EHentaiOrg extends PluginForHost {
      * @throws IOException
      */
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final Account account) throws PluginException, IOException {
-        // from manual 'online check', we don't want to 'try' as it uses up quota...
+        /* from manual 'online check', we don't want to 'try' as it uses up quota... */
         if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
             return AvailableStatus.UNCHECKABLE;
         }
@@ -281,9 +281,12 @@ public class EHentaiOrg extends PluginForHost {
     private void getDllink(final Account account) throws PluginException, IOException {
         // g.e-hentai.org = free non account
         // error
-        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img" src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a></div>
+        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img"
+        // src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a></div>
         // working
-        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img" src="http://153.149.98.104:65000/h/40e8a3da0fac1b0ec40b5c58489f7b8d46b1a2a2-436260-1200-1600-jpg/keystamp=1469074200-e1ec68e0ef/093.jpg" style="height:1600px;width:1200px" /></a></div>
+        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img"
+        // src="http://153.149.98.104:65000/h/40e8a3da0fac1b0ec40b5c58489f7b8d46b1a2a2-436260-1200-1600-jpg/keystamp=1469074200-e1ec68e0ef/093.jpg"
+        // style="height:1600px;width:1200px" /></a></div>
         // error (no div id=i3, no a onclick either...) Link; 0957971887641.log; 57438449; jdlog://0957971887641
         // <a href="http://g.e-hentai.org/s/4bf901e9e6/957224-513"><img src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a>
         // working
@@ -291,9 +294,12 @@ public class EHentaiOrg extends PluginForHost {
 
         // exhentai.org = account
         // error
-        // <div id="i3"><a onclick="return load_image(26, '2fb043446a')" href="http://exhentai.org/s/2fb043446a/706165-26"><img id="img" src="http://exhentai.org/img/509.gif" style="margin:20px auto" /></a></div>
+        // <div id="i3"><a onclick="return load_image(26, '2fb043446a')" href="http://exhentai.org/s/2fb043446a/706165-26"><img id="img"
+        // src="http://exhentai.org/img/509.gif" style="margin:20px auto" /></a></div>
         // working
-        // <div id="i3"><a onclick="return load_image(54, 'cd7295ee9c')" href="http://exhentai.org/s/cd7295ee9c/940613-54"><img id="img" src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg" style="height:1800px;width:1273px" /></a></div>
+        // <div id="i3"><a onclick="return load_image(54, 'cd7295ee9c')" href="http://exhentai.org/s/cd7295ee9c/940613-54"><img id="img"
+        // src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg"
+        // style="height:1800px;width:1273px" /></a></div>
 
         // best solution is to apply cleanup?
         final String b = br.toString();

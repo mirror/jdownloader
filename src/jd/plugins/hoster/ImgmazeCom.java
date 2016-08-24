@@ -48,8 +48,9 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com" }, urls = { "https?://(www\\.)?imgmaze\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgmaze.com" }, urls = { "https?://(www\\.)?imgmaze\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgmazeCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -173,7 +174,10 @@ public class ImgmazeCom extends PluginForHost {
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (correctedBR.contains("imgmaze.com/mazegp.php\"</script>")) {
+        final String jsredirect = new Regex(correctedBR, "<script type=\"text/javascript\">window\\.location\\s*?= \\s*?\"(http[^<>\"]+)\"").getMatch(0);
+        if (jsredirect != null) {
+            getPage(jsredirect);
+        } else if (correctedBR.contains("imgmaze.com/mazegp.php\"</script>")) {
             getPage("/mazegp.php");
         }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
@@ -237,6 +241,7 @@ public class ImgmazeCom extends PluginForHost {
         if (fileInfo[0] == null && IMAGEHOSTER) {
             /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
             fileInfo[0] = this.fuid;
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {

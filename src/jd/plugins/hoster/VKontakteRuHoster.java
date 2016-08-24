@@ -341,38 +341,36 @@ public class VKontakteRuHoster extends PluginForHost {
                             if (br.containsHTML("Unknown error|Unbekannter Fehler|Access denied")) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
-                            albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                            if (albumID == null) {
-                                // new.vk.com/
-                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
+                            if (picturesGetJsonFromHtml() == null) {
+                                albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
                                 if (albumID == null) {
-                                    /* New 2016-08-23 */
-                                    final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                    if (json != null) {
-                                        albumID = PluginJSonUtils.getJsonValue(json, "list");
-                                        if (albumID != null) {
-                                            /* Fix id */
-                                            albumID = albumID.replace("album", "");
+                                    // new.vk.com/
+                                    albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
+                                    if (albumID == null) {
+                                        /* New 2016-08-23 */
+                                        final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                        if (json != null) {
+                                            albumID = PluginJSonUtils.getJsonValue(json, "list");
+                                            if (albumID != null) {
+                                                /* Fix id */
+                                                albumID = albumID.replace("album", "");
+                                            }
                                         }
                                     }
+                                    if (albumID == null) {
+                                        logger.info("vk.com: albumID is null");
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                    }
                                 }
-                                if (albumID == null) {
-                                    logger.info("vk.com: albumID is null");
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                link.setProperty("albumid", albumID);
+                                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                                postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                                if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
+                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                                 }
                             }
-                            link.setProperty("albumid", albumID);
                         }
-                        /*
-                         * TODO: 2016-08-23 It might be possible to skip this step by simply using the json which is inside the html - this
-                         * would save server capacity and speed up our plugin!
-                         */
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                    }
-                    if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 }
             }
@@ -855,9 +853,12 @@ public class VKontakteRuHoster extends PluginForHost {
      *
      * @throws IOException
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     private void getHighestQualityPic(final DownloadLink dl) throws Exception {
-        final String json = br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
+        String json = picturesGetJsonFromHtml();
+        if (json == null) {
+            json = picturesGetJsonFromXml();
+        }
         if (json == null) {
             if (br.containsHTML("<!>deleted<!>")) {
                 // we suffer some desync between website and api. I guess due to website pages been held in cache.
@@ -868,20 +869,9 @@ public class VKontakteRuHoster extends PluginForHost {
             errLog(e, br, dl);
             throw e;
         }
-        Map<String, Object> sourcemap = null;
         final String thisid = getPhotoID(dl);
-        ArrayList<String> entries = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
-        for (final Object entry : entries) {
-            if (entry instanceof Map) {
-                Map<String, Object> entrymap = (Map<String, Object>) entry;
-                final String entry_id = (String) entrymap.get("id");
-                if (entry_id.equals(thisid)) {
-                    sourcemap = entrymap;
-                    break;
-                }
-
-            }
-        }
+        final Object photoo = findPictureObject(JavaScriptEngineFactory.jsonToJavaObject(json), thisid);
+        final Map<String, Object> sourcemap = (Map<String, Object>) photoo;
         if (sourcemap == null) {
             logger.warning("Failed to find specified source json of picturelink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -913,6 +903,52 @@ public class VKontakteRuHoster extends PluginForHost {
         } else if (links_count > 0 && !success) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Photo is temporarily unavailable or offline (server issues)", 30 * 60 * 1000l);
         }
+    }
+
+    /** Recursive function to find object containing picture (download) information. */
+    private Object findPictureObject(final Object o, final String picid) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> cookieEntry : entrymap.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final Object value = cookieEntry.getValue();
+                if (key.equals("id") && value instanceof String) {
+                    final String entry_id = (String) value;
+                    if (entry_id.equals(picid)) {
+                        return o;
+                    } else {
+                        continue;
+                    }
+                } else if (value instanceof ArrayList || value instanceof Map) {
+                    findPictureObject(value, picid);
+                }
+            }
+            return null;
+
+        } else if (o instanceof ArrayList) {
+            final ArrayList<Object> array = (ArrayList) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof ArrayList || arrayo instanceof Map) {
+                    final Object pico = findPictureObject(arrayo, picid);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    /** RegEx source-json from html. */
+    private String picturesGetJsonFromHtml() {
+        return this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.+)").getMatch(0);
+    }
+
+    /** RegEx source-json from xml. */
+    private String picturesGetJsonFromXml() {
+        return this.br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
     }
 
     /**

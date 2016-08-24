@@ -74,6 +74,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Small fallback */
             chnumber_str = "1";
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(date_underscore);
+        // fp.setProperty("ALLOW_MERGE", true);
         LinkedHashMap<String, Object> tempmap = null;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<Object> ressourcelist = null;
@@ -122,7 +125,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 continue;
             }
             title = date_underscore + "_raitv_" + title;
-            decryptRelinker(relinker, title, null, description);
+            decryptRelinker(relinker, title, null, fp, description);
         }
     }
 
@@ -237,12 +240,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
         title = date_formatted + "_raitv_" + title;
         title = encodeUnicode(title);
 
-        decryptRelinker(dllink, title, extension, description);
-    }
-
-    private void decryptRelinker(final String relinker_url, final String title, String extension, final String description) throws Exception {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
+
+        decryptRelinker(dllink, title, extension, fp, description);
+    }
+
+    private void decryptRelinker(final String relinker_url, final String title, String extension, final FilePackage fp, final String description) throws Exception {
         String dllink = relinker_url;
         if (extension != null && extension.equalsIgnoreCase("wmv")) {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
@@ -289,6 +293,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     dl.setComment(description);
                 }
                 decryptedLinks.add(dl);
+                distribute(dl);
             }
         } else {
             /* Single http url */
@@ -298,6 +303,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             dl.setFinalFileName(title + "." + extension);
             this.decryptedLinks.add(dl);
+            distribute(dl);
         }
     }
 

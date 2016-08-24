@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -669,7 +669,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         return passwordRequired;
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({ "unchecked" })
     private void decryptUserLoggedIn() throws Exception {
         final int limit = 10;
         int offset = 0;

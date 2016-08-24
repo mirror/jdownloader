@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/g/(\\d+)/[a-z0-9]+" })
 public class EHentaiOrg extends PluginForDecrypt {
 
     public EHentaiOrg(PluginWrapper wrapper) {
@@ -105,8 +105,10 @@ public class EHentaiOrg extends PluginForDecrypt {
             }
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink(singleLink);
-                final String namepart = fpName + "_" + uid + "-" + df.format(counter);
+                final String imgposition = df.format(counter);
+                final String namepart = fpName + "_" + uid + "-" + imgposition;
                 dl.setProperty("namepart", namepart);
+                dl.setProperty("imageposition", imgposition);
                 dl.setName(namepart);
                 dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 dl.setAvailable(true);
