@@ -20,7 +20,11 @@ public class EventSandbox {
     }
 
     public String getData() {
-        return JSonStorage.toString(data);
+        if (data == null) {
+            return null;
+        } else {
+            return JSonStorage.toString(data);
+        }
     }
 
     public String getPublisher() {

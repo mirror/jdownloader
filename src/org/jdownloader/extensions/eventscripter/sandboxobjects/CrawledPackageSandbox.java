@@ -26,6 +26,13 @@ public class CrawledPackageSandbox {
         this(null);
     }
 
+    public long getAddedDate() {
+        if (filePackage != null) {
+            return filePackage.getCreated();
+        }
+        return -1;
+    }
+
     public ArchiveSandbox[] getArchives() {
         if (filePackage == null) {
             return null;

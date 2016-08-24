@@ -15,8 +15,8 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 
 public class LinkCollectorEventPublisher implements EventPublisher, LinkCollectorListener {
 
-    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private final String[]                             eventIDs;
+    private final CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
+    private final String[]                                   eventIDs;
 
     private enum EVENTID {
         CONTENT_ADDED,
@@ -45,81 +45,74 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
         return "linkcollector";
     }
 
+    public boolean hasSubscriptionFor(final String eventID) {
+        if (eventSenders.size() > 0) {
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                if (eventSender.hasSubscriptionFor(this, eventID)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onLinkCollectorAbort(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.ABORT.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
+        sendEventID(EVENTID.ABORT);
+    }
+
+    private final void sendEventID(EVENTID eventid) {
+        if (eventid != null && hasSubscriptionFor(eventid.name())) {
+            final SimpleEventObject eventObject = new SimpleEventObject(this, eventid.name(), eventid.name());
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
         }
     }
 
     @Override
     public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.FILTERED_LINKS_AVAILABLE.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.FILTERED_LINKS_AVAILABLE);
     }
 
     @Override
     public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.FILTERED_LINKS_EMPTY.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.FILTERED_LINKS_EMPTY);
     }
 
     @Override
     public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.DATA_REFRESH.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.DATA_REFRESH);
     }
 
     @Override
     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.STRUCTURE_REFRESH.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.STRUCTURE_REFRESH);
     }
 
     @Override
     public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.CONTENT_REMOVED.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.CONTENT_REMOVED);
     }
 
     @Override
     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.CONTENT_ADDED.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.CONTENT_ADDED);
     }
 
     @Override
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.LINK_ADDED.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.LINK_ADDED);
     }
 
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.DUPE_ADDED.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.DUPE_ADDED);
     }
 
     @Override
     public synchronized void register(RemoteAPIEventsSender eventsAPI) {
-        boolean wasEmpty = eventSenders.isEmpty();
+        final boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
             LinkCollector.getInstance().getEventsender().addListener(this, true);
