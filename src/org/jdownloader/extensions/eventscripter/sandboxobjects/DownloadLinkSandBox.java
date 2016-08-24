@@ -66,6 +66,13 @@ public class DownloadLinkSandBox {
         return -1;
     }
 
+    public long getAddedDate() {
+        if (storable != null) {
+            return storable.getAddedDate();
+        }
+        return -1;
+    }
+
     public long getFinishedDate() {
         if (storable != null) {
             return storable.getFinishedDate();

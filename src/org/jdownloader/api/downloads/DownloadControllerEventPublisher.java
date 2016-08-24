@@ -137,7 +137,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public synchronized void register(RemoteAPIEventsSender eventsAPI) {
-        boolean wasEmpty = remoteEventSenders.isEmpty();
+        final boolean wasEmpty = remoteEventSenders.isEmpty();
         remoteEventSenders.add(eventsAPI);
         if (wasEmpty && remoteEventSenders.isEmpty() == false) {
             DownloadController.getInstance().addListener(this, true);
@@ -470,7 +470,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     private void fire(String eventID, Object dls, String collapseKey) {
         synchronized (this) {
-            ArrayList<Subscriber> subscribers = eventsAPI.getSubscribers();
+            List<Subscriber> subscribers = eventsAPI.getSubscribers();
             final SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
             RemoteAPIController.getInstance().getEventSender().fireEvent(new RemoteAPIInternalEvent() {
 
@@ -670,9 +670,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             System.out.println("Flush Buffer " + buffer.size());
 
             for (Entry<Subscriber, List<EventObject>> es : buffer.entrySet()) {
-
                 eventsAPI.push(es.getKey(), es.getValue());
-
             }
             buffer.clear();
         }

@@ -144,6 +144,20 @@ public class FilePackageSandBox {
         return null;
     }
 
+    public long getAddedDate() {
+        if (filePackage != null) {
+            return filePackage.getCreated();
+        }
+        return -1;
+    }
+
+    public long getFinishedDate() {
+        if (filePackage != null) {
+            return filePackage.getFinishedDate();
+        }
+        return -1;
+    }
+
     public String getDownloadFolder() {
         if (filePackage == null) {
             return Application.getResource("").getAbsolutePath();
