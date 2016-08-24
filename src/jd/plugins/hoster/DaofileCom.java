@@ -690,7 +690,7 @@ public class DaofileCom extends PluginForHost {
         }
         if (ttt == null) {
             // 24.08.2016
-            ttt = new Regex(correctedBR, "id=\"countdown\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "<span id=\"countdown\">Wait <span class=\"seconds\">(\\d+)</span> seconds").getMatch(0);
         }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
