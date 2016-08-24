@@ -30,30 +30,31 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
         switch (propertyChange.getProperty()) {
         case STOPSIGN:
-            HashMap<String, Object> dls = new HashMap<String, Object>();
-            Object data = propertyChange.getValue();
-            if (data instanceof FilePackage) {
-                data = ((FilePackage) propertyChange.getValue()).getUniqueID().getID();
-            } else if (data instanceof DownloadLink) {
-                data = ((DownloadLink) propertyChange.getValue()).getUniqueID().getID();
-            } else {
-                data = String.valueOf(propertyChange.getValue());
-            }
-            dls.put("data", data);
-            SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.STOPSIGN.name(), dls);
-            for (RemoteAPIEventsSender eventSender : eventSenders) {
-                eventSender.publishEvent(eventObject, null);
+            if (hasSubscriptionFor(EVENTID.STOPSIGN.name())) {
+                final HashMap<String, Object> dls = new HashMap<String, Object>();
+                Object data = propertyChange.getValue();
+                if (data instanceof FilePackage) {
+                    data = ((FilePackage) propertyChange.getValue()).getUniqueID().getID();
+                } else if (data instanceof DownloadLink) {
+                    data = ((DownloadLink) propertyChange.getValue()).getUniqueID().getID();
+                } else {
+                    data = String.valueOf(propertyChange.getValue());
+                }
+                dls.put("data", data);
+                final SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.STOPSIGN.name(), dls);
+                for (RemoteAPIEventsSender eventSender : eventSenders) {
+                    eventSender.publishEvent(eventObject, null);
+                }
             }
             break;
         }
     }
 
-    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    private final String[]                             eventIDs;
+    private final CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
+    private final String[]                                   eventIDs;
 
     public DownloadWatchDogEventPublisher() {
         eventIDs = new String[] { EVENTID.PAUSED.name(), EVENTID.RUNNING.name(), EVENTID.STOPPED.name(), EVENTID.UPDATE.name() };
-
     }
 
     @Override
@@ -74,28 +75,39 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
     public void onDownloadWatchdogStateIsIdle() {
     }
 
+    private final boolean hasSubscriptionFor(final String eventID) {
+        if (eventSenders.size() > 0) {
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                if (eventSender.hasSubscriptionFor(this, eventID)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private final void sendEventID(EVENTID eventid) {
+        if (eventid != null && hasSubscriptionFor(eventid.name())) {
+            final SimpleEventObject eventObject = new SimpleEventObject(this, eventid.name(), "watchDogState");
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
+    }
+
     @Override
     public void onDownloadWatchdogStateIsPause() {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.PAUSED.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.PAUSED);
     }
 
     @Override
     public void onDownloadWatchdogStateIsRunning() {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.RUNNING.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.RUNNING);
     }
 
     @Override
     public void onDownloadWatchdogStateIsStopped() {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.STOPPED.name(), null);
-        for (RemoteAPIEventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        sendEventID(EVENTID.STOPPED);
     }
 
     @Override
@@ -104,7 +116,7 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
 
     @Override
     public synchronized void register(RemoteAPIEventsSender eventsAPI) {
-        boolean wasEmpty = eventSenders.isEmpty();
+        final boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
             DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
