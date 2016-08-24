@@ -37,20 +37,17 @@ public class PluginScannerNIO<T extends Plugin> {
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final long timeStamp = System.currentTimeMillis();
         try {
-            long lastModified = lastFolderModification != null ? lastFolderModification.get() : -1;
+            final long lastFolderModifiedCheck = lastFolderModification != null ? lastFolderModification.get() : -1;
             final Path folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath).toPath();
-            final long lastFolderModified = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
-            if (lastModified > 0 && lastFolderModified == lastModified && pluginCache != null && pluginCache.size() > 0) {
+            final long lastFolderModifiedScanStart = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
+            if (lastFolderModifiedCheck > 0 && lastFolderModifiedScanStart == lastFolderModifiedCheck && pluginCache != null && pluginCache.size() > 0) {
                 for (final LazyPlugin<T> lazyPlugin : pluginCache) {
                     final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
                     ret.add(pluginInfo);
                 }
                 return ret;
             }
-            PluginClassLoaderChild cl = null;
-            MessageDigest md = null;
             final String pkg = hosterpath.replace("/", ".");
-            final byte[] mdCache = new byte[32767];
             final HashMap<String, List<LazyPlugin<T>>> lazyPluginClassMap;
             if (pluginCache != null && pluginCache.size() > 0) {
                 lazyPluginClassMap = new HashMap<String, List<LazyPlugin<T>>>();
@@ -65,9 +62,9 @@ public class PluginScannerNIO<T extends Plugin> {
             } else {
                 lazyPluginClassMap = null;
             }
-            if (lastFolderModification != null) {
-                lastFolderModification.set(lastFolderModified);
-            }
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            final byte[] mdCache = new byte[32767];
+            PluginClassLoaderChild cl = null;
             stream = Files.newDirectoryStream(folder, "*.class");
             for (final Path path : stream) {
                 try {
@@ -76,11 +73,12 @@ public class PluginScannerNIO<T extends Plugin> {
                     if (className.indexOf("$") < 0 && !PluginController.IGNORELIST.contains(className)) {
                         byte[] sha256 = null;
                         final BasicFileAttributes pathAttr = Files.readAttributes(path, BasicFileAttributes.class);
+                        final long lastFileModification = pathAttr.lastModifiedTime().toMillis();
                         if (lazyPluginClassMap != null) {
                             final List<LazyPlugin<T>> lazyPlugins = lazyPluginClassMap.get(className);
                             if (lazyPlugins != null && lazyPlugins.size() > 0) {
                                 final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
-                                if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == pathAttr.lastModifiedTime().toMillis() || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path.toFile(), md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
+                                if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastFileModification || ((sha256 = PluginController.getFileHashBytes(path.toFile(), md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
                                     for (final LazyPlugin<T> lazyPlugin : lazyPlugins) {
                                         // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
                                         // lazyPluginClass.getRevision());
@@ -98,8 +96,8 @@ public class PluginScannerNIO<T extends Plugin> {
                                 cl = PluginClassLoader.getInstance().getChild();
                                 cl.setMapStaticFields(false);
                             }
-                            if (md == null) {
-                                md = MessageDigest.getInstance("SHA-256");
+                            if (sha256 == null) {
+                                sha256 = PluginController.getFileHashBytes(path.toFile(), md, mdCache);
                             }
                             pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
                             if (!Modifier.isAbstract(pluginClass.getModifiers()) && Plugin.class.isAssignableFrom(pluginClass)) {
@@ -115,11 +113,8 @@ public class PluginScannerNIO<T extends Plugin> {
                             logger.log(e);
                             continue;
                         }
-                        if (sha256 == null) {
-                            sha256 = PluginController.getFileHashBytes(path.toFile(), md, mdCache);
-                        }
                         //
-                        final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, pathAttr.lastModifiedTime().toMillis(), (int) infos[0], infos[1]);
+                        final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastFileModification, (int) infos[0], infos[1]);
                         final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
                         // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
                         ret.add(pluginInfo);
@@ -130,7 +125,19 @@ public class PluginScannerNIO<T extends Plugin> {
                     logger.log(e);
                 }
             }
-            return ret;
+            if (stream != null) {
+                stream.close();
+            }
+            final long lastFolderModifiedScanStop = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
+            if (lastFolderModifiedScanStart != lastFolderModifiedScanStop) {
+                Thread.sleep(1000);
+                return scan(logger, hosterpath, pluginCache, lastFolderModification);
+            } else {
+                if (lastFolderModification != null) {
+                    lastFolderModification.set(lastFolderModifiedScanStop);
+                }
+                return ret;
+            }
         } finally {
             logger.info("@PluginController(NIO): scan took " + (System.currentTimeMillis() - timeStamp) + "ms for " + ret.size());
             if (stream != null) {
