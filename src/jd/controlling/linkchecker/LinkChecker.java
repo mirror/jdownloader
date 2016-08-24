@@ -13,6 +13,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -25,16 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkChecker<E extends CheckableLink> {
 
@@ -287,17 +287,27 @@ public class LinkChecker<E extends CheckableLink> {
                                     final WeakHashMap<LinkChecker<?>, List<InternCheckableLink>> map = LINKCHECKER.get(threadHost);
                                     final ArrayList<Iterator<InternCheckableLink>> its = new ArrayList<Iterator<InternCheckableLink>>();
                                     for (final List<InternCheckableLink> list : map.values()) {
-                                        its.add(list.iterator());
+                                        if (list.size() > 0) {
+                                            its.add(list.iterator());
+                                        }
                                     }
-                                    while (roundComplete.size() < ROUNDSIZE && its.size() > 0) {
-                                        final Iterator<Iterator<InternCheckableLink>> it = its.iterator();
-                                        while (it.hasNext()) {
-                                            final Iterator<InternCheckableLink> it2 = it.next();
-                                            if (it2.hasNext()) {
-                                                roundComplete.add(it2.next());
-                                                it2.remove();
-                                            } else {
+                                    if (its.size() > 0) {
+                                        int index = 0;
+                                        int again = its.size();
+                                        while (true) {
+                                            final Iterator<InternCheckableLink> it = its.get(index++);
+                                            index = index % its.size();
+                                            if (it.hasNext()) {
+                                                again = its.size();
+                                                roundComplete.add(it.next());
+                                                if (roundComplete.size() > ROUNDSIZE) {
+                                                    break;
+                                                }
                                                 it.remove();
+                                            } else {
+                                                if (--again == 0) {
+                                                    break;
+                                                }
                                             }
                                         }
                                     }
