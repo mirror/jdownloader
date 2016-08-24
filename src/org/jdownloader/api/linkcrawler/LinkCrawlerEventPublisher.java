@@ -32,14 +32,25 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
         eventIDs = new String[] { EVENTID.STARTED.name(), EVENTID.STOPPED.name(), EVENTID.FINISHED.name() };
     }
 
+    private final boolean hasSubscriptionFor(final String eventID) {
+        if (eventSenders.size() > 0) {
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                if (eventSender.hasSubscriptionFor(this, eventID)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
-        if (!eventSenders.isEmpty()) {
-            HashMap<String, Object> dls = new HashMap<String, Object>();
+        if (hasSubscriptionFor(event.getType().name())) {
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
             final LinkCrawler crawler = event.getCaller();
             dls.put("crawlerId", crawler.getUniqueAlltimeID().getID());
             if (event.getCaller() instanceof JobLinkCrawler) {
-                JobLinkCrawler jobCrawler = ((JobLinkCrawler) crawler);
+                final JobLinkCrawler jobCrawler = ((JobLinkCrawler) crawler);
                 final LinkCollectingJob job = ((JobLinkCrawler) crawler).getJob();
                 if (job != null) {
                     dls.put("jobId", job.getUniqueAlltimeID().getID());
@@ -61,21 +72,18 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
                                 }
                             }
                         }
-
                         dls.put("packages", dupe.size());
                         dls.put("links", jobCrawler.getCrawledLinksFoundCounter());
                         dls.put("online", onlineCnt);
                         dls.put("offline", offlineCnt);
                     }
                 }
-
             }
             final SimpleEventObject eventObject = new SimpleEventObject(this, event.getType().name(), dls);
             // you can add uniqueID of linkcrawler and job to event
-            for (RemoteAPIEventsSender eventSender : eventSenders) {
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
                 eventSender.publishEvent(eventObject, null);
             }
-
         }
     }
 

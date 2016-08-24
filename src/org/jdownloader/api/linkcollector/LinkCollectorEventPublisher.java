@@ -45,7 +45,7 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
         return "linkcollector";
     }
 
-    public boolean hasSubscriptionFor(final String eventID) {
+    private final boolean hasSubscriptionFor(final String eventID) {
         if (eventSenders.size() > 0) {
             for (final RemoteAPIEventsSender eventSender : eventSenders) {
                 if (eventSender.hasSubscriptionFor(this, eventID)) {
