@@ -32,20 +32,18 @@ public class PluginScannerFiles<T extends Plugin> {
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final long timeStamp = System.currentTimeMillis();
         try {
-            long lastModified = lastFolderModification != null ? lastFolderModification.get() : -1;
+            final long lastFolderModifiedCheck = lastFolderModification != null ? lastFolderModification.get() : -1;
             final File folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
-            final long lastFolderModified = folder.lastModified();
-            if (lastModified > 0 && lastFolderModified == lastModified && pluginCache != null && pluginCache.size() > 0) {
+            final long lastFolderModifiedScanStart = folder.lastModified();
+            if (lastFolderModifiedCheck > 0 && lastFolderModifiedScanStart == lastFolderModifiedCheck && pluginCache != null && pluginCache.size() > 0) {
                 for (final LazyPlugin<T> lazyPlugin : pluginCache) {
                     final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
                     ret.add(pluginInfo);
                 }
                 return ret;
             }
-            PluginClassLoaderChild cl = null;
             final String pkg = hosterpath.replace("/", ".");
-            MessageDigest md = null;
-            final byte[] mdCache = new byte[32767];
+
             final HashMap<String, List<LazyPlugin<T>>> lazyPluginClassMap;
             if (pluginCache != null && pluginCache.size() > 0) {
                 lazyPluginClassMap = new HashMap<String, List<LazyPlugin<T>>>();
@@ -60,9 +58,9 @@ public class PluginScannerFiles<T extends Plugin> {
             } else {
                 lazyPluginClassMap = null;
             }
-            if (lastFolderModification != null) {
-                lastFolderModification.set(lastFolderModified);
-            }
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            final byte[] mdCache = new byte[32767];
+            PluginClassLoaderChild cl = null;
             final File stream[] = folder.listFiles();
             for (final File path : stream) {
                 try {
@@ -71,12 +69,12 @@ public class PluginScannerFiles<T extends Plugin> {
                         final String className = pathFileName.substring(0, pathFileName.length() - 6);
                         if (className.indexOf("$") < 0 && !PluginController.IGNORELIST.contains(className)) {
                             byte[] sha256 = null;
-                            lastModified = path.lastModified();
+                            final long lastFileModification = path.lastModified();
                             if (lazyPluginClassMap != null) {
                                 final List<LazyPlugin<T>> lazyPlugins = lazyPluginClassMap.get(className);
                                 if (lazyPlugins != null && lazyPlugins.size() > 0) {
                                     final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
-                                    if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastModified || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
+                                    if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastFileModification || ((sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
                                         for (final LazyPlugin<T> lazyPlugin : lazyPlugins) {
                                             // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
                                             // lazyPluginClass.getRevision());
@@ -94,8 +92,8 @@ public class PluginScannerFiles<T extends Plugin> {
                                     cl = PluginClassLoader.getInstance().getChild();
                                     cl.setMapStaticFields(false);
                                 }
-                                if (md == null) {
-                                    md = MessageDigest.getInstance("SHA-256");
+                                if (sha256 == null) {
+                                    sha256 = PluginController.getFileHashBytes(path, md, mdCache);
                                 }
                                 pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
                                 if (!Modifier.isAbstract(pluginClass.getModifiers()) && Plugin.class.isAssignableFrom(pluginClass)) {
@@ -111,10 +109,7 @@ public class PluginScannerFiles<T extends Plugin> {
                                 logger.log(e);
                                 continue;
                             }
-                            if (sha256 == null) {
-                                sha256 = PluginController.getFileHashBytes(path, md, mdCache);
-                            }
-                            final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastModified, (int) infos[0], infos[1]);
+                            final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastFileModification, (int) infos[0], infos[1]);
                             final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
                             // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
                             ret.add(pluginInfo);
@@ -125,7 +120,16 @@ public class PluginScannerFiles<T extends Plugin> {
                     logger.log(e);
                 }
             }
-            return ret;
+            final long lastFolderModifiedScanStop = folder.lastModified();
+            if (lastFolderModifiedScanStart != lastFolderModifiedScanStop) {
+                Thread.sleep(1000);
+                return scan(logger, hosterpath, pluginCache, lastFolderModification);
+            } else {
+                if (lastFolderModification != null) {
+                    lastFolderModification.set(lastFolderModifiedScanStop);
+                }
+                return ret;
+            }
         } finally {
             logger.info("@PluginController(Files): scan took " + (System.currentTimeMillis() - timeStamp) + "ms for " + ret.size());
         }
