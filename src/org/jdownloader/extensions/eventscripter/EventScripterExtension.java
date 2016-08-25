@@ -139,7 +139,10 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         LinkCollector.getInstance().getEventsender().removeListener(this);
-
+        final Subscriber old = EventScripterExtension.this.subscriber.getAndSet(null);
+        if (old != null) {
+            old.kill();
+        }
         if (!Application.isHeadless()) {
             MenuManagerTrayIcon.getInstance().unregisterExtender(this);
             MenuManagerMainToolbar.getInstance().unregisterExtender(this);
