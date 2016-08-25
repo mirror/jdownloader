@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -48,6 +50,7 @@ import net.sourceforge.htmlunit.corejs.javascript.Script;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.remoteapi.events.EventObject;
+import org.appwork.remoteapi.events.Subscriber;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -56,7 +59,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.api.RemoteAPIInternalEventListener;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -102,12 +104,13 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
-public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener, ReconnecterListener, ChallengeResponseListener {
+public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener, ReconnecterListener, ChallengeResponseListener {
 
-    private EventScripterConfigPanel   configPanel = null;
-    private volatile List<ScriptEntry> entries     = new ArrayList<ScriptEntry>();
+    private EventScripterConfigPanel          configPanel = null;
+    private volatile List<ScriptEntry>        entries     = new ArrayList<ScriptEntry>();
+    private final AtomicReference<Subscriber> subscriber  = new AtomicReference<Subscriber>(null);
 
-    private IntervalController         intervalController;
+    private IntervalController                intervalController;
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -133,7 +136,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         Reconnecter.getInstance().getEventSender().removeListener(this);
         PackagizerController.getInstance().getEventSender().removeListener(this);
         DownloadWatchDog.getInstance().getEventSender().removeListener(this);
-        RemoteAPIController.getInstance().getEventSender().removeListener(this);
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         LinkCollector.getInstance().getEventsender().removeListener(this);
@@ -167,7 +169,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         LinkCollector.getInstance().getEventsender().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
-        RemoteAPIController.getInstance().getEventSender().addListener(this);
 
         if (!Application.isHeadless()) {
             MenuManagerMainToolbar.getInstance().registerExtender(this);
@@ -203,6 +204,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
             @Override
             public void run() {
+                setupRemoteAPIListener(entries);
                 for (ScriptEntry script : entries) {
                     if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_JDOWNLOADER_STARTED == script.getEventTrigger()) {
                         try {
@@ -216,6 +218,56 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             }
         });
 
+    }
+
+    private void setupRemoteAPIListener(List<ScriptEntry> scriptEntries) {
+        if (scriptEntries != null) {
+            for (ScriptEntry script : entries) {
+                if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
+                    final Subscriber subscriber = new Subscriber(new Pattern[] { Pattern.compile(".*") }, new Pattern[0]) {
+                        @Override
+                        public boolean isAlive() {
+                            return super.isAlive() && EventScripterExtension.this.subscriber.get() == this;
+                        }
+
+                        @Override
+                        protected void push(final EventObject event) {
+                            for (ScriptEntry script : entries) {
+                                if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
+                                    try {
+                                        HashMap<String, Object> props = new HashMap<String, Object>();
+                                        props.put("event", new EventSandbox(event));
+                                        // props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
+                                        runScript(script, props);
+                                    } catch (Throwable e) {
+                                        getLogger().log(e);
+                                    }
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void push(List<EventObject> events) {
+                            if (events != null) {
+                                for (EventObject event : events) {
+                                    push(event);
+                                }
+                            }
+                        }
+                    };
+                    final Subscriber old = EventScripterExtension.this.subscriber.getAndSet(subscriber);
+                    if (old != null) {
+                        old.kill();
+                    }
+                    RemoteAPIController.getInstance().getEventsapi().addSubscriber(subscriber);
+                    return;
+                }
+            }
+        }
+        final Subscriber old = EventScripterExtension.this.subscriber.getAndSet(null);
+        if (old != null) {
+            old.kill();
+        }
     }
 
     public List<ScriptEntry> getEntries() {
@@ -297,7 +349,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadWatchdogStateIsPause() {
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_DOWNLOADS_PAUSE == script.getEventTrigger()) {
                 try {
@@ -413,6 +464,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         } else {
             this.entries = new ArrayList<ScriptEntry>(entries);
         }
+        setupRemoteAPIListener(entries);
         intervalController.update();
     }
 
@@ -420,7 +472,9 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         new Thread() {
             @Override
             public void run() {
-                getSettings().setScripts(new ArrayList<ScriptEntry>(tableData));
+                final ArrayList<ScriptEntry> entries = new ArrayList<ScriptEntry>(tableData);
+                setupRemoteAPIListener(entries);
+                getSettings().setScripts(entries);
             }
         }.start();
 
@@ -475,22 +529,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             final ArrayList<ScriptEntry> newEntries = new ArrayList<ScriptEntry>(entries);
             newEntries.removeAll(entries2);
             save(newEntries);
-        }
-    }
-
-    @Override
-    public void onRemoteAPIEvent(EventObject event) {
-        for (ScriptEntry script : entries) {
-            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
-                try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("event", new EventSandbox(event));
-                    // props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
-                    runScript(script, props);
-                } catch (Throwable e) {
-                    getLogger().log(e);
-                }
-            }
         }
     }
 

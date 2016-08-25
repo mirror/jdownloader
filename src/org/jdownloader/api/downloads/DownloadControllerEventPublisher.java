@@ -5,12 +5,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -36,12 +37,11 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.remoteapi.events.Subscriber;
 import org.appwork.remoteapi.events.local.LocalEventsAPIListener;
 import org.appwork.remoteapi.exceptions.BadParameterException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.api.RemoteAPIInternalEvent;
-import org.jdownloader.api.RemoteAPIInternalEventListener;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.FilePackageAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
@@ -67,16 +67,21 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         PACKAGE_UPDATE
     }
 
-    private CopyOnWriteArraySet<RemoteAPIEventsSender> remoteEventSenders      = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
-    public static final List<String>                   EVENT_ID_LIST;
-    private ConcurrentHashMap<Long, DownloadLink>      linksWithPluginProgress = new ConcurrentHashMap<Long, DownloadLink>();
-    private ConcurrentHashMap<Long, ChannelCollector>  collectors              = new ConcurrentHashMap<Long, ChannelCollector>();
+    private final CopyOnWriteArraySet<RemoteAPIEventsSender> remoteEventSenders      = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
+    private static final List<String>                        EVENT_ID_LIST;
+    private final CopyOnWriteArraySet<DownloadLink>          linksWithPluginProgress = new CopyOnWriteArraySet<DownloadLink>();
 
-    public static List<String>                         INTERVAL_EVENT_ID_LIST;
-    private ScheduledExecutorService                   executer;
-    private EventsAPI                                  eventsAPI;
-    private long                                       backEndChangeID;
-    private long                                       contentChangesCounter;
+    private final CopyOnWriteArrayList<ChannelCollector>     collectors              = new CopyOnWriteArrayList<ChannelCollector>();
+
+    protected final static List<String>                      INTERVAL_EVENT_ID_LIST  = new ArrayList<String>();
+    private ScheduledExecutorService                         executer;
+    private final EventsAPI                                  eventsAPI;
+    private final AtomicLong                                 backEndChangeID         = new AtomicLong(-1);
+    private final AtomicLong                                 contentChangesCounter   = new AtomicLong(-1);
+    private final Queue                                      queue                   = new Queue("DownloadControllerEventPublisher") {
+        public void killQueue() {
+        };
+    };
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -93,7 +98,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + "." + es.getKey());
         }
 
-        INTERVAL_EVENT_ID_LIST = new ArrayList<String>();
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".speed");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".bytesLoaded");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".eta");
@@ -156,334 +160,424 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
-        HashMap<String, Object> dls = new HashMap<String, Object>();
-        long afterUuid = -1l;
-        PackageController<FilePackage, DownloadLink> controller = pkg.getControlledBy();
-        if (controller != null) {
-            boolean locked = controller.readLock();
-            try {
-                int index = controller.indexOf(pkg);
-                if (index > 0) {
-                    FilePackage fp = controller.getPackages().get(index - 1);
-                    if (fp != null) {
-                        afterUuid = fp.getUniqueID().getID();
-                    }
-                }
-            } finally {
-                controller.readUnlock(locked);
-            }
+        boolean flush = false;
+        if (hasSubscriptionFor(BASIC_EVENT.ADD_CONTENT.name())) {
+            fire(BASIC_EVENT.ADD_CONTENT.name(), null, BASIC_EVENT.ADD_CONTENT.name());
+            flush = true;
         }
-        dls.put("uuid", pkg.getUniqueID().getID());
-        dls.put("afterUuid", afterUuid);
-
-        fire(BASIC_EVENT.ADD_CONTENT.name(), null, BASIC_EVENT.ADD_CONTENT.name());
-        fire(BASIC_EVENT.ADD_PACKAGE.name(), dls, BASIC_EVENT.ADD_PACKAGE.name() + "." + pkg.getUniqueID().getID());
-        flushBuffer();
+        if (hasSubscriptionFor(BASIC_EVENT.ADD_PACKAGE.name())) {
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
+            long afterUuid = -1l;
+            final PackageController<FilePackage, DownloadLink> controller = pkg.getControlledBy();
+            if (controller != null) {
+                final boolean readL = controller.readLock();
+                try {
+                    final int index = controller.indexOf(pkg);
+                    if (index > 0) {
+                        final FilePackage fp = controller.getPackages().get(index - 1);
+                        if (fp != null) {
+                            afterUuid = fp.getUniqueID().getID();
+                        }
+                    }
+                } finally {
+                    controller.readUnlock(readL);
+                }
+            }
+            dls.put("uuid", pkg.getUniqueID().getID());
+            dls.put("afterUuid", afterUuid);
+            fire(BASIC_EVENT.ADD_PACKAGE.name(), dls, BASIC_EVENT.ADD_PACKAGE.name() + "." + pkg.getUniqueID().getID());
+            flush = true;
+        }
+        if (flush) {
+            flushBuffer();
+        }
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
-        long newChange = DownloadController.getInstance().getPackageControllerChanges();
-        if (backEndChangeID == newChange) {
-            // avoid dupe events
-            return;
+        if (hasControllerChanges() && hasSubscriptionFor(BASIC_EVENT.REFRESH_STRUCTURE.name())) {
+            fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
+            flushBuffer();
         }
-        backEndChangeID = newChange;
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
-        flushBuffer();
-
     }
 
     @Override
     public void onDownloadControllerStructureRefresh() {
-        long newChange = DownloadController.getInstance().getPackageControllerChanges();
-        if (backEndChangeID == newChange) {
-            // avoid dupe events
-            return;
+        if (hasControllerChanges() && hasSubscriptionFor(BASIC_EVENT.REFRESH_STRUCTURE.name())) {
+            fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
+            flushBuffer();
         }
-        backEndChangeID = newChange;
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
-        flushBuffer();
+    }
+
+    private final boolean hasControllerChanges() {
+        final long newChange = DownloadController.getInstance().getPackageControllerChanges();
+        return backEndChangeID.getAndSet(newChange) != newChange;
+    }
+
+    private final boolean hasContentChanges() {
+        final long newChange = DownloadController.getInstance().getContentChanges();
+        return contentChangesCounter.getAndSet(newChange) != newChange;
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
-        long newChange = DownloadController.getInstance().getPackageControllerChanges();
-        if (backEndChangeID == newChange) {
-            // avoid dupe events
-            return;
+        if (hasControllerChanges() && hasSubscriptionFor(BASIC_EVENT.REFRESH_STRUCTURE.name())) {
+            fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
+            flushBuffer();
         }
-        backEndChangeID = newChange;
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
-        flushBuffer();
     }
 
     @Override
     public void onDownloadControllerRemovedPackage(FilePackage pkg) {
-        HashMap<String, Object> dls = new HashMap<String, Object>();
-        dls.put("uuid", pkg.getUniqueID().getID());
-        fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
-        fire(BASIC_EVENT.REMOVE_PACKAGE.name(), dls, BASIC_EVENT.REMOVE_PACKAGE.name() + "." + pkg.getUniqueID().getID());
-        flushBuffer();
+        boolean flush = false;
+        if (hasSubscriptionFor(BASIC_EVENT.REMOVE_CONTENT.name())) {
+            fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+            flush = true;
+        }
+        if (hasSubscriptionFor(BASIC_EVENT.REMOVE_PACKAGE.name())) {
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuid", pkg.getUniqueID().getID());
+            fire(BASIC_EVENT.REMOVE_PACKAGE.name(), dls, BASIC_EVENT.REMOVE_PACKAGE.name() + "." + pkg.getUniqueID().getID());
+            flush = true;
+        }
+        if (flush) {
+            flushBuffer();
+        }
     }
 
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
-        fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
-        final long[] ret = new long[list.size()];
-        int index = 0;
-        for (DownloadLink link : list) {
-            ret[index++] = link.getUniqueID().getID();
+        boolean flush = false;
+        if (hasSubscriptionFor(BASIC_EVENT.REMOVE_CONTENT.name())) {
+            fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+            flush = true;
         }
-        HashMap<String, Object> dls = new HashMap<String, Object>();
-        dls.put("uuids", ret);
-        fire(BASIC_EVENT.REMOVE_LINK.name(), dls, null);
-        flushBuffer();
+        if (hasSubscriptionFor(BASIC_EVENT.REMOVE_LINK.name())) {
+            final long[] ret = new long[list.size()];
+            int index = 0;
+            for (final DownloadLink link : list) {
+                ret[index++] = link.getUniqueID().getID();
+            }
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuids", ret);
+            fire(BASIC_EVENT.REMOVE_LINK.name(), dls, null);
+            flush = true;
+        }
+        if (flush) {
+            flushBuffer();
+        }
     }
+
+    private static final String LINK_UPDATE_availability     = BASIC_EVENT.LINK_UPDATE.name() + ".availability";
+    private static final String LINK_UPDATE_comment          = BASIC_EVENT.LINK_UPDATE.name() + ".comment";
+    private static final String LINK_UPDATE_url              = BASIC_EVENT.LINK_UPDATE.name() + ".url";
+    private static final String LINK_UPDATE_bytesTotal       = BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal";
+    private static final String LINK_UPDATE_priority         = BASIC_EVENT.LINK_UPDATE.name() + ".priority";
+    private static final String LINK_UPDATE_name             = BASIC_EVENT.LINK_UPDATE.name() + ".name";
+    private static final String LINK_UPDATE_extractionStatus = BASIC_EVENT.LINK_UPDATE.name() + ".extractionStatus";
+    private static final String LINK_UPDATE_status           = BASIC_EVENT.LINK_UPDATE.name() + ".status";
+    private static final String LINK_UPDATE_skipped          = BASIC_EVENT.LINK_UPDATE.name() + ".skipped";
+    private static final String LINK_UPDATE_finished         = BASIC_EVENT.LINK_UPDATE.name() + ".finished";
+    private static final String LINK_UPDATE_reset            = BASIC_EVENT.LINK_UPDATE.name() + ".reset";
+    private static final String PACKAGE_UPDATE_reset         = BASIC_EVENT.PACKAGE_UPDATE.name() + ".reset";
+    private static final String LINK_UPDATE_running          = BASIC_EVENT.LINK_UPDATE.name() + ".running";
+    private static final String PACKAGE_UPDATE_running       = BASIC_EVENT.PACKAGE_UPDATE.name() + ".running";
+    private static final String PACKAGE_UPDATE_status        = BASIC_EVENT.PACKAGE_UPDATE.name() + ".status";
+    private static final String LINK_UPDATE_enabled          = BASIC_EVENT.LINK_UPDATE.name() + ".enabled";
+    private static final String PACKAGE_UPDATE_enabled       = BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled";
+    private static final String PACKAGE_UPDATE_name          = BASIC_EVENT.PACKAGE_UPDATE.name() + ".name";
+    private static final String PACKAGE_UPDATE_priority      = BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority";
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink dl, DownloadLinkProperty property) {
-
-        if (property != null) {
-            FilePackage parent = dl.getParentNode();
-            HashMap<String, Object> dls = null;
-            // [DATA_UPDATE.extractionStatus, DATA_UPDATE.finished, DATA_UPDATE.priority, DATA_UPDATE.speed, DATA_UPDATE.url,
-            // DATA_UPDATE.enabled, DATA_UPDATE.skipped, DATA_UPDATE.running, DATA_UPDATE.bytesLoaded, DATA_UPDATE.eta,
-            // DATA_UPDATE.maxResults, DATA_UPDATE.packageUUIDs, DATA_UPDATE.host, DATA_UPDATE.comment, DATA_UPDATE.bytesTotal,
-            // DATA_UPDATE.startAt, DATA_UPDATE.status]
-            System.out.println("Property Change: " + property.getProperty());
-            switch (property.getProperty()) {
-            case ARCHIVE:
-                break;
-            case ARCHIVE_ID:
-                // //archive properties changed;
-                break;
-
-            case AVAILABILITY:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("availability", property.getValue());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".availability", dls, BASIC_EVENT.LINK_UPDATE.name() + ".availability." + dl.getUniqueID().getID());
-                break;
-            case CHUNKS:
-                break;
-            case COMMENT:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("comment", property.getValue());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".comment", dls, BASIC_EVENT.LINK_UPDATE.name() + ".comment." + dl.getUniqueID().getID());
-                break;
-            case URL_CONTAINER:
-            case URL_ORIGIN:
-            case URL_REFERRER:
-            case URL_CONTENT:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("url", dl.getView().getDisplayUrl());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".url", dls, BASIC_EVENT.LINK_UPDATE.name() + ".url." + dl.getUniqueID().getID());
-
-                break;
-            case CONDITIONAL_SKIPPED:
-                pushStatus(dl);
-                break;
-            case DOWNLOAD_PASSWORD:
-                break;
-            case DOWNLOADSIZE:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("bytesTotal", property.getValue());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID());
-                break;
-            case DOWNLOADSIZE_VERIFIED:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("bytesTotal", property.getValue());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID());
-                break;
-            case DOWNLOAD_CONTROLLER:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("running", property.getValue() != null);
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID());
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", parent.getUniqueID().getID());
-                dls.put("running", property.getValue() != null || DownloadWatchDog.getInstance().hasRunningDownloads(parent));
-                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".running", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".running." + parent.getUniqueID().getID());
-                break;
-            case ENABLED:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                boolean enabled = dl.isEnabled();
-                dls.put("enabled", enabled);
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".enabled", dls, BASIC_EVENT.LINK_UPDATE.name() + ".enabled." + dl.getUniqueID().getID());
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", parent.getUniqueID().getID());
-                if (enabled == false) {
-                    final boolean readL = parent.getModifyLock().readLock();
-                    try {
-                        for (DownloadLink link : parent.getChildren()) {
-                            if (link.isEnabled()) {
-                                enabled = true;
-                                break;
+        if (hasListener()) {
+            boolean flush = false;
+            if (property != null) {
+                final FilePackage parent = dl.getParentNode();
+                switch (property.getProperty()) {
+                case ARCHIVE:
+                    break;
+                case ARCHIVE_ID:
+                    // //archive properties changed;
+                    break;
+                case AVAILABILITY:
+                    if (hasSubscriptionFor(LINK_UPDATE_availability)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("availability", property.getValue());
+                        fire(LINK_UPDATE_availability, dls, LINK_UPDATE_availability + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case CHUNKS:
+                    break;
+                case COMMENT:
+                    if (hasSubscriptionFor(LINK_UPDATE_comment)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("comment", property.getValue());
+                        fire(LINK_UPDATE_comment, dls, LINK_UPDATE_comment + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case URL_CONTAINER:
+                case URL_ORIGIN:
+                case URL_REFERRER:
+                case URL_CONTENT:
+                    if (hasSubscriptionFor(LINK_UPDATE_url)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("url", dl.getView().getDisplayUrl());
+                        fire(LINK_UPDATE_url, dls, LINK_UPDATE_url + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case CONDITIONAL_SKIPPED:
+                    pushStatus(dl);
+                    break;
+                case DOWNLOAD_PASSWORD:
+                    break;
+                case DOWNLOADSIZE:
+                case DOWNLOADSIZE_VERIFIED:
+                    if (hasSubscriptionFor(LINK_UPDATE_bytesTotal)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("bytesTotal", property.getValue());
+                        fire(LINK_UPDATE_bytesTotal, dls, LINK_UPDATE_bytesTotal + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case DOWNLOAD_CONTROLLER:
+                    if (hasSubscriptionFor(LINK_UPDATE_running)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("running", property.getValue() != null);
+                        fire(LINK_UPDATE_running, dls, LINK_UPDATE_running + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    if (hasSubscriptionFor(PACKAGE_UPDATE_running)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", parent.getUniqueID().getID());
+                        dls.put("running", property.getValue() != null || DownloadWatchDog.getInstance().hasRunningDownloads(parent));
+                        fire(PACKAGE_UPDATE_running, dls, PACKAGE_UPDATE_running + "." + parent.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case ENABLED:
+                    if (hasSubscriptionFor(LINK_UPDATE_enabled)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("enabled", dl.isEnabled());
+                        fire(LINK_UPDATE_enabled, dls, LINK_UPDATE_enabled + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    if (hasSubscriptionFor(PACKAGE_UPDATE_enabled)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", parent.getUniqueID().getID());
+                        boolean enabled = dl.isEnabled();
+                        if (enabled == false) {
+                            final boolean readL = parent.getModifyLock().readLock();
+                            try {
+                                for (final DownloadLink link : parent.getChildren()) {
+                                    if (link.isEnabled()) {
+                                        enabled = true;
+                                        break;
+                                    }
+                                }
+                            } finally {
+                                parent.getModifyLock().readUnlock(readL);
                             }
                         }
-                    } finally {
-                        parent.getModifyLock().readUnlock(readL);
+                        dls.put("enabled", enabled);
+                        fire(PACKAGE_UPDATE_enabled, dls, PACKAGE_UPDATE_enabled + "." + parent.getUniqueID().getID());
+                        flush = true;
                     }
-                }
-                dls.put("enabled", enabled);
-                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled." + parent.getUniqueID().getID());
-                break;
-            case EXTRACTION_STATUS:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                ExtractionStatus es = dl.getExtractionStatus();
-                dls.put("extractionStatus", es == null ? null : es.toString());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".extractionStatus", dls, BASIC_EVENT.LINK_UPDATE.name() + ".extractionStatus." + dl.getUniqueID().getID());
-
-                pushStatus(dl);
-                break;
-            case FINAL_STATE:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("finished", (FinalLinkState.CheckFinished(dl.getFinalLinkState())));
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".finished", dls, BASIC_EVENT.LINK_UPDATE.name() + ".finished." + dl.getUniqueID().getID());
-
-                final FinalLinkState finalLinkState = dl.getFinalLinkState();
-
-                pushStatus(dl);
-
-                break;
-            case LINKSTATUS:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("status", property.getValue());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".status", dls, BASIC_EVENT.LINK_UPDATE.name() + ".status." + dl.getUniqueID().getID());
-
-                break;
-            case MD5:
-                break;
-            case NAME:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("name", dl.getView().getDisplayName());
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".name", dls, BASIC_EVENT.LINK_UPDATE.name() + ".name." + dl.getUniqueID().getID());
-
-                break;
-            case PLUGIN_PROGRESS:
-                synchronized (linksWithPluginProgress) {
+                    break;
+                case EXTRACTION_STATUS:
+                    if (hasSubscriptionFor(LINK_UPDATE_extractionStatus)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        ExtractionStatus es = dl.getExtractionStatus();
+                        dls.put("extractionStatus", es == null ? null : es.toString());
+                        fire(LINK_UPDATE_extractionStatus, dls, LINK_UPDATE_extractionStatus + "." + dl.getUniqueID().getID());
+                        flush = true;
+                        pushStatus(dl);
+                    }
+                    break;
+                case FINAL_STATE:
+                    if (hasSubscriptionFor(LINK_UPDATE_finished)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("finished", (FinalLinkState.CheckFinished(dl.getFinalLinkState())));
+                        fire(LINK_UPDATE_finished, dls, LINK_UPDATE_finished + "." + dl.getUniqueID().getID());
+                        pushStatus(dl);
+                    }
+                    break;
+                case LINKSTATUS:
+                    if (hasSubscriptionFor(LINK_UPDATE_status)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("status", property.getValue());
+                        fire(LINK_UPDATE_status, dls, LINK_UPDATE_status + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case MD5:
+                    break;
+                case NAME:
+                    if (hasSubscriptionFor(LINK_UPDATE_name)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("name", dl.getView().getDisplayName());
+                        fire(LINK_UPDATE_name, dls, LINK_UPDATE_name + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case PLUGIN_PROGRESS:
                     if (dl.getPluginProgress() == null) {
-                        linksWithPluginProgress.remove(dl.getUniqueID().getID());
-                        pushDiff(dl);
-                        cleanup(dl);
+                        if (linksWithPluginProgress.remove(dl)) {
+                            pushDiff(dl);
+                            cleanup(dl);
+                        }
                     } else {
-                        linksWithPluginProgress.put(dl.getUniqueID().getID(), dl);
-                        updateExecuter(true);
+                        if (linksWithPluginProgress.add(dl)) {
+                            queue.add(new QueueAction<Void, RuntimeException>() {
 
+                                @Override
+                                protected Void run() throws RuntimeException {
+                                    updateExecuter(true);
+                                    return null;
+                                }
+                            });
+                        }
                     }
+                    break;
+                case PRIORITY:
+                    if (hasSubscriptionFor(LINK_UPDATE_priority)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
+                        fire(LINK_UPDATE_priority, dls, LINK_UPDATE_priority + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case RESET:
+                    if (hasSubscriptionFor(LINK_UPDATE_reset)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("reset", "true");
+                        fire(LINK_UPDATE_reset, dls, LINK_UPDATE_reset + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    if (hasSubscriptionFor(PACKAGE_UPDATE_reset)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("reset", "true");
+                        fire(PACKAGE_UPDATE_reset, dls, PACKAGE_UPDATE_reset + "." + parent.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case RESUMABLE:
+                    break;
+                case SHA1:
+                    break;
+                case SHA256:
+                    break;
+                case SKIPPED:
+                    if (hasSubscriptionFor(LINK_UPDATE_skipped)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("skipped", property.getValue() != null);
+                        if (property.getValue() != null) {
+                            dls.put("skipreason", property.getValue().toString());
+                        }
+                        fire(LINK_UPDATE_skipped, dls, LINK_UPDATE_skipped + "." + dl.getUniqueID().getID());
+                        flush = true;
+                        pushStatus(dl);
+                    }
+                    break;
+                case SPEED_LIMIT:
+                    break;
+                case URL_PROTECTION:
+                    break;
+                case VARIANT:
+                    break;
+                case VARIANTS:
+                    break;
+                case VARIANTS_ENABLED:
+                    break;
+
                 }
-                break;
-            case PRIORITY:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".priority", dls, BASIC_EVENT.LINK_UPDATE.name() + ".priority." + dl.getUniqueID().getID());
-
-                break;
-            case RESET:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("reset", "true");
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".reset", dls, BASIC_EVENT.LINK_UPDATE.name() + ".reset." + dl.getUniqueID().getID());
-
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("reset", "true");
-                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".reset", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".reset." + parent.getUniqueID().getID());
-                break;
-            case RESUMABLE:
-                break;
-            case SHA1:
-                break;
-            case SHA256:
-                break;
-            case SKIPPED:
-                pushStatus(dl);
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("skipped", property.getValue() != null);
-                if (property.getValue() != null) {
-                    dls.put("skipreason", property.getValue().toString());
-                }
-                fire(BASIC_EVENT.LINK_UPDATE.name() + ".skipped", dls, BASIC_EVENT.LINK_UPDATE.name() + ".skipped." + dl.getUniqueID().getID());
-                break;
-            case SPEED_LIMIT:
-                break;
-            case URL_PROTECTION:
-                break;
-            case VARIANT:
-                break;
-            case VARIANTS:
-                break;
-            case VARIANTS_ENABLED:
-                break;
-
+            }
+            if (hasContentChanges() && hasSubscriptionFor(BASIC_EVENT.REFRESH_CONTENT.name())) {
+                fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
+                flush = true;
+            }
+            if (flush) {
+                flushBuffer();
             }
         }
-        long newContentChangesCounter = DownloadController.getInstance().getContentChanges();
-        if (newContentChangesCounter != this.contentChangesCounter) {
-            // avoid dupes
-            this.contentChangesCounter = newContentChangesCounter;
-            fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
-        }
-        flushBuffer();
     }
 
+    /**
+     * TODO: optimize!!!!
+     *
+     * @param dl
+     */
     private void pushStatus(DownloadLink dl) {
-
-        HashMap<String, Object> dls = new HashMap<String, Object>();
-        dls.put("uuid", dl.getUniqueID().getID());
-
-        DownloadLinkAPIStorableV2 dlss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new DownloadLinkAPIStorableV2(), dl, this);
-
-        dls.put("statusIconKey", dlss.getStatusIconKey());
-        dls.put("status", dlss.getStatus());
-
-        fire(BASIC_EVENT.LINK_UPDATE.name() + ".status", dls, BASIC_EVENT.LINK_UPDATE.name() + ".status." + dl.getUniqueID().getID());
-
-        // package
-
-        FilePackageView fpView = new FilePackageView(dl.getFilePackage());
-        fpView.aggregate();
-        FilePackageAPIStorableV2 dpss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new FilePackageAPIStorableV2(), fpView);
-        dls = new HashMap<String, Object>();
-        dls.put("uuid", dl.getFilePackage().getUniqueID().getID());
-        dls.put("statusIconKey", dpss.getStatusIconKey());
-        dls.put("status", dpss.getStatus());
-
-        fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".status", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".status." + dl.getFilePackage().getUniqueID().getID());
-
+        if (hasSubscriptionFor(LINK_UPDATE_status)) {
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuid", dl.getUniqueID().getID());
+            final DownloadLinkAPIStorableV2 dlss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new DownloadLinkAPIStorableV2(), dl, this);
+            dls.put("statusIconKey", dlss.getStatusIconKey());
+            dls.put("status", dlss.getStatus());
+            fire(LINK_UPDATE_status, dls, LINK_UPDATE_status + "." + dl.getUniqueID().getID());
+        }
+        if (hasSubscriptionFor(PACKAGE_UPDATE_status)) {
+            // package
+            final FilePackage fp = dl.getFilePackage();
+            final FilePackageView fpView = new FilePackageView(fp);
+            fpView.aggregate();
+            final FilePackageAPIStorableV2 dpss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new FilePackageAPIStorableV2(), fpView);
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuid", fp.getUniqueID().getID());
+            dls.put("statusIconKey", dpss.getStatusIconKey());
+            dls.put("status", dpss.getStatus());
+            fire(PACKAGE_UPDATE_status, dls, PACKAGE_UPDATE_status + "." + dl.getFilePackage().getUniqueID().getID());
+        }
     }
 
-    // private HashMap<String, Object> cache = new HashMap<String, Object>();
-    private HashMap<Subscriber, List<EventObject>> buffer = new HashMap<Subscriber, List<EventObject>>(); ;
+    private final WeakHashMap<Subscriber, List<EventObject>> buffer = new WeakHashMap<Subscriber, List<EventObject>>(); ;
 
-    private void fire(String eventID, Object dls, String collapseKey) {
-        synchronized (this) {
-            List<Subscriber> subscribers = eventsAPI.getSubscribers();
-            final SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
-            RemoteAPIController.getInstance().getEventSender().fireEvent(new RemoteAPIInternalEvent() {
+    private void fire(final String eventID, final Object dls, final String collapseKey) {
+        queue.add(new QueueAction<Void, RuntimeException>() {
 
-                @Override
-                public void fireTo(RemoteAPIInternalEventListener listener) {
-                    listener.onRemoteAPIEvent(eventObject);
+            @Override
+            protected Void run() throws RuntimeException {
+                final SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, eventID, dls, collapseKey);
+                for (final ChannelCollector collector : collectors) {
+                    pushToBuffer(collector, eventObject);
                 }
+                return null;
+            }
 
-            });
-            for (Subscriber subscriber : subscribers) {
-                pushToBuffer(subscriber, eventObject);
+        });
+    }
+
+    private final boolean hasListener() {
+        return collectors.size() > 0;
+    }
+
+    private final boolean hasSubscriptionFor(final String event) {
+        if (collectors.size() > 0) {
+            final String eventID = getPublisherName().concat(".").concat(event);
+            for (final ChannelCollector collector : collectors) {
+                if (collector.getSubscriber().isSubscribed(eventID)) {
+                    return true;
+                }
             }
         }
+        return false;
     }
 
     private void fire(BASIC_EVENT eventType, final String eventID, Object dls, UniqueAlltimeID uniqueAlltimeID) {
@@ -496,71 +590,88 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-
-        if (property != null) {
-            HashMap<String, Object> dls = null;
-            // [DATA_UPDATE.extractionStatus, DATA_UPDATE.finished, DATA_UPDATE.priority, DATA_UPDATE.speed, DATA_UPDATE.url,
-            // DATA_UPDATE.enabled, DATA_UPDATE.skipped, DATA_UPDATE.running, DATA_UPDATE.bytesLoaded, DATA_UPDATE.eta,
-            // DATA_UPDATE.maxResults, DATA_UPDATE.packageUUIDs, DATA_UPDATE.host, DATA_UPDATE.comment, DATA_UPDATE.bytesTotal,
-            // DATA_UPDATE.startAt, DATA_UPDATE.status]
-
-            switch (property.getProperty()) {
-            case COMMENT:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", pkg.getUniqueID().getID());
-                dls.put("comment", pkg.getComment());
-                fire(BASIC_EVENT.PACKAGE_UPDATE, FilePackageProperty.Property.COMMENT.toString(), dls, pkg.getUniqueID());
-                break;
-            case FOLDER:
-                break;
-            case NAME:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", pkg.getUniqueID().getID());
-                dls.put("name", pkg.getName());
-                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".name", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".name." + pkg.getUniqueID().getID());
-                break;
-            case PRIORITY:
-                dls = new HashMap<String, Object>();
-                dls.put("uuid", pkg.getUniqueID().getID());
-                dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
-                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority." + pkg.getUniqueID().getID());
+        if (hasListener()) {
+            boolean flush = false;
+            if (property != null) {
+                switch (property.getProperty()) {
+                case COMMENT:
+                    if (hasSubscriptionFor(BASIC_EVENT.PACKAGE_UPDATE.name())) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", pkg.getUniqueID().getID());
+                        dls.put("comment", pkg.getComment());
+                        fire(BASIC_EVENT.PACKAGE_UPDATE, FilePackageProperty.Property.COMMENT.name(), dls, pkg.getUniqueID());
+                        flush = true;
+                    }
+                    break;
+                case FOLDER:
+                    break;
+                case NAME:
+                    if (hasSubscriptionFor(PACKAGE_UPDATE_name)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", pkg.getUniqueID().getID());
+                        dls.put("name", pkg.getName());
+                        fire(PACKAGE_UPDATE_name, dls, PACKAGE_UPDATE_name + "." + pkg.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                case PRIORITY:
+                    if (hasSubscriptionFor(PACKAGE_UPDATE_priority)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", pkg.getUniqueID().getID());
+                        dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
+                        fire(PACKAGE_UPDATE_priority, dls, PACKAGE_UPDATE_priority + "." + pkg.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
+                }
+            }
+            if (hasSubscriptionFor(BASIC_EVENT.REFRESH_CONTENT.name())) {
+                fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
+                flush = true;
+            }
+            if (flush) {
+                flushBuffer();
             }
         }
-
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
-        flushBuffer();
-
     }
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
-
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
-        flushBuffer();
+        if (hasSubscriptionFor(BASIC_EVENT.REFRESH_CONTENT.name())) {
+            fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
+            flushBuffer();
+        }
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
-        flushBuffer();
+        if (hasSubscriptionFor(BASIC_EVENT.REFRESH_CONTENT.name())) {
+            fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
+            flushBuffer();
+        }
     }
 
     @Override
     public void onEventsChannelUpdate(Subscriber subscriber) {
-
-        ChannelCollector collector = collectors.get(subscriber.getSubscriptionID());
-        if (collector != null) {
-            collector.updateSubscriptions();
-        }
-
-        int counter = 0;
-        for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
-            if (es.getValue().hasIntervalSubscriptions()) {
-                counter++;
+        final ChannelCollector ret = getChannelCollector(subscriber.getSubscriptionID());
+        if (ret != null) {
+            ret.updateSubscriptions();
+            boolean execute = false;
+            for (final ChannelCollector collector : collectors) {
+                if (collector.hasIntervalSubscriptions()) {
+                    execute = true;
+                }
             }
-        }
-        updateExecuter(counter > 0);
+            final boolean finalExecute = execute;
+            queue.add(new QueueAction<Void, RuntimeException>() {
 
+                @Override
+                protected Void run() throws RuntimeException {
+                    updateExecuter(finalExecute);
+                    return null;
+                }
+            });
+        }
     }
 
     private void updateExecuter(boolean b) {
@@ -576,58 +687,50 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                         public void run() {
                             boolean kill = true;
                             int events = 0;
-                            Set<SingleDownloadController> activeDownloads = DownloadWatchDog.getInstance().getRunningDownloadLinks();
-
                             HashSet<DownloadLink> linksToProcess = null;
                             HashSet<FilePackage> packagesToProcess = null;
-
                             if (true) {
-                                for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
-                                    if (es.getValue().hasIntervalSubscriptions()) {
+                                for (final ChannelCollector collector : collectors) {
+                                    if (collector.hasIntervalSubscriptions()) {
                                         kill = false;
-                                        if (System.currentTimeMillis() - es.getValue().getLastPush() >= es.getValue().getInterval()) {
-                                            es.getValue().setLastPush(System.currentTimeMillis());
+                                        if (System.currentTimeMillis() - collector.getLastPush() >= collector.getInterval()) {
+                                            collector.setLastPush(System.currentTimeMillis());
                                             if (linksToProcess == null) {
                                                 linksToProcess = new HashSet<DownloadLink>();
-                                                for (SingleDownloadController dl : activeDownloads) {
+                                                for (SingleDownloadController dl : DownloadWatchDog.getInstance().getRunningDownloadLinks()) {
                                                     linksToProcess.add(dl.getDownloadLink());
                                                 }
-                                                linksToProcess.addAll(linksWithPluginProgress.values());
+                                                linksToProcess.addAll(linksWithPluginProgress);
                                             }
-                                            for (DownloadLink dl : linksToProcess) {
-                                                HashMap<String, Object> diff = es.getValue().getDiff(dl);
-
-                                                for (Entry<String, Object> entry : diff.entrySet()) {
-                                                    HashMap<String, Object> dls = new HashMap<String, Object>();
+                                            for (final DownloadLink dl : linksToProcess) {
+                                                final HashMap<String, Object> diff = collector.getDiff(dl);
+                                                for (final Entry<String, Object> entry : diff.entrySet()) {
+                                                    final HashMap<String, Object> dls = new HashMap<String, Object>();
                                                     dls.put("uuid", dl.getUniqueID().getID());
                                                     dls.put(entry.getKey(), entry.getValue());
-                                                    SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID());
-                                                    List<Long> publishTo = new ArrayList<Long>();
-
-                                                    pushToBuffer(es.getValue().getSubscriber(), eventObject);
+                                                    final SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID());
+                                                    final List<Long> publishTo = new ArrayList<Long>();
+                                                    pushToBuffer(collector, eventObject);
                                                     events++;
                                                 }
                                             }
                                             if (packagesToProcess == null) {
                                                 packagesToProcess = new HashSet<FilePackage>();
-
-                                                for (DownloadLink dl : linksToProcess) {
-                                                    FilePackage p = dl.getParentNode();
+                                                for (final DownloadLink dl : linksToProcess) {
+                                                    final FilePackage p = dl.getParentNode();
                                                     if (p != null) {
                                                         packagesToProcess.add(p);
                                                     }
                                                 }
-
                                             }
-                                            for (FilePackage p : packagesToProcess) {
-                                                HashMap<String, Object> diff = es.getValue().getDiff(p);
-
-                                                for (Entry<String, Object> entry : diff.entrySet()) {
-                                                    HashMap<String, Object> dls = new HashMap<String, Object>();
+                                            for (final FilePackage p : packagesToProcess) {
+                                                final HashMap<String, Object> diff = collector.getDiff(p);
+                                                for (final Entry<String, Object> entry : diff.entrySet()) {
+                                                    final HashMap<String, Object> dls = new HashMap<String, Object>();
                                                     dls.put("uuid", p.getUniqueID().getID());
                                                     dls.put(entry.getKey(), entry.getValue());
-                                                    SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + p.getUniqueID().getID());
-                                                    pushToBuffer(es.getValue().getSubscriber(), eventObject);
+                                                    final SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + p.getUniqueID().getID());
+                                                    pushToBuffer(collector, eventObject);
                                                     events++;
                                                 }
                                             }
@@ -647,59 +750,75 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                             } else {
                                 terminationRounds = 0;
                             }
-
                         }
                     }, 0, 100, TimeUnit.MILLISECONDS);
                 }
             } else {
-                if (executer == null) {
-                    return;
+                if (executer != null) {
+                    executer.shutdownNow();
+                    executer = null;
                 }
-                executer.shutdownNow();
-
-                executer = null;
             }
         }
     }
 
     protected void flushBuffer() {
-        synchronized (buffer) {
-            if (buffer.size() == 0) {
-                return;
-            }
-            System.out.println("Flush Buffer " + buffer.size());
+        queue.add(new QueueAction<Void, RuntimeException>() {
 
-            for (Entry<Subscriber, List<EventObject>> es : buffer.entrySet()) {
-                eventsAPI.push(es.getKey(), es.getValue());
+            @Override
+            protected Void run() throws RuntimeException {
+                if (buffer.size() > 0) {
+                    try {
+                        for (final Entry<Subscriber, List<EventObject>> es : buffer.entrySet()) {
+                            eventsAPI.push(es.getKey(), es.getValue());
+                        }
+                    } finally {
+                        buffer.clear();
+                    }
+                }
+                return null;
             }
-            buffer.clear();
+        });
+    }
+
+    private final ChannelCollector getChannelCollector(long channelID) {
+        if (collectors.size() > 0) {
+            for (final ChannelCollector collector : collectors) {
+                if (collector.getSubscriber().getSubscriptionID() == channelID) {
+                    return collector;
+                }
+            }
         }
-
+        return null;
     }
 
     @Override
     public void onEventChannelOpened(Subscriber s) {
-
-        collectors.put(s.getSubscriptionID(), new ChannelCollector(s));
-
+        if (s != null) {
+            final ChannelCollector ret = getChannelCollector(s.getSubscriptionID());
+            if (ret == null) {
+                collectors.add(new ChannelCollector(s));
+            }
+        }
     }
 
     @Override
     public void onEventChannelClosed(Subscriber s) {
-
-        collectors.remove(s.getSubscriptionID());
-
+        if (s != null) {
+            final ChannelCollector ret = getChannelCollector(s.getSubscriptionID());
+            if (ret != null) {
+                collectors.remove(ret);
+            }
+        }
     }
 
     @Override
     public boolean setStatusEventInterval(long channelID, long interval) {
-
-        ChannelCollector collector = collectors.get(channelID);
-        if (collector != null) {
+        final ChannelCollector collector = getChannelCollector(channelID);
+        if (collector != null && collector.isAlive()) {
             collector.setInterval(interval);
             return true;
         }
-
         return false;
     }
 
@@ -728,152 +847,136 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
-        DownloadLink dl = candidate.getLink();
-        HashMap<String, Object> dls = new HashMap<String, Object>();
-        dls.put("uuid", dl.getUniqueID().getID());
-        dls.put("running", true);
-        fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID());
-        flushBuffer();
-        for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
-            if (es.getValue().hasIntervalSubscriptions()) {
-                es.getValue().updateBase(dl);
-            }
+    public void onDownloadControllerStart(SingleDownloadController downloadController, final DownloadLinkCandidate candidate) {
+        if (hasSubscriptionFor(BASIC_EVENT.LINK_UPDATE.name() + ".running")) {
+            final DownloadLink dl = candidate.getLink();
+            final HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuid", dl.getUniqueID().getID());
+            dls.put("running", true);
+            fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID());
+            flushBuffer();
         }
-        updateExecuter(true);
+        if (collectors.size() > 0) {
+            queue.add(new QueueAction<Void, RuntimeException>() {
 
+                @Override
+                protected Void run() throws RuntimeException {
+                    for (final ChannelCollector collector : collectors) {
+                        if (collector.hasIntervalSubscriptions()) {
+                            collector.updateBase(candidate.getLink());
+                        }
+                    }
+                    updateExecuter(true);
+                    return null;
+                }
+            });
+        }
     }
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
-
-        DownloadLink dl = candidate.getLink();
-        HashMap<String, Object> dls = new HashMap<String, Object>();
-        dls.put("uuid", dl.getUniqueID().getID());
-        dls.put("running", false);
-        fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID());
-
-        pushDiff(dl);
-        cleanup(dl);
-        flushBuffer();
-
+        final DownloadLink dl = candidate.getLink();
+        if (hasSubscriptionFor(BASIC_EVENT.LINK_UPDATE.name() + ".running")) {
+            HashMap<String, Object> dls = new HashMap<String, Object>();
+            dls.put("uuid", dl.getUniqueID().getID());
+            dls.put("running", false);
+            fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID());
+        }
+        if (collectors.size() > 0) {
+            pushDiff(dl);
+            cleanup(dl);
+            flushBuffer();
+        }
     }
 
     private void cleanup(DownloadLink dl2) {
-        Set<SingleDownloadController> activeDownloads = DownloadWatchDog.getInstance().getRunningDownloadLinks();
+        if (collectors.size() > 0) {
+            queue.add(new QueueAction<Void, RuntimeException>() {
 
-        HashSet<DownloadLink> linksToProcess = new HashSet<DownloadLink>();
-        for (SingleDownloadController dl : activeDownloads) {
-            linksToProcess.add(dl.getDownloadLink());
-        }
-        linksToProcess.addAll(linksWithPluginProgress.values());
-
-        for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
-            es.getValue().cleanUp(linksToProcess);
+                @Override
+                protected Void run() throws RuntimeException {
+                    final HashSet<DownloadLink> linksToProcess = new HashSet<DownloadLink>();
+                    for (SingleDownloadController dl : DownloadWatchDog.getInstance().getRunningDownloadLinks()) {
+                        linksToProcess.add(dl.getDownloadLink());
+                    }
+                    linksToProcess.addAll(linksWithPluginProgress);
+                    for (final ChannelCollector collector : collectors) {
+                        collector.cleanUp(linksToProcess);
+                    }
+                    return null;
+                }
+            });
         }
     }
 
-    private void pushDiff(DownloadLink dl) {
+    private void pushDiff(final DownloadLink dl) {
+        if (collectors.size() > 0) {
+            final FilePackage parent = dl.getParentNode();
+            queue.add(new QueueAction<Void, RuntimeException>() {
 
-        for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
-            if (es.getValue().hasIntervalSubscriptions()) {
-
-                es.getValue().setLastPush(System.currentTimeMillis());
-
-                HashMap<String, Object> diff = es.getValue().getDiff(dl);
-
-                for (Entry<String, Object> entry : diff.entrySet()) {
-                    HashMap<String, Object> dls = new HashMap<String, Object>();
-                    dls.put("uuid", dl.getUniqueID().getID());
-                    dls.put(entry.getKey(), entry.getValue());
-                    EventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID());
-                    // List<Long> publishTo = new ArrayList<Long>();
-                    // publishTo.add(es.getValue().getSubscriber().getSubscriptionID());
-                    pushToBuffer(es.getValue().getSubscriber(), eventObject);
-
-                }
-
-                FilePackage p = dl.getParentNode();
-                if (p != null) {
-                    diff = es.getValue().getDiff(p);
-
-                    for (Entry<String, Object> entry : diff.entrySet()) {
-                        HashMap<String, Object> dls = new HashMap<String, Object>();
-                        dls.put("uuid", p.getUniqueID().getID());
-                        dls.put(entry.getKey(), entry.getValue());
-                        SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + p.getUniqueID().getID());
-                        // List<Long> publishTo = new ArrayList<Long>();
-                        // publishTo.add(es.getValue().getSubscriber().getSubscriptionID());
-                        pushToBuffer(es.getValue().getSubscriber(), eventObject);
-                        // for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                        // eventSender.publishEvent(eventObject, publishTo);
-                        // }
+                @Override
+                protected Void run() throws RuntimeException {
+                    for (final ChannelCollector collector : collectors) {
+                        if (collector.hasIntervalSubscriptions()) {
+                            collector.setLastPush(System.currentTimeMillis());
+                            HashMap<String, Object> diff = collector.getDiff(dl);
+                            for (Entry<String, Object> entry : diff.entrySet()) {
+                                final HashMap<String, Object> dls = new HashMap<String, Object>();
+                                dls.put("uuid", dl.getUniqueID().getID());
+                                dls.put(entry.getKey(), entry.getValue());
+                                final EventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID());
+                                pushToBuffer(collector, eventObject);
+                            }
+                            if (parent != null) {
+                                diff = collector.getDiff(parent);
+                                for (Entry<String, Object> entry : diff.entrySet()) {
+                                    final HashMap<String, Object> dls = new HashMap<String, Object>();
+                                    dls.put("uuid", parent.getUniqueID().getID());
+                                    dls.put(entry.getKey(), entry.getValue());
+                                    final SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + parent.getUniqueID().getID());
+                                    pushToBuffer(collector, eventObject);
+                                }
+                            }
+                        }
                     }
+                    return null;
                 }
-
-            }
+            });
         }
-
     }
 
-    private void pushToBuffer(Subscriber subscriber, EventObject eventObject) {
-        synchronized (buffer) {
+    private void pushToBuffer(final ChannelCollector collector, final EventObject eventObject) {
+        if (collector != null) {
+            queue.add(new QueueAction<Void, RuntimeException>() {
 
-            ChannelCollector col = collectors.get(subscriber.getSubscriptionID());
-            if (col == null) {
-
-                // Closed channel?
-                return;
-            }
-            Object dls = eventObject.getEventdata();
-            if (dls != null && dls instanceof HashMap) {
-                if (col != null) {
-                    HashMap<String, Object> copy = new HashMap<String, Object>((HashMap) dls);
-
-                    if (!col.updateDupeCache(eventObject.getEventid() + "." + copy.remove("uuid"), copy)) {
-                        return;
+                @Override
+                protected Void run() throws RuntimeException {
+                    final Object dls = eventObject.getEventdata();
+                    if (dls != null && dls instanceof HashMap) {
+                        final HashMap<String, Object> copy = new HashMap<String, Object>((HashMap) dls);
+                        if (!collector.updateDupeCache(eventObject.getEventid() + "." + copy.remove("uuid"), copy)) {
+                            return null;
+                        }
                     }
+                    List<EventObject> lst = buffer.get(collector.getSubscriber());
+                    if (lst == null) {
+                        lst = new ArrayList<EventObject>();
+                        buffer.put(collector.getSubscriber(), lst);
+                    }
+                    lst.add(eventObject);
+                    return null;
                 }
-            }
-            System.out.println(getClass().getName() + "FireEvent -> " + subscriber.getSubscriptionID() + " : " + eventObject.getEventid() + " - " + JSonStorage.serializeToJson(dls));
-
-            List<EventObject> lst = this.buffer.get(subscriber);
-            if (lst == null) {
-                lst = new ArrayList<EventObject>();
-                buffer.put(subscriber, lst);
-            }
-            lst.add(eventObject);
+            });
         }
-
     }
 
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
-
     }
 
     @Override
     public DownloadListDiffStorable queryLinks(LinkQueryStorable queryParams, int diffID) throws BadParameterException {
-
-        // List<DownloadLinkAPIStorableV2> newList = RemoteAPIController.getInstance().getDownloadsAPIV2().queryLinks(queryParams);
-        //
-        // ArrayList<DownloadLinkAPIStorableV2> oldList = new ArrayList<DownloadLinkAPIStorableV2>();
-        // HashMap<Long, DownloadLinkAPIStorableV2> newListMap = toIDMap(newList);
-        // HashMap<Long, DownloadLinkAPIStorableV2> oldListMap = toIDMap(oldList);
-        //
-        //
-        // for(int i=0;i<oldList.size();i++){
-        // old=
-        // }
         throw new WTFException("Not Implemented");
-        // return null;
     }
-
-    // private HashMap<Long, DownloadLinkAPIStorableV2> toIDMap(List<DownloadLinkAPIStorableV2> newList) {
-    // HashMap<Long, DownloadLinkAPIStorableV2> ret = new HashMap<Long, DownloadLinkAPIStorableV2>();
-    // for (DownloadLinkAPIStorableV2 dl : newList)
-    // ret.put(dl.getUuid(), dl);
-    // return ret;
-    // }
 
 }

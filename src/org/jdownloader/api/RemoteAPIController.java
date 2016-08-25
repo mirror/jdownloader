@@ -12,6 +12,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.DefaultDocsPageFactory;
@@ -24,7 +28,6 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.remoteapi.annotations.ApiNamespace;
-import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.EventsAPIInterface;
@@ -89,10 +92,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
     private final boolean              isJared  = Application.isJared(RemoteAPIController.class);
@@ -108,7 +107,6 @@ public class RemoteAPIController {
     private AdvancedConfigManagerAPIImpl             advancedConfigAPI;
     private ContentAPIImplV2                         contentAPI;
     private DownloadsAPIV2Impl                       downloadsAPIV2;
-    private final RemoteAPIInternalEventSender       eventSender;
     private LinkCollectorAPIImplV2                   linkcollector;
     private final UserAgentController                uaController;
     private final HashMap<String, RIDArray>          rids;
@@ -119,7 +117,6 @@ public class RemoteAPIController {
     }
 
     private RemoteAPIController() {
-        eventSender = new RemoteAPIInternalEventSender();
         this.uaController = new UserAgentController();
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
         rids = new HashMap<String, RIDArray>();
@@ -304,20 +301,7 @@ public class RemoteAPIController {
         } catch (Throwable e) {
             logger.log(e);
         }
-        register(eventsapi = new EventsAPI() {
-            @Override
-            public List<Long> publishEvent(final EventObject event, List<Long> subscriptionids) {
-                if (subscriptionids == null || subscriptionids.size() == 0) {
-                    eventSender.fireEvent(new RemoteAPIInternalEvent() {
-                        @Override
-                        public void fireTo(RemoteAPIInternalEventListener listener) {
-                            listener.onRemoteAPIEvent(event);
-                        }
-                    });
-                }
-                return super.publishEvent(event, subscriptionids);
-            }
-        });
+        register(eventsapi = new EventsAPI());
         validateInterfaces(EventsAPIInterface.class, EventsInterface.class);
         register(CaptchaAPISolver.getInstance());
         register(CaptchaAPISolver.getInstance().getEventPublisher());
@@ -363,10 +347,6 @@ public class RemoteAPIController {
 
     public LinkCollectorAPIImplV2 getLinkcollector() {
         return linkcollector;
-    }
-
-    public RemoteAPIInternalEventSender getEventSender() {
-        return eventSender;
     }
 
     public DownloadsAPIV2Impl getDownloadsAPIV2() {
@@ -446,6 +426,10 @@ public class RemoteAPIController {
             }
         }
         return ret;
+    }
+
+    public EventsAPI getEventsapi() {
+        return eventsapi;
     }
 
     public boolean unregister(final RemoteAPIInterface x) {

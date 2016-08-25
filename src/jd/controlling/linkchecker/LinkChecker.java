@@ -1,5 +1,6 @@
 package jd.controlling.linkchecker;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,16 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -35,6 +26,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class LinkChecker<E extends CheckableLink> {
 
@@ -81,23 +80,22 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     /* static variables */
-    private final static AtomicInteger                                                           CHECKER                = new AtomicInteger(0);
-    private final static AtomicLong                                                              LINKCHECKER_THREAD_NUM = new AtomicLong(0);
-    private final static int                                                                     MAX_THREADS;
-    private final static int                                                                     KEEP_ALIVE;
-    private final static HashMap<String, Thread>                                                 CHECK_THREADS          = new HashMap<String, Thread>();
-    private final static HashMap<String, WeakHashMap<LinkChecker<?>, List<InternCheckableLink>>> LINKCHECKER            = new HashMap<String, WeakHashMap<LinkChecker<?>, List<InternCheckableLink>>>();
-    private final static Object                                                                  LOCK                   = new Object();
+    private final static AtomicInteger                                                                 CHECKER                = new AtomicInteger(0);
+    private final static AtomicLong                                                                    LINKCHECKER_THREAD_NUM = new AtomicLong(0);
+    private final static int                                                                           MAX_THREADS;
+    private final static int                                                                           KEEP_ALIVE;
+    private final static HashMap<String, Thread>                                                       CHECK_THREADS          = new HashMap<String, Thread>();
+    private final static HashMap<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>> LINKCHECKER            = new HashMap<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>>();
+    private final static Object                                                                        LOCK                   = new Object();
 
     /* local variables for this LinkChecker */
-    private final AtomicLong                                                                     linksRequested         = new AtomicLong(0);
-    private final boolean                                                                        forceRecheck;
-    private LinkCheckerHandler<E>                                                                handler                = null;
-    private final static int                                                                     SPLITSIZE              = 80;
-    private final static int                                                                     ROUNDSIZE              = 40;
-    private final static LinkCheckerEventSender                                                  EVENTSENDER            = new LinkCheckerEventSender();
-    protected final AtomicLong                                                                   checkerGeneration      = new AtomicLong(0);
-    protected final AtomicBoolean                                                                runningState           = new AtomicBoolean(false);
+    private final AtomicLong                                                                           linksRequested         = new AtomicLong(0);
+    private final boolean                                                                              forceRecheck;
+    private LinkCheckerHandler<E>                                                                      handler                = null;
+    private final static int                                                                           ROUNDSIZE              = 80;
+    private final static LinkCheckerEventSender                                                        EVENTSENDER            = new LinkCheckerEventSender();
+    protected final AtomicLong                                                                         checkerGeneration      = new AtomicLong(0);
+    protected final AtomicBoolean                                                                      runningState           = new AtomicBoolean(false);
 
     public static LinkCheckerEventSender getEventSender() {
         return EVENTSENDER;
@@ -211,14 +209,14 @@ public class LinkChecker<E extends CheckableLink> {
             }
         }
         synchronized (LOCK) {
-            WeakHashMap<LinkChecker<?>, List<InternCheckableLink>> map = LINKCHECKER.get(host);
+            WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>> map = LINKCHECKER.get(host);
             if (map == null) {
-                map = new WeakHashMap<LinkChecker<?>, List<InternCheckableLink>>();
+                map = new WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>();
                 LINKCHECKER.put(host, map);
             }
-            List<InternCheckableLink> list = map.get(this);
+            ArrayDeque<InternCheckableLink> list = map.get(this);
             if (list == null) {
-                list = new ArrayList<InternCheckableLink>();
+                list = new ArrayDeque<InternCheckableLink>(64);
                 map.put(this, list);
             }
             list.add(checkableLink);
@@ -274,84 +272,101 @@ public class LinkChecker<E extends CheckableLink> {
 
                 public void run() {
                     int stopDelay = 1;
-                    PluginForHost plg = null;
-                    LogSource logger = null;
                     try {
                         while (true) {
                             /*
                              * arraylist to hold the current checkable links
                              */
-                            final List<InternCheckableLink> roundComplete = new ArrayList<InternCheckableLink>();
+                            this.checkableLinks = new ArrayList<InternCheckableLink>();
                             try {
                                 synchronized (LOCK) {
-                                    final WeakHashMap<LinkChecker<?>, List<InternCheckableLink>> map = LINKCHECKER.get(threadHost);
+                                    final WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>> map = LINKCHECKER.get(threadHost);
                                     final ArrayList<Iterator<InternCheckableLink>> its = new ArrayList<Iterator<InternCheckableLink>>();
-                                    for (final List<InternCheckableLink> list : map.values()) {
+                                    for (final ArrayDeque<InternCheckableLink> list : map.values()) {
                                         if (list.size() > 0) {
                                             its.add(list.iterator());
                                         }
                                     }
                                     if (its.size() > 0) {
-                                        int index = 0;
-                                        int again = its.size();
-                                        while (true) {
-                                            final Iterator<InternCheckableLink> it = its.get(index++);
-                                            index = index % its.size();
-                                            if (it.hasNext()) {
-                                                again = its.size();
-                                                roundComplete.add(it.next());
-                                                if (roundComplete.size() > ROUNDSIZE) {
+                                        if (its.size() == 1) {
+                                            final Iterator<InternCheckableLink> it = its.get(0);
+                                            while (it.hasNext()) {
+                                                checkableLinks.add(it.next());
+                                                it.remove();
+                                                if (checkableLinks.size() > ROUNDSIZE) {
                                                     break;
                                                 }
-                                                it.remove();
-                                            } else {
-                                                if (--again == 0) {
-                                                    break;
+                                            }
+                                        } else {
+                                            int index = 0;
+                                            final int size = its.size();
+                                            int again = size;
+                                            while (true) {
+                                                final Iterator<InternCheckableLink> it = its.get(index++);
+                                                index = index % size;
+                                                if (it.hasNext()) {
+                                                    again = size;
+                                                    checkableLinks.add(it.next());
+                                                    if (checkableLinks.size() > ROUNDSIZE) {
+                                                        break;
+                                                    }
+                                                    it.remove();
+                                                } else {
+                                                    if (--again == 0) {
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                /* add LinkStatus from roundComplete */
-                                for (InternCheckableLink link : roundComplete) {
-                                    if (link.linkCheckAllowed()) {
-                                        if (link.getLinkChecker().isForceRecheck()) {
-                                            /*
-                                             * linkChecker instance is set to forceRecheck
-                                             */
-                                            link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                                if (checkableLinks.size() > 0) {
+                                    /* add LinkStatus from roundComplete */
+                                    for (InternCheckableLink link : checkableLinks) {
+                                        if (link.linkCheckAllowed()) {
+                                            if (link.getLinkChecker().isForceRecheck()) {
+                                                /*
+                                                 * linkChecker instance is set to forceRecheck
+                                                 */
+                                                link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                                            }
                                         }
                                     }
-                                }
-                                final int n = roundComplete.size();
-                                for (int i = 0; i < n; i += SPLITSIZE) {
-                                    List<InternCheckableLink> roundSplit = roundComplete.subList(i, Math.min(n, i + SPLITSIZE));
-                                    if (roundSplit.size() > 0) {
-                                        stopDelay = 1;
-                                        /* now we check the links */
-                                        if (plg == null && roundSplit.size() > 0) {
-                                            /* create plugin if not done yet */
-                                            final DownloadLink first = roundSplit.get(0).getCheckableLink().getDownloadLink();
+                                    stopDelay = 1;
+                                    /* now we check the links */
+                                    LogSource logger = null;
+                                    if (this.plugin == null) {
+                                        /* create plugin if not done yet */
+                                        final DownloadLink first = checkableLinks.get(0).getCheckableLink().getDownloadLink();
+                                        try {
                                             final PluginClassLoaderChild cl = PluginClassLoader.getSharedChild(first.getDefaultPlugin());
                                             PluginClassLoader.setThreadPluginClassLoaderChild(cl, null);
-                                            final LazyHostPlugin lazyp = HostPluginController.getInstance().get(first.getDefaultPlugin().getHost());
-                                            plg = lazyp.newInstance(cl);
-                                            plg.setLogger(logger = LogController.getFastPluginLogger(plg.getHost() + "_" + lazyp.getClassName()));
-                                            logger.info("LinkChecker: " + threadHost);
+                                            this.plugin = first.getDefaultPlugin().getLazyP().newInstance(cl);
+                                            this.plugin.setLogger(logger = LogController.getFastPluginLogger(plugin.getHost() + "_" + plugin.getLazyP().getClassName()));
                                             ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
-                                            plg.setBrowser(new Browser());
-                                            plg.init();
+                                            this.plugin.setBrowser(new Browser());
+                                            this.plugin.init();
+                                        } catch (final Throwable e) {
+                                            LogController.CL().log(e);
+                                        } finally {
+                                            if (logger != null) {
+                                                logger.close();
+                                            }
                                         }
-                                        this.checkableLinks = roundSplit;
-                                        this.plugin = plg;
-                                        try {
-                                            if (plg != null && PluginForHost.implementsCheckLinks(plg)) {
-                                                resetLinkStatus();
+                                    }
+                                    try {
+                                        if (this.plugin == null) {
+                                            for (final InternCheckableLink link : checkableLinks) {
+                                                link.getLinkChecker().linkChecked(link);
+                                            }
+                                        } else {
+                                            this.plugin.setLogger(logger = LogController.getFastPluginLogger(plugin.getHost() + "_" + plugin.getLazyP().getClassName()));
+                                            ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
+                                            if (PluginForHost.implementsCheckLinks(this.plugin)) {
                                                 logger.info("Check Multiple FileInformation");
                                                 try {
                                                     final HashSet<DownloadLink> downloadLinks = new HashSet<DownloadLink>();
-
-                                                    for (InternCheckableLink link : roundSplit) {
+                                                    for (InternCheckableLink link : checkableLinks) {
                                                         if (link.linkCheckAllowed()) {
                                                             final DownloadLink dlLink = link.getCheckableLink().getDownloadLink();
                                                             if (dlLink.getAvailableStatus() != AvailableStatus.UNCHECKED) {
@@ -364,11 +379,11 @@ public class LinkChecker<E extends CheckableLink> {
                                                     /* try mass link check */
                                                     logger.clear();
                                                     if (downloadLinks.size() > 0) {
-                                                        plg.setBrowser(new Browser());
-                                                        plg.reset();
+                                                        this.plugin.setBrowser(new Browser());
+                                                        this.plugin.reset();
                                                     }
-                                                    if (downloadLinks.size() == 0 || plg.checkLinks(downloadLinks.toArray(new DownloadLink[downloadLinks.size()]))) {
-                                                        for (final InternCheckableLink link : roundSplit) {
+                                                    if (downloadLinks.size() == 0 || this.plugin.checkLinks(downloadLinks.toArray(new DownloadLink[downloadLinks.size()]))) {
+                                                        for (final InternCheckableLink link : checkableLinks) {
                                                             link.getLinkChecker().linkChecked(link);
                                                         }
                                                         continue;
@@ -379,38 +394,37 @@ public class LinkChecker<E extends CheckableLink> {
                                                 } finally {
                                                     logger.clear();
                                                     try {
-                                                        plg.getBrowser().getHttpConnection().disconnect();
+                                                        this.plugin.getBrowser().getHttpConnection().disconnect();
                                                     } catch (Throwable e) {
                                                     }
+                                                    resetLinkStatus();
                                                 }
                                             }
-                                            resetLinkStatus();
                                             final HashSet<DownloadLink> dupCheck = new HashSet<DownloadLink>();
-                                            for (final InternCheckableLink link : roundSplit) {
-                                                if (link.linkCheckAllowed() && plg != null) {
+                                            for (final InternCheckableLink link : checkableLinks) {
+                                                if (link.linkCheckAllowed()) {
                                                     /*
                                                      * this will check the link, if not already checked
                                                      */
                                                     if (dupCheck.add(link.getCheckableLink().getDownloadLink())) {
-                                                        LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
+                                                        LinkChecker.updateAvailableStatus(this.plugin, link.getCheckableLink().getDownloadLink(), logger);
                                                     }
                                                 }
                                                 link.getLinkChecker().linkChecked(link);
                                             }
-                                        } finally {
-                                            resetLinkStatus();
-                                            this.plugin = null;
-                                            this.checkableLinks = null;
                                         }
+                                    } finally {
+                                        try {
+                                            if (logger != null) {
+                                                logger.close();
+                                            }
+                                        } catch (final Throwable e) {
+                                        }
+                                        resetLinkStatus();
                                     }
                                 }
                             } catch (Throwable e) {
                                 LogController.CL().log(e);
-                            } finally {
-                                try {
-                                    logger.close();
-                                } catch (final Throwable e) {
-                                }
                             }
                             try {
                                 Thread.sleep(KEEP_ALIVE);
@@ -422,7 +436,7 @@ public class LinkChecker<E extends CheckableLink> {
                                 }
                             }
                             synchronized (LOCK) {
-                                final WeakHashMap<LinkChecker<?>, List<InternCheckableLink>> map = LINKCHECKER.get(threadHost);
+                                final WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>> map = LINKCHECKER.get(threadHost);
                                 if (map == null || !isNotEmpty(map.values())) {
                                     stopDelay--;
                                     if (stopDelay < 0) {
@@ -435,21 +449,21 @@ public class LinkChecker<E extends CheckableLink> {
                             }
                         }
                     } catch (final Throwable ignore) {
-                        ignore.printStackTrace();
+                        LogController.CL().log(ignore);
                     } finally {
                         PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
                         try {
-                            if (plg != null) {
-                                plg.clean();
+                            if (this.plugin != null) {
+                                this.plugin.clean();
                             }
                         } catch (final Throwable e) {
                         }
                     }
                 }
 
-                private boolean isNotEmpty(Collection<List<InternCheckableLink>> values) {
+                private final boolean isNotEmpty(Collection<ArrayDeque<InternCheckableLink>> values) {
                     if (values != null) {
-                        for (final List<InternCheckableLink> list : values) {
+                        for (final ArrayDeque<InternCheckableLink> list : values) {
                             if (list.size() > 0) {
                                 return true;
                             }
@@ -482,17 +496,17 @@ public class LinkChecker<E extends CheckableLink> {
         final ArrayList<InternCheckableLink> removeList = new ArrayList<InternCheckableLink>();
         synchronized (LOCK) {
             final Set<String> removeHosts = new HashSet<String>();
-            final Set<Entry<String, WeakHashMap<LinkChecker<?>, List<InternCheckableLink>>>> allTodos = LINKCHECKER.entrySet();
-            for (final Entry<String, WeakHashMap<LinkChecker<?>, List<InternCheckableLink>>> set : allTodos) {
+            final Set<Entry<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>>> allTodos = LINKCHECKER.entrySet();
+            for (final Entry<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>> set : allTodos) {
                 final String host = set.getKey();
                 final Thread thread = CHECK_THREADS.get(host);
                 if (thread == null || !thread.isAlive()) {
                     CHECK_THREADS.remove(host);
-                    final WeakHashMap<LinkChecker<?>, List<InternCheckableLink>> map = set.getValue();
+                    final WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>> map = set.getValue();
                     if (map != null) {
-                        final Iterator<List<InternCheckableLink>> linkCheckerIt = map.values().iterator();
+                        final Iterator<ArrayDeque<InternCheckableLink>> linkCheckerIt = map.values().iterator();
                         while (linkCheckerIt.hasNext()) {
-                            final List<InternCheckableLink> next = linkCheckerIt.next();
+                            final ArrayDeque<InternCheckableLink> next = linkCheckerIt.next();
                             final Iterator<InternCheckableLink> it = next.iterator();
                             while (it.hasNext()) {
                                 final InternCheckableLink link = it.next();

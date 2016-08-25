@@ -12,7 +12,6 @@ import org.appwork.remoteapi.events.Subscriber;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.api.downloads.v2.FilePackageAPIStorableV2;
@@ -21,25 +20,22 @@ import org.jdownloader.api.downloads.v2.PackageQueryStorable;
 
 public class ChannelCollector {
 
-    private long                 interval = 1000;
-    private long                 lastPush;
-    private Subscriber           subscriber;
-    private HashSet<String>      activeSubscriptions;
+    private volatile long              interval = 1000;
+    private volatile long              lastPush;
+    private final Subscriber           subscriber;
+    private HashSet<String>            activeSubscriptions;
 
-    private DownloadsAPIV2Impl   downloadsAPI;
-    private LinkQueryStorable    linkQuery;
-    private PackageQueryStorable pkgQuery;
+    private final LinkQueryStorable    linkQuery;
+    private final PackageQueryStorable pkgQuery;
 
     public ChannelCollector(Subscriber s) {
         this.subscriber = s;
-        downloadsAPI = RemoteAPIController.getInstance().getDownloadsAPIV2();
         linkQuery = new LinkQueryStorable();
         linkQuery.setBytesLoaded(true);
         linkQuery.setBytesTotal(true);
         linkQuery.setEta(true);
         linkQuery.setSpeed(true);
         linkQuery.setStatus(true);
-
         pkgQuery = new PackageQueryStorable();
         pkgQuery.setBytesLoaded(true);
         pkgQuery.setBytesTotal(true);
@@ -52,6 +48,10 @@ public class ChannelCollector {
         this.lastPush = lastPush;
     }
 
+    public boolean isAlive() {
+        return subscriber.isAlive();
+    }
+
     public long getInterval() {
         return interval;
     }
@@ -61,22 +61,17 @@ public class ChannelCollector {
     }
 
     public void updateSubscriptions() {
-        HashSet<String> eventIds = new HashSet<String>();
-
+        final HashSet<String> eventIds = new HashSet<String>();
         for (String id : DownloadControllerEventPublisher.INTERVAL_EVENT_ID_LIST) {
-
             if (subscriber.isSubscribed("downloads." + id)) {
                 eventIds.add(id);
-
             }
         }
-
         this.activeSubscriptions = eventIds;
     }
 
     public boolean hasIntervalSubscriptions() {
-
-        return activeSubscriptions != null && activeSubscriptions.size() > 0;
+        return isAlive() && activeSubscriptions != null && activeSubscriptions.size() > 0;
     }
 
     public long getLastPush() {
@@ -126,7 +121,7 @@ public class ChannelCollector {
 
     }
 
-    public void cleanUp(HashSet<DownloadLink> linksToProcess) {
+    protected void cleanUp(HashSet<DownloadLink> linksToProcess) {
         HashSet<Long> idMap = new HashSet<Long>();
         HashSet<Long> idParentMap = new HashSet<Long>();
         for (DownloadLink dl : linksToProcess) {
@@ -159,9 +154,9 @@ public class ChannelCollector {
         }
     }
 
-    private HashMap<String, String> dupeCache = new HashMap<String, String>();
+    private final HashMap<String, String> dupeCache = new HashMap<String, String>();
 
-    public boolean updateDupeCache(String string, HashMap<String, Object> copy) {
+    public synchronized boolean updateDupeCache(String string, HashMap<String, Object> copy) {
         String id = copy == null ? null : Hash.getMD5(JSonStorage.serializeToJson(copy));
         if (StringUtils.equals(id, dupeCache.get(string))) {
             return false;
@@ -170,7 +165,7 @@ public class ChannelCollector {
         return true;
     }
 
-    private HashMap<Long, FilePackageAPIStorableV2> comparePackageMap = new HashMap<Long, FilePackageAPIStorableV2>();
+    private final HashMap<Long, FilePackageAPIStorableV2> comparePackageMap = new HashMap<Long, FilePackageAPIStorableV2>();
 
     public HashMap<String, Object> getDiff(FilePackage p) {
         synchronized (this) {

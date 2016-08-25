@@ -25,7 +25,7 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
      * access this publisher view CaptchaAPISolver.getInstance().getEventPublisher
      */
     public CaptchaAPIEventPublisher() {
-        eventIDs = new String[] { EVENTID.NEW.name() };
+        eventIDs = new String[] { EVENTID.NEW.name(), EVENTID.DONE.name() };
     }
 
     @Override
@@ -38,8 +38,19 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
         return "captchas";
     }
 
-    public void fireJobDoneEvent(SolverJob<?> job) {
+    private final boolean hasSubscriptionFor(final String eventID) {
         if (eventSenders.size() > 0) {
+            for (final RemoteAPIEventsSender eventSender : eventSenders) {
+                if (eventSender.hasSubscriptionFor(this, eventID)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void fireJobDoneEvent(SolverJob<?> job) {
+        if (hasSubscriptionFor(EVENTID.DONE.name())) {
             final EventObject eventObject = new SimpleEventObject(this, EVENTID.DONE.name(), job.getChallenge().getId().getID());
             for (final RemoteAPIEventsSender eventSender : eventSenders) {
                 eventSender.publishEvent(eventObject, null);
@@ -48,7 +59,7 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
     }
 
     public void fireNewJobEvent(SolverJob<?> job) {
-        if (eventSenders.size() > 0) {
+        if (hasSubscriptionFor(EVENTID.NEW.name())) {
             final EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW.name(), job.getChallenge().getId().getID());
             for (final RemoteAPIEventsSender eventSender : eventSenders) {
                 eventSender.publishEvent(eventObject, null);
