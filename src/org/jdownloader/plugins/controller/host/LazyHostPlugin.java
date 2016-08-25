@@ -48,7 +48,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             }
         };
 
-        public static final long CACHEVERSION = 19042016l; // change when you add/change enums!
+        public static final long CACHEVERSION = 25082016l; // change when you add/change enums!
 
         public boolean isSet(FEATURE[] features) {
             if (features != null) {
