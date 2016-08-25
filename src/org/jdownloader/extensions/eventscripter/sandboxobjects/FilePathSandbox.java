@@ -9,7 +9,7 @@ import org.jdownloader.extensions.eventscripter.EnvironmentException;
 
 public class FilePathSandbox {
 
-    private final File file;
+    protected final File file;
 
     public FilePathSandbox(String fileOrUrl) {
         file = new File(fileOrUrl);
@@ -36,8 +36,20 @@ public class FilePathSandbox {
         return file.mkdirs();
     }
 
+    public long getModifiedDate() {
+        return file.lastModified();
+    }
+
+    public long getCreatedDate() {
+        return -1;
+    }
+
     public FilePathSandbox getParent() {
-        return new FilePathSandbox(file.getParent());
+        return newFilePathSandbox(file.getParent());
+    }
+
+    protected FilePathSandbox newFilePathSandbox(final String file) {
+        return new FilePathSandbox(file);
     }
 
     public FilePathSandbox[] getChildren() {
@@ -48,7 +60,7 @@ public class FilePathSandbox {
         } else {
             ret = new FilePathSandbox[files.length];
             for (int i = 0; i < files.length; i++) {
-                ret[i] = new FilePathSandbox(files[i].getAbsolutePath());
+                ret[i] = newFilePathSandbox(files[i].getAbsolutePath());
             }
         }
         return ret;

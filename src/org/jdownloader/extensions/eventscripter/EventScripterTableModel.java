@@ -13,6 +13,8 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jsyntaxpane.syntaxkits.JavaScriptSyntaxKit;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -34,8 +36,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-
-import jsyntaxpane.syntaxkits.JavaScriptSyntaxKit;
 
 public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implements GenericConfigEventListener<Object> {
 
@@ -129,7 +129,6 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
             protected void setBooleanValue(boolean value, ScriptEntry object) {
                 object.setEnabled(value);
                 extension.save(getTableData());
-
             }
         });
 
