@@ -316,9 +316,10 @@ public class SubChallenge {
     public boolean isSlotAnnotated(int x, int y) {
         if (true) {
             return true;
+        } else {
+            int num = x + y * getGridWidth();
+            return annotatedIndices == null || annotatedIndices.contains(num);
         }
-        int num = x + y * getGridWidth();
-        return annotatedIndices == null || annotatedIndices.contains(num);
     }
 
     private boolean isSlotAnnotatedInternal(int xslot, int yslot) {
