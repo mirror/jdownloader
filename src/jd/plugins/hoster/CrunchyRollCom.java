@@ -51,6 +51,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -61,6 +62,7 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -69,7 +71,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl\\&media_id=[0-9]+.*)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl\\&media_id=[0-9]+.*)" })
 public class CrunchyRollCom extends antiDDoSForHost {
 
     static private Object                                    lock                 = new Object();
@@ -77,6 +79,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
     static private final String                              RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
     static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
     static private final String                              RCP_API_ANDROID      = "RpcApiAndroid_GetVideoWithAcl";
+
+    private String                                           rtmp_path_or_hls_url = null;
 
     @SuppressWarnings("deprecation")
     public CrunchyRollCom(final PluginWrapper wrapper) {
@@ -295,7 +299,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
             // Set all of the needed rtmpdump parameters
             rtmp.setUrl(url);
             rtmp.setTcUrl(downloadLink.getStringProperty("rtmphost"));
-            rtmp.setPlayPath(downloadLink.getStringProperty("rtmpfile"));
+            rtmp.setPlayPath(rtmp_path_or_hls_url);
             rtmp.setSwfVfy(downloadLink.getStringProperty("swfdir") + downloadLink.getStringProperty("rtmpswf"));
             rtmp.setResume(true);
 
@@ -323,6 +327,18 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 this.convertSubs(downloadLink);
             }
         }
+    }
+
+    private void downloadHls(final DownloadLink downloadLink) throws Exception {
+        br.getPage(rtmp_path_or_hls_url);
+        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        if (hlsbest == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        rtmp_path_or_hls_url = hlsbest.downloadurl;
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, rtmp_path_or_hls_url);
+        dl.startDownload();
     }
 
     @Override
@@ -378,7 +394,9 @@ public class CrunchyRollCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
         this.requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
+        if (rtmp_path_or_hls_url != null && rtmp_path_or_hls_url.contains(".m3u8")) {
+            downloadHls(downloadLink);
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
@@ -392,7 +410,9 @@ public class CrunchyRollCom extends antiDDoSForHost {
         downloadLink.setProperty("valid", false);
         this.login(account, this.br, false);
         this.requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
+        if (rtmp_path_or_hls_url != null && rtmp_path_or_hls_url.contains(".m3u8")) {
+            downloadHls(downloadLink);
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
@@ -509,6 +529,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
+        rtmp_path_or_hls_url = getRtmpPathOrHlsUrl(downloadLink);
 
         // Try and find which download type it is
         if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
@@ -594,6 +615,10 @@ public class CrunchyRollCom extends antiDDoSForHost {
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.FALSE;
+    }
+
+    private String getRtmpPathOrHlsUrl(final DownloadLink dl) {
+        return dl.getStringProperty("rtmpfile", null);
     }
 
     @Override

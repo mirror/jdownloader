@@ -23,7 +23,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www\\.)?crunchyroll\\.com(?:\\.br)?/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www\\.)?crunchyroll\\.com(?:\\.br)?/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" })
 public class CrhyRllCom extends PluginForDecrypt {
 
     // Define the video quality codes used for RTMP
@@ -218,11 +218,7 @@ public class CrhyRllCom extends PluginForDecrypt {
 
                 final DownloadLink thisLink = this.createDownloadlink(xmlUrl);
 
-                try {/* JD2 only */
-                    thisLink.setContentUrl(cryptedLink.getCryptedUrl());
-                } catch (Throwable e) {/* Stable */
-                    thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-                }
+                thisLink.setContentUrl(cryptedLink.getCryptedUrl());
                 thisLink.setFinalFileName(filename + EXT_UNKNOWN);
                 thisLink.setProperty("quality", qualityValue.getFirstValue());
                 thisLink.setProperty("filename", filename);
@@ -254,11 +250,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                 final String subFile = title + "." + subName;
                 final DownloadLink thisLink = this.createDownloadlink(subUrl);
 
-                try {/* JD2 only */
-                    thisLink.setContentUrl(cryptedLink.getCryptedUrl());
-                } catch (Throwable e) {/* Stable */
-                    thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-                }
+                thisLink.setContentUrl(cryptedLink.getCryptedUrl());
                 thisLink.setFinalFileName(subFile + EXT_SUBS);
                 thisLink.setProperty("filename", subFile);
                 thisLink.setProperty("valid", true);
@@ -272,11 +264,7 @@ public class CrhyRllCom extends PluginForDecrypt {
 
             final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
 
-            try {/* JD2 only */
-                androidLink.setContentUrl(cryptedLink.getCryptedUrl());
-            } catch (Throwable e) {/* Stable */
-                androidLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-            }
+            androidLink.setContentUrl(cryptedLink.getCryptedUrl());
             androidLink.setFinalFileName(androidFile + EXT_UNKNOWN);
             androidLink.setProperty("filename", androidFile);
 
