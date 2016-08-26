@@ -71,7 +71,7 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "https?://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/.*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "https?://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/.*?\\.html" })
 public class LetitBitNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();
@@ -865,6 +865,9 @@ public class LetitBitNet extends PluginForHost {
                  * we must save the cookies, because letitbit only allows 100 logins per 24hours
                  */
                 postPage(this.br, "http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+                if (br.getRequest().getHttpConnection().getResponseCode() == 405) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 String check = br.getCookie(COOKIE_HOST, "log");
                 if (check == null) {
                     check = br.getCookie(COOKIE_HOST, "pas");
@@ -1150,6 +1153,7 @@ public class LetitBitNet extends PluginForHost {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.setCustomCharset("UTF-8");
         prepBr.setCookie(COOKIE_HOST, "lang", "en");
+        prepBr.setAllowedResponseCodes(new int[] { 405 });
         return prepBr;
     }
 
