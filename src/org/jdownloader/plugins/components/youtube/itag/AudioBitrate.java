@@ -6,7 +6,7 @@ import org.jdownloader.plugins.components.youtube.YT_STATICS;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 
-public enum AudioBitrate implements IntegerInterface, LabelInterface {
+public enum AudioBitrate implements IntegerInterface,LabelInterface {
     KBIT_384(384),
     KBIT_256(256),
     KBIT_192(192),
@@ -20,7 +20,6 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
     KBIT_32_ESTIMATED(31),
     KBIT_24(24),
     KBIT_12(12);
-
     private final int kbit;
 
     private AudioBitrate(int kbit) {
@@ -32,7 +31,6 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
     }
 
     public String getLabel() {
-
         return kbit + " kbit/s";
     }
 
@@ -49,7 +47,6 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
     }
 
     public static int getSortId(AbstractVariant v) {
-
         AudioBitrate res = getByVariant(v);
         if (res == null) {
             return -1;
@@ -62,7 +59,6 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
     }
 
     public static AudioBitrate getByInt(int bitrate) {
-
         AudioBitrate best = null;
         for (AudioBitrate b : values()) {
             if (best == null || Math.abs(best.getKbit() - bitrate) > Math.abs(b.getKbit() - bitrate)) {
@@ -71,5 +67,4 @@ public enum AudioBitrate implements IntegerInterface, LabelInterface {
         }
         return best;
     }
-
 }

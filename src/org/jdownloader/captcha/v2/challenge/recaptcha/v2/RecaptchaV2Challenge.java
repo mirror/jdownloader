@@ -180,7 +180,11 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (!binding.isAvailable()) {
             return null;
         }
-        basicChallenge = new Recaptcha2FallbackChallengeViaPhantomJS(this); //
+        basicChallenge = createPhantomJSChallenge(); //
         return basicChallenge;
+    }
+
+    protected Recaptcha2FallbackChallengeViaPhantomJS createPhantomJSChallenge() {
+        return new Recaptcha2FallbackChallengeViaPhantomJS(this);
     }
 }
