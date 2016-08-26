@@ -319,8 +319,8 @@ public class GoogleHelper {
                 }
                 form = br.getFormByInputFieldKeyValue("Page", "PasswordSeparationSignIn");
                 if (form != null) {
-                    form.put("Email", account.getUser());
-                    form.put("Passwd", account.getPass());
+                    form.put("Email", Encoding.urlEncode(account.getUser()));
+                    form.put("Passwd", Encoding.urlEncode(account.getPass()));
                     form.put("hl", "en");
                     submitForm(br, form);
                     continue;
