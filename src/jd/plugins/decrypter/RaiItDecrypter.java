@@ -273,6 +273,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Drop previous Headers & Cookies */
             this.br = jd.plugins.hoster.RaiTv.prepVideoBrowser(new Browser());
             jd.plugins.hoster.RaiTv.accessCont(this.br, cont);
+
+            if (this.br.containsHTML("video_no_available\\.mp4")) {
+                /* Offline */
+                /* XML response with e.g. this (and some more): <url>http://download.rai.it/video_no_available.mp4</url> */
+                return;
+            }
+
             dllink = jd.plugins.hoster.RaiTv.getDllink(this.br);
             if (dllink == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
@@ -311,10 +318,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
         } else {
             /* Single http url */
             final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
+            dl.setFinalFileName(title + "." + extension);
+            dl._setFilePackage(fp);
             if (description != null) {
                 dl.setComment(description);
             }
-            dl.setFinalFileName(title + "." + extension);
             this.decryptedLinks.add(dl);
         }
     }
