@@ -35,7 +35,6 @@ public enum VariantBase {
     FLV_H264_480P_30FPS_AAC_128KBIT(VariantGroup.VIDEO, DownloadType.VIDEO, FileContainer.FLV, YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, null),
     DEMUX_AAC_FLV_H264_480P_30FPS_AAC_128KBIT(VariantGroup.AUDIO, DownloadType.VIDEO, FileContainer.AAC, YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, YoutubeConverterFLVToAACAudio.getInstance()),
     DEMUX_M4A_FLV_H264_480P_30FPS_AAC_128KBIT(VariantGroup.AUDIO, DownloadType.VIDEO, FileContainer.M4A, YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, YoutubeConverterFLVToM4AAudio.getInstance()),
-    FLV_H263_270P_30FPS_MP3_64KBIT(VariantGroup.VIDEO, DownloadType.VIDEO, FileContainer.FLV, YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null),
     DEMUX_MP3_FLV_H263_270P_30FPS_MP3_64KBIT(VariantGroup.AUDIO, DownloadType.VIDEO, FileContainer.MP3, YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, YoutubeConverterFLVToMP3Audio.getInstance()),
     FLV_H263_240P_30FPS_MP3_64KBIT(VariantGroup.VIDEO, DownloadType.VIDEO, FileContainer.FLV, YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null),
     DEMUX_MP3_FLV_H263_240P_30FPS_MP3_64KBIT(VariantGroup.AUDIO, DownloadType.VIDEO, FileContainer.MP3, YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, YoutubeConverterFLVToMP3Audio.getInstance()),
@@ -313,14 +312,57 @@ public enum VariantBase {
     MP4_H264_1920P_60FPS_AAC_128KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null),
     MP4_H264_1920P_60FPS_AAC_SPATIAL_256KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_256K_AAC_SPATIAL, null, null),
     MP4_H264_1920P_60FPS_AAC_256KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null),
-    MP4_H264_1920P_60FPS_AAC_48KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null)
+    MP4_H264_1920P_60FPS_AAC_48KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null),
+    HLS_MP4_H264_144P_15FPS_AAC_48KBIT(VariantGroup.VIDEO, DownloadType.HLS_VIDEO, FileContainer.MP4, YoutubeITAG.HLS_VIDEO_MP4_144P_AUDIO_AAC, null, null, null),
+    DEMUX_AAC_HLS_MP4_H264_144P_15FPS_AAC_48KBIT(VariantGroup.AUDIO, DownloadType.HLS_VIDEO, FileContainer.AAC, YoutubeITAG.HLS_VIDEO_MP4_144P_AUDIO_AAC, null, null, YoutubeConverterMP4ToAACAudio.getInstance()),
+    DEMUX_M4A_HLS_MP4_H264_144P_15FPS_AAC_48KBIT(VariantGroup.AUDIO, DownloadType.HLS_VIDEO, FileContainer.M4A, YoutubeITAG.HLS_VIDEO_MP4_144P_AUDIO_AAC, null, null, YoutubeConverterMP4ToM4AAudio.getInstance()),
+    MP4_H264_1080P_60FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1080_H264_FPS60, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    AAC_AAC_SPATIAL_192KBIT_DASH(VariantGroup.AUDIO, DownloadType.DASH_AUDIO, FileContainer.AAC, null, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    M4A_AAC_SPATIAL_192KBIT_DASH(VariantGroup.AUDIO, DownloadType.DASH_AUDIO, FileContainer.M4A, null, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1080P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1440P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_144P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_144P_15FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_144P_H264_FPS15, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1920P_60FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1920_H264_FPS_60, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_2160P_60FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_2160_H264_FPS_60, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_2160P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_2160_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1920P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1920_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_240P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_360P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_480P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_720P_60FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_720_H264_FPS60, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_720P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1280P_60FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG304_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1920P_60FPS_AAC_SPATIAL_192KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_2160P_30FPS_AAC_SPATIAL_192KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_GENERIC_4K, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1080P_30FPS_AAC_SPATIAL_192KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_GENERIC_1080P, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_4320P_30FPS_AAC_SPATIAL_192KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_GENERIC_8K, YoutubeITAG.DASH_AUDIO_192K_AAC_SPATIAL, null, null),
+    MP4_H264_1080P_60FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1080_H264_FPS60, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    AAC_AAC_SPATIAL_384KBIT_DASH(VariantGroup.AUDIO, DownloadType.DASH_AUDIO, FileContainer.AAC, null, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    M4A_AAC_SPATIAL_384KBIT_DASH(VariantGroup.AUDIO, DownloadType.DASH_AUDIO, FileContainer.M4A, null, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1080P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1440P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_144P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_144P_15FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_144P_H264_FPS15, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1920P_60FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1920_H264_FPS_60, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_2160P_60FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_2160_H264_FPS_60, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_2160P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_2160_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1920P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_1920_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_240P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_360P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_480P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_720P_60FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_720_H264_FPS60, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_720P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1280P_60FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG304_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1920P_60FPS_AAC_SPATIAL_384KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ITAG305_MP4_1280P_60FPS, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_2160P_30FPS_AAC_SPATIAL_384KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_GENERIC_4K, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_1080P_30FPS_AAC_SPATIAL_384KBIT_DASH_2(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_GENERIC_1080P, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null),
+    MP4_H264_4320P_30FPS_AAC_SPATIAL_384KBIT_DASH(VariantGroup.VIDEO, DownloadType.DASH_VIDEO, FileContainer.MP4, YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_GENERIC_8K, YoutubeITAG.DASH_AUDIO_384K_AAC_SPATIAL, null, null)
     // ###APPEND###
     ;
-
     public static HashMap<String, VariantBase> COMPATIBILITY_MAP = new HashMap<String, VariantBase>();
 
     static {
-
         COMPATIBILITY_MAP.put("AAC_128", AAC_128KBIT_DASH);
         COMPATIBILITY_MAP.put("AAC_256", AAC_256KBIT_DASH);
         COMPATIBILITY_MAP.put("AAC_48", AAC_48KBIT_DASH);
@@ -399,7 +441,7 @@ public enum VariantBase {
         COMPATIBILITY_MAP.put("DEMUX_M4A_96_360P_3D_V1", DEMUX_M4A_MP4_H264_360P_30FPS_AAC_96KBIT);
         COMPATIBILITY_MAP.put("DEMUX_M4A_96_360P_V1", DEMUX_M4A_MP4_H264_360P_30FPS_AAC_96KBIT_2);
         COMPATIBILITY_MAP.put("FLV_240_LOW", FLV_H263_240P_30FPS_MP3_64KBIT);
-        COMPATIBILITY_MAP.put("FLV_270_HIGH", FLV_H263_270P_30FPS_MP3_64KBIT);
+        COMPATIBILITY_MAP.put("FLV_270_HIGH", DEMUX_MP3_FLV_H263_270P_30FPS_MP3_64KBIT);
         COMPATIBILITY_MAP.put("FLV_360", FLV_H264_360P_30FPS_AAC_128KBIT);
         COMPATIBILITY_MAP.put("FLV_480", FLV_H264_480P_30FPS_AAC_128KBIT);
         COMPATIBILITY_MAP.put("M4A_128", M4A_AAC_128KBIT_DASH);
@@ -503,22 +545,15 @@ public enum VariantBase {
     }
 
     private YoutubeConverter   converter;
-
     final private VariantGroup group;
-
     final private YoutubeITAG  iTagAudio;
-
     final private YoutubeITAG  iTagData;
-
     final private YoutubeITAG  iTagVideo;
-
     final private DownloadType type;
-
     private FileContainer      container;
 
     private VariantBase(final VariantGroup group, final DownloadType type, FileContainer container, final YoutubeITAG video, final YoutubeITAG audio, YoutubeITAG data, YoutubeConverter converter) {
         this.group = group;
-
         this.container = container;
         if (type == null) {
             throw new NullPointerException();
@@ -527,9 +562,7 @@ public enum VariantBase {
         this.iTagVideo = video;
         this.iTagAudio = audio;
         this.iTagData = data;
-
         this.converter = converter;
-
     }
 
     public FileContainer getContainer() {
@@ -543,7 +576,6 @@ public enum VariantBase {
     }
 
     public VideoFrameRate getFrameRate(Object link) {
-
         return iTagVideo.getVideoFrameRate();
     }
 
@@ -579,7 +611,6 @@ public enum VariantBase {
     // }
     // return this.qualityRating;
     // }
-
     public DownloadType getType() {
         return this.type;
     }
@@ -596,7 +627,6 @@ public enum VariantBase {
             return StringUtils.isNotEmpty(vid.description);
         default:
         }
-
         return true;
     }
 
@@ -619,17 +649,14 @@ public enum VariantBase {
             if (converter instanceof ExternalToolRequired) {
                 return true;
             }
-
         }
         return false;
     }
 
     public List<File> listProcessFiles(DownloadLink link) {
         ArrayList<File> ret = new ArrayList<File>();
-
         return ret;
     }
-
     // public String modifyFileName(String formattedFilename, DownloadLink link) {
     // if (filenameModifier != null) {
     // return filenameModifier.run(formattedFilename, link);
@@ -644,7 +671,6 @@ public enum VariantBase {
     // }
     // return variantName;
     // }
-
     public static VariantBase get(String variantName) {
         VariantBase ret = COMPATIBILITY_MAP.get(variantName);
         if (ret != null) {
@@ -657,5 +683,4 @@ public enum VariantBase {
             return null;
         }
     }
-
 }

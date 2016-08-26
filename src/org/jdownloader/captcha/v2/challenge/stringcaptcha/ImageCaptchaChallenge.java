@@ -7,17 +7,16 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import jd.plugins.Plugin;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.captcha.v2.Challenge;
 import org.seamless.util.io.IO;
 
-public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
+import jd.plugins.Plugin;
 
-    private volatile File imageFile;
+public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
+    protected volatile File imageFile;
 
     public ImageCaptchaChallenge(File file, String method, String explain, Plugin plugin) {
         super(method, explain);
@@ -45,7 +44,7 @@ public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
     }
 
     public String toString() {
-        return "CaptchaChallenge by " + plugin.getHost() + "-" + getTypeID() + " File: " + getImageFile();
+        return "CaptchaChallenge by " + getHost() + "-" + getTypeID() + " File: " + getImageFile();
     }
 
     public Plugin getPlugin() {

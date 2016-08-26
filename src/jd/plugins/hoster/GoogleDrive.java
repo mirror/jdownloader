@@ -13,8 +13,11 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -34,13 +37,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
-
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.google.com/signup");
@@ -76,7 +74,6 @@ public class GoogleDrive extends PluginForHost {
     private boolean              pluginloaded                   = false;
     private boolean              privatefile                    = false;
     private boolean              download_might_not_be_possible = false;
-
     /* Connection stuff */
     private static final boolean FREE_RESUME                    = true;
     private static final int     FREE_MAXCHUNKS                 = 0;
@@ -91,7 +88,6 @@ public class GoogleDrive extends PluginForHost {
         // https://docs.google.com/leaf?id=0B_QJaGmmPrqeZjJkZDFmYzEtMTYzMS00N2Y2LWI2NDUtMjQ1ZjhlZDhmYmY3
         // https://docs.google.com/open?id=0B9Z2XD2XD2iQNmxzWjd1UTdDdnc
         // https://video.google.com/get_player?docid=0B2vAVBc_577958658756vEo2eUk
-
         if (downloadLink == null) {
             return null;
         }
@@ -111,7 +107,6 @@ public class GoogleDrive extends PluginForHost {
         // used within the decrypter also, leave public
         // language determined by the accept-language
         // user-agent required to use new ones otherwise blocks with javascript notice.
-
         if (pbr == null) {
             pbr = new Browser();
         }
@@ -132,7 +127,6 @@ public class GoogleDrive extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         privatefile = false;
         download_might_not_be_possible = false;
-
         this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -216,14 +210,12 @@ public class GoogleDrive extends PluginForHost {
                 streamLink = unescape(streamLink);
             }
         }
-
         stream_map = br.getRegex("\"url_encoded_fmt_stream_map\",\"(.*?)\"").getMatch(0);
         if (stream_map != null) {
             final String[] links = stream_map.split("\\,");
             for (int i = 0; i < links.length; i++) {
                 links[i] = unescape(links[i]);
             }
-
             final UrlQuery query = Request.parseQuery(links[0]);
             streamLink = Encoding.urlDecode(query.get("url"), false);
         }
@@ -310,7 +302,9 @@ public class GoogleDrive extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            if (!login(account)) {
+                throw new Exception("Login Failed");
+            }
         } catch (final Exception e) {
             ai.setStatus(e.getMessage());
             account.setValid(false);
@@ -355,5 +349,4 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
