@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -50,6 +51,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
     private static final String type_invalid = "https?://(www\\.)?linkshrink\\.net/(report|login)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(type_invalid)) {
@@ -62,6 +64,8 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
         }
+        br.setCookie(getHost(), "s32", "1");
+        br.setCookie(getHost(), "AABE2", "1");
         getPage(parameter);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid))) {
             decryptedLinks.add(createOfflinelink(parameter));
