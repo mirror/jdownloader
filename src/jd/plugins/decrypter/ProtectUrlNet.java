@@ -45,7 +45,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-url.net" }, urls = { "http://(www\\.)?(protect-url\\.net|p-u.in)/([a-z0-9]+-[\\w_]+|check\\.[a-z0-9]+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-url.net" }, urls = { "http://(?:www\\.)?(?:protect-url\\.net|p-u\\.in)/([a-z0-9]+-[\\w_]+|check\\.[a-z0-9]+)\\.html" })
 public class ProtectUrlNet extends PluginForDecrypt {
 
     public ProtectUrlNet(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
     /* DecrypterScript_linkid=_linkcheck.php */
     private String                         uid           = null;
     private final String                   PASSWRONG     = "window\\.location = \"linkcheck\\.php\\?linkid=[a-z0-9]+\\&message=wrong\"";
-    private final String                   security      = "<font color=red>ACCÈS REFUSÉ : PROXY DÉTECTÉ</font>";
+    private final String                   security      = "<font color=red>ACCÈS REFUSÉ : PROXY DÉTECTÉ</font>|>ACCÈS REFUSÉ<";
     private static AtomicReference<String> agent         = new AtomicReference<String>(null);
     private static AtomicReference<Object> cookieMonster = new AtomicReference<Object>();
     private static AtomicInteger           maxConProIns  = new AtomicInteger(1);
@@ -65,8 +65,8 @@ public class ProtectUrlNet extends PluginForDecrypt {
 
     private boolean                        debug         = false;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("p-u.in/", "protect-url.net/");
         // prevent more than one thread starting across the different versions of JD
         synchronized (ctrlLock) {
@@ -77,7 +77,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
                 // magic
             } else if ((System.currentTimeMillis() - lastUsed.get()) <= 5000) {
                 // hoodo
-                Thread.sleep(3731 + new Random().nextInt(3000));
+                sleep(3731 + new Random().nextInt(3000), param);
             }
             uid = new Regex(parameter, "([a-z0-9]+)-[\\w_]+\\.html").getMatch(0);
             if (uid == null) {
@@ -93,7 +93,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
             getPage(parameter);
             if (br.containsHTML(security)) {
-                Thread.sleep(1000);
+                sleep(1000, param);
                 // this switches to french and you no longer need referrer! haxor
                 br.setCookie(this.getHost(), "PURL_Lang", "fr");
                 br.setCookie(this.getHost(), "googtranz", "1");
@@ -234,7 +234,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
