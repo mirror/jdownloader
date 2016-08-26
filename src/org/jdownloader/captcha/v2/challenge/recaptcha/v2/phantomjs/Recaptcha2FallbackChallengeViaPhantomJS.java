@@ -244,6 +244,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                         if (GOOGLE.isEmpty()) {
                             final Browser google = br.cloneBrowser();
                             google.setFollowRedirects(true);
+                            google.setCookie("https://google.com", "PREF", "hl=en-GB");
                             google.getPage("https://www.google.com");
                             google.getPage("https://consent.google.com/status?continue=https://www." + google.getHost() + "&pc=s&timestamp=" + System.currentTimeMillis());
                             GOOGLE.add(google.getCookies("https://www.google.com"));
