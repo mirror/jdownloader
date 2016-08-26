@@ -296,7 +296,7 @@ public class RemoteAPIController {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
             if (JsonConfig.create(RemoteAPIConfig.class).isDeprecatedApiEnabled()) {
-                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(3128, true, sessionc);
+                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(JsonConfig.create(RemoteAPIConfig.class).getDeprecatedApiPort(), true, sessionc);
             }
         } catch (Throwable e) {
             logger.log(e);

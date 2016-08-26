@@ -141,7 +141,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         LinkCollector.getInstance().getEventsender().removeListener(this);
         final Subscriber old = EventScripterExtension.this.subscriber.getAndSet(null);
         if (old != null) {
-            old.kill();
+            RemoteAPIController.getInstance().getEventsapi().removeSubscriber(old);
         }
         if (!Application.isHeadless()) {
             MenuManagerTrayIcon.getInstance().unregisterExtender(this);
@@ -234,6 +234,11 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                         }
 
                         @Override
+                        public boolean isExpired() {
+                            return false;
+                        }
+
+                        @Override
                         protected void push(final EventObject event) {
                             for (ScriptEntry script : entries) {
                                 if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
@@ -260,7 +265,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                     };
                     final Subscriber old = EventScripterExtension.this.subscriber.getAndSet(subscriber);
                     if (old != null) {
-                        old.kill();
+                        RemoteAPIController.getInstance().getEventsapi().removeSubscriber(old);
                     }
                     RemoteAPIController.getInstance().getEventsapi().addSubscriber(subscriber);
                     return;
@@ -269,7 +274,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         }
         final Subscriber old = EventScripterExtension.this.subscriber.getAndSet(null);
         if (old != null) {
-            old.kill();
+            RemoteAPIController.getInstance().getEventsapi().removeSubscriber(old);
         }
     }
 
