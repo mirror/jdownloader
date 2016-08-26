@@ -64,8 +64,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
     private void decryptWholeDay() throws Exception {
         final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
         final String[] channels = new Regex(parameter, "ch=(\\d+)").getColumn(0);
+        final String[] videoids = new Regex(parameter, "v=(\\d+)").getColumn(0);
         final String date = dates[dates.length - 1];
         final String date_underscore = date.replace("-", "_");
+        String id_of_single_video_which_user_wants_to_have_only = null;
         String chnumber_str = null;
         if (channels != null && channels.length > 0) {
             chnumber_str = channels[channels.length - 1];
@@ -73,6 +75,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (chnumber_str == null) {
             /* Small fallback */
             chnumber_str = "1";
+        }
+        if (videoids != null && videoids.length > 0) {
+            id_of_single_video_which_user_wants_to_have_only = videoids[videoids.length - 1];
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(date_underscore);
@@ -119,13 +124,22 @@ public class RaiItDecrypter extends PluginForDecrypt {
             final Entry<String, Object> entry = it.next();
             tempmap = (LinkedHashMap<String, Object>) entry.getValue();
             String title = (String) tempmap.get("t");
+            final String videoid_temp = (String) tempmap.get("i");
             final String relinker = (String) tempmap.get("r");
             final String description = (String) tempmap.get("d");
             if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
                 continue;
             }
             title = date_underscore + "_raitv_" + title;
-            decryptRelinker(relinker, title, null, fp, description);
+            if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
+                /* User wants to have a specified video only --> Clear list, add only this entry, then step out of the loop */
+                this.decryptedLinks.clear();
+                decryptRelinker(relinker, title, null, fp, description);
+                return;
+            } else {
+                /* Simply add video */
+                decryptRelinker(relinker, title, null, fp, description);
+            }
         }
     }
 
@@ -293,7 +307,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     dl.setComment(description);
                 }
                 decryptedLinks.add(dl);
-                distribute(dl);
             }
         } else {
             /* Single http url */
@@ -303,7 +316,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             dl.setFinalFileName(title + "." + extension);
             this.decryptedLinks.add(dl);
-            distribute(dl);
         }
     }
 

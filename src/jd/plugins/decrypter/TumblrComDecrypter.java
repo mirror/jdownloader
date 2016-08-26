@@ -109,12 +109,18 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_IMAGE)) {
                 decryptedLinks.addAll(processImage(parameter, null, null));
             } else {
-                if (loggedin) {
-                    decryptUserLoggedIn();
-                } else {
-                    parameter = convertUserUrlToLoggedOutUser();
-                    decryptUser();
-                }
+                /*
+                 * 2016-08-26: Seems like when logged in, users now get the same view they have when not logged in. Using the "old"
+                 * logged-in method, the crawler will not find all entries which is why we now use the normal method (again).
+                 */
+                // if (loggedin) {
+                // decryptUserLoggedIn();
+                // } else {
+                // parameter = convertUserUrlToLoggedOutUser();
+                // decryptUser();
+                // }
+                parameter = convertUserUrlToLoggedOutUser();
+                decryptUser();
             }
         } catch (final BrowserException e) {
             logger.info("Server error, couldn't decrypt link: " + parameter);
