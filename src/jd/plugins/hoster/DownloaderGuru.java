@@ -70,7 +70,6 @@ public class DownloaderGuru extends PluginForHost {
 
     private static Object                                  CTRLLOCK             = new Object();
     private int                                            statuscode           = 0;
-    private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
     private Account                                        currAcc              = null;
     private DownloadLink                                   currDownloadLink     = null;
 
@@ -190,14 +189,7 @@ public class DownloaderGuru extends PluginForHost {
             handleAPIErrors(this.br);
             handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
         }
-        try {
-            controlSlot(+1);
-            this.dl.startDownload();
-        } finally {
-            // remove usedHost slot from hostMap
-            // remove download slot
-            controlSlot(-1);
-        }
+        this.dl.startDownload();
     }
 
     @Override
@@ -454,34 +446,6 @@ public class DownloaderGuru extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
-     *
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
-     * @param controlSlot
-     *            (+1|-1)
-     * */
-    private void controlSlot(final int num) {
-        synchronized (CTRLLOCK) {
-            final String currentHost = correctHost(this.currDownloadLink.getHost());
-            int was = maxPrem.get();
-            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), defaultMAXDOWNLOADS));
-            logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
-            AtomicInteger currentRunningDls = new AtomicInteger(0);
-            if (hostRunningDlsNumMap.containsKey(currentHost)) {
-                currentRunningDls = hostRunningDlsNumMap.get(currentHost);
-            }
-            currentRunningDls.set(currentRunningDls.get() + num);
-            hostRunningDlsNumMap.put(currentHost, currentRunningDls);
-        }
-    }
-
-    /**
      * Errors 1-99 = JDErrors (by psp)
      */
     private void updatestatuscode() {
@@ -521,11 +485,6 @@ public class DownloaderGuru extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
-    }
-
-    @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
     }
 
     @Override
