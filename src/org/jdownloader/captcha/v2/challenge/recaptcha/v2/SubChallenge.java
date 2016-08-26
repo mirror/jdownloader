@@ -18,7 +18,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Response;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.TileContent;
 
 public class SubChallenge {
-
     protected String type;
     private String   searchKey;
     private boolean  errorAnotherOneRequired;
@@ -48,11 +47,8 @@ public class SubChallenge {
     }
 
     private boolean                        errorDynamicTileMore;
-
     private boolean                        errorIncorrect;
-
     private final HashMap<String, Payload> payloads = new HashMap<String, Payload>();
-
     private volatile String                mainImageUrl;
 
     public String getMainImageUrl() {
@@ -175,10 +171,8 @@ public class SubChallenge {
 
     public BufferedImage paintImage() {
         Payload mainImage = getMainPayload();
-
         BufferedImage imgnew = IconIO.createEmptyImage(mainImage.image.getWidth(), mainImage.image.getHeight());
         Graphics2D g2d = (Graphics2D) imgnew.getGraphics();
-
         if (getChallengeType() == ChallengeType.DYNAMIC) {
             double tileWidth = (double) mainImage.image.getWidth() / getGridWidth();
             double tileHeight = (double) mainImage.image.getHeight() / getGridHeight();
@@ -194,12 +188,10 @@ public class SubChallenge {
                             g2d.drawImage(tile.getPayload().image, (int) (x * tileWidth), (int) (y * tileHeight), (int) tileWidth, (int) tileHeight, null);
                             g2d.drawImage(ImageProvider.convertToGrayScale(tile.getPayload().image), (int) (x * tileWidth), (int) (y * tileHeight), (int) tileWidth, (int) tileHeight, null);
                         } else {
-
                             if (grayOriginal == null) {
                                 grayOriginal = ImageProvider.convertToGrayScale(mainImage.image);
                             }
                             g2d.drawImage(grayOriginal, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, null);
-
                         }
                         Composite c = g2d.getComposite();
                         try {
@@ -209,19 +201,15 @@ public class SubChallenge {
                         } finally {
                             g2d.setComposite(c);
                         }
-
                     } else {
                         if (tile.getPayload().url.contains("&id=")) {
                             g2d.drawImage(tile.getPayload().image, (int) (x * tileWidth), (int) (y * tileHeight), (int) tileWidth, (int) tileHeight, null);
                         } else {
                             g2d.drawImage(mainImage.image, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, tileX, tileY, tileX + (int) tileWidth, tileY + (int) tileHeight, null);
-
                         }
-
                     }
                 }
             }
-
         } else {
             g2d.drawImage(mainImage.image, 0, 0, null);
         }
@@ -259,28 +247,21 @@ public class SubChallenge {
         synchronized (responses) {
             HashSet<Integer> remove = new HashSet<Integer>();
             for (Integer num : resp.getClickedIndices()) {
-
                 if (num >= 0 && !isSlotAnnotated(num % getGridWidth(), num / getGridWidth())) {
                     resp.getResponse().setValidation(ValidationResult.INVALID);
                     remove.add(num);
                 }
-
             }
             resp.remove(remove);
             // this response selects an image that has not been selected for *unchangedFor* rounds.
-
             responses.add(resp);
             updateAnnotations();
             HashSet<Integer> selected = new HashSet<Integer>(resp.getClickedIndices());
-
             for (int i = 0; i < getTileCount(); i++) {
                 TileContent tile = getTile(i);
                 tile.mark(resp, selected.contains(i), responses.size());
-
             }
-
             if (responses.size() > 1) {
-
                 for (int i = 0; i < responses.size() - 1; i++) {
                     Response old = responses.get(i);
                     selected = new HashSet<Integer>(resp.getClickedIndices());
@@ -292,17 +273,13 @@ public class SubChallenge {
                                 break;
                             }
                         }
-
                     }
                     if (unchanged > 1) {
                         old.getResponse().setValidation(ValidationResult.VALID);
                     }
                 }
-
             }
-
         }
-
     }
 
     private int staysUnselectedInFurtherResponses(int responseIndex, int tileIndex) {
@@ -337,6 +314,9 @@ public class SubChallenge {
     }
 
     public boolean isSlotAnnotated(int x, int y) {
+        if (true) {
+            return true;
+        }
         int num = x + y * getGridWidth();
         return annotatedIndices == null || annotatedIndices.contains(num);
     }
@@ -371,7 +351,6 @@ public class SubChallenge {
             if (count >= amount) {
                 return true;
             }
-
         }
         return false;
     }
