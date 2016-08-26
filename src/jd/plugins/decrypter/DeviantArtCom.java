@@ -22,10 +22,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -36,13 +37,13 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" }) 
-public class DevArtCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" })
+public class DeviantArtCom extends PluginForDecrypt {
 
     /**
      * @author raztoki
      */
-    public DevArtCm(PluginWrapper wrapper) {
+    public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -105,13 +106,18 @@ public class DevArtCm extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException be) {
-            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
-            return decryptedLinks;
+
+        /* Login if possible. Sometimes not all items of a gallery are visible without being logged in. */
+        final Account acc = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        if (acc != null) {
+            try {
+                jd.plugins.hoster.DeviantArtCom.login(this.br, acc, false);
+            } catch (final Throwable e) {
+            }
         }
-        if (br.containsHTML("The page you were looking for doesn\\'t exist\\.") || br.getURL().matches("https?://([A-Za-z0-9]+\\.)?deviantart\\.com/browse/.+")) {
+
+        br.getPage(parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.") || br.getURL().matches("https?://([A-Za-z0-9]+\\.)?deviantart\\.com/browse/.+")) {
             this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return decryptedLinks;
         }

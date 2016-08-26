@@ -16,13 +16,12 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
 public class SpankBangCom extends antiDDoSForHost {
@@ -54,6 +55,7 @@ public class SpankBangCom extends antiDDoSForHost {
     private final static String ALLOW_1080p   = "ALLOW_1080p";
 
     private String              dllink        = null;
+    private boolean             server_issues = false;
 
     @Override
     protected boolean useRUA() {
@@ -67,45 +69,64 @@ public class SpankBangCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        /* Old links before the decrypter --> hosterplugin + qualityselection change! */
-        if (!link.getDownloadURL().matches("http://spankbangdecrypted\\.com/\\d+")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         this.setBrowserExclusive();
+        server_issues = false;
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        getPage(link.getStringProperty("mainlink", null));
-        if ("http://spankbang.com/".equals(br.getURL()) || br.containsHTML(">this video is no longer available\\.<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final String filename = link.getStringProperty("plain_filename", null);
         dllink = link.getStringProperty("plain_directlink", null);
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
 
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            // this request isn't behind cloudflare.
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } catch (final BrowserException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } finally {
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                // this request isn't behind cloudflare.
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
+                } else {
+                    final String mainlink = link.getStringProperty("mainlink", null);
+                    final String quality = link.getStringProperty("quality", null);
+                    if (mainlink == null || quality == null) {
+                        /* Missing property - this should not happen! */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    getPage(mainlink);
+                    if (jd.plugins.decrypter.SpankBangCom.isOffline(this.br)) {
+                        /* Main videolink offline --> Offline */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    /* Main videolink online --> Refresh directlink ... */
+                    final LinkedHashMap<String, String> foundQualities = jd.plugins.decrypter.SpankBangCom.findQualities(this.br, mainlink);
+                    if (foundQualities != null) {
+                        dllink = foundQualities.get(quality);
+                    }
+                    if (dllink != null) {
+                        con = br.openHeadConnection(dllink);
+                        if (!con.getContentType().contains("html")) {
+                            link.setDownloadSize(con.getLongContentLength());
+                            /* Save new directlink */
+                            link.setProperty("plain_directlink", dllink);
+                            return AvailableStatus.TRUE;
+                        } else {
+                            /* Link is still online but our directlink does not work for whatever reason ... */
+                            server_issues = true;
+                        }
+                    }
+                    link.setDownloadSize(con.getLongContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -121,6 +142,9 @@ public class SpankBangCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

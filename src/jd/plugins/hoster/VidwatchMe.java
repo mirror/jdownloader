@@ -55,10 +55,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nodefiles.com" }, urls = { "https?://(?:www\\.)?(?:gwshare|nodefiles)\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class NodefilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidwatch.me" }, urls = { "https?://(?:www\\.)?vidwatch\\.me/(?:embed\\-)?[a-z0-9]{12}" })
+public class VidwatchMe extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -66,11 +67,11 @@ public class NodefilesCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://nodefiles.com";
+    private static final String            COOKIE_HOST                        = "http://vidwatch.me";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(gwshare\\.com|nodefiles\\.com)";
+    private static final String            DOMAINS                            = "(vidwatch\\.me)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -84,25 +85,25 @@ public class NodefilesCom extends PluginForHost {
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
     private final boolean                  VIDEOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private final boolean                  VIDEOHOSTER_2                      = false;
-    private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
+    private final boolean                  VIDEOHOSTER_2                      = true;
+    private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = true;
     /*
      * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
      * will check for videohoster "next" Download/Ad- Form.
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = true;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = true;
-    private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
-    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
+    private final boolean                  SUPPORTS_HTTPS                     = false;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = false;
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = false;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
     private final boolean                  ENABLE_RANDOM_UA                   = false;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
+    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = false;
 
     /* Pre-Download waittime stuff */
     private final boolean                  WAITFORCED                         = false;
@@ -132,14 +133,14 @@ public class NodefilesCom extends PluginForHost {
 
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(5);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.2.4<br />
-     * mods: scanInfo[2 new filename RegExes]<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.2.8<br />
+     * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -174,19 +175,9 @@ public class NodefilesCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public NodefilesCom(PluginWrapper wrapper) {
+    public VidwatchMe(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if ("gwshare.com".equals(getHost())) {
-            if (host == null || "gwshare.com".equals(host)) {
-                return "nodefiles.com";
-            }
-        }
-        return super.rewriteHost(host);
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -255,7 +246,7 @@ public class NodefilesCom extends PluginForHost {
         scanInfo(fileInfo);
 
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
-        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -270,6 +261,7 @@ public class NodefilesCom extends PluginForHost {
              * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
              */
             fileInfo[0] = this.fuid + ".jpg";
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (inValidate(fileInfo[0])) {
             /*
@@ -341,10 +333,7 @@ public class NodefilesCom extends PluginForHost {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, ">Free Download </span>([^<>\"]+)<").getMatch(0);
-        }
-        if (inValidate(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "File Name: <strong>([^<>\"]+)<").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "<div id=\"content\" class=\"left\">[^<>]*?<h2>([^<>]+)</h2>").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
@@ -434,13 +423,13 @@ public class NodefilesCom extends PluginForHost {
         if (!filename.endsWith("." + defaultExtension)) {
             filename += "." + defaultExtension;
         }
-        return null;
+        return filename;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -544,6 +533,14 @@ public class NodefilesCom extends PluginForHost {
                         logger.warning("Could not find 'fname'");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                }
+                /* Fix/Add "method_free" value if necessary. */
+                if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
+                    String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
+                    if (method_free_value == null || method_free_value.equals("")) {
+                        method_free_value = "Free Download";
+                    }
+                    download1.put("method_free", method_free_value);
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -870,22 +867,18 @@ public class NodefilesCom extends PluginForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\']+)").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/\\d+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
-            }
-            if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                /* Do NOT download thumbnails! */
-                dllink = null;
+            final String[] regexes = { "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\'\\[\\]]+)", "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/i/\\d+/[^<>\"\\'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))" };
+            for (final String regex : regexes) {
+                final String[] possibleDllinks = new Regex(this.correctedBR, regex).getColumn(0);
+                for (final String possibleDllink : possibleDllinks) {
+                    /* Do NOT download thumbnails! */
+                    if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                        dllink = possibleDllink;
+                    }
+                }
+                if (dllink != null) {
+                    break;
+                }
             }
         }
         return dllink;
@@ -971,6 +964,10 @@ public class NodefilesCom extends PluginForHost {
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            /* More open RegEx */
+            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)<").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);

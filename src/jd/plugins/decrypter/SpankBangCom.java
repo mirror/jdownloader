@@ -23,6 +23,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -78,7 +79,7 @@ public class SpankBangCom extends PluginForDecrypt {
         br.setCookie("http://spankbang.com/", "country", "GB");
         br.getHeaders().put("Accept-Language", "en");
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<") || !br.getURL().contains("/video")) {
+        if (isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -87,31 +88,15 @@ public class SpankBangCom extends PluginForDecrypt {
 
         /* Decrypt qualities START */
         String title = br.getRegex("<title>([^<>\"]*?) \\- SpankBang</title>").getMatch(0);
-        final String fid = new Regex(parameter, "spankbang\\.com/([a-z0-9]+)/video/").getMatch(0);
-        final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
-        // qualities 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript
-        String[] qualities = br.getRegex("class=\"q_(\\w+)\"").getColumn(0);
-        if (qualities == null || qualities.length == 0) {
-            /* Maybe we only have 1 quality. */
-            qualities = new String[1];
-            qualities[0] = "high";
-        }
-        if (qualities == null || qualities.length == 0 || streamkey == null || title == null) {
+        final String fid = getFid(parameter);
+        foundQualities = findQualities(this.br, parameter);
+        if (foundQualities == null || foundQualities.size() == 0 || title == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        }
-        title = Encoding.htmlDecode(title.trim());
-        fp.setName(title);
-        for (final String q : qualities) {
-            final String quality = getQuality(q);
-            final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
-            foundQualities.put(quality, directlink);
         }
 
-        if (foundQualities == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        title = Encoding.htmlDecode(title.trim());
+        fp.setName(title);
         /* Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         boolean q240p = cfg.getBooleanProperty(ALLOW_240p, true);
@@ -158,6 +143,7 @@ public class SpankBangCom extends PluginForDecrypt {
                 dl.setProperty("plain_filename", finalname);
                 dl.setProperty("plain_directlink", directlink);
                 dl.setProperty("mainlink", parameter);
+                dl.setProperty("quality", selectedQualityValue);
                 fp.add(dl);
                 decryptedLinks.add(dl);
                 if (best) {
@@ -171,6 +157,36 @@ public class SpankBangCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException {
+        final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
+        final String fid = getFid(source_url);
+        final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
+        // qualities 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript
+        String[] qualities = br.getRegex("class=\"q_(\\w+)\"").getColumn(0);
+        if (qualities == null || qualities.length == 0) {
+            /* Maybe we only have 1 quality. */
+            qualities = new String[1];
+            qualities[0] = "high";
+        }
+        if (qualities == null || qualities.length == 0 || streamkey == null) {
+            return null;
+        }
+        for (final String q : qualities) {
+            final String quality = getQuality(q);
+            final String directlink = "http://spankbang.com/_" + fid + "/" + streamkey + "/title/" + quality + "__mp4";
+            foundQualities.put(quality, directlink);
+        }
+        return foundQualities;
+    }
+
+    public static String getFid(final String source_url) {
+        return new Regex(source_url, "spankbang\\.com/([a-z0-9]+)/video/").getMatch(0);
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<") || !br.getURL().contains("/video");
+    }
+
     /**
      * 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript
      *
@@ -178,7 +194,7 @@ public class SpankBangCom extends PluginForDecrypt {
      * @return
      * @throws DecrypterException
      */
-    private String getQuality(final String q) throws DecrypterException {
+    public static String getQuality(final String q) throws DecrypterException {
         if ("super".equalsIgnoreCase(q)) {
             return "1080p";
         } else if ("high".equalsIgnoreCase(q)) {

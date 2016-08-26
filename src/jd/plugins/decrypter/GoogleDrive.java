@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
 
     /**
@@ -51,15 +51,23 @@ public class GoogleDrive extends PluginForDecrypt {
     // language determined by the accept-language
     // user-agent required to use new ones otherwise blocks with javascript notice.
 
-    private static final String FOLDER_NORMAL = "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+";
-    private static final String FOLDER_OLD    = "https?://(www\\.)?docs\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
-    private static final String FOLDER_NEW    = "https?://(www\\.)?drive\\.google\\.com/folderview\\?id=?[A-Za-z0-9_\\\\]+";
+    private static final String FOLDER_NORMAL  = "https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+";
+    private static final String FOLDER_OLD     = "https?://(?:www\\.)?docs\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
+    private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
+        String fid;
+        if (parameter.matches(FOLDER_NORMAL) || parameter.matches(FOLDER_CURRENT)) {
+            fid = new Regex(parameter, "([^/]+)$").getMatch(0);
+        } else {
+            fid = new Regex(parameter, "id=([^\\&=]+)").getMatch(0);
+        }
+        parameter = "https://drive.google.com/drive/folders/" + fid;
+
+        final PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
         ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br);
 
         int retry = 0;
@@ -83,16 +91,13 @@ public class GoogleDrive extends PluginForDecrypt {
             retry++;
         } while (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500 && retry <= 3);
 
-        final String count_docs = br.getRegex("class=\"flip-folder-item-count\">(\\d+)").getMatch(0);
-
-        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404 || count_docs == null) {
+        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String fid = new Regex(parameter, "(?:id=|/d/)([A-Za-z0-9]+)").getMatch(0);
         if (fid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -103,21 +108,29 @@ public class GoogleDrive extends PluginForDecrypt {
             fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
 
-        String[] results = br.getRegex("(\\{\"description\":[^\\}]+),").getColumn(0);
+        /* 2016-08-26: TODO: Check if this works fine for big folders too */
+        String json_src = this.br.getRegex("window\\[\\'_DRIVE_ivd\\'\\]\\s*?=\\s*?\\'\\[(.*?)\\';").getMatch(0);
+        String[] results = null;
+        if (json_src != null) {
+            // json_src = JSonUtils.unescape(json_src);
+            results = json_src.split("\\\\n,\\[\\\\x22");
+        }
         // if (results == null || results.length == 0) {
         // br2.getPage(parameter + "/list?rm=whitebox&hl=en_GB&forcehl=1&pref=2&pli=1");
         // results = br2.getRegex("(<td class=\"list\\-entry\\-title\".+</a></td></tr>)").getColumn(0);
         // }
         if (results != null && results.length != 0) {
             for (String result : results) {
-                String link = new Regex(result, "\"openURL\":\"(http.+(\\\\/|/)folder(\\\\/|/)d(\\\\/|/)[^\"]+)").getMatch(0);
-                // if (link == null) link = new Regex(result, "(.+)").getMatch(0);
-                if (link != null) {
-                    // return folder links back into the plugin again.
-                    decryptedLinks.add(createDownloadlink(link.replaceAll("\\\\/", "/")));
+                final String id = new Regex(result, "(?:\\\\x22)?([A-Za-z0-9\\-_]{10,})\\\\x22").getMatch(0);
+                if (id == null) {
+                    continue;
+                }
+                if (result.contains("vnd.google-apps.folder")) {
+                    /* Folder */
+                    decryptedLinks.add(createDownloadlink("https://drive.google.com/drive/folders/" + id));
                 } else {
-                    // folder could just contain /file/ links
-                    scanLinks(result, decryptedLinks);
+                    /* Single file */
+                    decryptedLinks.add(createDownloadlink("https://drive.google.com/file/d/" + id));
                 }
             }
         }
@@ -149,7 +162,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 }
             }
 
-            final String[] folderlinks = new Regex(content, "(" + FOLDER_NEW + ")").getColumn(0);
+            final String[] folderlinks = new Regex(content, "(" + FOLDER_CURRENT + ")").getColumn(0);
             if (folderlinks != null && folderlinks.length != 0) {
                 for (String folderlink : folderlinks) {
                     folderlink = unescape(folderlink);
