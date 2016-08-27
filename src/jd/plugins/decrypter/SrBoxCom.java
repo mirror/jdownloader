@@ -32,14 +32,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|net|org|info|me|download|eu|be|club)|isbox\\.net)/[0-9]+-.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club)|isbox\\.net)/[0-9]+-.*?\\.html" })
 public class SrBoxCom extends PluginForDecrypt {
 
     public SrBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:com|net|org|info|me|download|eu|be|club)|isbox\\.net)/";
+    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club)|isbox\\.net)/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -258,7 +258,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to remove some character to have a nice name
-     *
+     * 
      * @param strName
      *            The name of the package
      * @return the name of the package normalised.
@@ -374,7 +374,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to put a capital letter on each words of the title
-     *
+     * 
      * @param strText
      *            The text that we want to be capitalise
      * @return the text with a capital letter on each words.
@@ -476,7 +476,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to replace text using a regular expression pattern
-     *
+     * 
      * @param strText
      *            Text to replace
      * @param strPattern
@@ -489,7 +489,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to replace text using a regular expression pattern
-     *
+     * 
      * @param strText
      *            Text to replace
      * @param strPattern
