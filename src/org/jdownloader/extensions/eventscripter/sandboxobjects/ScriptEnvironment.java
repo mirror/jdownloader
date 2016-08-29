@@ -493,6 +493,10 @@ public class ScriptEnvironment {
     public static Collection<Class<?>> getRequiredClasses() {
         final ArraySet<Class<?>> clazzes = new ArraySet<Class<?>>();
         collectClasses(ScriptEnvironment.class, clazzes);
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            clazzes.add(FilePathSandbox17.class);
+            collectClasses(FilePathSandbox17.class, clazzes);
+        }
         return clazzes;
     }
 

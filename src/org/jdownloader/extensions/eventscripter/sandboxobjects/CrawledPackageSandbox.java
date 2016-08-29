@@ -119,6 +119,12 @@ public class CrawledPackageSandbox {
         }
     }
 
+    public void setDownloadFolder(String downloadFolder) {
+        if (filePackage != null) {
+            filePackage.setDownloadFolder(downloadFolder);
+        }
+    }
+
     public String getUUID() {
         if (filePackage != null) {
             return filePackage.getUniqueID().toString();

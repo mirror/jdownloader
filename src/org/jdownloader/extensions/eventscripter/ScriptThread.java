@@ -130,12 +130,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     private String preInitClasses() {
-        HashSet<String> dupes = new HashSet<String>();
+        final HashSet<String> dupes = new HashSet<String>();
         dupes.add("net.sourceforge.htmlunit.corejs.javascript.Function");
         dupes.add("void");
-        Class[] classes = new Class[] { Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class };
-        String preloadClasses = "";
-        for (Class c : classes) {
+        StringBuilder preloadClasses = new StringBuilder("");
+        for (Class<?> c : new Class[] { Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class }) {
             if (c.isArray()) {
                 c = c.getComponentType();
             }
@@ -145,9 +144,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             if (c.isPrimitive()) {
                 continue;
             }
-            preloadClasses += "load=" + c.getName() + ";\r\n";
+            preloadClasses.append("load=");
+            preloadClasses.append(c.getName());
+            preloadClasses.append(";\r\n");
         }
-        Collection<Class<?>> clazzes = ScriptEnvironment.getRequiredClasses();
+        final Collection<Class<?>> clazzes = ScriptEnvironment.getRequiredClasses();
         clazzes.addAll(script.getEventTrigger().getAPIClasses());
         clazzes.add(Object.class);
         for (Class<?> c : clazzes) {
@@ -161,7 +162,9 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             if (c.isPrimitive()) {
                 continue;
             }
-            preloadClasses += "load=" + c.getName() + ";\r\n";
+            preloadClasses.append("load=");
+            preloadClasses.append(c.getName());
+            preloadClasses.append(";\r\n");
         }
         for (Field f : ScriptEnvironment.class.getDeclaredFields()) {
             if (f.getAnnotation(ScriptAPI.class) != null) {
@@ -175,11 +178,13 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
                 if (Clazz.isPrimitive(c)) {
                     continue;
                 }
-                preloadClasses += "load=" + c.getName() + ";\r\n";
+                preloadClasses.append("load=");
+                preloadClasses.append(c.getName());
+                preloadClasses.append(";\r\n");
             }
         }
-        preloadClasses += "delete load;";
-        return preloadClasses;
+        preloadClasses.append("delete load;");
+        return preloadClasses.toString();
     }
 
     private void initEnvironment() throws IllegalAccessException {

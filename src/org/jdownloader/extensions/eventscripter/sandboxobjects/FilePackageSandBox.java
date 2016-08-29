@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -163,6 +164,12 @@ public class FilePackageSandBox {
             return Application.getResource("").getAbsolutePath();
         } else {
             return filePackage.getDownloadDirectory();
+        }
+    }
+
+    public void setDownloadFolder(String downloadFolder) {
+        if (filePackage != null) {
+            DownloadWatchDog.getInstance().setDownloadDirectory(filePackage, downloadFolder);
         }
     }
 

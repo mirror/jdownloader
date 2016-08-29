@@ -130,6 +130,7 @@ public class PluginScannerNIO<T extends Plugin> {
             }
             final long lastFolderModifiedScanStop = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
             if (lastFolderModifiedScanStart != lastFolderModifiedScanStop) {
+                logger.info("@PluginController(NIO): folder modification during scan detected!");
                 Thread.sleep(1000);
                 return scan(logger, hosterpath, pluginCache, lastFolderModification);
             } else {
