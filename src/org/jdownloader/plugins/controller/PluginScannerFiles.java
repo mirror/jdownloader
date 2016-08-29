@@ -122,6 +122,7 @@ public class PluginScannerFiles<T extends Plugin> {
             }
             final long lastFolderModifiedScanStop = folder.lastModified();
             if (lastFolderModifiedScanStart != lastFolderModifiedScanStop) {
+                logger.info("@PluginController(Files): folder modification during scan detected!");
                 Thread.sleep(1000);
                 return scan(logger, hosterpath, pluginCache, lastFolderModification);
             } else {

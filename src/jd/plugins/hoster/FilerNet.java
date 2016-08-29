@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
 public class FilerNet extends PluginForHost {
 
     private static Object       LOCK                            = new Object();
@@ -459,7 +459,9 @@ public class FilerNet extends PluginForHost {
 
     private void updateStatuscode() {
         final String code = getJson("code", br.toString());
-        if (code != null) {
+        if ("file wait needed".equals(code)) {
+            statusCode = 203;
+        } else if (code != null) {
             statusCode = Integer.parseInt(code);
         }
     }
