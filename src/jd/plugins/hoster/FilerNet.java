@@ -459,7 +459,9 @@ public class FilerNet extends PluginForHost {
 
     private void updateStatuscode() {
         final String code = getJson("code", br.toString());
-        if ("file wait needed".equals(code)) {
+        if ("file captcha input needed".equals(code)) {
+            statusCode = 202;
+        } else if ("file wait needed".equals(code)) {
             statusCode = 203;
         } else if (code != null) {
             statusCode = Integer.parseInt(code);
