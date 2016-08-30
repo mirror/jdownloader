@@ -12,6 +12,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -41,6 +42,8 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
 import jd.plugins.DownloadLink;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -80,6 +83,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -624,21 +628,43 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (input == null) {
             return;
         }
-        final String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText(), null);
+        final String text = new EDTHelper<String>() {
+            @Override
+            public String edtRun() {
+                return input.getText();
+            }
+        }.getReturnValue();
+        final AtomicBoolean fastContainsLinksFlag = new AtomicBoolean(false);
+        try {
+            jd.parser.html.HTMLParser.getHttpLinks(text, null, new HtmlParserResultSet() {
+                @Override
+                public boolean add(HtmlParserCharSequence e) {
+                    if (e != null) {
+                        fastContainsLinksFlag.set(true);
+                        throw new RuntimeException("abort");
+                    }
+                    return false;
+                }
+            });
+        } catch (Throwable ignore) {
+            if (!fastContainsLinksFlag.get()) {
+                LogController.CL().log(ignore);
+            }
+        }
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                okButton.setEnabled(true);
-                confirmOptions.setEnabled(true);
-                okButton.setToolTipText("");
-                if (links.length == 0) {
+                if (fastContainsLinksFlag.get()) {
+                    okButton.setToolTipText("");
+                    input.setToolTipText(null);
+                    okButton.setEnabled(true);
+                    confirmOptions.setEnabled(true);
+                } else {
                     okButton.setToolTipText(_GUI.T.AddLinksDialog_validateForm_input_missing());
                     input.setToolTipText(_GUI.T.AddLinksDialog_validateForm_input_missing());
                     okButton.setEnabled(false);
                     confirmOptions.setEnabled(false);
-                } else {
-                    input.setToolTipText(null);
                 }
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
                     final String toolTip = okButton.getToolTipText();
