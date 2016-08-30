@@ -75,12 +75,12 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smed79.info" }, urls = { "https?://(?:www\\.)?(?:smed79\\.info|youwatch\\.org)/((vid)?embed-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youwatch.org" }, urls = { "https?://(?:www\\.)?(?:youwatch\\.org|sikafika\\.info)/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class YouWatchOrg extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://smed79.info";
+    private final String               COOKIE_HOST                  = "http://youwatch.org";
     // domain names used within download links.
     private final String               DOMAINS                      = "(smed79\\.info|youwatch\\.org)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -120,8 +120,8 @@ public class YouWatchOrg extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "youwatch.org".equals(host) || "smed79.info".equals(host)) {
-            return "smed79.info";
+        if (host == null || "youwatch.org".equals(host)) {
+            return "youwatch.org";
         }
         return super.rewriteHost(host);
     }
