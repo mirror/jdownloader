@@ -13,6 +13,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -29,6 +30,7 @@ import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler.TransferSupport;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
@@ -116,7 +118,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private JComboBox                           priority;
 
-    private HashSet<String>                     autoPasswords = new HashSet<String>();
+    private volatile HashSet<String>            autoPasswords = new HashSet<String>();
 
     private ExtTextField                        comment;
 
@@ -513,45 +515,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         String newText = config.getPresetDebugLinks();
                         String browserURL = null;
                         if (StringUtils.isEmpty(newText) && config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
-                            ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
+                            final ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
                             if (content != null) {
                                 newText = preprocessFind(content.getContent());
                                 browserURL = content.getBrowserURL();
                             }
                         }
                         if (config.isAddLinksPreParserEnabled()) {
-                            if (!StringUtils.isEmpty(newText)) {
-                                new EDTRunner() {
-                                    @Override
-                                    protected void runInEDT() {
-                                        input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
-                                    };
-                                };
-                                parse(newText);
-                                newText = (list(HTMLParser.getHttpLinks(newText, browserURL)));
-                            }
-                        }
-                        final String txt = newText;
-                        if (!StringUtils.isEmpty(newText)) {
-                            new EDTRunner() {
-
-                                @Override
-                                protected void runInEDT() {
-                                    input.setText(txt);
-                                    input.setEditable(true);
-                                    sp.repaint();
-                                    delayedValidate.run();
-                                }
-                            };
-                        } else {
                             new EDTRunner() {
                                 @Override
                                 protected void runInEDT() {
-                                    input.setText("");
-                                    input.setEditable(true);
-                                    sp.repaint();
+                                    input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
                                 };
                             };
+                            asyncAnalyse(newText, browserURL);
                         }
                     }
                 }.start();
@@ -585,21 +562,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         JLabel ret = new JLabel(add);
         ret.setToolTipText(tooltip);
         return ret;
-    }
-
-    public static String list(String[] links) {
-        if (links == null || links.length == 0) {
-            return "";
-        }
-        final StringBuilder ret = new StringBuilder();
-
-        for (final String element : links) {
-            if (ret.length() > 0) {
-                ret.append("\r\n");
-            }
-            ret.append(element.trim());
-        }
-        return ret.toString();
     }
 
     protected JButton createOkButton() {
@@ -752,6 +714,130 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         System.exit(1);
     }
 
+    private final AtomicReference<Thread> asyncImportThread = new AtomicReference<Thread>();
+
+    protected void asyncAnalyse(final String toAnalyse, final String base) {
+        final Thread thread = new Thread() {
+            private Thread thisThread = null;
+
+            {
+                setDaemon(true);
+                setName(getClass().getName());
+            }
+
+            private String list(String[] links) {
+                if (links == null || links.length == 0) {
+                    return "";
+                }
+                final StringBuilder ret = new StringBuilder();
+                for (final String element : links) {
+                    if (ret.length() > 0) {
+                        ret.append("\r\n");
+                    }
+                    ret.append(element.trim());
+                }
+                return ret.toString();
+            }
+
+            public void run() {
+                try {
+                    thisThread = Thread.currentThread();
+                    autoPasswords = PasswordUtils.getPasswords(toAnalyse);
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            final HashSet<String> passwords = autoPasswords;
+                            if (passwords.size() > 1) {
+                                password.setText(JSonStorage.serializeToJson(passwords));
+                            } else if (autoPasswords.size() > 0) {
+                                password.setText(passwords.toArray(new String[] {})[0]);
+                            }
+                        }
+                    };
+                    String[] result = HTMLParser.getHttpLinks(toAnalyse, base, new HtmlParserResultSet() {
+                        @Override
+                        public boolean add(HtmlParserCharSequence e) {
+                            if (thisThread != asyncImportThread.get()) {
+                                throw new RuntimeException("abort");
+                            }
+                            return super.add(e);
+                        }
+                    });
+                    if (result.length == 0) {
+                        result = HTMLParser.getHttpLinks(toAnalyse.replace("www.", "http://www."), base, new HtmlParserResultSet() {
+                            @Override
+                            public boolean add(HtmlParserCharSequence e) {
+                                if (thisThread != asyncImportThread.get()) {
+                                    throw new RuntimeException("abort");
+                                }
+                                return super.add(e);
+                            }
+                        });
+                    }
+                    if (result.length == 0) {
+                        result = HTMLParser.getHttpLinks("http://" + toAnalyse, base, new HtmlParserResultSet() {
+                            @Override
+                            public boolean add(HtmlParserCharSequence e) {
+                                if (thisThread != asyncImportThread.get()) {
+                                    throw new RuntimeException("abort");
+                                }
+                                return super.add(e);
+                            }
+                        });
+                    }
+                    final String resultText = list(result);
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            if (thisThread == asyncImportThread.get()) {
+                                input.setText(resultText);
+                            }
+                        }
+                    }.waitForEDT();
+                } catch (final Throwable e) {
+                    if (thisThread == asyncImportThread.get()) {
+                        LogController.CL().log(e);
+                    }
+                } finally {
+                    asyncImportThread.compareAndSet(Thread.currentThread(), null);
+                }
+            };
+        };
+        asyncImportThread.set(thread);
+        thread.start();
+    }
+
+    protected void asyncImportData(TransferSupport support) {
+        try {
+            final String base = ClipboardMonitoring.getCurrentBrowserURL(support.getTransferable());
+            final String old = input.getText();
+            final int start = input.getSelectionStart();
+            final int end = input.getSelectionEnd();
+            final StringBuilder sb = new StringBuilder();
+            sb.append(old.substring(0, start));
+            if (ClipboardMonitoring.isHtmlFlavorAllowed()) {
+                final String html = ClipboardMonitoring.getHTMLTransferData(support.getTransferable());
+                if (StringUtils.isNotEmpty(html)) {
+                    sb.append(html);
+                }
+            }
+            final String text = ClipboardMonitoring.getStringTransferData(support.getTransferable());
+            if (!StringUtils.isEmpty(text)) {
+                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) {
+                    sb.append("\r\n");
+                }
+                sb.append(text);
+            }
+            sb.append(old.substring(end));
+            final String toAnalyse = sb.toString();
+            asyncAnalyse(toAnalyse, base);
+        } catch (Throwable e) {
+            LogController.CL().log(e);
+        }
+    }
+
     private Component createIconLabel(String iconKey, String tooltip) {
         JLabel ret = new JLabel(new AbstractIcon(iconKey, 24));
         ret.setToolTipText(tooltip);
@@ -763,15 +849,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             return new LinkCrawler(false, false).preprocessFind(text, null, false);
         }
         return text;
-    }
-
-    public void parse(String txt) {
-        autoPasswords.addAll(PasswordUtils.getPasswords(txt));
-        if (autoPasswords.size() > 1) {
-            password.setText(JSonStorage.serializeToJson(autoPasswords));
-        } else if (autoPasswords.size() > 0) {
-            password.setText(autoPasswords.toArray(new String[] {})[0]);
-        }
     }
 
 }
