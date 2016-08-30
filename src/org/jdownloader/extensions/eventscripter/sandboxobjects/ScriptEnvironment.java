@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -777,7 +778,15 @@ public class ScriptEnvironment {
     public static String readFile(String filepath) throws EnvironmentException {
         askForPermission("read a local file");
         try {
-            return IO.readFileToString(new File(filepath));
+            final File file = new File(filepath);
+            final Object lock = requestLock(file);
+            try {
+                synchronized (lock) {
+                    return IO.readFileToString(file);
+                }
+            } finally {
+                unLock(file);
+            }
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
@@ -913,11 +922,40 @@ public class ScriptEnvironment {
         return (String) env.evalTrusted(js);
     }
 
+    private static final HashMap<File, AtomicInteger> LOCKS = new HashMap<File, AtomicInteger>();
+
+    private static synchronized Object requestLock(File name) {
+        AtomicInteger lock = LOCKS.get(name);
+        if (lock == null) {
+            lock = new AtomicInteger(0);
+            LOCKS.put(name, lock);
+        }
+        lock.incrementAndGet();
+        return lock;
+    }
+
+    private static synchronized void unLock(File name) {
+        AtomicInteger lock = LOCKS.get(name);
+        if (lock != null) {
+            if (lock.decrementAndGet() == 0) {
+                LOCKS.remove(name);
+            }
+        }
+    }
+
     @ScriptAPI(description = "Write a text file", parameters = { "filepath", "myText", "append" }, example = "writeFile(JD_HOME+\"/log.txt\",JSON.stringify(this)+\"\\r\\n\",true);")
     public static void writeFile(String filepath, String string, boolean append) throws EnvironmentException {
         askForPermission("create a local file and write to it");
         try {
-            IO.writeStringToFile(new File(filepath), string, append);
+            final File file = new File(filepath);
+            final Object lock = requestLock(file);
+            try {
+                synchronized (lock) {
+                    IO.writeStringToFile(file, string, append);
+                }
+            } finally {
+                unLock(file);
+            }
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }
