@@ -3,9 +3,11 @@ package org.jdownloader.updatev2;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
@@ -104,5 +106,17 @@ public interface UpdateSettings extends ConfigInterface {
     long getCountdownForInstallUpdatesOnExitBubble();
 
     void setCountdownForInstallUpdatesOnExitBubble(long bubble);
+
+    @DefaultIntValue(60000)
+    @SpinnerValidator(min = 60000, max = 60000 * 5)
+    int getSelftestPollTimeout();
+
+    int setSelftestPollTimeout(int timeout);
+
+    @DefaultIntValue(60000)
+    @SpinnerValidator(min = 60000, max = 60000 * 5)
+    int getSelftestWriteTimeout();
+
+    int setSelftestWriteTimeout(int timeout);
 
 }
