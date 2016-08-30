@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,8 +28,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GogoanimeCom extends antiDDoSForDecrypt {
@@ -38,7 +38,7 @@ public class GogoanimeCom extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
+        return new String[] { "gogoanime.com", "goodanime.net", "gogoanime.to", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
     }
 
     /**
