@@ -107,16 +107,18 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setCountdownForInstallUpdatesOnExitBubble(long bubble);
 
+    @AboutConfig
     @DefaultIntValue(60000)
     @SpinnerValidator(min = 60000, max = 60000 * 5)
     int getSelftestPollTimeout();
 
-    int setSelftestPollTimeout(int timeout);
+    void setSelftestPollTimeout(int timeout);
 
+    @AboutConfig
     @DefaultIntValue(60000)
     @SpinnerValidator(min = 60000, max = 60000 * 5)
     int getSelftestWriteTimeout();
 
-    int setSelftestWriteTimeout(int timeout);
+    void setSelftestWriteTimeout(int timeout);
 
 }
