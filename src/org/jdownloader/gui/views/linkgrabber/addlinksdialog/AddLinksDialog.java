@@ -725,7 +725,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 setName(getClass().getName());
             }
 
-            private String list(String[] links) {
+            private final String list(String[] links) {
                 if (links == null || links.length == 0) {
                     return "";
                 }
