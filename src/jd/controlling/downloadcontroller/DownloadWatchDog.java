@@ -3918,7 +3918,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             final String source;
             if (obj instanceof SingleDownloadController) {
-                source = ((SingleDownloadController) obj).getDownloadLink().getBrowserUrl();
+                String url = ((SingleDownloadController) obj).getDownloadLink().getContentUrl();
+                if (url == null) {
+                    url = ((SingleDownloadController) obj).getDownloadLink().getContentUrl();
+                }
+                source = url;
             } else {
                 source = null;
             }
