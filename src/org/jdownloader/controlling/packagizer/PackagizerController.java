@@ -58,22 +58,23 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private final PackagizerSettings            config;
-    private ArrayList<PackagizerRule>           list           = new ArrayList<PackagizerRule>();
+    private ArrayList<PackagizerRule>           list                  = new ArrayList<PackagizerRule>();
     private PackagizerControllerEventSender     eventSender;
     private List<PackagizerRuleWrapper>         rules;
 
-    public static final String                  ORGFILENAME    = "orgfilename";
-    public static final String                  ORGFILETYPE    = "orgfiletype";
-    public static final String                  HOSTER         = "hoster";
-    public static final String                  SOURCE         = "source";
+    public static final String                  ORGFILENAME           = "orgfilename";
+    public static final String                  ORGFILENAMEWITHOUTEXT = "orgfilenamewithoutext";
+    public static final String                  ORGFILETYPE           = "orgfiletype";
+    public static final String                  HOSTER                = "hoster";
+    public static final String                  SOURCE                = "source";
 
-    public static final String                  PACKAGENAME    = "packagename";
-    public static final String                  SIMPLEDATE     = "simpledate";
-    public static final String                  INDEXOF        = "indexof";
+    public static final String                  PACKAGENAME           = "packagename";
+    public static final String                  SIMPLEDATE            = "simpledate";
+    public static final String                  INDEXOF               = "indexof";
 
-    private static final PackagizerController   INSTANCE       = new PackagizerController(false);
-    public static final String                  ORGPACKAGENAME = "orgpackagename";
-    private HashMap<String, PackagizerReplacer> replacers      = new HashMap<String, PackagizerReplacer>();
+    private static final PackagizerController   INSTANCE              = new PackagizerController(false);
+    public static final String                  ORGPACKAGENAME        = "orgpackagename";
+    private HashMap<String, PackagizerReplacer> replacers             = new HashMap<String, PackagizerReplacer>();
     private final boolean                       testInstance;
 
     public static PackagizerController getInstance() {
@@ -427,19 +428,38 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             private final Pattern pat = Pattern.compile("<jd:orgfiletype/?>");
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
-                final String name = link.getName();
-                String fileType = new Regex(name, "\\.([0-9a-zA-Z]+)$").getMatch(0);
+                String fileType = new Regex(link.getName(), "\\.([0-9a-zA-Z]+)$").getMatch(0);
                 if (fileType == null) {
                     fileType = "";
                 }
                 if (StringUtils.isNotEmpty(modifiers)) {
                     return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(stringOrEmpty(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1])));
+                } else {
+                    return pat.matcher(input).replaceAll(Matcher.quoteReplacement(fileType));
                 }
-                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(fileType));
             }
 
             public String getID() {
                 return ORGFILETYPE;
+            }
+
+        });
+
+        addReplacer(new PackagizerReplacer() {
+
+            private final Pattern pat = Pattern.compile("<orgfilenamewithoutext/?>");
+
+            public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+                final String name = new Regex(link.getName(), "(.+)\\.[0-9a-zA-Z]+$").getMatch(0);
+                if (name == null) {
+                    return pat.matcher(input).replaceAll("");
+                } else {
+                    return pat.matcher(input).replaceAll(Matcher.quoteReplacement(name));
+                }
+            }
+
+            public String getID() {
+                return ORGFILENAMEWITHOUTEXT;
             }
 
         });
