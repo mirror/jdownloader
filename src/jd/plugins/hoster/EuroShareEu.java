@@ -148,7 +148,7 @@ public class EuroShareEu extends PluginForHost {
         final String expire = PluginJSonUtils.getJsonValue(this.br, "unlimited_download_until");
         // Not sure if this behaviour is correct
         final String availableTraffic = PluginJSonUtils.getJsonValue(this.br, "credit");
-        if (expire == null || expire.equals("0") && availableTraffic == null || availableTraffic.equals("0")) {
+        if ("0".equals(expire) && "0".equalsIgnoreCase(availableTraffic)) {
             ai.setStatus("Registered User");
             maxPrem.set(1);
             account.setMaxSimultanDownloads(1);
@@ -157,7 +157,7 @@ public class EuroShareEu extends PluginForHost {
             ai.setUnlimitedTraffic();
         } else {
             /* There are traffic and volume accounts and both combined. For combined accounts they have unlimited traffic till they expire. */
-            if (!expire.equals("0")) {
+            if (expire != null && !"0".equals(expire)) {
                 ai.setValidUntil(Long.parseLong(expire) * 1000);
                 if (ai.isExpired()) {
                     ai.setStatus("Premium User (Credit)");
