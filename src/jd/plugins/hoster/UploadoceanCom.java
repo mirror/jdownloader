@@ -54,7 +54,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadocean.com" }, urls = { "https?://(www\\.)?uploadocean\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadocean.com" }, urls = { "https?://(www\\.)?uploadocean\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class UploadoceanCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -91,6 +91,7 @@ public class UploadoceanCom extends antiDDoSForHost {
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
     private static final boolean           ENABLE_RANDOM_UA                = false;
     private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK_DEEP = false;
 
     /* Waittime stuff */
     private static final boolean           WAITFORCED                      = false;
@@ -302,21 +303,30 @@ public class UploadoceanCom extends antiDDoSForHost {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (fileInfo[1] == null) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                    // next two are details from sharing box
-                    if (fileInfo[1] == null) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                            // generic failover#1
-                            if (fileInfo[1] == null) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                            }
-                            // generic failover#2
-                            if (fileInfo[1] == null) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-                            }
-                        }
-                    }
+                }
+                // next two are details from sharing box
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                }
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                }
+
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, ">Size</span>[\t\n\r ]*?<span><b>([^<>\"]+)<").getMatch(0);
+                }
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "<span>Download \\(([^<>\"]+)\\)</span>").getMatch(0);
+                }
+            }
+            if (fileInfo[1] == null && ENABLE_HTML_FILESIZE_CHECK_DEEP) {
+                // generic failover#1
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                }
+                // generic failover#2
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
                 }
             }
         }
@@ -716,7 +726,8 @@ public class UploadoceanCom extends antiDDoSForHost {
 
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
+        /* 2016-08-31: Removed this one RegEx as it was causing issues! */
+        // regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
@@ -750,6 +761,9 @@ public class UploadoceanCom extends antiDDoSForHost {
         if (dllink == null) {
             /* Sometimes used for streaming */
             dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "class=\"downloadbtn\" [^<>]+href=\"(http[^<>\"]+)\"").getMatch(0);
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */

@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehorst.de" }, urls = { "http://(www\\.)?filehorst\\.de/d/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehorst.de" }, urls = { "https?://(?:www\\.)?filehorst\\.de/(?:d/|download\\.php\\?file=)[A-Za-z0-9]+" })
 public class FileHorstDe extends PluginForHost {
 
     public FileHorstDe(PluginWrapper wrapper) {
@@ -45,11 +45,15 @@ public class FileHorstDe extends PluginForHost {
         return "http://filehorst.de/agb.php";
     }
 
+    private String fid = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        /* 2016-08-31: New linkformat - directly access new url to avoid redirect --> It's a bit faster */
+        br.getPage("http://" + this.getHost() + "/download.php?file=" + fid);
         if (br.containsHTML("Fehler: Die angegebene Datei wurde nicht gefunden") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -74,7 +78,6 @@ public class FileHorstDe extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             final Regex wait_id = br.getRegex(">downloadWait\\((\\d+), \"([^<>\"]*?)\"\\)<");
             final String waittime = wait_id.getMatch(0);
             final String id = wait_id.getMatch(1);
