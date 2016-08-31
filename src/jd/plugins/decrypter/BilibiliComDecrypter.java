@@ -78,37 +78,62 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             }
             links = br.getRegex("/Files/DownLoad/(\\d+)\\.mp4").getColumn(0);
             if (links == null || links.length == 0) {
-                /* Offline link - empty tables which do not contain any downloadurls. */
-                if (!this.br.containsHTML("class=\\'Data_Data\\'><a href=")) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
-                }
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                links = br.getRegex("/DownLoad/Cid/(\\d+)\\'").getColumn(0);
+            }
+            if (links == null || links.length == 0) {
+                /*
+                 * Return links because maybe there simply are no downloadlinks available. From the code above we should at least have one
+                 * stream-url which the user can download!
+                 */
+                logger.warning("Downloadlink-Decrypter might be broken for link: " + parameter);
+                return decryptedLinks;
             }
             for (final String singleID : links) {
                 this.br.setFollowRedirects(true);
-                String continue_url = "http://www.bilibilijj.com/FreeDown/" + singleID + ".php";
+                String continue_url = "http://www.bilibilijj.com/DownLoad/Cid/" + singleID;
                 this.br.getPage(continue_url);
-                continue_url = this.br.getRegex("Base64\\.encodeURI\\(\"(https?://[^<>\"]+)\"").getMatch(0);
-                if (continue_url == null) {
-                    return null;
+                final String html_with_multiple_downloadurls = this.br.getRegex("<div class=\"D\">(.*?)</div>").getMatch(0);
+                if (html_with_multiple_downloadurls != null) {
+                    final String[] dlurls = new Regex(html_with_multiple_downloadurls, "<a href=\\'(http[^<>\"\\']+)\\' target=\\'_blank\\'>").getColumn(0);
+                    for (final String dlurl : dlurls) {
+                        decryptedLinks.add(createDownloadlink("directhttp://" + dlurl));
+                    }
+                } else {
+                    continue_url = this.br.getRegex("Base64\\.encodeURI\\(\"(https?://[^<>\"]+)\"").getMatch(0);
+                    if (continue_url == null) {
+                        /*
+                         * Return links because maybe there simply are no downloadlinks available. From the code above we should at least
+                         * have one stream-url which the user can download!
+                         */
+                        logger.warning("Downloadlink-Decrypter might be broken for link: " + parameter);
+                        return decryptedLinks;
+                    }
+                    String finallink = null;
+                    if (continue_url.contains("http://www.bilibilijj.comhttp")) {
+                        finallink = continue_url.replace("http://www.bilibilijj.comhttp://", "http");
+                    } else {
+                        this.br.setFollowRedirects(false);
+                        this.br.getPage(continue_url);
+                        /* Usually finallink is a ctdisk.com downloadurl. */
+                        finallink = this.br.getRedirectLocation();
+                        if (finallink == null) {
+                            /*
+                             * Return links because maybe there simply are no downloadlinks available. From the code above we should at
+                             * least have one stream-url which the user can download!
+                             */
+                            logger.warning("Downloadlink-Decrypter might be broken for link: " + parameter);
+                            return decryptedLinks;
+                        }
+                    }
+                    /*
+                     * Make sure directlinks with endings and parameters get added correctly. TODO: Maybe find a better way o identify
+                     * directlinks!
+                     */
+                    if ((finallink.contains(".mp4") || finallink.contains(".flv")) && finallink.contains("?")) {
+                        finallink = "directhttp://" + finallink;
+                    }
+                    decryptedLinks.add(createDownloadlink(finallink));
                 }
-                this.br.setFollowRedirects(false);
-                this.br.getPage(continue_url);
-                /* Usually finallink is a ctdisk.com downloadurl. */
-                String finallink = this.br.getRedirectLocation();
-                if (finallink == null) {
-                    return null;
-                }
-                /*
-                 * Make sure directlinks with endings and parameters get added correctly. TODO: Maybe find a better way o identify
-                 * directlinks!
-                 */
-                if ((finallink.contains(".mp4") || finallink.contains(".flv")) && finallink.contains("?")) {
-                    finallink = "directhttp://" + finallink;
-                }
-                decryptedLinks.add(createDownloadlink(finallink));
             }
         } catch (final Throwable e) {
             logger.warning("Failed to grab downloadurls");

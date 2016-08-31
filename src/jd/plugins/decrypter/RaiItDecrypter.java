@@ -128,6 +128,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
             final String relinker = (String) tempmap.get("r");
             final String description = (String) tempmap.get("d");
             if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
+                if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
+                    logger.info("User wants to have y single video only but this appears to be offline");
+                }
                 continue;
             }
             title = date_underscore + "_raitv_" + title;

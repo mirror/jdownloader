@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,6 +78,8 @@ public class InstaGramCom extends PluginForHost {
 
     private static final String  MAINPAGE                          = "https://www.instagram.com";
     public static final String   QUIT_ON_RATE_LIMIT_REACHED        = "QUIT_ON_RATE_LIMIT_REACHED";
+    public static final String   PREFER_SERVER_FILENAMES           = "PREFER_SERVER_FILENAMES";
+    public static final boolean  defaultPREFER_SERVER_FILENAMES    = false;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED = false;
 
     private static Object        LOCK                              = new Object();
@@ -116,9 +119,11 @@ public class InstaGramCom extends PluginForHost {
             /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String ext = ".mp4";
         dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
         // Maybe we have a picture
         if (dllink == null) {
+            ext = null;
             dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
             String remove = new Regex(dllink, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
             if (remove != null) {
@@ -139,8 +144,16 @@ public class InstaGramCom extends PluginForHost {
             filename = linkid;
         }
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        if (ext == null) {
+            ext = getFileNameExtensionFromString(dllink, ".jpg");
+        }
+        String server_filename = getFileNameFromURL(new URL(dllink));
+        if (this.getPluginConfig().getBooleanProperty(PREFER_SERVER_FILENAMES, defaultPREFER_SERVER_FILENAMES) && server_filename != null) {
+            server_filename = fixServerFilename(server_filename, ext);
+            downloadLink.setFinalFileName(server_filename);
+        } else {
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -152,13 +165,23 @@ public class InstaGramCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    public static String fixServerFilename(String server_filename, final String correctExtension) {
+        final String server_filename_ext = getFileNameExtensionFromString(server_filename, null);
+        if (correctExtension != null && server_filename_ext == null) {
+            server_filename += correctExtension;
+        } else if (correctExtension != null && !server_filename_ext.equalsIgnoreCase(correctExtension)) {
+            server_filename = server_filename.replace(server_filename_ext, correctExtension);
+        }
+        return server_filename;
     }
 
     @Override
@@ -316,6 +339,7 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, JDL.L("plugins.hoster.InstaGramCom.preferServerFilenames", "Use server-filenames whenever possible?")).setDefaultValue(defaultPREFER_SERVER_FILENAMES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, JDL.L("plugins.hoster.InstaGramCom.quitOnRateLimitReached", "Abort crawl process once rate limit is reached?")).setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
     }
 

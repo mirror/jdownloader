@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -37,7 +38,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!p/)[^/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!p/)[^/]+" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
 
     public InstaGramComDecrypter(PluginWrapper wrapper) {
@@ -84,6 +85,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         fp.setName(username_url);
 
         final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
+        final boolean prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
         String nextid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
         final String maxid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
         ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
@@ -172,8 +174,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             for (final Object o : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) o;
+                String server_filename = null;
                 final String linkid = (String) entries.get("code");
                 final boolean isVideo = ((Boolean) entries.get("is_video")).booleanValue();
+                String dllink = (String) entries.get("display_src");
+                if (dllink == null || !dllink.startsWith("http")) {
+                    dllink = (String) entries.get("thumbnail_src");
+                }
+                if (dllink != null) {
+                    server_filename = getFileNameFromURL(new URL(dllink));
+                }
                 final String filename;
                 final String ext;
                 if (isVideo) {
@@ -181,10 +191,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 } else {
                     ext = ".jpg";
                 }
-                if (StringUtils.isNotEmpty(username_url)) {
-                    filename = username_url + " - " + linkid + ext;
+                if (prefer_server_filename && server_filename != null) {
+                    server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
+                    filename = server_filename;
                 } else {
-                    filename = linkid + ext;
+                    if (StringUtils.isNotEmpty(username_url)) {
+                        filename = username_url + " - " + linkid + ext;
+                    } else {
+                        filename = linkid + ext;
+                    }
                 }
                 final String content_url = "https://www.instagram.com/p/" + linkid;
                 final DownloadLink dl = this.createDownloadlink(content_url);
