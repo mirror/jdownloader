@@ -104,7 +104,6 @@ public class PCloudComFolder extends PluginForDecrypt {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void addSingleItem(final LinkedHashMap<String, Object> entries, final String fpName) {
         final DownloadLink dl = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
@@ -122,6 +121,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         dl.setProperty("mainlink", parameter);
         dl.setProperty("plain_fileid", fileid);
         dl.setProperty("plain_code", foldercode);
+        dl.setLinkID(foldercode + fileid);
         dl.setAvailable(true);
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

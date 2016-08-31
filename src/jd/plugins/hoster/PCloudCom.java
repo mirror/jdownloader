@@ -48,7 +48,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -533,17 +533,16 @@ public class PCloudCom extends PluginForHost {
             case 7002:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 7005:
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            case 7014:
+                /*
+                 * 2016-08-31: Added support for this though I'm not sure about this - I guess some kind of account traffic limit has been
+                 * reached!
+                 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             default:
                 /* Unknown error */
-                statusMessage = "Unknown error";
+                statusMessage = "This file can only be downloaded by registered/premium users";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "This file can only be downloaded by registered/premium users");
             }
         } catch (final PluginException e) {

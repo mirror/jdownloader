@@ -23,8 +23,6 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +37,8 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.JDHexUtils;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)|https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html" })
 public class RtveEs extends PluginForHost {
 
@@ -46,7 +46,7 @@ public class RtveEs extends PluginForHost {
     private static final String TYPE_SERIES  = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
     private static final String TYPE_RIO2016 = "https?://rio2016\\.rtve\\.es/video/article/[a-z0-9\\-]+.html";
 
-    private String              dllink        = null;
+    private String              dllink       = null;
     private String              BLOWFISHKEY  = "eWVMJmRhRDM=";
     private String              dl_now_now   = null;
 
@@ -156,8 +156,7 @@ public class RtveEs extends PluginForHost {
     @SuppressWarnings("deprecation")
     private AvailableStatus requestVideo(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
-        String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.|id=\"errorndispo\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 404) {
