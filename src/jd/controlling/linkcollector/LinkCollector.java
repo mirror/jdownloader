@@ -301,6 +301,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return id;
         }
 
+        private boolean isNull() {
+            return getPackageName() == null && getDownloadFolder() == null && getDownloadFolderRaw() == null;
+        }
+
         private String getPackageName() {
             return packageName;
         }
@@ -1082,32 +1086,35 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (pkg == null) {
                             if (!ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
                                 /* these links will never come back online */
-                                List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
                                 LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
                             } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.isEnabled()) {
-                                java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, offlineMap);
-                                list.add(link);
-                                List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
                                 LinkCollector.this.moveOrAddAt(getOfflineCrawledPackage(), add, -1);
                             } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0 && CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED.isEnabled()) {
-                                java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, variousMap);
-                                list.add(link);
-                                if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
+                                final List<CrawledLink> list;
+                                if (!crawledPackageMapID.isNull() || !AvailableLinkState.OFFLINE.equals(link.getLinkState())) {
+                                    list = getIdentifiedMap(crawledPackageMapID, variousMap);
+                                    list.add(link);
+                                } else {
+                                    list = null;
+                                }
+                                if (list != null && list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
                                     addToNewPackage(list, newPackageName, crawledPackageMapID);
                                 } else {
-                                    java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                    final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                     add.add(link);
                                     addToExistingPackage(add, getVariousCrawledPackage(), crawledPackageMapID);
                                 }
                             } else {
-                                java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
                                 addToNewPackage(add, newPackageName, crawledPackageMapID);
                             }
                         } else {
-                            java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                            final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             addToExistingPackage(add, pkg, crawledPackageMapID);
                         }
