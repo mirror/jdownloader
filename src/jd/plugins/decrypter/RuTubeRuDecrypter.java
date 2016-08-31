@@ -43,7 +43,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public RuTubeRuDecrypter(PluginWrapper wrapper) {
@@ -101,10 +101,11 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
         }
         if (uid != null && decryptedLinks.isEmpty()) {
-            DownloadLink link = createDownloadlink(uid);
-            if (link != null) {
-                decryptedLinks.add(link);
+            final DownloadLink link = createDownloadlink(uid);
+            if (link == null) {
+                return null;
             }
+            decryptedLinks.add(link);
         }
 
         return decryptedLinks;
@@ -200,14 +201,14 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
                 return ret;
             } else {
-                logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
-                return null;
+                logger.info("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
+                ret.setAvailable(false);
+                return ret;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-
     }
 
     private Browser cloneBrowser(Browser br) {

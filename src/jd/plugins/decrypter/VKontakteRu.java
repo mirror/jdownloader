@@ -462,21 +462,21 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String postData = jd.plugins.hoster.VKontakteRuHoster.getAudioAlbumPostString(this.CRYPTEDLINK_FUNCTIONAL, owner_ID);
-        br.postPage(getBaseURL() + "/audio", postData);
-        final String[] audioData = jd.plugins.hoster.VKontakteRuHoster.getAudioDataArray(this.br);
-        if (audioData == null || audioData.length == 0) {
+        final String postData = "act=load_silent&al=1&album_id=-2&band=false&owner_id=" + owner_ID;
+        br.postPage(getBaseURL() + "/al_audio.php", postData);
+        final ArrayList<Object> audioData = jd.plugins.hoster.VKontakteRuHoster.getAudioDataArray(this.br);
+        if (audioData == null || audioData.size() == 0) {
             decryptedLinks = null;
             return;
         }
-        for (final String singleAudioData : audioData) {
-            final String[] singleAudioDataAsArray = new Regex(singleAudioData, "'(.*?)'").getColumn(0);
-            final String owner_id = singleAudioDataAsArray[0];
-            final String content_id = singleAudioDataAsArray[1];
-            final String directlink = singleAudioDataAsArray[2];
-            final String artist = singleAudioDataAsArray[5];
-            final String title = singleAudioDataAsArray[6];
-            if (owner_id == null || content_id == null || directlink == null || artist == null || title == null) {
+        for (final Object audioDataSingle : audioData) {
+            final ArrayList<Object> singleAudioDataAsArray = (ArrayList<Object>) audioDataSingle;
+            final String owner_id = (String) singleAudioDataAsArray.get(0);
+            final String content_id = (String) singleAudioDataAsArray.get(1);
+            final String directlink = (String) singleAudioDataAsArray.get(2);
+            final String artist = (String) singleAudioDataAsArray.get(4);
+            final String title = (String) singleAudioDataAsArray.get(3);
+            if (owner_id == null || content_id == null || artist == null || title == null) {
                 decryptedLinks = null;
                 return;
             }
@@ -484,7 +484,9 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + linkid);
             dl.setContentUrl(this.CRYPTEDLINK_FUNCTIONAL);
             dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
-            dl.setProperty("directlink", Encoding.htmlDecode(directlink));
+            if (directlink != null && directlink.startsWith("http")) {
+                dl.setProperty("directlink", directlink);
+            }
             dl.setProperty("content_id", content_id);
             dl.setProperty("owner_id", owner_id);
             dl.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title.trim()) + ".mp3");

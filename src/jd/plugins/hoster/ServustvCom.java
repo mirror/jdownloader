@@ -36,7 +36,7 @@ import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servustv\\.com/(?:de|at)/Medien/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servustv\\.com/(?:de|at)/Medien/.+" })
 public class ServustvCom extends PluginForHost {
 
     public ServustvCom(PluginWrapper wrapper) {
@@ -108,6 +108,7 @@ public class ServustvCom extends PluginForHost {
         if (httpstream == null) {
             httpstream = this.br.getRegex("\"(https?://stvmedia\\.pmd\\.servustv\\.com/media/hds/[^<>\"\\']+\\.mp4)\"").getMatch(0);
         }
+        HlsContainer hlsbest = null;
         String videoid = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
         if (videoid == null) {
             /* Age restricted videos can only be viewed between 8PM and 6AM --> This way we can usually download them anyways! */
@@ -124,15 +125,18 @@ public class ServustvCom extends PluginForHost {
         if (videoid != null) {
             /* Prefer hls as we might get a better videoquality. */
             br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + videoid);
-            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            /* E.g. here, (mobile) HLS download is not possible: http://www.servustv.com/at/Medien/Spielberg-Musikfestival-20162 */
+            hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        }
+        if (hlsbest != null) {
             final String url_hls = hlsbest.downloadurl;
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else {
+            if (httpstream == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             /* Use http as fallback. */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, httpstream, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {

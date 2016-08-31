@@ -79,6 +79,9 @@ public class SrBoxCom extends PluginForDecrypt {
         // Added links
         for (String redirectlink : links) {
             // prevent null in decryptedLinks
+            if (redirectlink.matches(base + ".+") || !redirectlink.startsWith("http")) {
+                continue;
+            }
             final DownloadLink dl = createDownloadlink(redirectlink);
             if (dl != null) {
                 decryptedLinks.add(dl);
@@ -258,7 +261,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to remove some character to have a nice name
-     * 
+     *
      * @param strName
      *            The name of the package
      * @return the name of the package normalised.
@@ -374,7 +377,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to put a capital letter on each words of the title
-     * 
+     *
      * @param strText
      *            The text that we want to be capitalise
      * @return the text with a capital letter on each words.
@@ -476,7 +479,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to replace text using a regular expression pattern
-     * 
+     *
      * @param strText
      *            Text to replace
      * @param strPattern
@@ -489,7 +492,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to replace text using a regular expression pattern
-     * 
+     *
      * @param strText
      *            Text to replace
      * @param strPattern

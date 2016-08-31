@@ -257,25 +257,13 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
-                        postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(mainlink, ownerID));
-                        final String[] audioData = getAudioDataArray(this.br);
-                        if (audioData != null) {
-                            for (final String singleAudioData : audioData) {
-                                final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
-                                final String content_id = singleAudioDataAsArray[1];
-                                final String directlink = singleAudioDataAsArray[2];
-                                if (content_id == null || directlink == null) {
-                                    logger.warning("FATAL error in audiolink refresh directlink handling");
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                if (content_id.equals(contentID)) {
-                                    url = Encoding.htmlDecode(directlink);
-                                    break;
-                                }
-                            }
+                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
+                        url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
+                        if (url != null) {
+                            url = url.replace("\\", "");
                         }
                     }
                     if (url == null) {
@@ -336,39 +324,39 @@ public class VKontakteRuHoster extends PluginForHost {
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
-                        if (albumID == null) {
-                            getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
-                            if (br.containsHTML("Unknown error|Unbekannter Fehler|Access denied")) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            if (picturesGetJsonFromHtml() == null) {
+                        getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
+                        if (br.containsHTML("Unknown error|Unbekannter Fehler|Access denied")) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        if (picturesGetJsonFromHtml() == null) {
+                            if (albumID == null) {
                                 albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                            }
+                            if (albumID == null) {
+                                // new.vk.com/
+                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
                                 if (albumID == null) {
-                                    // new.vk.com/
-                                    albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
-                                    if (albumID == null) {
-                                        /* New 2016-08-23 */
-                                        final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                        if (json != null) {
-                                            albumID = PluginJSonUtils.getJsonValue(json, "list");
-                                            if (albumID != null) {
-                                                /* Fix id */
-                                                albumID = albumID.replace("album", "");
-                                            }
+                                    /* New 2016-08-23 */
+                                    final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                    if (json != null) {
+                                        albumID = PluginJSonUtils.getJsonValue(json, "list");
+                                        if (albumID != null) {
+                                            /* Fix id */
+                                            albumID = albumID.replace("album", "");
                                         }
                                     }
-                                    if (albumID == null) {
-                                        logger.info("vk.com: albumID is null");
-                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                    }
                                 }
-                                link.setProperty("albumid", albumID);
-                                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                                postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                                if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
-                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                if (albumID == null) {
+                                    logger.info("vk.com: albumID is null");
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
+                            }
+                            link.setProperty("albumid", albumID);
+                            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                            postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                            if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
                         }
                     }
@@ -1048,22 +1036,14 @@ public class VKontakteRuHoster extends PluginForHost {
         this.mainlink = dl.getStringProperty("mainlink", null);
     }
 
-    public static String getAudioAlbumPostString(final String source_url, final String ownerID) {
-        String postData;
-        if (new Regex(source_url, ".+vk\\.com/audio\\?id=\\-\\d+").matches()) {
-            postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + ownerID;
-        } else {
-            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + ownerID + "&please_dont_ddos=2";
-        }
-        return postData;
-    }
-
-    public static String[] getAudioDataArray(final Browser br) {
-        final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);
-        if (completeData == null) {
+    public static ArrayList<Object> getAudioDataArray(final Browser br) throws Exception {
+        final String json = br.getRegex("<\\!json>(.+)").getMatch(0);
+        if (json == null) {
             return null;
         }
-        return completeData.split(",\\[");
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("list");
+        return ressourcelist;
     }
 
     private String getOwnerID(final DownloadLink dl) {
