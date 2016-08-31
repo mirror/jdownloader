@@ -14,9 +14,11 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
+import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectServer;
 import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
+import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfo;
 import org.jdownloader.myjdownloader.client.json.DirectConnectionInfos;
 
@@ -24,11 +26,17 @@ public class DeviceAPIImpl implements DeviceAPI {
 
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
-        final MyJDownloaderDirectServer directServer = MyJDownloaderController.getInstance().getConnectThread().getDirectServer();
         final DirectConnectionInfos ret = new DirectConnectionInfos();
-        if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
+        final MyJDownloaderConnectThread thread = MyJDownloaderController.getInstance().getConnectThread();
+        if (thread == null) {
             return ret;
         }
+        final MyJDownloaderDirectServer directServer = thread.getDirectServer();
+        if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
+            ret.setMode(DIRECTMODE.NONE.name());
+            return ret;
+        }
+        ret.setMode(directServer.getConnectMode().name());
         final List<DirectConnectionInfo> infos = new ArrayList<DirectConnectionInfo>();
         final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
         if (localIPs != null) {
