@@ -12,6 +12,7 @@ import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.net.Base64OutputStream;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectServer;
@@ -32,10 +33,21 @@ public class DeviceAPIImpl implements DeviceAPI {
         final List<InetAddress> localIPs = HTTPProxyUtils.getLocalIPs(true);
         if (localIPs != null) {
             for (InetAddress localIP : localIPs) {
-                DirectConnectionInfo info = new DirectConnectionInfo();
+                final DirectConnectionInfo info = new DirectConnectionInfo();
                 info.setPort(directServer.getLocalPort());
                 info.setIp(localIP.getHostAddress());
                 infos.add(info);
+                if (!localIP.isLoopbackAddress() && !ret.isRebindProtectionDetected()) {
+                    final String mydns = localIP.getHostAddress().replace(".", "-") + ".mydns.jdownloader.org";
+                    try {
+                        final InetAddress[] resolves = HTTPConnectionUtils.resolvHostIP(mydns);
+                        if (resolves == null || resolves.length != 1 || !resolves[0].equals(localIP)) {
+                            ret.setRebindProtectionDetected(true);
+                        }
+                    } catch (final Throwable e) {
+                        ret.setRebindProtectionDetected(true);
+                    }
+                }
             }
         }
         if (directServer.getRemotePort() > 0) {
