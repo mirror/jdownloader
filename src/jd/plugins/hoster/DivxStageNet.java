@@ -39,7 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(?:www\\.)?(?:(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/video/|embed\\.(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(?:www\\.)?(?:(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/video/|embed\\.(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class DivxStageNet extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
@@ -56,12 +56,8 @@ public class DivxStageNet extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String newurl = "http://www.cloudtime.to/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        link.setUrlDownload(newurl);
-        try {
-            link.setContentUrl(newurl);
-        } catch (final Throwable e) {
-            link.setBrowserUrl(newurl);
-        }
+        link.setPluginPatternMatcher(newurl);
+        link.setContentUrl(newurl);
     }
 
     @Override

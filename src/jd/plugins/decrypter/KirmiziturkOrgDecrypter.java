@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturk\\.org/video/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturk\\.org/video/\\d+" })
 public class KirmiziturkOrgDecrypter extends PluginForDecrypt {
 
     public KirmiziturkOrgDecrypter(PluginWrapper wrapper) {
@@ -38,12 +38,9 @@ public class KirmiziturkOrgDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         final DownloadLink main = createDownloadlink(parameter.replace("kirmiziturk.org/", "kirmiziturkdecrypted.org/"));
-        try {
-            main.setContentUrl(parameter);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            main.setBrowserUrl(parameter);
-        }
+
+        main.setContentUrl(parameter);
+
         if (br.getURL().contains("<h3>404</h3>") || br.getHttpConnection().getResponseCode() == 404) {
             main.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             main.setAvailable(false);

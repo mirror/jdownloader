@@ -14,7 +14,9 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.APIQuery;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.settings.UrlDisplayType;
 
 @Deprecated
 public class DownloadsAPIImpl implements DownloadsAPI {
@@ -255,7 +257,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("skipped", dl.isSkipped());
             }
             if (queryParams.fieldRequested("url")) {
-                infomap.put("url", dl.getBrowserUrl());
+                infomap.put("url", LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, dl));
             }
             if (queryParams.fieldRequested("enabled")) {
                 infomap.put("enabled", dl.isEnabled());

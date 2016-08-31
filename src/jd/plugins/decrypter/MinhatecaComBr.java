@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" })
 public class MinhatecaComBr extends PluginForDecrypt {
 
     public MinhatecaComBr(PluginWrapper wrapper) {
@@ -130,13 +130,8 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("pass", passCode);
-
-            try {
-                dl.setContentUrl(parameter);
-                dl.setLinkID(fid);
-            } catch (final Throwable e) {
-                dl.setBrowserUrl(parameter);
-            }
+            dl.setContentUrl(parameter);
+            dl.setLinkID(fid);
 
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -249,12 +244,8 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     dl.setProperty("mainlink", parameter);
                     dl.setProperty("pass", passCode);
 
-                    try {
-                        dl.setContentUrl(content_url);
-                        dl.setLinkID(fid);
-                    } catch (final Throwable e) {
-                        dl.setBrowserUrl(parameter);
-                    }
+                    dl.setContentUrl(content_url);
+                    dl.setLinkID(fid);
 
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));

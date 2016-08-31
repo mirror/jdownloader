@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9\\.]+|download\\?[^\"\\'<>]+|s/[\\w\\-]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9\\.]+|download\\?[^\"\\'<>]+|s/[\\w\\-]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)" })
 public class XunleiComDecrypter extends PluginForDecrypt {
 
     public XunleiComDecrypter(PluginWrapper wrapper) {
@@ -81,12 +81,7 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                 dl.setProperty("decryptedfilesize", fsize);
                 dl.setProperty("decrypted_fid", fid);
                 dl.setProperty("mainlink", parameter);
-                try {
-                    dl.setContentUrl(parameter);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    dl.setBrowserUrl(parameter);
-                }
+                dl.setContentUrl(parameter);
                 dl.setFinalFileName(fname);
                 dl.setDownloadSize(Long.parseLong(fsize));
                 dl.setAvailable(true);

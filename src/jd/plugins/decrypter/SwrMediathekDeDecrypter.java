@@ -25,9 +25,6 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -38,6 +35,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://(www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" })
 public class SwrMediathekDeDecrypter extends PluginForDecrypt {
@@ -254,11 +254,9 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
             if (FASTLINKCHECK_active) {
                 dl.setAvailable(true);
             }
-            try {
-                dl.setContainerUrl(PARAMETER);
-            } catch (final Throwable e) {
-                dl.setBrowserUrl(PARAMETER);
-            }
+
+            dl.setContainerUrl(PARAMETER);
+
             return dl;
         }
         return dl;
@@ -279,11 +277,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         dl.setProperty("plain_ext", ".srt");
         dl.setProperty("LINKDUPEID", DOMAIN + "_" + ftitle);
         dl.setName(ftitle);
-        try {
-            dl.setContainerUrl(PARAMETER);
-        } catch (final Throwable e) {
-            dl.setBrowserUrl(PARAMETER);
-        }
+        dl.setContainerUrl(PARAMETER);
         dl.setAvailable(true);
         return dl;
     }

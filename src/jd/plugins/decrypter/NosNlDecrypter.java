@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://(www\\.)?nos\\.nl/(video/[A-Za-z0-9\\-_]+\\.html|/?embed/\\?id=v:\\d+|uitzendingen/(lq/)?\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://(www\\.)?nos\\.nl/(video/[A-Za-z0-9\\-_]+\\.html|/?embed/\\?id=v:\\d+|uitzendingen/(lq/)?\\d+)" })
 public class NosNlDecrypter extends PluginForDecrypt {
 
     public NosNlDecrypter(PluginWrapper wrapper) {
@@ -185,14 +185,8 @@ public class NosNlDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_date", DATE);
             dl.setProperty("plain_linkid", VIDEOID);
             dl.setProperty("plain_ext", directlink.substring(directlink.lastIndexOf(".")));
-            try {
-                dl.setContentUrl(PARAMETER);
-                dl.setLinkID(linkdupeid);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(PARAMETER);
-                dl.setProperty("LINKDUPEID", linkdupeid);
-            }
+            dl.setContentUrl(PARAMETER);
+            dl.setLinkID(linkdupeid);
             dl.setName(jd.plugins.hoster.NosNl.getFormattedFilename(this, dl));
             if (SubConfiguration.getConfig(DOMAIN).getBooleanProperty(FASTLINKCHECK, false)) {
                 dl.setAvailable(true);

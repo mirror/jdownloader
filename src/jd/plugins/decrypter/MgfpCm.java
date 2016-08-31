@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -229,11 +229,9 @@ public class MgfpCm extends PluginForDecrypt {
                     final String fid = elements[0];
                     final String original_filename = Encoding.htmlDecode(elements[1].trim());
                     final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + fid);
-                    try {/* JD2 only */
-                        link.setContentUrl("http://www.imagefap.com/photo/" + fid + "/");
-                    } catch (Throwable e) {/* Stable */
-                        link.setBrowserUrl("http://www.imagefap.com/photo/" + fid + "/");
-                    }
+
+                    link.setContentUrl("http://www.imagefap.com/photo/" + fid + "/");
+
                     link.setProperty("orderid", orderID);
                     link.setProperty("galleryname", galleryName);
                     link.setProperty("directusername", authorsName);

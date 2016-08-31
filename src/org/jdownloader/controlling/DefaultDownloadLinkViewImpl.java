@@ -137,9 +137,6 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     @Override
     public String getDisplayUrl() {
-        if (1409057525234l - link.getCreated() > 0) {
-            return link.getBrowserUrl();
-        }
         // http://board.jdownloader.org/showpost.php?p=305216&postcount=12
         for (final UrlDisplayType dt : DISPLAY_URL_TYPE) {
             if (dt != null) {

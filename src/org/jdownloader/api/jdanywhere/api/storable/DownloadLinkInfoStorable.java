@@ -28,10 +28,7 @@ public class DownloadLinkInfoStorable implements Storable {
     }
 
     public String getBrowserurl() {
-        if (link == null) {
-            return null;
-        }
-        return link.getBrowserUrl();
+        return null;
     }
 
     public String getDirectory() {

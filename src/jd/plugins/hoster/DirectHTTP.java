@@ -228,32 +228,8 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     private String[] getBasicAuth(final DownloadLink link) throws PluginException {
-        String username = null;
-        String password = null;
-
-        try {
-            // jd2
-
-            org.jdownloader.auth.Login logins = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), link);
-            return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
-        } catch (PluginException e) {
-            throw e;
-        } catch (Throwable t) {
-            // jd1
-            String url;
-            if ("CONTAINER".equals(link.getStringProperty("LINKTYPE"))) {
-                url = link.getHost();
-            } else {
-                url = link.getBrowserUrl();
-            }
-            try {
-                username = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "username", "Username (BasicAuth) for %s", url), link);
-                password = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "password", "Password (BasicAuth) for %s", url), link);
-            } catch (final Exception e) {
-                return null;
-            }
-            return new String[] { "Basic " + Encoding.Base64Encode(username + ":" + password), username, password };
-        }
+        org.jdownloader.auth.Login logins = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), link);
+        return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
     }
 
     @Override

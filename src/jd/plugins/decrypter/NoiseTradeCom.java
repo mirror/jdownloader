@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://(?:www\\.|books\\.)?noisetrade\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noisetrade.com" }, urls = { "http://(?:www\\.|books\\.)?noisetrade\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" })
 public class NoiseTradeCom extends PluginForDecrypt {
 
     public NoiseTradeCom(PluginWrapper wrapper) {
@@ -132,12 +132,7 @@ public class NoiseTradeCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private DownloadLink getDownloadlink() {
         final DownloadLink dl = createDownloadlink("http://noisetradedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-        try {
-            dl.setContentUrl(parameter);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            dl.setBrowserUrl(parameter);
-        }
+        dl.setContentUrl(parameter);
         dl.setProperty("mainlink", parameter);
         return dl;
     }

@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv" }, urls = { "http://(?:www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fernsehkritik.tv" }, urls = { "http://(?:www\\.)?fernsehkritik\\.tv/folge\\-\\d+" })
 public class FernsehkritikTvA extends PluginForDecrypt {
 
     private static final String GRAB_POSTECKE      = "GRAB_POSTECKE";
@@ -157,12 +157,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         final String playurl = parameter + "/play/";
         br.getPage(playurl);
         final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolgeneu" + System.currentTimeMillis() + new Random().nextInt(1000000));
-        try {
-            dlLink.setContentUrl(parameter);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            dlLink.setBrowserUrl(parameter);
-        }
+
+        dlLink.setContentUrl(parameter);
+
         dlLink.setProperty("directdate", DATE);
         dlLink.setProperty("directepisodenumber", EPISODENUMBER);
         dlLink.setProperty("directtype", ".mp4");

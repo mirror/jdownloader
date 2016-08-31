@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/\\?d=[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/\\?d=[a-z0-9]+" })
 public class BitShareComFolder extends PluginForDecrypt {
 
     public BitShareComFolder(PluginWrapper wrapper) {
@@ -54,12 +54,7 @@ public class BitShareComFolder extends PluginForDecrypt {
         }
         for (final String dl : links) {
             final DownloadLink fina = createDownloadlink(dl);
-            try {
-                fina.setContentUrl(dl);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                fina.setBrowserUrl(dl);
-            }
+            fina.setContentUrl(dl);
             decryptedLinks.add(fina);
         }
         if (fpName != null) {

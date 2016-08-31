@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "http://tvthek\\.orf\\.atdecrypted\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "http://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
 
     private static final String NEW_URLFORMAT = "http://tvthek\\.orf\\.atdecrypted\\d+";
@@ -109,7 +109,7 @@ public class ORFMediathek extends PluginForHost {
             /* fetch fresh directURL */
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
-            br.getPage(link.getBrowserUrl());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
