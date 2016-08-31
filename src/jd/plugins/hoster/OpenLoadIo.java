@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.awt.Color;
@@ -22,8 +21,20 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,19 +53,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" })
 public class OpenLoadIo extends antiDDoSForHost {
-
     public OpenLoadIo(PluginWrapper wrapper) {
         super(wrapper);
         /* Server doesn't like it when we open too many connections in a short time */
@@ -88,17 +88,14 @@ public class OpenLoadIo extends antiDDoSForHost {
     private int                           api_responsecode             = 0;
     private String                        api_msg                      = null;
     private LinkedHashMap<String, Object> api_data                     = null;
-
     /* Website related things */
     private static final long             trust_cookie_age             = 300000l;
-
     private static final boolean          ACCOUNT_FREE_RESUME          = true;
     private static final int              ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int              ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean          ACCOUNT_PREMIUM_RESUME       = true;
     private static final int              ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int              ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     /* don't touch the following! */
     private static AtomicInteger          maxPrem                      = new AtomicInteger(1);
 
@@ -164,7 +161,6 @@ public class OpenLoadIo extends antiDDoSForHost {
                     final String filename = (String) api_data_singlelink.get("name");
                     final long filesize = JavaScriptEngineFactory.toLong(api_data_singlelink.get("size"), 0);
                     final String sha1 = (String) api_data_singlelink.get("sha1");
-
                     /* Trust API */
                     dl.setAvailable(true);
                     // Check filename from any decrypter first, please do not remove
@@ -173,7 +169,6 @@ public class OpenLoadIo extends antiDDoSForHost {
                     }
                     dl.setDownloadSize(filesize);
                     dl.setSha1Hash(sha1);
-
                 }
                 if (index == urls.length) {
                     break;
@@ -233,70 +228,108 @@ public class OpenLoadIo extends antiDDoSForHost {
             int waittime_int;
             boolean captcha = false;
             String captcha_response = "null";
-            if ((account == null && enable_api_free) || (account != null && isAPIAccount(account))) {
-                getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
-                final long timestampBeforeCaptcha = System.currentTimeMillis();
-                api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                api_data = (LinkedHashMap<String, Object>) api_data.get("result");
-                ticket = (String) api_data.get("ticket");
-                waittime_int = ((Number) api_data.get("wait_time")).intValue();
-                waittime = Integer.toString(waittime_int);
-                final Object captchao = api_data.get("captcha_url");
-                if (captchao instanceof String) {
-                    captcha = true;
-                    final String captchaurl = (String) captchao;
-                    captcha_response = this.getCaptchaCode(captchaurl, downloadLink);
-                }
-                if (ticket == null) {
-                    logger.warning("Ticket is null");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                this.waitTime(timestampBeforeCaptcha, waittime_int, downloadLink);
-                this.br.getPage(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=" + captcha_response + "&" + getAPILoginString(account));
-                updatestatuscode();
-                if (captcha && this.api_responsecode == 403 && "Captcha not solved correctly".equals(this.api_msg)) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                api_data = (LinkedHashMap<String, Object>) api_data.get("result");
-                dllink = (String) api_data.get("url");
-                if (dllink == null) {
-                    handleAPIErrors();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                if (true) {
-                    /** TODO: Fix that!! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.addAllowedResponseCodes(500);
-                br.setFollowRedirects(true);
-                getPage(downloadLink.getDownloadURL());
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final String rwlink = br.getRegex("var token = \"([^<>\"]*?)\";").getMatch(0);
-                if (rwlink != null) {
-                    /** TODO: Fix that. */
-                    try {
-                        getPage(br.cloneBrowser(), "https://" + this.getHost() + "/reward/" + rwlink + "?adblock=0");
-                    } catch (final Throwable e) {
-                        /* Don't fail here! */
+            try {
+                if ((account == null && enable_api_free) || (account != null && isAPIAccount(account))) {
+                    getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
+                    final long timestampBeforeCaptcha = System.currentTimeMillis();
+                    api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    api_data = (LinkedHashMap<String, Object>) api_data.get("result");
+                    ticket = (String) api_data.get("ticket");
+                    waittime_int = ((Number) api_data.get("wait_time")).intValue();
+                    waittime = Integer.toString(waittime_int);
+                    final Object captchao = api_data.get("captcha_url");
+                    if (captchao instanceof String) {
+                        captcha = true;
+                        final String captchaurl = (String) captchao;
+                        captcha_response = this.getCaptchaCode(captchaurl, downloadLink);
                     }
+                    if (ticket == null) {
+                        logger.warning("Ticket is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    this.waitTime(timestampBeforeCaptcha, waittime_int, downloadLink);
+                    this.br.getPage(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=" + captcha_response + "&" + getAPILoginString(account));
+                    updatestatuscode();
+                    if (captcha && this.api_responsecode == 403 && "Captcha not solved correctly".equals(this.api_msg)) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    api_data = (LinkedHashMap<String, Object>) api_data.get("result");
+                    dllink = (String) api_data.get("url");
+                    if (dllink == null) {
+                        handleAPIErrors();
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    if (true) {
+                        /** TODO: Fix that!! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.addAllowedResponseCodes(500);
+                    br.setFollowRedirects(true);
+                    getPage(downloadLink.getDownloadURL());
+                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String rwlink = br.getRegex("var token = \"([^<>\"]*?)\";").getMatch(0);
+                    if (rwlink != null) {
+                        /** TODO: Fix that. */
+                        try {
+                            getPage(br.cloneBrowser(), "https://" + this.getHost() + "/reward/" + rwlink + "?adblock=0");
+                        } catch (final Throwable e) {
+                            /* Don't fail here! */
+                        }
+                    }
+                    dllink = br.getRegex("\"(https?://[a-z0-9\\.\\-]+\\.dl\\.(?:openload\\.io|oload\\.co)/[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    int seconds = 5;
+                    String wait = br.getRegex("id=\"secondsleft\">(\\d+)</span>").getMatch(0);
+                    if (wait != null) {
+                        seconds = Integer.parseInt(wait);
+                    }
+                    this.sleep(seconds * 1001l, downloadLink);
                 }
-                dllink = br.getRegex("\"(https?://[a-z0-9\\.\\-]+\\.dl\\.(?:openload\\.io|oload\\.co)/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } catch (PluginException e1) {
+                if (e1.getMessage().contains("The owner of this file doesn't allow API downloads") || e1.getMessage().contains("out of capacity for non-browser")) {
+                    br.addAllowedResponseCodes(500);
+                    br.setFollowRedirects(true);
+                    getPage(downloadLink.getDownloadURL());
+                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    String hiddenUrl = br.getRegex("<span id=\"hiddenurl\">(.*?)</span>").getMatch(0);
+                    String decoded = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
+                    decoded = decoded.replace("var x = $(\"#hiddenurl\").text();", "var x=\"" + hiddenUrl + "\";");
+                    decoded = decoded.replace("$", "//$");
+                    decoded = decoded.replace("});", "//});");
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    String result = null;
+                    try {
+                        engine.eval(decoded);
+                        result = engine.get("str").toString();
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                    dllink = br.getURL("/stream/" + result + "?mime=true").toString();
+                    boolean fol = br.isFollowingRedirects();
+                    try {
+                        br.openGetConnection(dllink).disconnect();
+                        dllink = br.getURL();
+                    } finally {
+                        br.setFollowRedirects(fol);
+                    }
+                } else {
+                    throw e1;
                 }
-                int seconds = 5;
-                String wait = br.getRegex("id=\"secondsleft\">(\\d+)</span>").getMatch(0);
-                if (wait != null) {
-                    seconds = Integer.parseInt(wait);
-                }
-                this.sleep(seconds * 1001l, downloadLink);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -371,7 +404,6 @@ public class OpenLoadIo extends antiDDoSForHost {
                         /* We trust these cookies --> Do not check them */
                         return;
                     }
-
                     if (this.br.containsHTML("href=\"/logout\"")) {
                         /* Cookies are valid - refresh timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -448,7 +480,6 @@ public class OpenLoadIo extends antiDDoSForHost {
                 } else {
                     ai.setTrafficLeft(traffic_left);
                 }
-
             } else {
                 final String expire = br.getRegex("").getMatch(0);
                 if (expire == null) {
@@ -578,7 +609,6 @@ public class OpenLoadIo extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-
         case 404:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case 405:
@@ -587,9 +617,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API error 509 'bandwidth usage too high (peak hours). out of capacity for non-browser downloads.'", 30 * 60 * 1000l);
         default:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error " + status);
-
         }
-
         if (super.br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
         } else if (super.br.getHttpConnection().getResponseCode() == 503) {
@@ -640,7 +668,6 @@ public class OpenLoadIo extends antiDDoSForHost {
          *
          */
         private static final long serialVersionUID = 1L;
-
         private final String      IDHELP           = "Enter your FTP Username/API Login";
         private final String      PINHELP          = "Enter your FTP Password/API Key";
 
@@ -695,24 +722,18 @@ public class OpenLoadIo extends antiDDoSForHost {
             add(new JLink("https://openload.co/account"));
             add(idLabel = new JLabel(usertext_uid));
             add(this.name = new ExtTextField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
                 }
-
             });
-
             name.setHelpText(IDHELP);
-
             add(new JLabel("FTP Password/API Key:"));
             add(this.pass = new ExtPasswordField() {
-
                 @Override
                 public void onChanged() {
                     callback.onChangedInput(this);
                 }
-
             }, "");
             pass.setHelpText(PINHELP);
         }
@@ -754,5 +775,4 @@ public class OpenLoadIo extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
