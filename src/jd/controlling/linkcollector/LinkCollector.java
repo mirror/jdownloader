@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1336,9 +1337,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2727,25 +2728,42 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
                                 lc.setDeepInspector(new LinkCrawlerDeepInspector() {
 
+                                    private final boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+                                        if (urlConnection.getResponseCode() == 200) {
+                                            if (urlConnection.isContentDisposition()) {
+                                                return true;
+                                            } else if (StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
+                                                return true;
+                                            } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && !StringUtils.contains(urlConnection.getContentType(), "text")) {
+                                                return true;
+                                            }
+                                        }
+                                        return false;
+                                    }
+
+                                    private final boolean hasDirectHTTPRule(final URLConnectionAdapter urlConnection) {
+                                        final String url = urlConnection.getURL().toString();
+                                        for (final LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
+                                            if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
+                                                return true;
+                                            }
+                                        }
+                                        return false;
+                                    }
+
                                     @Override
                                     public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawler.LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
-                                        if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200) {
-                                            if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
-                                                final String url = urlConnection.getRequest().getUrl();
-                                                final String fileName = Plugin.extractFileNameFromURL(url);
-                                                final String fileExtension = Files.getExtension(fileName);
-                                                if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
-                                                    boolean add = true;
-                                                    for (LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
-                                                        if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                                                            add = false;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if (add) {
+                                        if (urlConnection.getResponseCode() == 200 && urlConnection.getRequest().getLocation() == null) {
+                                            final LinkCrawlerRule matchingRule = link.getMatchingRule();
+                                            if (matchingRule == null) {
+                                                final URL url = urlConnection.getURL();
+                                                if (looksLikeDownloadableContent(urlConnection) && StringUtils.endsWithCaseInsensitive(url.getPath(), ".php") && url.getQuery() != null) {
+                                                    // hoster.domain/script.php?somevalue=somekey.....->Download
+                                                    if (!hasDirectHTTPRule(urlConnection)) {
+                                                        final String domain = Browser.getHost(url, false);
                                                         final LinkCrawlerRule rule = new LinkCrawlerRule();
-                                                        rule.setName("Learned file extension:" + fileExtension);
-                                                        rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
+                                                        rule.setName("Learned php script download: " + domain + url.getPath());
+                                                        rule.setPattern("(?i)https?://.*?" + Pattern.quote(domain) + Pattern.quote(url.getPath()) + "\\?.+");
                                                         rule.setRule(RULE.DIRECTHTTP);
                                                         LinkCrawler.addLinkCrawlerRule(rule);
                                                     }
@@ -2754,6 +2772,24 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                     } catch (Throwable e) {
                                                     }
                                                     return lc.find(generation, "directhttp://" + url, null, false, false);
+                                                }
+                                                if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
+                                                    final String fileName = Plugin.getFileNameFromURL(url);
+                                                    final String fileExtension = Files.getExtension(fileName);
+                                                    if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
+                                                        if (!hasDirectHTTPRule(urlConnection)) {
+                                                            final LinkCrawlerRule rule = new LinkCrawlerRule();
+                                                            rule.setName("Learned file extension: " + fileExtension);
+                                                            rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
+                                                            rule.setRule(RULE.DIRECTHTTP);
+                                                            LinkCrawler.addLinkCrawlerRule(rule);
+                                                        }
+                                                        try {
+                                                            urlConnection.disconnect();
+                                                        } catch (Throwable e) {
+                                                        }
+                                                        return lc.find(generation, "directhttp://" + url, null, false, false);
+                                                    }
                                                 }
                                             }
                                         }
