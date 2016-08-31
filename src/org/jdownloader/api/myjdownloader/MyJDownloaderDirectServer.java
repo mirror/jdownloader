@@ -56,6 +56,10 @@ public class MyJDownloaderDirectServer extends Thread {
         setDaemon(true);
     }
 
+    public DIRECTMODE getConnectMode() {
+        return connectMode;
+    }
+
     private ServerSocket createServerSocket(int wished) throws IOException {
         int lastPort = CFG_MYJD.CFG.getLastLocalPort();
         if (lastPort <= 0 || lastPort > 65000) {
