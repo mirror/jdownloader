@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?dailymotion\\.com/.+" })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public DailyMotionComDecrypter(PluginWrapper wrapper) {
@@ -720,12 +720,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setLinkID("dailymotioncom" + videoId + "_" + qualityName);
             final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
             dl.setName(formattedFilename);
-            try {
-                dl.setContentUrl(parameter);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                dl.setBrowserUrl(parameter);
-            }
+            dl.setContentUrl(parameter);
             logger.info("Creating: " + directlinkinfo[2] + "/" + qualityName + " link");
             decryptedLinks.add(dl); // This is it, not the other one.
             return dl;

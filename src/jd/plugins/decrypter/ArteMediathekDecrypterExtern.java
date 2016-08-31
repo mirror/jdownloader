@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creative.arte.tv_extern" }, urls = { "http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+" })
 public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
 
     private static final String           EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
@@ -273,13 +273,7 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
 
             filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + videoresolution + "_" + videoBitrate + ".mp4";
             link.setFinalFileName(filename);
-            try {
-                /* JD2 only */
-                link.setContentUrl(parameter);
-            } catch (Throwable e) {
-                /* Stable */
-                link.setBrowserUrl(parameter);
-            }
+            link.setContentUrl(parameter);
             link._setFilePackage(fp);
             link.setProperty("directURL", hls_directlink);
             link.setProperty("directName", filename);
@@ -287,19 +281,11 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
             link.setProperty("langShort", selectedLanguage);
             link.setProperty("mainlink", parameter);
             link.setProperty("apiurl", apiurl);
-            try {
-                try {
-                    link.setComment(description);
-                } catch (final Throwable e) {
-                    /* Not available in 0.9.581 Stable */
-                }
-                link.setContentUrl(sourceURL);
-                link.setLinkID(linkid);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                link.setBrowserUrl(sourceURL);
-                link.setProperty("LINKDUPEID", linkid);
-            }
+
+            link.setComment(description);
+            link.setContentUrl(sourceURL);
+            link.setLinkID(linkid);
+
             if (fastLinkcheck) {
                 link.setAvailable(true);
             }
@@ -334,13 +320,9 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         linkid = fid + "_" + quality_intern;
         filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(this.languageVersion) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
         link.setFinalFileName(filename);
-        try {
-            /* JD2 only */
-            link.setContentUrl(parameter);
-        } catch (Throwable e) {
-            /* Stable */
-            link.setBrowserUrl(parameter);
-        }
+
+        link.setContentUrl(parameter);
+
         link._setFilePackage(fp);
         link.setProperty("directURL", url);
         link.setProperty("directName", filename);
@@ -348,19 +330,9 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         link.setProperty("langShort", selectedLanguage);
         link.setProperty("mainlink", parameter);
         link.setProperty("apiurl", apiurl);
-        try {
-            try {
-                link.setComment(description);
-            } catch (final Throwable e) {
-                /* Not available in 0.9.581 Stable */
-            }
-            link.setContentUrl(sourceURL);
-            link.setLinkID(linkid);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            link.setBrowserUrl(sourceURL);
-            link.setProperty("LINKDUPEID", linkid);
-        }
+        link.setComment(description);
+        link.setContentUrl(sourceURL);
+        link.setLinkID(linkid);
         if (fastLinkcheck) {
             link.setAvailable(true);
         }

@@ -54,7 +54,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tape.tv" }, urls = { "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+(/[\\w\\-]+)?|vid/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tape.tv" }, urls = { "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+(/[\\w\\-]+)?|vid/\\d+)" })
 public class TapeTv extends PluginForHost {
 
     private class ReplacerInputStream extends InputStream {
@@ -318,11 +318,6 @@ public class TapeTv extends PluginForHost {
                             final DownloadLink link = new DownloadLink(this, title, getHost(), sourceLink.getDownloadURL(), true);
                             link.setAvailable(true);
                             link.setFinalFileName(title);
-                            try {/* JD2 only */
-                                link.setContentUrl(sourceLink.getBrowserUrl());
-                            } catch (Throwable e) {/* Stable */
-                                link.setBrowserUrl(sourceLink.getBrowserUrl());
-                            }
                             link.setProperty("directURL", streamUrl);
                             link.setProperty("directName", title);
                             link.setProperty("LINKDUPEID", "tapetv" + ID + title + q);

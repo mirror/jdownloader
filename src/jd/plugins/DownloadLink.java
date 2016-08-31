@@ -743,25 +743,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return urlDownload;
     }
 
-    /**
-     *
-     * @deprecated use {@link #getOriginUrl()} {@link #getContentUrl()} {@link #getContainerUrl()} {@link #getReferrerUrl()} instead
-     */
-    @Deprecated
-    public String getBrowserUrl() {
-        return getPluginPatternMatcher();
-    }
-
-    @Deprecated
-    /**
-     *
-     * @deprecated {@link #setPluginPattern(String)},{@link #setContentUrl(String)}, {@link #setReferrerUrl(String)} or
-     *             {@link #setOriginUrl(String)} instead
-     */
-    public void setBrowserUrl(String url) {
-        setOriginUrl(url);
-    }
-
     public String getFileOutput() {
         return getFileOutput(false, false);
     }

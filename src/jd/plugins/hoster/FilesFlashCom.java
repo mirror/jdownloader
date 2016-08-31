@@ -38,7 +38,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:8001)?/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:8001)?/[a-z0-9]+" })
 public class FilesFlashCom extends PluginForHost {
 
     private final String html_ipBlocked       = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
@@ -88,12 +88,9 @@ public class FilesFlashCom extends PluginForHost {
         // record userPreference link!
         final String userEndURL = "http://" + userDomain + "/" + fuid;
         link.setProperty("userEndURL", userEndURL);
-        try {
-            link.setContentUrl(userEndURL);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            link.setBrowserUrl(userEndURL);
-        }
+
+        link.setContentUrl(userEndURL);
+
         link.setUrlDownload(mainDomain + fuid);
     }
 

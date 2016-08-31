@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[a-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[a-z0-9\\-]+" })
 public class XnXxCom extends PluginForHost {
 
     public XnXxCom(PluginWrapper wrapper) {
@@ -68,12 +68,7 @@ public class XnXxCom extends PluginForHost {
         final String addedlink = link.getDownloadURL();
         if (!addedlink.endsWith("/")) {
             final String user_url = addedlink + "/";
-            try {
-                link.setContentUrl(user_url);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                link.setBrowserUrl(user_url);
-            }
+            link.setContentUrl(user_url);
         }
     }
 

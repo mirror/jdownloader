@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
 public class ChoMikujPl extends PluginForDecrypt {
 
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -564,14 +564,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
                 dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
                 fp.add(dl);
-                try {
-                    dl.setContentUrl(content_url);
-                    dl.setLinkID(fid);
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                    dl.setBrowserUrl(content_url);
-                }
+                dl.setContentUrl(content_url);
+                dl.setLinkID(fid);
+                distribute(dl);
                 decryptedLinks.add(dl);
             }
         }
