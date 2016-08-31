@@ -132,17 +132,16 @@ public class FilerNet extends PluginForHost {
         }
         callAPI("http://filer.net/get/" + fuid + ".json");
         handleFreeErrorsAPI();
-        int wait = getWait();
-        final String token = getJson("token", br.toString());
-        if (token == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
         if (statusCode == 203) {
+            final String token = getJson("token", br.toString());
+            if (token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final int wait = getWait();
             sleep(wait * 1001l, downloadLink);
+            callAPI("http://filer.net/get/" + fuid + ".json?token=" + token);
+            handleFreeErrorsAPI();
         }
-        callAPI("http://filer.net/get/" + fuid + ".json?token=" + token);
-        handleFreeErrorsAPI();
         String dllink = null;
         if (statusCode == 202) {
             int maxCaptchaTries = 5;
