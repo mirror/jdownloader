@@ -21,6 +21,8 @@ import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
 public class CrawledLinkSandbox {
@@ -64,6 +66,34 @@ public class CrawledLinkSandbox {
                     return properties.get(key);
                 }
             }
+        }
+        return null;
+    }
+
+    public String getContentURL() {
+        if (link != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link);
+        }
+        return null;
+    }
+
+    public String getContainerURL() {
+        if (link != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link);
+        }
+        return null;
+    }
+
+    public String getOriginURL() {
+        if (link != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, link);
+        }
+        return null;
+    }
+
+    public String getReferrerURL() {
+        if (link != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link);
         }
         return null;
     }

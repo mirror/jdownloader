@@ -24,11 +24,13 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
+import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
@@ -64,6 +66,34 @@ public class DownloadLinkSandBox {
             return ret;
         }
         return -1;
+    }
+
+    public String getContentURL() {
+        if (downloadLink != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, downloadLink);
+        }
+        return null;
+    }
+
+    public String getContainerURL() {
+        if (downloadLink != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, downloadLink);
+        }
+        return null;
+    }
+
+    public String getOriginURL() {
+        if (downloadLink != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, downloadLink);
+        }
+        return null;
+    }
+
+    public String getReferrerURL() {
+        if (downloadLink != null) {
+            return LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, downloadLink);
+        }
+        return null;
     }
 
     public long getAddedDate() {
