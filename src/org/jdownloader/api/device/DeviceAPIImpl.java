@@ -27,13 +27,13 @@ public class DeviceAPIImpl implements DeviceAPI {
     @Override
     public DirectConnectionInfos getDirectConnectionInfos(final RemoteAPIRequest request) {
         final DirectConnectionInfos ret = new DirectConnectionInfos();
+        ret.setMode(DIRECTMODE.NONE.name());
         final MyJDownloaderConnectThread thread = MyJDownloaderController.getInstance().getConnectThread();
         if (thread == null) {
             return ret;
         }
         final MyJDownloaderDirectServer directServer = thread.getDirectServer();
         if (directServer == null || !directServer.isAlive() || directServer.getLocalPort() < 0) {
-            ret.setMode(DIRECTMODE.NONE.name());
             return ret;
         }
         ret.setMode(directServer.getConnectMode().name());
