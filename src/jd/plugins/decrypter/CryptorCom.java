@@ -32,21 +32,22 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-_]+" })
 public class CryptorCom extends PluginForDecrypt {
 
     public CryptorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String html_passwordrequired = "\"folder_password_form\\[submit\\]\"";
+    private final String html_passwordrequired = "folder_access";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(500);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Ordner nicht verfügbar")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || this.br.containsHTML("Ordner nicht verfügbar")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -55,28 +56,28 @@ public class CryptorCom extends PluginForDecrypt {
             boolean failed = true;
             for (int i = 0; i <= 3; i++) {
                 String postData = "";
-                if (this.br.containsHTML("\"folder_password_form_recaptcha\"")) {
+                if (this.br.containsHTML("\"g\\-recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                     postData += "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-                if (this.br.containsHTML("\"folder_password_form_password_check\"")) {
+                if (this.br.containsHTML("\"folder_access_password_check\"")) {
                     final String passCode = getUserInput("Password?", param);
                     if (postData.length() == 0) {
-                        postData += "folder_password_form%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
+                        postData += "folder_access%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
                     } else {
-                        postData += "&folder_password_form%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
+                        postData += "&folder_access%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
                     }
                 } else {
                     if (postData.length() == 0) {
-                        postData += "folder_password_form";
+                        postData += "folder_access";
                     } else {
-                        postData += "&folder_password_form";
+                        postData += "&folder_access";
                     }
                 }
                 if (postData.length() == 0) {
-                    postData += "%5Bsubmit%5D=";
+                    postData += "folder_access%5Bsubmit%5D=";
                 } else {
-                    postData += "&%5Bsubmit%5D=";
+                    postData += "&folder_access%5Bsubmit%5D=";
                 }
                 this.br.postPage(this.br.getURL(), postData);
                 if (this.br.containsHTML(html_passwordrequired)) {
