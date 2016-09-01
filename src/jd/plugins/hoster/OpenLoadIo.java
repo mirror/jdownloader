@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
@@ -260,75 +261,32 @@ public class OpenLoadIo extends antiDDoSForHost {
                         handleAPIErrors();
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                } else {
-                    if (true) {
-                        /** TODO: Fix that!! */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.addAllowedResponseCodes(500);
-                    br.setFollowRedirects(true);
-                    getPage(downloadLink.getDownloadURL());
-                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final String rwlink = br.getRegex("var token = \"([^<>\"]*?)\";").getMatch(0);
-                    if (rwlink != null) {
-                        /** TODO: Fix that. */
-                        try {
-                            getPage(br.cloneBrowser(), "https://" + this.getHost() + "/reward/" + rwlink + "?adblock=0");
-                        } catch (final Throwable e) {
-                            /* Don't fail here! */
-                        }
-                    }
-                    dllink = br.getRegex("\"(https?://[a-z0-9\\.\\-]+\\.dl\\.(?:openload\\.io|oload\\.co)/[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    int seconds = 5;
-                    String wait = br.getRegex("id=\"secondsleft\">(\\d+)</span>").getMatch(0);
-                    if (wait != null) {
-                        seconds = Integer.parseInt(wait);
-                    }
-                    this.sleep(seconds * 1001l, downloadLink);
                 }
             } catch (PluginException e1) {
                 if (e1.getMessage().contains("The owner of this file doesn't allow API downloads") || e1.getMessage().contains("out of capacity for non-browser")) {
-                    br.addAllowedResponseCodes(500);
-                    br.setFollowRedirects(true);
-                    getPage(downloadLink.getDownloadURL());
-                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    String hiddenUrl = br.getRegex("<span id=\"hiddenurl\">(.*?)</span>").getMatch(0);
-                    String decoded = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
-                    decoded = decoded.replace("var x = $(\"#hiddenurl\").text();", "var x=\"" + hiddenUrl + "\";");
-                    decoded = decoded.replace("$", "//$");
-                    decoded = decoded.replace("});", "//});");
-                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-                    final ScriptEngine engine = manager.getEngineByName("javascript");
-                    String result = null;
-                    try {
-                        engine.eval(decoded);
-                        result = engine.get("str").toString();
-                    } catch (final Exception e) {
-                        e.printStackTrace();
-                    }
-                    dllink = br.getURL("/stream/" + result + "?mime=true").toString();
-                    boolean fol = br.isFollowingRedirects();
-                    try {
-                        br.openGetConnection(dllink).disconnect();
-                        dllink = br.getURL();
-                    } finally {
-                        br.setFollowRedirects(fol);
-                    }
                 } else {
                     throw e1;
+                }
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                br.addAllowedResponseCodes(500);
+                br.setFollowRedirects(true);
+                getPage(downloadLink.getDownloadURL());
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                String html = br.toString();
+                String result = decode(html);
+                dllink = br.getURL("/stream/" + result + "?mime=true").toString();
+                boolean fol = br.isFollowingRedirects();
+                try {
+                    br.openGetConnection(dllink).disconnect();
+                    dllink = br.getURL();
+                } finally {
+                    br.setFollowRedirects(fol);
                 }
             }
         }
@@ -347,6 +305,24 @@ public class OpenLoadIo extends antiDDoSForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    protected String decode(String html) throws Exception {
+        String hiddenUrl = new Regex(html, "<span id=\"hiddenurl\">(.*?)</span>").getMatch(0);
+        String decoded = new org.jdownloader.encoding.AADecoder(html).decode();
+        decoded = decoded.replace("var x = $(\"#hiddenurl\").text();", "var x=\"" + Encoding.htmlDecode(hiddenUrl) + "\";");
+        decoded = decoded.replace("$", "//$");
+        decoded = decoded.replace("});", "//});");
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String result = null;
+        try {
+            engine.eval(decoded);
+            result = engine.get("str").toString();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
