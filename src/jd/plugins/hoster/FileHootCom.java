@@ -48,7 +48,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehoot.com" }, urls = { "https?://(www\\.)?filehoot\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehoot.com" }, urls = { "https?://(www\\.)?filehoot\\.com/(vidembed\\-)?[a-z0-9]{12}" })
 public class FileHootCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -123,6 +123,9 @@ public class FileHootCom extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|>File Not Found<)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getHttpConnection().getResponseCode() == 403) {
+            /* 2016-09-01: Added this - potentially this could mean GEO-blocked too ... */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

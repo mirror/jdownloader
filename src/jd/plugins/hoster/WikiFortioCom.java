@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "http://(www\\.)?wikifortio\\.com/\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "http://(www\\.)?wikifortio\\.com/\\d+/" })
 public class WikiFortioCom extends PluginForHost {
 
     public WikiFortioCom(PluginWrapper wrapper) {
@@ -46,12 +46,20 @@ public class WikiFortioCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(doesn\\'t exist or has expired and is no longer available<|>We are sorry but file \\')")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final int responsecode = this.br.getHttpConnection().getResponseCode();
+        if (responsecode == 404 || responsecode == 410 || br.containsHTML("(doesn\\'t exist or has expired and is no longer available<|>We are sorry but file \\')")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"filename\">File name: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<input type=\"hidden\" name=\"fileName\" value=\"([^<>\"]*?)\"/>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<input type=\"hidden\" name=\"fileName\" value=\"([^<>\"]*?)\"/>").getMatch(0);
+        }
         String filesize = br.getRegex("<td>Size:</td>[\t\n\r ]+<td>([^<>\"]*?)\\&nbsp;</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;

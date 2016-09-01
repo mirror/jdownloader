@@ -44,11 +44,14 @@ public class WorkuploadCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME            = false;
+    private static final int     FREE_MAXCHUNKS         = 1;
+    private static final int     FREE_MAXDOWNLOADS      = 20;
 
-    private String               fid               = null;
+    private static final String  html_passwordprotected = "id=\"passwordprotected_file_password\"";
+
+    private String               fid                    = null;
+    private boolean              passwordprotected      = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -61,32 +64,37 @@ public class WorkuploadCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)<").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"intro\">[\n\t\r ]*?<b>([^<>\"]+)</b>").getMatch(0);
-        }
-        String filesize = br.getRegex("<td>Dateigröße:</td><td>([^<>\"]*?)<").getMatch(0);
-        if (filename == null || filesize == null) {
-            Regex filenameSize = br.getRegex("<p class=\"intro\">[\n\t\r ]*?<b>(.*?)</b>[^\n\t\r <>\"]*?(\\d+(?:\\.\\d+)? ?(KB|MB|GB))[^\n\t\r <>\"]*?");
+        passwordprotected = this.br.containsHTML(html_passwordprotected);
+        if (passwordprotected) {
+            link.getLinkStatus().setStatusText("This url is password protected");
+        } else {
+            String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)<").getMatch(0);
             if (filename == null) {
-                filename = filenameSize.getMatch(0);
+                filename = br.getRegex("class=\"intro\">[\n\t\r ]*?<b>([^<>\"]+)</b>").getMatch(0);
+            }
+            String filesize = br.getRegex("<td>Dateigröße:</td><td>([^<>\"]*?)<").getMatch(0);
+            if (filename == null || filesize == null) {
+                Regex filenameSize = br.getRegex("<p class=\"intro\">[\n\t\r ]*?<b>(.*?)</b>[^\n\t\r <>\"]*?(\\d+(?:\\.\\d+)? ?(KB|MB|GB))[^\n\t\r <>\"]*?");
+                if (filename == null) {
+                    filename = filenameSize.getMatch(0);
+                }
+                if (filesize == null) {
+                    filesize = filenameSize.getMatch(1);
+                }
             }
             if (filesize == null) {
-                filesize = filenameSize.getMatch(1);
+                filesize = br.getRegex("(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
             }
-        }
-        if (filesize == null) {
-            filesize = br.getRegex("(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-        }
-        if (filesize == null) {
-            filesize = br.getRegex("(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize == null) {
+                filesize = br.getRegex("(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -97,12 +105,24 @@ public class WorkuploadCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String first_url = this.br.getURL();
         // String dllink = checkDirectLink(downloadLink, directlinkproperty);
         String dllink = null;
         if (dllink == null) {
+            if (passwordprotected) {
+                String passCode = downloadLink.getDownloadPassword();
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", downloadLink);
+                }
+                this.br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + fid);
+                if (this.br.containsHTML(html_passwordprotected)) {
+                    downloadLink.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    downloadLink.setDownloadPassword(passCode);
+                }
+            }
             this.br.getPage("/start/" + fid);
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "http://(www\\.)?worldstarhiphopdecrypted\\.com/videos/video(\\d+)?.php\\?v=[a-zA-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "https?://(?:www\\.)?worldstarhiphopdecrypted\\.com/videos/video(\\d+)?.php\\?v=[a-zA-Z0-9]+" })
 public class WorldStarHipHopCom extends PluginForHost {
 
     private String dllink = null;

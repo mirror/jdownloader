@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //Finds and decrypts embedded videos from worldstarhiphop.com
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "http://(www\\.)?worldstarhiphop\\.com/videos/video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "http://(www\\.)?worldstarhiphop\\.com/videos/video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+" })
 public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
 
     public WorldStarHipHopComDecrypter(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\"").getMatch(0);
         }
         if (externID == null) {
-            externID = br.getRegex("<iframe src=\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0);
+            externID = br.getRegex("<iframe src=\"(https?://(?:www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
