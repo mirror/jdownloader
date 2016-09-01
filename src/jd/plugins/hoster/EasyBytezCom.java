@@ -75,7 +75,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easybytez.com" }, urls = { "https?://(www\\.)?easybytez\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easybytez.com" }, urls = { "https?://(www\\.)?easybytez\\.com/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class EasyBytezCom extends PluginForHost {
     // Site Setters
@@ -936,7 +936,7 @@ public class EasyBytezCom extends PluginForHost {
             if (inValidate(dllink)) {
                 getPage(downloadLink.getDownloadURL());
                 // required because we can't have redirects enabled for getDllink detection
-                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) {
+                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex) && !br.getRedirectLocation().matches(dllinkRegex_2)) {
                     getPage(br.getRedirectLocation());
                 }
                 // if the cached cookie expired, relogin.
