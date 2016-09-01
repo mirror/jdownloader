@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?7tv\\.(?:de|at|ch)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?7tv\\.(?:de|at|ch)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
 
     public ProSevenDeDecrypter(PluginWrapper wrapper) {
@@ -83,10 +83,13 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             final String formatName = (String) entries.get("formatName");
             String title = (String) entries.get("title");
             final String videoid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
-            if (contentType == null || formatName == null || title == null || videoid.equals("-1")) {
+            if (contentType == null || title == null || videoid.equals("-1")) {
                 return null;
             }
             String filename = date_formatted + "_" + brand + "_" + formatName;
+            if (formatName != null && formatName.length() > 0) {
+                filename += "_" + formatName;
+            }
 
             /* E.g. http://www.7tv.de/big-brother/161-staffel-1-episode-61-big-brother-tag-60-teil-2-ganze-folge */
             Regex seriesinfo = new Regex(title, "(Staffel (\\d+) Episode (\\d+): )");
