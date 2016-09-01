@@ -67,28 +67,28 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final String[] videoids = new Regex(parameter, "v=(\\d+)").getColumn(0);
         final String date = dates[dates.length - 1];
         final String date_underscore = date.replace("-", "_");
-        String id_of_single_video_which_user_wants_to_have_only = null;
-        String chnumber_str = null;
-        if (channels != null && channels.length > 0) {
-            chnumber_str = channels[channels.length - 1];
-        }
-        if (chnumber_str == null) {
-            /* Small fallback */
-            chnumber_str = "1";
-        }
-        if (videoids != null && videoids.length > 0) {
-            id_of_single_video_which_user_wants_to_have_only = videoids[videoids.length - 1];
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(date_underscore);
-        // fp.setProperty("ALLOW_MERGE", true);
-        LinkedHashMap<String, Object> tempmap = null;
-        LinkedHashMap<String, Object> entries = null;
-        ArrayList<Object> ressourcelist = null;
-        /* Find the name of our channel needed for the following requests */
-        this.br.getPage("http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html");
-        String channel_name = null;
         try {
+            String id_of_single_video_which_user_wants_to_have_only = null;
+            String chnumber_str = null;
+            if (channels != null && channels.length > 0) {
+                chnumber_str = channels[channels.length - 1];
+            }
+            if (chnumber_str == null) {
+                /* Small fallback */
+                chnumber_str = "1";
+            }
+            if (videoids != null && videoids.length > 0) {
+                id_of_single_video_which_user_wants_to_have_only = videoids[videoids.length - 1];
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(date_underscore);
+            // fp.setProperty("ALLOW_MERGE", true);
+            LinkedHashMap<String, Object> tempmap = null;
+            LinkedHashMap<String, Object> entries = null;
+            ArrayList<Object> ressourcelist = null;
+            /* Find the name of our channel needed for the following requests */
+            this.br.getPage("http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html");
+            String channel_name = null;
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             ressourcelist = (ArrayList<Object>) entries.get("Channels");
             for (final Object channelo : ressourcelist) {
@@ -99,49 +99,62 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     break;
                 }
             }
-        } catch (final Throwable e) {
-        }
-        if (channel_name == null || channel_name.equals("")) {
-            channel_name = "RaiUno";
-        }
+            if (channel_name == null || channel_name.equals("")) {
+                channel_name = "RaiUno";
+            }
 
-        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.br.getPage("http://www.rai.tv/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return;
-        }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get(chnumber_str);
-        entries = (LinkedHashMap<String, Object>) entries.get(date);
-
-        final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
-        while (it.hasNext()) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
+            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            this.br.getPage("http://www.rai.tv/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
             }
-            final Entry<String, Object> entry = it.next();
-            tempmap = (LinkedHashMap<String, Object>) entry.getValue();
-            String title = (String) tempmap.get("t");
-            final String videoid_temp = (String) tempmap.get("i");
-            final String relinker = (String) tempmap.get("r");
-            final String description = (String) tempmap.get("d");
-            if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
-                if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
-                    logger.info("User wants to have y single video only but this appears to be offline");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get(chnumber_str);
+            entries = (LinkedHashMap<String, Object>) entries.get(date);
+
+            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+            while (it.hasNext()) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return;
                 }
-                continue;
+                final Entry<String, Object> entry = it.next();
+                tempmap = (LinkedHashMap<String, Object>) entry.getValue();
+                String title = (String) tempmap.get("t");
+                final String videoid_temp = (String) tempmap.get("i");
+                final String relinker = (String) tempmap.get("r");
+                final String description = (String) tempmap.get("d");
+                if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
+                    if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
+                        logger.info("User wants to have a single video only but this appears to be offline");
+                        final DownloadLink offline = this.createOfflinelink(parameter);
+                        offline.setFinalFileName(id_of_single_video_which_user_wants_to_have_only + ".mp4");
+                        /* Remove previously found content */
+                        decryptedLinks.clear();
+                        /* Add offline */
+                        decryptedLinks.add(offline);
+                        return;
+                    }
+                    continue;
+                }
+                title = date_underscore + "_raitv_" + title;
+                if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
+                    /* User wants to have a specified video only --> Clear list, add only this entry, then step out of the loop */
+                    this.decryptedLinks.clear();
+                    decryptRelinker(relinker, title, null, fp, description);
+                    return;
+                } else {
+                    /* Simply add video */
+                    decryptRelinker(relinker, title, null, fp, description);
+                }
             }
-            title = date_underscore + "_raitv_" + title;
-            if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
-                /* User wants to have a specified video only --> Clear list, add only this entry, then step out of the loop */
-                this.decryptedLinks.clear();
-                decryptRelinker(relinker, title, null, fp, description);
-                return;
-            } else {
-                /* Simply add video */
-                decryptRelinker(relinker, title, null, fp, description);
+        } finally {
+            if (decryptedLinks.size() == 0) {
+                /* Probably none of the urls was downloadable ... */
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setName(date + ".mp4");
+                decryptedLinks.add(offline);
             }
         }
     }

@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promptfile.com" }, urls = { "http://(www\\.)?promptfile\\.com/l/[A-Z0-9]+\\-[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promptfile.com" }, urls = { "http://(www\\.)?promptfile\\.com/l/[A-Z0-9]+\\-[A-Z0-9]+" })
 public class PromptFileCom extends PluginForHost {
 
     public PromptFileCom(PluginWrapper wrapper) {
@@ -110,6 +110,8 @@ public class PromptFileCom extends PluginForHost {
             if (obstruction != null) {
                 chash.put(chash.getInputFields().get(0).getKey(), obstruction + chash.getInputFields().get(0).getValue());
             }
+            /* 2016-09-01: This cookie is important - without it we will get a (database) error from the server. */
+            this.br.setCookie(this.getHost(), "Upgrade-Insecure-Requests", "1");
             br.submitForm(chash);
             if (failed_once) {
                 /*

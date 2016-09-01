@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,6 +45,8 @@ public class VikiCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
+    private boolean              server_issues     = false;
+    private boolean              geoblocked        = false;
 
     @Override
     public String getAGBLink() {
@@ -67,6 +68,7 @@ public class VikiCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        geoblocked = false;
         final String vid = getVID(downloadLink);
         downloadLink.setName(vid);
         this.setBrowserExclusive();
@@ -88,65 +90,64 @@ public class VikiCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         br.getPage("http://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
+        geoblocked = this.br.containsHTML("We are sorry, this content is currently not available in your region|\"geo\":true");
+        server_issues = this.br.containsHTML("Video playback for this video is not supported by your browser");
         /* Should never happen */
         if (br.containsHTML("Video is Unavailable")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Video playback for this video is not supported by your browser")) {
+        } else if (server_issues) {
             downloadLink.getLinkStatus().setStatusText("Linktype not yet supported");
             downloadLink.setName(filename + default_Extension);
             return AvailableStatus.TRUE;
         }
         dllink = br.getRegex("<source type=\"video/mp4\" src=\"(https?://[^<>\"]*?)\">").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, default_Extension);
+        String ext = getFileNameExtensionFromString(dllink, default_Extension);
+        if (ext == null) {
+            ext = default_Extension;
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            downloadLink.setFinalFileName(filename);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(dllink);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(dllink);
+                con = br2.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    downloadLink.setProperty("directlink", dllink);
+                } else {
+                    server_issues = true;
                 }
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+        } else {
+            /* We cannot be sure whether we have the correct extension or not! */
+            downloadLink.setName(filename);
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("\"geo\":true")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Not available in your country (geo block)");
-        } else if (br.containsHTML("Video playback for this video is not supported by your browser")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Linktype not yet supported");
+        if (geoblocked) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Not available in your country (geo blocked)");
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {

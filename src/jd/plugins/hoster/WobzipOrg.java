@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wobzip.org" }, urls = { "http://(www\\.)?wobzip\\.org/file/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wobzip.org" }, urls = { "http://(www\\.)?wobzip\\.org/file/[A-Za-z0-9]+" })
 public class WobzipOrg extends PluginForHost {
 
     public WobzipOrg(PluginWrapper wrapper) {
@@ -47,22 +47,14 @@ public class WobzipOrg extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = -2;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getRedirectLocation() != null && !this.br.getRedirectLocation().contains("/file/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("id=\"file\\-title\">([^<>\"]*?)<").getMatch(0);

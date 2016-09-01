@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.eu" }, urls = { "https?://(www\\.)?vshare\\.eu/((vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.eu" }, urls = { "https?://(www\\.)?vshare\\.eu/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class VShareEu extends PluginForHost {
     // Site Setters
@@ -236,7 +236,7 @@ public class VShareEu extends PluginForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) {
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|>File is no longer available|>The file you were looking for could not be)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (cbr.containsHTML(MAINTENANCE)) {
