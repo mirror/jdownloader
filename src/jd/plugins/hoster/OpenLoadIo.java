@@ -310,13 +310,12 @@ public class OpenLoadIo extends antiDDoSForHost {
     protected String decode(String html) throws Exception {
         String hiddenUrl = new Regex(html, "<span id=\"hiddenurl\">(.*?)</span>").getMatch(0);
         String decoded = new org.jdownloader.encoding.AADecoder(html).decode();
-        decoded = decoded.replace("var x = $(\"#hiddenurl\").text();", "var x=\"" + Encoding.htmlDecode(hiddenUrl) + "\";");
-        decoded = decoded.replace("$", "//$");
-        decoded = decoded.replace("});", "//});");
+        decoded = new Regex(decoded, "(var s=\\[\\]\\;.*?)\\$\\(\"\\#streamurl\"\\)").getMatch(0);
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         String result = null;
         try {
+            engine.put("x", Encoding.htmlOnlyDecode(hiddenUrl));
             engine.eval(decoded);
             result = engine.get("str").toString();
         } catch (final Exception e) {
