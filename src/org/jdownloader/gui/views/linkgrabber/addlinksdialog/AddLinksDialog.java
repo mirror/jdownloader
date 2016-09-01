@@ -112,7 +112,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private boolean                             deepAnalyse   = false;
 
     private DelayedRunnable                     delayedValidate;
-    private WindowListener                      listener      = null;
 
     private ExtTextField                        downloadPassword;
 
@@ -504,10 +503,14 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             input.setTransferHandler(dnd);
         }
 
-        input.setEditable(false);
-        this.getDialog().addWindowListener(listener = new WindowListener() {
+        this.getDialog().addWindowListener(new WindowListener() {
             public void windowOpened(WindowEvent e) {
                 new Thread() {
+
+                    {
+                        setDaemon(true);
+                        setName(getClass().getName());
+                    }
 
                     @Override
                     public void run() {
@@ -525,6 +528,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                             new EDTRunner() {
                                 @Override
                                 protected void runInEDT() {
+                                    input.setEditable(false);
                                     input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
                                 };
                             };
@@ -532,9 +536,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         }
                     }
                 }.start();
-                if (listener != null) {
-                    getDialog().removeWindowListener(listener);
-                }
+                getDialog().removeWindowListener(this);
             }
 
             public void windowIconified(WindowEvent e) {
@@ -663,6 +665,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private void inform() {
         new Thread() {
+            {
+                setDaemon(true);
+                setName(getClass().getName());
+            }
+
             public void run() {
                 try {
                     Thread.sleep(2000);
@@ -793,6 +800,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         protected void runInEDT() {
                             if (thisThread == asyncImportThread.get()) {
                                 input.setText(resultText);
+                                input.setEditable(true);
                             }
                         }
                     }.waitForEDT();
