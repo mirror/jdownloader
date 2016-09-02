@@ -249,26 +249,31 @@ public class UpfilesNet extends PluginForHost {
         this.br.getPage("/vip/show-plans");
         ai.setUnlimitedTraffic();
         String expire = this.br.getRegex(">Twoje konto VIP jest ważne do (\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
-        if (expire == null) {
+        if (expire != null) {
+            /* If there is only a very small amount of credit left, premium downloads will not be possible! */
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("VIP account");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+        } else {
             expire = this.br.getRegex(">Twoje konto Premium jest ważne do (\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
+            if (expire != null) {
+                /* If there is only a very small amount of credit left, premium downloads will not be possible! */
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                ai.setStatus("Premium account");
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+            }
         }
-        // final String credit_str = this.br.getRegex("Stan konta:[\t\n\r ]*?([0-9\\.]+)[\t\n\r ]*?zł").getMatch(0);
-        final String accounttext;
         if (expire == null) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             /* free accounts still have captcha */
             account.setConcurrentUsePossible(false);
-            accounttext = "Registered (free) user";
-        } else {
-            /* If there is only a very small amount of credit left, premium downloads will not be possible! */
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            accounttext = "Premium account";
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+            ai.setStatus("Registered (free) user");
         }
-        ai.setStatus(accounttext);
         account.setValid(true);
         return ai;
     }
