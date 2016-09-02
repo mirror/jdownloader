@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.net.CountingOutputStream;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,14 +42,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.net.CountingOutputStream;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class VipCocoleechCom extends PluginForHost {
 
-    private static final String                            API_ENDPOINT         = "http://vip.cocoleech.com/api";
+    private static final String                            API_ENDPOINT         = "https://vip.cocoleech.com/api";
     private static final String                            NICE_HOST            = "vip.cocoleech.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
@@ -306,7 +306,9 @@ public class VipCocoleechCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
 
         login(false);
-        /* As long as we always perform a full login, this call is never needed as full login will return account type and expire date too. */
+        /*
+         * As long as we always perform a full login, this call is never needed as full login will return account type and expire date too.
+         */
         // accessUserInfo();
 
         final String premiumstatus = PluginJSonUtils.getJsonValue(br, "premium_status");
@@ -448,7 +450,7 @@ public class VipCocoleechCom extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
             final String currentHost = correctHost(this.currDownloadLink.getHost());
@@ -594,7 +596,7 @@ public class VipCocoleechCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
