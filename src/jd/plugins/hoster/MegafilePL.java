@@ -15,7 +15,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 3, names = { "megafile.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-dpspwjrlfosjdhgidshg12" })
+@HostPlugin(revision = "$Revision: 2 $", interfaceVersion = 3, names = { "megafile.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-dpspwjrlfosjdhgidshg12" })
 public class MegafilePL extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -34,17 +34,21 @@ public class MegafilePL extends PluginForHost {
         String password = Encoding.urlEncode(account.getPass());
         String checkLogin = br.postPage("https://megafile.pl/managersAPI/accountInfo", "username=" + username + "&password=" + password);
 
-        // ERROR HANDLING NEEDED HERE ALSO.
-        String[] accountInfo = checkLogin.split(":");
-        if (accountInfo[0].contains("ERROR")) {
-            ac.setStatus(accountInfo[1]);
-            account.setError(AccountError.INVALID, accountInfo[1]);
-        } else {
-            ac.setStatus("Account valid");
-            ac.setTrafficLeft(Long.parseLong(accountInfo[1]));
+        // ERROR HANDLING
+        try {
+            String[] accountInfo = checkLogin.split(":");
+            if (accountInfo[0].contains("ERROR")) {
+                ac.setStatus(accountInfo[1]);
+                account.setError(AccountError.INVALID, accountInfo[1]);
+                return ac;
+            } else {
+                ac.setStatus("Account valid");
+                ac.setTrafficLeft(Long.parseLong(accountInfo[1]));
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost());
         }
 
-        // String hosts[] = br.getPage("http://downitfaster.com/api/supportedHosts.php").split("<br />");
         String hosts[] = { "catshare.net", "rapidu.net", "fileshark.pl", "lunaticfiles.com", "sharehost.eu", "uploaded.to", "turbobit.net", "rapidgator.net", "uploadrocket.net", "filefactory.com", "hitfile.net", "fastshare.cz", "hugefiles.net", "1fichier.com", "uptobox.com", "alfafile.net", "datafile.com", "keep2share.cc", "filejoker.net", "depositfiles.com", "depfile.com", "nitroflare.com", "chomikuj.pl", "" };
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
