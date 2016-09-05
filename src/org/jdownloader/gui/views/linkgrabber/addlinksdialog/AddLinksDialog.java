@@ -117,7 +117,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private JComboBox                           priority;
 
-    private volatile HashSet<String>            autoPasswords = new HashSet<String>();
+    private final HashSet<String>               autoPasswords = new HashSet<String>();
 
     private ExtTextField                        comment;
 
@@ -749,30 +749,28 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             public void run() {
                 try {
                     thisThread = Thread.currentThread();
-                    autoPasswords = PasswordUtils.getPasswords(toAnalyse);
-                    new EDTRunner() {
+                    final String resultText;
+                    if (toAnalyse != null) {
+                        final HashSet<String> passwords = PasswordUtils.getPasswords(toAnalyse);
+                        if (passwords != null && passwords.size() > 0) {
+                            synchronized (autoPasswords) {
+                                autoPasswords.addAll(passwords);
+                            }
+                        }
+                        new EDTRunner() {
 
-                        @Override
-                        protected void runInEDT() {
-                            final HashSet<String> passwords = autoPasswords;
-                            if (passwords.size() > 1) {
-                                password.setText(JSonStorage.serializeToJson(passwords));
-                            } else if (autoPasswords.size() > 0) {
-                                password.setText(passwords.toArray(new String[] {})[0]);
+                            @Override
+                            protected void runInEDT() {
+                                synchronized (autoPasswords) {
+                                    if (autoPasswords.size() > 1) {
+                                        password.setText(JSonStorage.serializeToJson(autoPasswords));
+                                    } else if (autoPasswords.size() > 0) {
+                                        password.setText(autoPasswords.toArray(new String[] {})[0]);
+                                    }
+                                }
                             }
-                        }
-                    };
-                    String[] result = HTMLParser.getHttpLinks(toAnalyse, base, new HtmlParserResultSet() {
-                        @Override
-                        public boolean add(HtmlParserCharSequence e) {
-                            if (thisThread != asyncImportThread.get()) {
-                                throw new RuntimeException("abort");
-                            }
-                            return super.add(e);
-                        }
-                    });
-                    if (result.length == 0) {
-                        result = HTMLParser.getHttpLinks(toAnalyse.replace("www.", "http://www."), base, new HtmlParserResultSet() {
+                        };
+                        String[] result = HTMLParser.getHttpLinks(toAnalyse, base, new HtmlParserResultSet() {
                             @Override
                             public boolean add(HtmlParserCharSequence e) {
                                 if (thisThread != asyncImportThread.get()) {
@@ -781,19 +779,32 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 return super.add(e);
                             }
                         });
-                    }
-                    if (result.length == 0) {
-                        result = HTMLParser.getHttpLinks("http://" + toAnalyse, base, new HtmlParserResultSet() {
-                            @Override
-                            public boolean add(HtmlParserCharSequence e) {
-                                if (thisThread != asyncImportThread.get()) {
-                                    throw new RuntimeException("abort");
+                        if (result.length == 0) {
+                            result = HTMLParser.getHttpLinks(toAnalyse.replace("www.", "http://www."), base, new HtmlParserResultSet() {
+                                @Override
+                                public boolean add(HtmlParserCharSequence e) {
+                                    if (thisThread != asyncImportThread.get()) {
+                                        throw new RuntimeException("abort");
+                                    }
+                                    return super.add(e);
                                 }
-                                return super.add(e);
-                            }
-                        });
+                            });
+                        }
+                        if (result.length == 0) {
+                            result = HTMLParser.getHttpLinks("http://" + toAnalyse, base, new HtmlParserResultSet() {
+                                @Override
+                                public boolean add(HtmlParserCharSequence e) {
+                                    if (thisThread != asyncImportThread.get()) {
+                                        throw new RuntimeException("abort");
+                                    }
+                                    return super.add(e);
+                                }
+                            });
+                        }
+                        resultText = list(result);
+                    } else {
+                        resultText = "";
                     }
-                    final String resultText = list(result);
                     new EDTRunner() {
 
                         @Override
