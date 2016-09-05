@@ -5,7 +5,7 @@ public enum BooleanStatus {
     TRUE,
     FALSE;
 
-    public Boolean getBoolean() {
+    public final Boolean getBoolean() {
         switch (this) {
         case FALSE:
             return Boolean.FALSE;
@@ -16,15 +16,19 @@ public enum BooleanStatus {
         }
     }
 
-    public static BooleanStatus convert(Boolean status) {
+    public static final BooleanStatus convert(final Boolean status) {
         return status == null ? UNSET : (status ? TRUE : FALSE);
     }
 
-    public static BooleanStatus get(BooleanStatus status) {
+    public static final BooleanStatus get(final BooleanStatus status) {
         return status == null ? UNSET : status;
     }
 
-    public static Boolean convert(BooleanStatus status) {
-        return status == null ? null : (status == TRUE ? Boolean.TRUE : Boolean.FALSE);
+    public static final Boolean convert(final BooleanStatus status) {
+        if (status != null) {
+            return status.getBoolean();
+        } else {
+            return null;
+        }
     }
 }
