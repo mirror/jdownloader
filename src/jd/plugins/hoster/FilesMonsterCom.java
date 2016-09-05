@@ -22,10 +22,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +43,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -454,7 +454,7 @@ public class FilesMonsterCom extends PluginForHost {
         }
         // needed because of cached login and we need to have a browser containing html to regex against!
         if (br.getURL() == null || !br.getURL().matches("https?://[^/]*filesmoster\\.com/?")) {
-            br.getPage("/");
+            br.getPage("https://filesmonster.com/");
         }
         ai.setUnlimitedTraffic();
         // current premium
