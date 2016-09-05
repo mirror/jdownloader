@@ -65,7 +65,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com|twobit\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(ifolder\\.com\\.ua|wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|hotshare\\.biz|mnogofiles\\.com|sibit\\.net|turbobit\\.net|turbobit\\.ru|xrfiles\\.ru|turbabit\\.net|filedeluxe\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|turboot\\.ru|filez\\.ninja|kilofile\\.com|twobit\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" })
 public class TurboBitNet extends PluginForHost {
 
     @Override
@@ -229,7 +229,7 @@ public class TurboBitNet extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         // >Turbo access till 27.09.2015</span>
-        String expire = br.getRegex(">Turbo access till (.*?)</span>").getMatch(0);
+        final String expire = br.getRegex(">Turbo access till (.*?)</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -238,6 +238,9 @@ public class TurboBitNet extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
         }
         ai.setStatus("Premium Account");
+        if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You have reached limit of premium downloads", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         return ai;
     }
 
@@ -950,20 +953,20 @@ public class TurboBitNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.\r\n3. Access the following site and disable the login captcha protection of your account and try again: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // valid premium (currently no traffic)|valid premium (traffic available)
-                if (!br.containsHTML("<notsure....>|<span class='glyphicon glyphicon-ok yesturbo'>")) {
+                if (br.containsHTML("<notsure....>|<span class='glyphicon glyphicon-ok yesturbo'>") || br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
+                    // cookies
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = br.getCookies(br.getHost());
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                    account.setProperty("cookies", cookies);
+                    account.setProperty("UA", userAgent.get());
+                } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type (Not premium account)!\r\nUngültiger Accounttyp (kein Premium Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(br.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-                account.setProperty("UA", userAgent.get());
             } catch (final PluginException e) {
                 account.setProperty("UA", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
