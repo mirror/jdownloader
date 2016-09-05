@@ -17,8 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -27,6 +29,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -218,62 +221,83 @@ public class PremiumyPl extends PluginForHost {
 
         final String trafficleft_str = PluginJSonUtils.getJsonValue(this.br, "transfer");
 
-        // final String validuntil = PluginJSonUtils.getJson(this.br, "premium");
-        // long trafficleft = 0;
-        // long timestamp_validuntil = 0;
-        // if (validuntil != null) {
-        // timestamp_validuntil = Long.parseLong(validuntil) * 1000;
-        // }
-        // if (trafficleft_str != null) {
-        // trafficleft = Long.parseLong(trafficleft_str);
-        // }
-        //
-        // /* Expired and no traffic --> Free account */
-        // if (timestamp_validuntil < System.currentTimeMillis() && trafficleft <= 0) {
-        // ai.setTrafficLeft(0);
-        // // account.setConcurrentUsePossible(false);
-        // account.setType(AccountType.FREE);
-        // ai.setStatus("Free account");
-        // } else {
-        // if (timestamp_validuntil > System.currentTimeMillis()) {
-        // ai.setValidUntil(timestamp_validuntil);
-        // }
-        // if (trafficleft > 0) {
-        // ai.setTrafficLeft(trafficleft);
-        // }
-        // account.setType(AccountType.PREMIUM);
-        // ai.setStatus("Premium account");
-        // }
-
-        // it's a bug in APi spec
-        // premium = 1 for Multi package
-        // premium = 0 for not Multi packages
-        // so for now until is not corected in API - Hoster package won't be supported
-        // because API returns: {"premium":0,"transfer":0} for Hoster package and free account
         final String premium = PluginJSonUtils.getJsonValue(this.br, "premium");
         long trafficleft = 0;
-        long timestamp_validuntil = 0;
+        long timestampValidUntil = 0;
+
+        String hostsValidDates = PluginJSonUtils.getJsonNested(this.br, "hosts");
+        String validDates[][] = null;
+
         if (trafficleft_str != null) {
             trafficleft = Long.parseLong(trafficleft_str);
         }
+        boolean isSingleHoster = false;
+        try {
+            timestampValidUntil = Long.parseLong(premium);
+        } catch (Exception e) {
+            timestampValidUntil = 0;
+        }
 
-        if ("1".equals(premium)) {
+        if (timestampValidUntil > 0l) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account - Multi");
+            timestampValidUntil = timestampValidUntil * 1000l;
+            if (timestampValidUntil > System.currentTimeMillis()) {
+                ai.setValidUntil(timestampValidUntil);
+            }
         } else if (trafficleft > 0) {
             ai.setTrafficLeft(trafficleft);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account - Transfer");
         } else {
-            ai.setTrafficLeft(0);
-            account.setType(AccountType.FREE);
-            ai.setStatus("Free account");
-            return ai;
+            // check if it is hoster plan
+            validDates = new Regex(hostsValidDates, "\"([^<>\"]+)\":(\\d+),?").getMatches();
+
+            for (String[] validDate : validDates) {
+                timestampValidUntil = Long.parseLong(validDate[1]);
+                if (timestampValidUntil > 0) {
+                    timestampValidUntil = timestampValidUntil * 1000l;
+                    if (timestampValidUntil > System.currentTimeMillis()) {
+                        ai.setValidUntil(timestampValidUntil);
+                        break;
+                    }
+                }
+
+            }
+            if (timestampValidUntil > 0) {
+                account.setType(AccountType.PREMIUM);
+                ai.setStatus("Premium account - Hoster");
+                isSingleHoster = true;
+            } else {
+                ai.setTrafficLeft(0);
+                account.setType(AccountType.FREE);
+                ai.setStatus("Free account");
+                return ai;
+            }
         }
 
         this.postAPISafe("hosts", "");
         final String[] hosts = this.br.getRegex("\"domain\":\"([^<>\"]+)\"").getColumn(0);
-        ai.setMultiHostSupport(this, Arrays.asList(hosts));
+
+        if (!hostsValidDates.isEmpty() && isSingleHoster) {
+            final String[] hostsNames = this.br.getRegex("\"name\":\"([^<>\"]+)\",?").getColumn(0);
+            List<String> hostersAvailable = new ArrayList<String>();
+            for (String[] validDate : validDates) {
+                if (Long.parseLong(validDate[1]) > 0) {
+                    for (int i = 0; i < hostsNames.length; i++) {
+                        if (validDate[0].equals(hostsNames[i])) {
+                            hostersAvailable.add(hosts[i]);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (hostersAvailable.size() > 0) {
+                ai.setMultiHostSupport(this, hostersAvailable);
+            }
+        } else {
+            ai.setMultiHostSupport(this, Arrays.asList(hosts));
+        }
         return ai;
     }
 
