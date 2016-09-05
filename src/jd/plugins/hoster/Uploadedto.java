@@ -74,7 +74,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" })
 public class Uploadedto extends PluginForHost {
     // DEV NOTES:
     // other: respects https in download methods, even though final download
@@ -458,9 +458,8 @@ public class Uploadedto extends PluginForHost {
                         }
                         setFinalFileName(dl, name);
                         final long size = SizeFormatter.getSize(infos[hit][2]);
-                        dl.setDownloadSize(size);
-                        if (size > 0) {
-                            dl.setProperty("VERIFIEDFILESIZE", size);
+                        if (dl.getVerifiedFileSize() == -1 && size > 0) {
+                            dl.setVerifiedFileSize(size);
                         }
                         if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
                             dl.setAvailable(true);
@@ -1502,13 +1501,8 @@ public class Uploadedto extends PluginForHost {
             downloadLink.setSha1Hash(sha1);
         }
         setFinalFileName(downloadLink, name);
-        if (size != null) {
-            try {
-                downloadLink.setVerifiedFileSize(Long.parseLong(size));
-            } catch (final Throwable e) {
-                /* not available in old 09581 stable */
-                downloadLink.setDownloadSize(Long.parseLong(size));
-            }
+        if (downloadLink.getVerifiedFileSize() == -1 && size != null) {
+            downloadLink.setVerifiedFileSize(Long.parseLong(size));
         }
         url = url.replaceAll("\\\\/", "/");
         /* we must append access_token because without the url won't work */

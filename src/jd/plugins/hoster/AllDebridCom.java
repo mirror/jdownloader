@@ -197,10 +197,27 @@ public class AllDebridCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account acc, final DownloadLink link, final String genlink) throws Exception {
+        if (genlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         showMessage(link, "Task 2: Download begins!");
         int maxChunks = 0;
         if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
             maxChunks = 1;
+        }
+        final URLConnectionAdapter con = br.openGetConnection(genlink);
+        con.disconnect();
+        if (con.isOK() && con.getCompleteContentLength() >= 0 && con.isContentDisposition()) {
+            final long size = con.getCompleteContentLength();
+            if (link.getVerifiedFileSize() == -1) {
+                link.setVerifiedFileSize(size);
+            } else if (size != link.getVerifiedFileSize()) {
+                logger.info("Filesize missmatch detected! expected=" + link.getVerifiedFileSize() + "|is=" + size);
+                link.setVerifiedFileSize(size);
+                if (link.getDownloadCurrent() > 0) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
@@ -217,10 +234,14 @@ public class AllDebridCom extends antiDDoSForHost {
                 handleErrorRetries("Unknown error", 3, 30 * 60 * 1000l);
             }
             if (!isDirectLink(link)) {
-                /* unknown error */
-                logger.severe("Error: Unknown Error");
-                // disable hoster for 5min
-                tempUnavailableHoster(5 * 60 * 1000l);
+                if (br.containsHTML("range not ok")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else {
+                    /* unknown error */
+                    logger.severe("Error: Unknown Error");
+                    // disable hoster for 5min
+                    tempUnavailableHoster(5 * 60 * 1000l);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
