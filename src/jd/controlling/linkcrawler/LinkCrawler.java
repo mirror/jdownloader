@@ -37,6 +37,8 @@ import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
@@ -880,6 +882,18 @@ public class LinkCrawler {
     protected URLConnectionAdapter openCrawlDeeperConnection(CrawledLink source, Browser br, URLConnectionAdapter urlConnection, int round) throws IOException {
         if (round == 1) {
             if (urlConnection != null && urlConnection.isOK() && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
+                final Cookies cookies = br.getCookies(br.getBaseURL());
+                for (final Cookie cookie : cookies.getCookies()) {
+                    if (StringUtils.contains(cookie.getKey(), "incap_ses")) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            urlConnection.disconnect();
+                            throw new IOException(e);
+                        }
+                        break;
+                    }
+                }
                 // retry request because it set some cookies, maybe response is different now
                 return openCrawlDeeperConnection(br, source, round + 1);
             }
