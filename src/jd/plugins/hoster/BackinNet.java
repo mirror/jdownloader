@@ -30,13 +30,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,6 +60,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
@@ -495,7 +495,7 @@ public class BackinNet extends antiDDoSForHost {
             } else {
                 retry++;
                 downloadLink.setProperty("retry", retry);
-                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15000);
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
@@ -610,7 +610,7 @@ public class BackinNet extends antiDDoSForHost {
             if (cbr.containsHTML(">Expired download session<")) {
                 // This shouldn't ever happen....
                 logger.warning("Expired download session, lets retry!");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Expired download session. Try again later.", 30000);
             }
             if (cbr.containsHTML("Wrong captcha")) {
                 logger.warning("Wrong Captcha response!");
@@ -638,13 +638,8 @@ public class BackinNet extends antiDDoSForHost {
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
-                synchronized (ACCLOCK) {
-                    AccountInfo ai = account.getAccountInfo();
-                    ai.setTrafficLeft(0);
-                    account.setAccountInfo(ai);
-                    account.setTempDisabled(true);
-                }
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
             }
@@ -931,7 +926,7 @@ public class BackinNet extends antiDDoSForHost {
                 synchronized (ACCLOCK) {
                     account.setProperty("cookies", Property.NULL);
                     // if you retry, it can use another account...
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Login failed. Try again later.", 30000);
                 }
             }
             doFree(downloadLink, account);
@@ -950,7 +945,7 @@ public class BackinNet extends antiDDoSForHost {
                     synchronized (ACCLOCK) {
                         account.setProperty("cookies", Property.NULL);
                         // if you retry, it can use another account...
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Login failed. Try again later.", 30000);
                     }
                 }
                 getDllink();
@@ -996,7 +991,7 @@ public class BackinNet extends antiDDoSForHost {
                 } else {
                     retry++;
                     downloadLink.setProperty("retry", retry);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "DNS issues. Try again later.", 15 * 60 * 1000l);
                 }
             }
             if (dl.getConnection().getContentType().contains("html")) {
