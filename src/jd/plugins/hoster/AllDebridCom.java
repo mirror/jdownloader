@@ -153,8 +153,9 @@ public class AllDebridCom extends antiDDoSForHost {
 
     private void handleErrors() throws PluginException {
         final String error = PluginJSonUtils.getJsonValue(br, "error");
-        if ("login fail".equals(br.toString()) || "login gailed".equals(br.toString())) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong User Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.toString().matches("(?i)login fail(?:ed)?")) {
+            // wrong password and they say this for blocked ip subnet.
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong Username:Password, or IP subnet block.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if ("too mutch fail, blocked for 6 hour".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToo many incorrect attempts at login!\r\nYou've been blocked for 6 hours", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
@@ -308,8 +309,9 @@ public class AllDebridCom extends antiDDoSForHost {
 
         String host_downloadlink = link.getDownloadURL();
         /* here we can get a 503 error page, which causes an exception */
-        getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
-        final String genlink = br.toString();
+        getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&json=true");
+        final String genlink = PluginJSonUtils.getJsonValue(br, "link");
+        // todo: fix this, as json now old error handling will be wrong -raztok20160906
         if (genlink != null && "banned".equalsIgnoreCase(genlink.trim())) {
             // account is banned
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account is banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
