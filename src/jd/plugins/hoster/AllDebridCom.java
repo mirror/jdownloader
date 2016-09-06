@@ -373,7 +373,7 @@ public class AllDebridCom extends antiDDoSForHost {
         if (error != null) {
             if (error.equals("Ip not allowed.")) {
                 statuscode = 1;
-            } else if (error.equals("Hoster unsupported or under maintenance.")) {
+            } else if (error.equals("Hoster unsupported or under maintenance.") || StringUtils.containsIgnoreCase(error, "Host is under maintenance")) {
                 statuscode = 2;
             } else {
                 statuscode = 666;
@@ -384,7 +384,9 @@ public class AllDebridCom extends antiDDoSForHost {
                 /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
             } else {
-                if (error.equals("Invalid link")) {
+                if (StringUtils.containsIgnoreCase(error, "Host is under maintenance")) {
+                    statuscode = 2;
+                } else if (error.equals("Invalid link")) {
                     /* complete html example: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
                     statuscode = 101;
                 } else if (error.equals("Link is dead")) {
