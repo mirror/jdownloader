@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)|https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+|https?://player\\.empflix\\.com/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)|https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+|https?://player\\.empflix\\.com/video/\\d+" })
 public class EmpFlixCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -99,6 +99,9 @@ public class EmpFlixCom extends PluginForHost {
                 DLLINK = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
                 if (DLLINK == null) {
                     DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(.*?)\"\\)").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = br.getRegex("config\" value=\"(.*?)\"").getMatch(0);
+                    }
                 }
             }
         }
@@ -110,7 +113,10 @@ public class EmpFlixCom extends PluginForHost {
             DLLINK = "http:" + DLLINK;
         }
         br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<(file|videoLink)>(.*?)</(file|videoLink)>").getMatch(1);
+        DLLINK = br.getRegex("<res>480p</res>\\s+<videoLink><\\!\\[CDATA\\[(.*?)\\]\\]></videoLink>").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<(file|videoLink)>(.*?)</(file|videoLink)>").getMatch(1);
+        }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -119,7 +125,7 @@ public class EmpFlixCom extends PluginForHost {
             DLLINK = "http:" + DLLINK;
         }
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
