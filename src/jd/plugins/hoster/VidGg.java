@@ -31,7 +31,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "vid.gg" }, urls = { "http://(?:www\\.)?(?:vid\\.gg|vidgg\\.to)/(?:video/|embed\\?id=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "vid.gg" }, urls = { "http://(?:www\\.)?(?:vid\\.gg|vidgg\\.to)/(?:video/|embed\\?id=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class VidGg extends PluginForHost {
 
     private static final String DOMAIN = "vidgg.to";
@@ -84,7 +84,7 @@ public class VidGg extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| vidgg\\.to</title>").getMatch(0);
         }
-        if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) {
+        if (br.containsHTML("<h5[^<>]+>Untitled</h5>") && filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         }
         if (filename == null) {
@@ -175,7 +175,7 @@ public class VidGg extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;
