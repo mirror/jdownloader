@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:s\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -205,21 +207,30 @@ public class AllDebridCom extends antiDDoSForHost {
         if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        final URLConnectionAdapter con = br.openGetConnection(genlink);
-        con.disconnect();
-        if (con.isOK() && con.getCompleteContentLength() >= 0 && con.isContentDisposition()) {
-            final long size = con.getCompleteContentLength();
-            if (link.getVerifiedFileSize() == -1) {
-                link.setVerifiedFileSize(size);
-            } else if (size != link.getVerifiedFileSize()) {
-                logger.info("Filesize missmatch detected! expected=" + link.getVerifiedFileSize() + "|is=" + size);
-                link.setVerifiedFileSize(size);
-                if (link.getDownloadCurrent() > 0) {
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+        if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "paws"))) {
+            final String host = Browser.getHost(link.getDownloadURL());
+            final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+
+                @Override
+                public HashInfo getHashInfo() {
+                    return null;
                 }
-            }
+
+                @Override
+                public long getVerifiedFileSize() {
+                    return -1;
+                }
+
+                @Override
+                public String getHost() {
+                    return host;
+                }
+
+            };
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, maxChunks);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -236,12 +247,11 @@ public class AllDebridCom extends antiDDoSForHost {
             if (!isDirectLink(link)) {
                 if (br.containsHTML("range not ok")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                } else {
-                    /* unknown error */
-                    logger.severe("Error: Unknown Error");
-                    // disable hoster for 5min
-                    tempUnavailableHoster(5 * 60 * 1000l);
                 }
+                /* unknown error */
+                logger.severe("Error: Unknown Error");
+                // disable hoster for 5min
+                tempUnavailableHoster(5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
