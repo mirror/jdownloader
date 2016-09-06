@@ -136,7 +136,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
     @Override
