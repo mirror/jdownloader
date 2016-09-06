@@ -54,7 +54,7 @@ public class UsenetConfigPanel extends PluginConfigPanelNG {
                 StringBuilder supportedProtocols = new StringBuilder();
                 supportedProtocols.append(" (");
                 if (sslSupported) {
-                    supportedProtocols.append("SLL");
+                    supportedProtocols.append("SSL");
                 }
                 if (nonsslSupported) {
                     if (supportedProtocols.length() > 2) {
@@ -98,7 +98,7 @@ public class UsenetConfigPanel extends PluginConfigPanelNG {
                 StringBuilder supportedProtocols = new StringBuilder();
                 supportedProtocols.append(" (");
                 if (sslSupported) {
-                    supportedProtocols.append("SLL");
+                    supportedProtocols.append("SSL");
                 }
                 if (nonsslSupported) {
                     if (supportedProtocols.length() > 2) {
