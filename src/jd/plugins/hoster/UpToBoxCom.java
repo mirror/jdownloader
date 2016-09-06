@@ -57,7 +57,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?uptobox\\.com/[a-z0-9]{12}" })
 public class UpToBoxCom extends antiDDoSForHost {
 
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
@@ -131,6 +131,12 @@ public class UpToBoxCom extends antiDDoSForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 150);
     }
 
     @Override
