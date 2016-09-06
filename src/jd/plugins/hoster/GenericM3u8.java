@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
+import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,10 +35,8 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 /**
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8|$)" })
 public class GenericM3u8 extends PluginForHost {
-
-    private String customFavIconHost = null;
 
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,6 +51,11 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     @Override
+    public boolean isSpeedLimited(DownloadLink link, Account account) {
+        return false;
+    }
+
+    @Override
     public String getAGBLink() {
         return "";
     }
@@ -63,36 +66,36 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        String url = "http" + link.getDownloadURL().substring(4);
-        link.setUrlDownload(url);
+        if (link.getPluginPatternMatcher().startsWith("m3u8")) {
+            final String url = "http" + link.getPluginPatternMatcher().substring(4);
+            link.setPluginPatternMatcher(url);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        checkFFProbe(downloadLink, "Download a HLS Stream");
         if (downloadLink.getBooleanProperty("encrypted")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
         }
-
-        br = new Browser();
-
+        checkFFProbe(downloadLink, "Download a HLS Stream");
         this.setBrowserExclusive();
-
-        // first get
-        br.getPage(downloadLink.getDownloadURL());
-
-        HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getDownloadURL());
-        StreamInfo streamInfo = downloader.getProbe();
+        final String referer = downloadLink.getStringProperty("Referer", null);
+        if (referer != null) {
+            br.getPage(referer);
+        }
+        final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
+        final StreamInfo streamInfo = downloader.getProbe();
+        if (downloadLink.getBooleanProperty("encrypted")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+        }
         if (streamInfo == null) {
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String videoq = null;
         String audioq = null;
         String extension = "m4a";
-
         for (Stream s : streamInfo.getStreams()) {
             if ("video".equalsIgnoreCase(s.getCodec_type())) {
-
                 extension = "mp4";
                 if (s.getHeight() > 0) {
                     videoq = s.getHeight() + "p";
@@ -108,13 +111,10 @@ public class GenericM3u8 extends PluginForHost {
                     if (s.getCodec_name() != null) {
                         audioq = s.getCodec_name();
                     }
-
                 }
             }
         }
-
-        String name = new File(downloadLink.getDownloadURL()).getName();
-
+        String name = getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
         name = name.substring(0, name.length() - 5);
         if (videoq != null && audioq != null) {
             name += " (" + videoq + " " + audioq + ")";
@@ -123,7 +123,6 @@ public class GenericM3u8 extends PluginForHost {
         } else if (audioq != null) {
             name += " (" + audioq + ")";
         }
-
         name += "." + extension;
         downloadLink.setName(name);
         return AvailableStatus.TRUE;
@@ -131,16 +130,16 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
         if (downloadLink.getBooleanProperty("encrypted")) {
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
         }
-        // requestFileInformation(downloadLink);
-        String master = downloadLink.getDownloadURL();
-        dl = new HLSDownloader(downloadLink, br, master);
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        final String referer = downloadLink.getStringProperty("Referer", null);
+        if (referer != null) {
+            br.getPage(referer);
+        }
+        dl = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
         dl.startDownload();
-
     }
 
     @Override

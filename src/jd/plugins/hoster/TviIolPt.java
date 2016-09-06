@@ -25,11 +25,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvi.iol.pt", "tvi24.iol.pt", "tviplayer.iol.pt" }, urls = { "http://(?:www\\.)?tvi\\.iol\\.pt/mediacenter\\.html\\?(load=\\d+\\&gal_id=\\d+|mul_id=\\d+\\&load=\\d+&pagina=\\d+\\&pos=\\d+)", "http://(?:www\\.)?tvi24\\.iol\\.pt/videos/[^/]+/[^/]+/[^/]+", "http://(?:www\\.)?tviplayer\\.iol\\.pt/programa/[^/]+/[^/]+/video/[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvi.iol.pt", "tvi24.iol.pt", "tviplayer.iol.pt" }, urls = { "http://(?:www\\.)?tvi\\.iol\\.pt/mediacenter\\.html\\?(load=\\d+\\&gal_id=\\d+|mul_id=\\d+\\&load=\\d+&pagina=\\d+\\&pos=\\d+)", "http://(?:www\\.)?tvi24\\.iol\\.pt/videos/[^/]+/[^/]+/[^/]+", "http://(?:www\\.)?tviplayer\\.iol\\.pt/programa/[^/]+/[^/]+/video/[^/]+" })
 public class TviIolPt extends PluginForHost {
 
     private String clipUrl              = null;
@@ -144,7 +144,7 @@ public class TviIolPt extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(dllink);
-            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

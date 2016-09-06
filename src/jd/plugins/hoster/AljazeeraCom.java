@@ -30,12 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aljazeera.com" }, urls = { "https?://(?:www\\.)?aljazeera\\.com/[^<>\"]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aljazeera.com" }, urls = { "https?://(?:www\\.)?aljazeera\\.com/[^<>\"]+\\.html" })
 public class AljazeeraCom extends PluginForHost {
 
     public AljazeeraCom(PluginWrapper wrapper) {
@@ -80,7 +80,7 @@ public class AljazeeraCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         this.br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + this.videoid);
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

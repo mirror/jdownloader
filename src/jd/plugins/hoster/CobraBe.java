@@ -26,15 +26,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 /*
  * vrt.be network
  * old content handling --> var vars12345 = Array();
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" })
 public class CobraBe extends PluginForHost {
 
     public CobraBe(PluginWrapper wrapper) {
@@ -76,7 +76,7 @@ public class CobraBe extends PluginForHost {
         }
         final String hlsmanifest = hlsserver + "/" + hlsfile;
         br.getPage(hlsmanifest);
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -29,13 +29,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 32254 $", interfaceVersion = 3, names = { "svt.se" }, urls = { "https?://(?:www\\.)?(?:svt|svtplay)\\.se/.+" }) 
+@HostPlugin(revision = "$Revision: 32254 $", interfaceVersion = 3, names = { "svt.se" }, urls = { "https?://(?:www\\.)?(?:svt|svtplay)\\.se/.+" })
 public class SvtSe extends PluginForHost {
 
     public SvtSe(PluginWrapper wrapper) {
@@ -113,7 +113,7 @@ public class SvtSe extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
         }
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

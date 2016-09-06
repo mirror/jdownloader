@@ -378,6 +378,9 @@ public class HLSDownloader extends DownloadInterface {
                             if (StringUtils.isEmpty(line)) {
                                 continue;
                             }
+                            if (StringUtils.containsIgnoreCase(line, "EXT-X-KEY")) {
+                                link.setProperty("ENCRYPTED", true);
+                            }
                             if (sb.length() > 0) {
                                 sb.append("\n");
                             }

@@ -30,12 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotstar.com" }, urls = { "https?://(?:www\\.)?hotstar\\.com/.+/\\d{10}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotstar.com" }, urls = { "https?://(?:www\\.)?hotstar\\.com/.+/\\d{10}" })
 public class HotstarCom extends PluginForHost {
 
     public HotstarCom(PluginWrapper wrapper) {
@@ -143,7 +143,7 @@ public class HotstarCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked: This content is not downloadable in your country");
         }
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

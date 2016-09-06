@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -34,14 +35,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" })
 public class DplayCom extends PluginForHost {
 
     public DplayCom(PluginWrapper wrapper) {
@@ -224,7 +225,7 @@ public class DplayCom extends PluginForHost {
 
         HlsContainer hlsSelected = null;
         final String selectedResolution = getConfiguredVideoFormat();
-        final ArrayList<HlsContainer> allContainers = jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br);
+        final List<HlsContainer> allContainers = HlsContainer.getHlsQualities(this.br);
         for (final HlsContainer currentContainer : allContainers) {
             final String currResolution = currentContainer.getResolution();
             if (currResolution.equals(selectedResolution)) {
@@ -235,7 +236,7 @@ public class DplayCom extends PluginForHost {
         }
         if (hlsSelected == null) {
             logger.info("Failed to find user selected videoresolution - trying to download highest resolution possible instead ...");
-            hlsSelected = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(allContainers);
+            hlsSelected = HlsContainer.findBestVideoByBandwidth(allContainers);
         }
         if (hlsSelected == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -29,12 +29,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[^<>\"/]+/[A-Z]{4}\\d{8}/sesong\\-\\d+/episode\\-\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[^<>\"/]+/[A-Z]{4}\\d{8}/sesong\\-\\d+/episode\\-\\d+" })
 public class TvNrkNo extends PluginForHost {
 
     public TvNrkNo(PluginWrapper wrapper) {
@@ -133,7 +133,7 @@ public class TvNrkNo extends PluginForHost {
             hls_master = url_hds.replace("akamaihd.net/z/", "akamaihd.net/i/").replace("/manifest.f4m", "/master.m3u8");
         }
         this.br.getPage(hls_master);
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

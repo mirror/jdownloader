@@ -30,12 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kure.tv" }, urls = { "https?://(?:www\\.)?kure\\.tv/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kure.tv" }, urls = { "https?://(?:www\\.)?kure\\.tv/.+" })
 public class KureTv extends PluginForHost {
 
     public KureTv(PluginWrapper wrapper) {
@@ -89,7 +89,7 @@ public class KureTv extends PluginForHost {
             /* Not sure if such streams will ever work again. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 1 * 60 * 60 * 1000l);
         }
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

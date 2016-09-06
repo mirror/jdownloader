@@ -1,14 +1,31 @@
 package org.jdownloader.plugins.components.hls;
 
-
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
+import java.util.List;
 
 import jd.http.Browser;
 
+import org.appwork.utils.Regex;
+
 public class HlsContainer {
-    public static ArrayList<HlsContainer> getHlsQualities(final Browser br) throws Exception {
+
+    public static HlsContainer findBestVideoByBandwidth(final List<HlsContainer> media) {
+        if (media == null) {
+            return null;
+        }
+        HlsContainer best = null;
+        long bandwidth_highest = 0;
+        for (final HlsContainer hls : media) {
+            final long bandwidth_temp = hls.bandwidth;
+            if (bandwidth_temp > bandwidth_highest) {
+                bandwidth_highest = bandwidth_temp;
+                best = hls;
+            }
+        }
+        return best;
+    }
+
+    public static List<HlsContainer> getHlsQualities(final Browser br) throws Exception {
         final ArrayList<HlsContainer> hlsqualities = new ArrayList<HlsContainer>();
         final String[] medias = br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
         if (medias == null) {
@@ -62,6 +79,10 @@ public class HlsContainer {
     public int                 width;
     public int                 height;
     public long                bandwidth;
+
+    public String getResolution() {
+        return width + "x" + height;
+    }
 
     public HlsContainer() {
     }

@@ -30,11 +30,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://video\\.pbs\\.org/video/\\d+|https?://(?:www\\.)?pbs\\.org/.+|https?://player\\.pbs\\.org/[a-z]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://video\\.pbs\\.org/video/\\d+|https?://(?:www\\.)?pbs\\.org/.+|https?://player\\.pbs\\.org/[a-z]+/\\d+" })
 public class PbsOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -206,7 +206,7 @@ public class PbsOrg extends PluginForHost {
             /* Prefer hls as video- and audio bitrate is higher and also the resolution. */
             br.getPage(url_hls_base);
             handleResponsecodeErrors(this.br.getHttpConnection());
-            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
