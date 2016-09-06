@@ -91,6 +91,9 @@ public class FantastiCc extends PluginForHost {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
+            dllink = br.getRegex("src:\\s+(?:\"|\\')(http[^\"]+/(mp4|flv)/[^\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = Encoding.htmlDecode(dllink);
