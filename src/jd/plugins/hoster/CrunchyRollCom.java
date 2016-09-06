@@ -51,7 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -64,6 +63,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -331,7 +331,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
 
     private void downloadHls(final DownloadLink downloadLink) throws Exception {
         br.getPage(rtmp_path_or_hls_url);
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -658,23 +658,23 @@ public class CrunchyRollCom extends antiDDoSForHost {
         final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
         final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
 
-                    magicStr += magic2;
+        magicStr += magic2;
 
-                    // Calculate the hash using SHA-1
-                    final MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-                    final byte[] magicBytes = magicStr.getBytes();
-                    md.update(magicBytes, 0, magicBytes.length);
-                    final byte[] hashBytes = md.digest();
+        // Calculate the hash using SHA-1
+        final MessageDigest md = MessageDigest.getInstance("SHA-1");
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+        final byte[] magicBytes = magicStr.getBytes();
+        md.update(magicBytes, 0, magicBytes.length);
+        final byte[] hashBytes = md.digest();
 
-                    // Create the key using the given length
-                    final byte[] key = new byte[size];
-                    Arrays.fill(key, (byte) 0);
+        // Create the key using the given length
+        final byte[] key = new byte[size];
+        Arrays.fill(key, (byte) 0);
 
-                    for (int i = 0; i < key.length && i < hashBytes.length; i++) {
-                        key[i] = hashBytes[i];
-                    }
-                    return key;
+        for (int i = 0; i < key.length && i < hashBytes.length; i++) {
+            key[i] = hashBytes[i];
+        }
+        return key;
     }
 
     /**

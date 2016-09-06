@@ -29,11 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "player.bfi.org.uk" }, urls = { "https?://(?:www\\.)?player\\.bfi\\.org\\.uk/film/[a-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "player.bfi.org.uk" }, urls = { "https?://(?:www\\.)?player\\.bfi\\.org\\.uk/film/[a-z0-9\\-]+" })
 public class PlayerBfiOrgUk extends PluginForHost {
 
     public PlayerBfiOrgUk(PluginWrapper wrapper) {
@@ -97,7 +97,7 @@ public class PlayerBfiOrgUk extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage(url_hls_main);
-        final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

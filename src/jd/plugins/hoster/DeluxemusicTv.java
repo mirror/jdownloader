@@ -37,13 +37,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "http://deluxemusic\\.tvdecrypted/\\d+_\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "http://deluxemusic\\.tvdecrypted/\\d+_\\d+" })
 public class DeluxemusicTv extends PluginForHost {
 
     public DeluxemusicTv(PluginWrapper wrapper) {
@@ -156,7 +156,7 @@ public class DeluxemusicTv extends PluginForHost {
             final String hls_Server = streamer.replaceAll("rtmpe?://", "http://");
             final String url_hls_playlist = hls_Server + location + "/playlist.m3u8";
             this.br.getPage(url_hls_playlist);
-            final HlsContainer hlsbest = jd.plugins.decrypter.GenericM3u8Decrypter.findBestVideoByBandwidth(jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br));
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

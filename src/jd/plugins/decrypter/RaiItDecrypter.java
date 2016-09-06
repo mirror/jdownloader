@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -31,8 +32,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.decrypter.GenericM3u8Decrypter.HlsContainer;
 
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" })
@@ -320,7 +321,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         if (dllink.contains(".m3u8")) {
             this.br.getPage(dllink);
-            final ArrayList<HlsContainer> allqualities = jd.plugins.decrypter.GenericM3u8Decrypter.getHlsQualities(this.br);
+            final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
             for (final HlsContainer singleHlsQuality : allqualities) {
                 final DownloadLink dl = this.createDownloadlink(singleHlsQuality.downloadurl);
                 final String filename = title + "_" + singleHlsQuality.getStandardFilename();
