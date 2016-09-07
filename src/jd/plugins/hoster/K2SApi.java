@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,6 +25,7 @@ import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -1243,9 +1245,6 @@ public abstract class K2SApi extends PluginForHost {
      **/
     protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
-    protected static AtomicLong          lastFreeDownloadTimestamp    = new AtomicLong(-1l);
-    protected static AtomicInteger       freeDownloadsRunning         = new AtomicInteger(0);
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -1261,15 +1260,23 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      */
     protected void controlSlot(final int num, final Account account) {
-        synchronized (CTRLLOCK) {
-            if (isFree) {
+        if (isFree) {
+            synchronized (freeDownloadHandling) {
+                final AbstractProxySelectorImpl proxySelector = getDownloadLink().getDownloadLinkController().getProxySelector();
+                AtomicLong[] store = freeDownloadHandling.get(proxySelector);
+                if (store == null) {
+                    store = new AtomicLong[] { new AtomicLong(-1), new AtomicLong(0) };
+                    freeDownloadHandling.put(proxySelector, store);
+                }
                 if (num == 1) {
-                    lastFreeDownloadTimestamp.set(System.currentTimeMillis());
-                    freeDownloadsRunning.incrementAndGet();
+                    store[0].set(System.currentTimeMillis());
+                    store[1].incrementAndGet();
                 } else if (num == -1) {
-                    freeDownloadsRunning.decrementAndGet();
+                    store[1].decrementAndGet();
                 }
             }
+        }
+        synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
                 maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
@@ -1282,17 +1289,25 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private final long nextFreeDownloadSlotInterval = 2 * 60 * 60 * 1000l;
+    protected static WeakHashMap<AbstractProxySelectorImpl, AtomicLong[]> freeDownloadHandling         = new WeakHashMap<AbstractProxySelectorImpl, AtomicLong[]>();
+
+    private final long                                                    nextFreeDownloadSlotInterval = 2 * 60 * 60 * 1000l;
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
         if (account == null || account.getBooleanProperty("free", false)) {
-            final int freeDownloadsRunning = K2SApi.freeDownloadsRunning.get();
-            if (freeDownloadsRunning > 0 && System.currentTimeMillis() - lastFreeDownloadTimestamp.get() > nextFreeDownloadSlotInterval) {
-                return Math.min(freeDownloadsRunning + 1, 20);
+            final AtomicLong[] store;
+            synchronized (freeDownloadHandling) {
+                store = freeDownloadHandling.get(proxy);
+            }
+            if (store != null) {
+                final long freeDownloadsRunning = store[1].get();
+                if (freeDownloadsRunning > 0 && System.currentTimeMillis() - store[0].get() > nextFreeDownloadSlotInterval) {
+                    return Math.min((int) freeDownloadsRunning + 1, 20);
+                }
             }
         }
-        return super.getMaxSimultanDownload(link, account);
+        return super.getMaxSimultanDownload(link, account, proxy);
     }
 
     /* Reconnect workaround methods */

@@ -72,38 +72,38 @@ public class DownloadLinkCandidateSelector {
     }
 
     private final Comparator<CandidateResultHolder>                                                        RESULT_SORTER = new Comparator<CandidateResultHolder>() {
-        private final DownloadLinkCandidateResult.RESULT[] FINAL_RESULT_SORT_ORDER = new RESULT[] { DownloadLinkCandidateResult.RESULT.SKIPPED, DownloadLinkCandidateResult.RESULT.ACCOUNT_REQUIRED, DownloadLinkCandidateResult.RESULT.PLUGIN_DEFECT, DownloadLinkCandidateResult.RESULT.FATAL_ERROR };
+                                                                                                                             private final DownloadLinkCandidateResult.RESULT[] FINAL_RESULT_SORT_ORDER = new RESULT[] { DownloadLinkCandidateResult.RESULT.SKIPPED, DownloadLinkCandidateResult.RESULT.ACCOUNT_REQUIRED, DownloadLinkCandidateResult.RESULT.PLUGIN_DEFECT, DownloadLinkCandidateResult.RESULT.FATAL_ERROR };
 
-        private int indexOf(RESULT o1) {
-            for (int index = 0; index < FINAL_RESULT_SORT_ORDER.length; index++) {
-                if (FINAL_RESULT_SORT_ORDER[index] == o1) {
-                    return index;
-                }
-            }
-            return -1;
-        }
+                                                                                                                             private int indexOf(RESULT o1) {
+                                                                                                                                 for (int index = 0; index < FINAL_RESULT_SORT_ORDER.length; index++) {
+                                                                                                                                     if (FINAL_RESULT_SORT_ORDER[index] == o1) {
+                                                                                                                                         return index;
+                                                                                                                                     }
+                                                                                                                                 }
+                                                                                                                                 return -1;
+                                                                                                                             }
 
-        private int compare(long x, long y) {
-            return (x < y) ? -1 : ((x == y) ? 0 : 1);
-        }
+                                                                                                                             private int compare(long x, long y) {
+                                                                                                                                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                                                                             }
 
-        @Override
-        public int compare(CandidateResultHolder o1, CandidateResultHolder o2) {
-            long i1 = indexOf(o1.getResult().getResult());
-            long i2 = indexOf(o2.getResult().getResult());
-            if (i1 >= 0 && i2 < 0) {
-                return -1;
-            } else if (i2 >= 0 && i1 < 0) {
-                return 1;
-            } else if (i1 >= 0 && i2 >= 0) {
-                return compare(i1, i2);
-            } else {
-                i1 = o1.getResult().getRemainingTime();
-                i2 = o2.getResult().getRemainingTime();
-                return -compare(i1, i2);
-            }
-        };
-    };
+                                                                                                                             @Override
+                                                                                                                             public int compare(CandidateResultHolder o1, CandidateResultHolder o2) {
+                                                                                                                                 long i1 = indexOf(o1.getResult().getResult());
+                                                                                                                                 long i2 = indexOf(o2.getResult().getResult());
+                                                                                                                                 if (i1 >= 0 && i2 < 0) {
+                                                                                                                                     return -1;
+                                                                                                                                 } else if (i2 >= 0 && i1 < 0) {
+                                                                                                                                     return 1;
+                                                                                                                                 } else if (i1 >= 0 && i2 >= 0) {
+                                                                                                                                     return compare(i1, i2);
+                                                                                                                                 } else {
+                                                                                                                                     i1 = o1.getResult().getRemainingTime();
+                                                                                                                                     i2 = o2.getResult().getRemainingTime();
+                                                                                                                                     return -compare(i1, i2);
+                                                                                                                                 }
+                                                                                                                             };
+                                                                                                                         };
 
     private final DownloadSession                                                                          session;
 
@@ -187,7 +187,7 @@ public class DownloadLinkCandidateSelector {
         final CachedAccount cachedAccount = candidate.getCachedAccount();
         final String candidatePlugin = cachedAccount.getPlugin().getHost();
         final Account candidateAccount = cachedAccount.getAccount();
-        int maxPluginConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, candidateAccount);
+        int maxPluginConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, candidateAccount, candidate.getProxySelector());
         if (maxPluginConcurrentAccount == 0) {
             final String plugin = cachedAccount.getPlugin().getLazyP().getClassName();
             if (candidateAccount == null) {
@@ -211,9 +211,9 @@ public class DownloadLinkCandidateSelector {
             /**
              * not a forced candidate and no special rules and already reached max concurrent downloads
              */
-             if (DownloadWatchDog.getInstance().checkForAdditionalDownloadSlots(session)) {
-                 return DownloadLinkCandidatePermission.OK_SPEED_EXTENSION;
-             }
+            if (DownloadWatchDog.getInstance().checkForAdditionalDownloadSlots(session)) {
+                return DownloadLinkCandidatePermission.OK_SPEED_EXTENSION;
+            }
             return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
         }
         int forcedDownloads = 0;
