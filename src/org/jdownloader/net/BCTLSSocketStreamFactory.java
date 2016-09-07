@@ -169,7 +169,9 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
                 try {
                     protocol.close();
                 } finally {
-                    socketStream.getSocket().close();
+                    if (socketStream.getSocket() != null) {
+                        socketStream.getSocket().close();
+                    }
                 }
             }
 
