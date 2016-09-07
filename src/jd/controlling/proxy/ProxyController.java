@@ -285,6 +285,7 @@ public class ProxyController implements ProxySelectorInterface {
                     switch (proxy.getType()) {
                     case NONE:
                     case HTTP:
+                    case HTTPS:
                     case SOCKS4:
                     case SOCKS5:
                     case DIRECT:
@@ -314,6 +315,7 @@ public class ProxyController implements ProxySelectorInterface {
                 protected Void run() throws RuntimeException {
                     switch (proxy.getType()) {
                     case HTTP:
+                    case HTTPS:
                     case SOCKS4:
                     case SOCKS5:
                     case DIRECT:
@@ -488,6 +490,7 @@ public class ProxyController implements ProxySelectorInterface {
         for (AbstractProxySelectorImpl sel : getList()) {
             switch (sel.getType()) {
             case HTTP:
+            case HTTPS:
             case SOCKS4:
             case SOCKS5:
             case NONE:

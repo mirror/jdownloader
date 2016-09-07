@@ -15,6 +15,14 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.ConnectionBan;
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -37,14 +45,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.FilterList;
-
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.ConnectionBan;
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
 
 public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
@@ -132,7 +132,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
         });
         addColumn(new OrderColumn());
-        DefaultComboBoxModel<AbstractProxySelectorImpl.Type> model = new DefaultComboBoxModel<AbstractProxySelectorImpl.Type>(new AbstractProxySelectorImpl.Type[] { AbstractProxySelectorImpl.Type.HTTP, AbstractProxySelectorImpl.Type.SOCKS5, AbstractProxySelectorImpl.Type.SOCKS4 });
+        DefaultComboBoxModel<AbstractProxySelectorImpl.Type> model = new DefaultComboBoxModel<AbstractProxySelectorImpl.Type>(new AbstractProxySelectorImpl.Type[] { AbstractProxySelectorImpl.Type.HTTP, AbstractProxySelectorImpl.Type.HTTPS, AbstractProxySelectorImpl.Type.SOCKS5, AbstractProxySelectorImpl.Type.SOCKS4 });
         this.addColumn(new ExtComboColumn<AbstractProxySelectorImpl, AbstractProxySelectorImpl.Type>(_GUI.T.gui_column_proxytype(), model) {
 
             @Override
@@ -178,6 +178,8 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return _GUI.T.gui_column_proxytype_direct_tt();
                 case HTTP:
                     return _GUI.T.gui_column_proxytype_http_tt();
+                case HTTPS:
+                    return _GUI.T.gui_column_proxytype_https_tt();
                 case SOCKS5:
                     return _GUI.T.gui_column_proxytype_socks5_tt();
                 case SOCKS4:
@@ -196,6 +198,8 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
                     return _GUI.T.gui_column_proxytype_direct();
                 case HTTP:
                     return _GUI.T.gui_column_proxytype_http();
+                case HTTPS:
+                    return _GUI.T.gui_column_proxytype_https();
                 case NONE:
                     return _GUI.T.gui_column_proxytype_no_proxy();
                 case SOCKS4:
@@ -424,6 +428,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             public boolean isEditable(AbstractProxySelectorImpl obj) {
                 switch (obj.getType()) {
                 case HTTP:
+                case HTTPS:
                 case PAC:
                     return true;
                 default:

@@ -288,6 +288,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "HTTP" })
     String jd_gui_swing_dialog_ProxyDialog_http();
 
+    @Default(lngs = { "en" }, values = { "HTTPS" })
+    String jd_gui_swing_dialog_ProxyDialog_https();
+
     @Default(lngs = { "en" }, values = { "Password:" })
     String jd_gui_swing_dialog_ProxyDialog_password();
 
@@ -441,6 +444,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "HTTP Proxy" })
     String gui_column_proxytype_http();
 
+    @Default(lngs = { "en" }, values = { "HTTPS Proxy" })
+    String gui_column_proxytype_https();
+
     @Default(lngs = { "en" }, values = { "Socks 5 Proxy" })
     String gui_column_proxytype_socks5();
 
@@ -458,6 +464,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Hypertext Transfer Protocol (HTTP Proxy)" })
     String gui_column_proxytype_http_tt();
+
+    @Default(lngs = { "en" }, values = { "Hypertext Transfer Protocol Secure(HTTPS Proxy)" })
+    String gui_column_proxytype_https_tt();
 
     @Default(lngs = { "en" }, values = { "SOCKS-5-Protocol Proxy Server " })
     String gui_column_proxytype_socks5_tt();

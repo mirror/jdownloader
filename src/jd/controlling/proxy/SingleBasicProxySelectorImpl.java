@@ -89,6 +89,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         switch (getProxy().getType()) {
         case HTTP:
             return Type.HTTP;
+        case HTTPS:
+            return Type.HTTPS;
         case SOCKS4:
             return Type.SOCKS4;
         case SOCKS5:
@@ -102,6 +104,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         switch (value) {
         case HTTP:
             proxy.setType(TYPE.HTTP);
+            break;
+        case HTTPS:
+            proxy.setType(TYPE.HTTPS);
             break;
         case SOCKS4:
             proxy.setType(TYPE.SOCKS4);

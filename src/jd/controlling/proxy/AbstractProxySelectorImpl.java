@@ -26,6 +26,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         SOCKS4,
         SOCKS5,
         HTTP,
+        HTTPS,
         PAC
     }
 

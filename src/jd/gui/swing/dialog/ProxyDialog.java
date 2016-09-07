@@ -17,6 +17,13 @@ import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -37,13 +44,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.InternetConnectionSettings;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
-import net.miginfocom.swing.MigLayout;
 
 public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> implements CaretListener {
 
@@ -104,9 +104,9 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
         String[] types = null;
         if (JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
-            types = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_pac() };
+            types = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_https(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_pac() };
         } else {
-            types = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct() };
+            types = new String[] { _GUI.T.jd_gui_swing_dialog_ProxyDialog_http(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_https(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI.T.jd_gui_swing_dialog_ProxyDialog_direct() };
 
         }
         cmbType = new JComboBox(types);
@@ -199,7 +199,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                         }
                     };
                 } catch (IOException e) {
-                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                 }
                 return null;
             }
@@ -283,6 +283,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
         switch (cmbType.getSelectedIndex()) {
         case 0:
+        case 1:
             // http
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
             panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
@@ -305,7 +306,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 txtPort.setText("8080");
             }
             break;
-        case 1:
+        case 2:
             // socks5
 
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
@@ -329,7 +330,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 txtPort.setText("1080");
             }
             break;
-        case 2:
+        case 3:
             // socks4
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
             panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
@@ -349,7 +350,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 txtPort.setText("1080");
             }
             break;
-        case 3:
+        case 4:
             // direct
             panel.setLayout(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[]"));
             panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
@@ -367,7 +368,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_local());
             break;
 
-        case 4:
+        case 5:
             // pac
             if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
                 throw new WTFException("Not possible");
@@ -419,20 +420,19 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             return null;
         }
         try {
-
             HTTPProxy.TYPE type = null;
             if (cmbType.getSelectedIndex() == 0) {
                 type = HTTPProxy.TYPE.HTTP;
             } else if (cmbType.getSelectedIndex() == 1) {
-                type = HTTPProxy.TYPE.SOCKS5;
+                type = HTTPProxy.TYPE.HTTPS;
             } else if (cmbType.getSelectedIndex() == 2) {
-                type = HTTPProxy.TYPE.SOCKS4;
+                type = HTTPProxy.TYPE.SOCKS5;
             } else if (cmbType.getSelectedIndex() == 3) {
+                type = HTTPProxy.TYPE.SOCKS4;
+            } else if (cmbType.getSelectedIndex() == 4) {
                 type = HTTPProxy.TYPE.DIRECT;
                 return new SingleDirectGatewaySelector(HTTPProxy.parseHTTPProxy("direct://" + txtHost.getText()));
-
-            } else if (cmbType.getSelectedIndex() == 4) {
-
+            } else if (cmbType.getSelectedIndex() == 5) {
                 return new PacProxySelectorImpl(txtHost.getText(), txtUser.getText(), txtPass.getText());
             } else {
                 return null;
