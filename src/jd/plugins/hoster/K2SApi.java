@@ -15,17 +15,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -49,6 +44,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -1242,6 +1243,9 @@ public abstract class K2SApi extends PluginForHost {
      **/
     protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
+    protected static AtomicLong          lastFreeDownloadTimestamp    = new AtomicLong(-1l);
+    protected static AtomicInteger       freeDownloadsRunning         = new AtomicInteger(0);
+
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -1258,6 +1262,14 @@ public abstract class K2SApi extends PluginForHost {
      */
     protected void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
+            if (isFree) {
+                if (num == 1) {
+                    lastFreeDownloadTimestamp.set(System.currentTimeMillis());
+                    freeDownloadsRunning.incrementAndGet();
+                } else if (num == -1) {
+                    freeDownloadsRunning.decrementAndGet();
+                }
+            }
             if (account == null) {
                 int was = maxFree.get();
                 maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
@@ -1268,6 +1280,19 @@ public abstract class K2SApi extends PluginForHost {
                 logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
             }
         }
+    }
+
+    private final long nextFreeDownloadSlotInterval = 2 * 60 * 60 * 1000l;
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (account == null || account.getBooleanProperty("free", false)) {
+            final int freeDownloadsRunning = K2SApi.freeDownloadsRunning.get();
+            if (freeDownloadsRunning > 0 && System.currentTimeMillis() - lastFreeDownloadTimestamp.get() > nextFreeDownloadSlotInterval) {
+                return Math.min(freeDownloadsRunning + 1, 20);
+            }
+        }
+        return super.getMaxSimultanDownload(link, account);
     }
 
     /* Reconnect workaround methods */
