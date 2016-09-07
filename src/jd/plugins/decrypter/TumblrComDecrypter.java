@@ -44,6 +44,9 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
@@ -75,8 +78,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private String                  parameter              = null;
     private String                  passCode               = null;
 
-    private Browser prepBR(final Browser br) {
-        return br;
+    private boolean                 useOriginalFilename    = false;
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return TumblrComConfig.class;
     }
 
     @SuppressWarnings("deprecation")
@@ -90,15 +96,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             /* Remove this from our url as it is only needed for this decrypter internally. */
             parameter = parameter.replace("?password=" + passCode, "");
         }
-        boolean loggedin = false;
+        useOriginalFilename = PluginJsonConfig.get(TumblrComConfig.class).isUseOriginalFilenameEnabled();
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
             /* Login whenever possible to be able to download account-only-stuff */
             try {
                 jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
-                loggedin = true;
             } catch (final Throwable e) {
-
             }
         }
         try {
@@ -326,7 +330,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     extension = ".mp4";
                 }
                 dl.setLinkID(getHost() + "://" + puid);
-                dl.setFinalFileName(filename + extension);
+                if (!useOriginalFilename) {
+                    dl.setFinalFileName(filename + extension);
+                }
             } else {
                 dl = createDownloadlink("directhttp://" + externID);
                 dl.setLinkID(getHost() + "://" + puid);
@@ -372,7 +378,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
                 // determine file extension
                 final String ext = getFileNameExtensionFromURL(pic);
-                dl.setFinalFileName(filename + ext);
+                if (!useOriginalFilename) {
+                    dl.setFinalFileName(filename + ext);
+                }
                 setMD5Hash(dl, pic);
                 setImageLinkID(dl, pic, puid);
                 if (hashTagsStr != null) {
@@ -450,7 +458,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     }
                     // cleanup...
                     final String filename = setFileName(cleanupName(df.format(count) + " - " + fpName), puid) + getFileNameExtensionFromString(url);
-                    dl.setFinalFileName(filename);
+                    if (!useOriginalFilename) {
+                        dl.setFinalFileName(filename);
+                    }
                     dl.setAvailable(true);
                     setMD5Hash(dl, url);
                     setImageLinkID(dl, url, puid);
@@ -540,7 +550,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         }
         // determine file extension
         final String ext = getFileNameExtensionFromURL(externID);
-        dl.setFinalFileName(filename + ext);
+        if (!useOriginalFilename) {
+            dl.setFinalFileName(filename + ext);
+        }
         setMD5Hash(dl, externID);
         setImageLinkID(dl, externID, puid);
         dl.setAvailable(true);
@@ -751,7 +763,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     if (post_url != null) {
                         dl.setContentUrl(post_url);
                     }
-                    if (filename != null) {
+                    if (filename != null && !useOriginalFilename) {
                         dl.setName(filename);
                     }
                     fp.add(dl);

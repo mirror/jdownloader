@@ -1,4 +1,4 @@
-package org.jdownloader.plugins.components;
+package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -10,7 +10,7 @@ import org.jdownloader.plugins.config.Type;
 public interface WallPapersCraftComConfig extends PluginConfigInterface {
     public static class TRANSLATION {
 
-        public String getUseSSLForDownload_label() {
+        public String isPreferOriginalResolution_label() {
             return "Prefer original resolution?";
         }
     }
