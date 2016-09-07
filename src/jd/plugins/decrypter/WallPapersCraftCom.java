@@ -12,7 +12,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.WallPapersCraftComConfig;
+import org.jdownloader.plugins.components.config.WallPapersCraftComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
