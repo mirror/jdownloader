@@ -219,6 +219,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         case HTTP:
             sb.append("http://");
             break;
+        case HTTPS:
+            sb.append("https://");
+            break;
         case SOCKS4:
             sb.append("socks4://");
             break;
