@@ -141,10 +141,12 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 }
                 title = date_underscore + "_raitv_" + title;
                 if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
-                    /* User wants to have a specified video only --> Clear list, add only this entry, then step out of the loop */
-                    this.decryptedLinks.clear();
+                    /* User wants to have a specified video only and we found it. */
                     decryptRelinker(relinker, title, null, fp, description);
                     return;
+                } else if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && !videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
+                    /* User wants to have a specified video only but this is not the one he wants --> Skip this */
+                    continue;
                 } else {
                     /* Simply add video */
                     decryptRelinker(relinker, title, null, fp, description);

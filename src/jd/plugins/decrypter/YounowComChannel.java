@@ -32,7 +32,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+(?:/\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+(?:/\\d+)?" })
 public class YounowComChannel extends PluginForDecrypt {
 
     public YounowComChannel(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class YounowComChannel extends PluginForDecrypt {
         } else {
             fpName = username;
             br.getPage(parameter);
-            br.getPage("https://www.younow.com/php/api/broadcast/info/user=" + username + "/curId=0");
+            br.getPage("https://api.younow.com/php/api/broadcast/info/user=" + username + "/curId=0");
             int addedlinks = 0;
             int addedlinks_temp = 0;
             String userid = this.br.getRegex("\"userId\":\"(\\d+)\"").getMatch(0);

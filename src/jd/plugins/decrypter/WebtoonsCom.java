@@ -23,13 +23,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z]{2}/[^/]+/[^/]+/[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z]{2}/[^/]+/[^/]+/(?:[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+|list\\?title_no=\\d+)" })
 public class WebtoonsCom extends PluginForDecrypt {
 
     public WebtoonsCom(PluginWrapper wrapper) {
@@ -45,25 +46,61 @@ public class WebtoonsCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String titlenumber = new Regex(parameter, "title_no=(\\d+)").getMatch(0);
+        final String episodenumber = new Regex(parameter, "episode_no=(\\d+)").getMatch(0);
         String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
-        final String[] links = br.getRegex("class=\"_images\" data\\-url=\"(http[^<>\"]*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final DecimalFormat df = new DecimalFormat("0000");
-        int counter = 0;
-        for (final String singleLink : links) {
-            counter++;
-            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-            String name = this.getFileNameFromURL(new URL(singleLink));
-            if (name == null) {
-                name = ".jpg";
+        String[] links;
+        if (episodenumber != null) {
+            /* Decrypt single episode */
+            links = br.getRegex("class=\"_images\" data\\-url=\"(http[^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            name = df.format(counter) + "_" + name;
-            dl.setAvailable(true);
-            dl.setFinalFileName(name);
-            decryptedLinks.add(dl);
+            final DecimalFormat df = new DecimalFormat("0000");
+            int counter = 0;
+            for (final String singleLink : links) {
+                counter++;
+                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                String name = getFileNameFromURL(new URL(singleLink));
+                if (name == null) {
+                    name = ".jpg";
+                }
+                name = df.format(counter) + "_" + name;
+                dl.setAvailable(true);
+                dl.setFinalFileName(name);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            int maxpage = 1;
+            int pagetemp = 0;
+            final String[] pages = this.br.getRegex(titlenumber + "\\&page=(\\d+)").getColumn(0);
+            for (final String page_str : pages) {
+                pagetemp = Integer.parseInt(page_str);
+                if (pagetemp > maxpage) {
+                    maxpage = pagetemp;
+                }
+            }
+            for (int currpage = 1; currpage <= maxpage; currpage++) {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                }
+                if (currpage > 1) {
+                    this.br.getPage(parameter + "&page=" + currpage);
+                }
+                /* Find urls of all episode of a title --> Re-Add these single episodes to the crawler. */
+                links = br.getRegex("<li id=\"episode_\\d+\">[^<>]*?<a href=\"(https?://[^<>\"]+title_no=" + titlenumber + "\\&episode_no=\\d+)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    /* Maybe we already found everything or there simply ism't anything. */
+                    break;
+                }
+                for (final String singleLink : links) {
+                    decryptedLinks.add(this.createDownloadlink(singleLink));
+                }
+            }
+            if (decryptedLinks.size() == 0) {
+                return null;
+            }
         }
 
         if (fpName != null) {
@@ -74,5 +111,4 @@ public class WebtoonsCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
