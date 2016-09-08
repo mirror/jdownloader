@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -115,9 +116,11 @@ public class GenericM3u8 extends PluginForHost {
             }
         }
         String name = getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
-        name = name.substring(0, name.length() - 5);
+        if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
+            name = name.substring(0, name.length() - 5);
+        }
         if (videoq != null && audioq != null) {
-            name += " (" + videoq + " " + audioq + ")";
+            name += " (" + videoq + "_" + audioq + ")";
         } else if (videoq != null) {
             name += " (" + videoq + ")";
         } else if (audioq != null) {
