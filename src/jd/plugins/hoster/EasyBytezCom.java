@@ -38,12 +38,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -74,6 +68,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easybytez.com" }, urls = { "https?://(www\\.)?easybytez\\.com/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
@@ -1585,16 +1585,50 @@ public class EasyBytezCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      */
+    private boolean              downloadFlag   = false;
+    private static AtomicInteger freeSlotsInUse = new AtomicInteger(0);
+    private static AtomicInteger premSlotsInUse = new AtomicInteger(0);
+
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
-            if (account == null) {
-                int was = maxFree.get();
-                maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-                logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
+            if (num == 1) {
+                if (downloadFlag == false) {
+                    if (account == null) {
+                        freeSlotsInUse.incrementAndGet();
+                    } else {
+                        premSlotsInUse.incrementAndGet();
+                    }
+                    downloadFlag = true;
+                } else {
+                    return;
+                }
             } else {
-                int was = maxPrem.get();
-                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 5)));
-                logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+                if (downloadFlag) {
+                    if (account == null) {
+                        freeSlotsInUse.decrementAndGet();
+                    } else {
+                        premSlotsInUse.decrementAndGet();
+                    }
+                    downloadFlag = false;
+                } else {
+                    if (account == null) {
+                        final int was = maxFree.get();
+                        maxFree.set(Math.max(1, was - 1));
+                        logger.info("maxFree(Penalty) was=" + was + "|now = " + maxFree.get());
+                    } else {
+                        final int was = maxPrem.get();
+                        maxPrem.set(Math.max(1, was - 1));
+                        logger.info("maxPrem(Penalty) was=" + was + "|now = " + maxPrem.get());
+                    }
+                    return;
+                }
+            }
+            if (account == null) {
+                final int was = maxFree.getAndSet(Math.min(freeSlotsInUse.get() + 1, totalMaxSimultanFreeDownload.get()));
+                logger.info("maxFree(Slot) was=" + was + "|now = " + maxFree.get());
+            } else {
+                final int was = maxPrem.getAndSet(Math.min(premSlotsInUse.get() + 1, account.getIntegerProperty("totalMaxSim", 5)));
+                logger.info("maxPrem(Slot) was=" + was + "|now = " + maxPrem.get());
             }
         }
     }
