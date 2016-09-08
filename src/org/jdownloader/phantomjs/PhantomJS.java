@@ -720,11 +720,19 @@ public class PhantomJS implements HttpRequestHandler {
         execute(jobID, domjs + "; endJob(" + jobID + ",null);");
     }
 
-    public String execute(long jobID, String js) throws IOException, InterruptedException {
+    public synchronized String execute(long jobID, String js) throws IOException, InterruptedException {
         final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if (isResultOkay(result)) {
             return waitForJob(jobID);
         } else {
+            final Request request = ipcBrowser.getRequest();
+            if (request != null) {
+                try {
+                    logger.info(request.printHeaders());
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+            }
             throw new IOException("IPC JD->PJS Failed: '" + result + "'");
         }
     }

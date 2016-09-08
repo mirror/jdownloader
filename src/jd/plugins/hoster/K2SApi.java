@@ -1259,6 +1259,10 @@ public abstract class K2SApi extends PluginForHost {
      *            (+1|-1)
      * @author raztoki
      */
+    private boolean                      downloadFlag                 = false;
+    private static AtomicInteger         freeSlotsInUse               = new AtomicInteger(0);
+    private static AtomicInteger         premSlotsInUse               = new AtomicInteger(0);
+
     protected void controlSlot(final int num, final Account account) {
         if (isFree) {
             synchronized (freeDownloadHandling) {
@@ -1277,14 +1281,44 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         synchronized (CTRLLOCK) {
-            if (account == null) {
-                int was = maxFree.get();
-                maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-                logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
+            if (num == 1) {
+                if (downloadFlag == false) {
+                    if (account == null) {
+                        freeSlotsInUse.incrementAndGet();
+                    } else {
+                        premSlotsInUse.incrementAndGet();
+                    }
+                    downloadFlag = true;
+                } else {
+                    return;
+                }
             } else {
-                int was = maxPrem.get();
-                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
-                logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+                if (downloadFlag) {
+                    if (account == null) {
+                        freeSlotsInUse.decrementAndGet();
+                    } else {
+                        premSlotsInUse.decrementAndGet();
+                    }
+                    downloadFlag = false;
+                } else {
+                    if (account == null) {
+                        final int was = maxFree.get();
+                        maxFree.set(Math.max(1, was - 1));
+                        logger.info("maxFree(Penalty) was=" + was + "|now = " + maxFree.get());
+                    } else {
+                        final int was = maxPrem.get();
+                        maxPrem.set(Math.max(1, was - 1));
+                        logger.info("maxPrem(Penalty) was=" + was + "|now = " + maxPrem.get());
+                    }
+                    return;
+                }
+            }
+            if (account == null) {
+                final int was = maxFree.getAndSet(Math.min(freeSlotsInUse.get() + 1, totalMaxSimultanFreeDownload.get()));
+                logger.info("maxFree(Slot) was=" + was + "|now = " + maxFree.get());
+            } else {
+                final int was = maxPrem.getAndSet(Math.min(premSlotsInUse.get() + 1, account.getIntegerProperty("totalMaxSim", 20)));
+                logger.info("maxPrem(Slot) was=" + was + "|now = " + maxPrem.get());
             }
         }
     }
