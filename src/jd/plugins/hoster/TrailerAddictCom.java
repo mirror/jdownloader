@@ -21,6 +21,8 @@ import java.io.IOException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,9 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "traileraddict.com" }, urls = { "http://(?:www\\.)?traileraddict\\.com/(?:trailer/)?[a-z0-9\\-]+/[a-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "traileraddict.com" }, urls = { "http://(?:www\\.)?traileraddict\\.com/(?:trailer/)?[a-z0-9\\-]+/[a-z0-9\\-]+" })
 public class TrailerAddictCom extends PluginForHost {
 
     private String dllink = null;
@@ -77,7 +77,7 @@ public class TrailerAddictCom extends PluginForHost {
             /* Not a video / Nothing for us to download! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?) \\- Trailer Addict</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         String vid = br.getRegex("/emd/(\\d+)").getMatch(0);
         if (vid == null) {
             vid = br.getRegex("\\'flashvars\\', \\'trailerid=(\\d+)").getMatch(0);
