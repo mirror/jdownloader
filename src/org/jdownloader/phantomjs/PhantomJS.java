@@ -557,8 +557,9 @@ public class PhantomJS implements HttpRequestHandler {
                         if (phantomProcessThread != null) {
                             Thread.sleep(5000);
                             final String result;
+                            final Browser browser = ipcBrowser.cloneBrowser();
                             try {
-                                result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+                                result = browser.postPage("http://127.0.0.1:" + phantomJSPort + "/ping", new UrlQuery().addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
                             } catch (Throwable e) {
                                 if (--tryAgain == 0) {
                                     throw e;
@@ -568,6 +569,14 @@ public class PhantomJS implements HttpRequestHandler {
                                 }
                             }
                             if (!isResultOkay(result)) {
+                                final Request request = browser.getRequest();
+                                if (request != null) {
+                                    try {
+                                        logger.info(request.printHeaders());
+                                    } catch (final Throwable e) {
+                                        logger.log(e);
+                                    }
+                                }
                                 throw new IOException("IPC JD->PJS Failed: '" + result + "'");
                             }
                             tryAgain = maxTry;
@@ -686,13 +695,22 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     public Image getScreenShot() throws InterruptedException, IOException {
+        final Browser browser = ipcBrowser.cloneBrowser();
         final long jobID = new UniqueAlltimeID().getID();
-        final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new UrlQuery().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+        final String result = browser.postPage("http://127.0.0.1:" + phantomJSPort + "/screenshot", new UrlQuery().addAndReplace("jobID", jobID + "").addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if (isResultOkay(result)) {
             final String base64JSon = waitForJob(jobID);
             final String base64 = JSonStorage.restoreFromString(base64JSon, TypeRef.STRING);
             return ImageIO.read(new ByteArrayInputStream(Base64.decode(base64)));
         } else {
+            final Request request = browser.getRequest();
+            if (request != null) {
+                try {
+                    logger.info(request.printHeaders());
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+            }
             throw new IOException("IPC JD->PJS Failed: '" + result + "'");
         }
     }
@@ -720,12 +738,13 @@ public class PhantomJS implements HttpRequestHandler {
         execute(jobID, domjs + "; endJob(" + jobID + ",null);");
     }
 
-    public synchronized String execute(long jobID, String js) throws IOException, InterruptedException {
-        final String result = ipcBrowser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
+    public String execute(long jobID, String js) throws IOException, InterruptedException {
+        final Browser browser = ipcBrowser.cloneBrowser();
+        final String result = browser.postPage("http://127.0.0.1:" + phantomJSPort + "/exec", new UrlQuery().addAndReplace("js", URLEncode.encodeRFC2396(js)).addAndReplace("accessToken", URLEncode.encodeRFC2396(accessToken)));
         if (isResultOkay(result)) {
             return waitForJob(jobID);
         } else {
-            final Request request = ipcBrowser.getRequest();
+            final Request request = browser.getRequest();
             if (request != null) {
                 try {
                     logger.info(request.printHeaders());
