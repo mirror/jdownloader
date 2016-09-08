@@ -197,7 +197,7 @@ public class EHentaiOrg extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
+        final String ext = getFileNameExtensionFromString(dllink, ".png");
         // package customiser altered, or user altered value, we need to update this value.
         if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
             downloadLink.setForcedFileName(namepart + ext);

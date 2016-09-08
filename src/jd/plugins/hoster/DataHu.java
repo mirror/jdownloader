@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -31,16 +30,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" }) 
-public class DataHu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" })
+public class DataHu extends antiDDoSForHost {
 
     private static final String nice_host         = "data.hu";
     private static final String nice_hostproperty = nice_host.replaceAll("(\\.|\\-)", "");
@@ -200,7 +199,7 @@ public class DataHu extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         handleSiteErrors();
         if (br.containsHTML("class=\\'slow_dl_error_text\\'")) {
             try {
@@ -288,14 +287,14 @@ public class DataHu extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "data.hu/get/(\\d+)").getMatch(0);
     }
 
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
+    private void getAPISafe(final String accesslink) throws Exception {
+        getPage(accesslink);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
+    private void postAPISafe(final String accesslink, final String postdata) throws Exception {
+        postPage(accesslink, postdata);
         updatestatuscode();
         handleAPIErrors(this.br);
     }

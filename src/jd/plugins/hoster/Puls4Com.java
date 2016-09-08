@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,7 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "http://(www\\.)?puls4\\.com/video/[a-z0-9\\-]+/play/\\d+" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "https?://(?:www\\.)?puls4\\.com/[^/]+/videos.*" })
 public class Puls4Com extends PluginForHost {
 
     public Puls4Com(PluginWrapper wrapper) {
@@ -63,13 +63,23 @@ public class Puls4Com extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
+        final String urlpart = new Regex(downloadLink.getDownloadURL(), "puls4\\.com/(.+)").getMatch(0);
         if (use_mobile_api) {
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
-            /* We have to access the normal link once to get the mobile ID of the video/link. */
-            br.getPage(downloadLink.getDownloadURL());
-            final String mobileID = new Regex(br.getURL(), "id=(\\d+)").getMatch(0);
+            /* 2016-09-08: Webpage has changed. */
+            String mobileID = new Regex(downloadLink.getDownloadURL(), "(\\d{5,})$").getMatch(0);
             if (mobileID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                this.br.getPage("http://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
+                this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+                mobileID = this.br.getRegex("/video-grid/(\\d+)").getMatch(0);
+                if (mobileID == null) {
+                    /* E.g. "id":"playerVideo" */
+                    if (!this.br.containsHTML("playerVideo")) {
+                        /* Probably offline! */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
