@@ -93,15 +93,14 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
         return lines;
     }
 
-    private LogInterface logger;
-    private PhantomJS    phantom;
-    private DebugWindow  debugger;
-    protected String     verificationResponse;
-    protected String     error;
-    private boolean      doRunAntiDdos;
-    private boolean      googleLoggedIn;
-    protected String     initScript;
-    protected String     reloadResponse;
+    private LogInterface      logger;
+    private PhantomJS         phantom;
+    private DebugWindow       debugger;
+    protected String          verificationResponse;
+    protected volatile String error;
+    private boolean           doRunAntiDdos;
+    private boolean           googleLoggedIn;
+    protected volatile String reloadResponse;
 
     @Override
     protected boolean isSlotAnnotated(int xslot, int yslot) {
@@ -279,6 +278,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                 // phantom.evalInPageContext("console.log(document.getElementsByClassName('recaptcha-checkbox-checkmark').length);");
                 phantom.waitUntilDOM(read("waitForCheckbox.js"));
                 phantom.evalInPageContext(read("clickCheckbox.js"));
+                final AtomicReference<String> initScript = new AtomicReference<String>();
                 waitFor(60000, null, new Condition() {
                     @Override
                     public boolean breakIfTrue() throws InterruptedException, IOException {
@@ -291,7 +291,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                         if (StringUtils.isNotEmpty(token)) {
                             Recaptcha2FallbackChallengeViaPhantomJS.this.token = token;
                             StatsManager.I().track("direct", CollectionName.PJS);
-                            logger.info("Wow");
+                            logger.info("Wow?!");
                             return true;
                         } else {
                             Recaptcha2FallbackChallengeViaPhantomJS.this.token = null;
@@ -299,15 +299,16 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
                         phantom.switchFrameToMain();
                         if (phantom.evalInPageContext("document.getElementsByTagName('iframe').length>1") == Boolean.TRUE) {
                             phantom.switchFrameToChild(1);
-                            initScript = (String) phantom.evalInPageContext(read("getInitScript.js"));
-                            if (StringUtils.isNotEmpty(initScript)) {
+                            final String initScriptJs = (String) phantom.evalInPageContext(read("getInitScript.js"));
+                            if (StringUtils.isNotEmpty(initScriptJs)) {
+                                initScript.set(initScriptJs);
                                 return true;
                             }
                         }
                         return false;
                     }
                 });
-                readChallenge(initScript);
+                readChallenge(initScript.get());
                 phantom.evalInPageContext(read("basicsPage.js"));
                 // BasicWindow.showImage(phantom.getScreenShot());
                 // try {
@@ -410,7 +411,11 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
     }
 
     protected void readChallenge(String initScript) throws IOException, InterruptedException, TimeoutException {
-        String json = new Regex(initScript, "recaptcha\\.frame\\.Main\\.init\\(\"(.*)\"\\)\\;").getMatch(0);
+        final String json = new Regex(initScript, "recaptcha\\.frame\\.Main\\.init\\(\"(.*)\"\\)\\;").getMatch(0);
+        if (StringUtils.isEmpty(json)) {
+            logger.info("InitScript JSON not found:" + initScript);
+            throw new IOException("InitScript JSON not found");
+        }
         phantom.setVariable("initScript", json);
         Map<String, Object> initData = (Map<String, Object>) phantom.get(read("extractInitData.js"));
         handleInitData(initData);
