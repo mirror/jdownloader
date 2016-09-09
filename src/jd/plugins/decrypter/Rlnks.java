@@ -33,7 +33,9 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 
@@ -44,7 +46,7 @@ import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15})" })
 public class Rlnks extends antiDDoSForDecrypt {
 
     @Override
@@ -270,11 +272,31 @@ public class Rlnks extends antiDDoSForDecrypt {
                         if (captchaLink == null) {
                             break;
                         }
-                        final File captchaFile = this.getLocalCaptchaFile();
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/" + captchaLink));
-                        final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/5", null);
-                        allForm.put("button.x", String.valueOf(cp.getX()));
-                        allForm.put("button.y", String.valueOf(cp.getY()));
+                        if (StringUtils.containsIgnoreCase(captchaLink, "solvemedia.com")) {
+                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                            try {
+                                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                                final String code = getCaptchaCode("solvemedia", cf, param);
+                                if ("".equals(code)) {
+                                    // refresh (f5) button returns "", but so does a empty response by the user (send button)
+                                    continue;
+                                }
+                                final String chid = sm.getChallenge(code);
+                                allForm.put("adcopy_response", Encoding.urlEncode(code));
+                                allForm.put("adcopy_challenge", Encoding.urlEncode(chid));
+                            } catch (final Exception e) {
+                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                                }
+                                throw e;
+                            }
+                        } else {
+                            final File captchaFile = this.getLocalCaptchaFile();
+                            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaLink));
+                            final ClickedPoint cp = getCaptchaClickedPoint(getHost(), captchaFile, param, getHost() + " | " + String.valueOf(i + 1) + "/5", null);
+                            allForm.put("button.x", String.valueOf(cp.getX()));
+                            allForm.put("button.y", String.valueOf(cp.getY()));
+                        }
                     }
                 }
                 submitForm(allForm);
