@@ -116,6 +116,7 @@ please_wait=Lütfen indirme tamamlanana kadar bekleyin
 progress=%%s3 %s1/%s2
 proxy_direct=Doğrudan: %s1
 proxy_http=%s1:%s2 (Http Proksi)
+proxy_https=%s1:%s2 (Https Proksi)
 proxy_none=Doğrudan
 proxy_socks4=%s1:%s2 (Socks4 Proksi)
 proxy_socks5=%s1:%s2 (Socks5 Proksi)
