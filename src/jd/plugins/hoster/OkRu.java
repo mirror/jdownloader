@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" })
 public class OkRu extends PluginForHost {
 
     public OkRu(PluginWrapper wrapper) {
@@ -154,6 +154,9 @@ public class OkRu extends PluginForHost {
         }
         // video blocked | video not found
         if (br.containsHTML(">Видеоролик заблокирован<|>Видеоролик не найден<")) {
+            return true;
+        }
+        if (br.containsHTML(">Video has not been found</div") || br.containsHTML(">Video hasn't been found</div")) {
             return true;
         }
         // offline due to copyright claim
