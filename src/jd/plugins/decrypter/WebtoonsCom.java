@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -48,7 +49,15 @@ public class WebtoonsCom extends PluginForDecrypt {
         }
         final String titlenumber = new Regex(parameter, "title_no=(\\d+)").getMatch(0);
         final String episodenumber = new Regex(parameter, "episode_no=(\\d+)").getMatch(0);
-        String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+        final String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+        final FilePackage fp;
+        if (fpName != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        } else {
+            fp = null;
+        }
+
         String[] links;
         if (episodenumber != null) {
             /* Decrypt single episode */
@@ -69,24 +78,20 @@ public class WebtoonsCom extends PluginForDecrypt {
                 name = df.format(counter) + "_" + name;
                 dl.setAvailable(true);
                 dl.setFinalFileName(name);
+                if (fp != null) {
+                    fp.add(dl);
+                }
                 decryptedLinks.add(dl);
             }
         } else {
-            int maxpage = 1;
-            int pagetemp = 0;
-            final String[] pages = this.br.getRegex(titlenumber + "\\&page=(\\d+)").getColumn(0);
-            for (final String page_str : pages) {
-                pagetemp = Integer.parseInt(page_str);
-                if (pagetemp > maxpage) {
-                    maxpage = pagetemp;
-                }
-            }
-            for (int currpage = 1; currpage <= maxpage; currpage++) {
+            int pageIndex = 1;
+            final HashSet<String> singleLinks = new HashSet<String>();
+            while (true) {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
-                if (currpage > 1) {
-                    this.br.getPage(parameter + "&page=" + currpage);
+                if (pageIndex > 1) {
+                    this.br.getPage(parameter + "&page=" + pageIndex);
                 }
                 /* Find urls of all episode of a title --> Re-Add these single episodes to the crawler. */
                 links = br.getRegex("<li id=\"episode_\\d+\">[^<>]*?<a href=\"(https?://[^<>\"]+title_no=" + titlenumber + "\\&episode_no=\\d+)\"").getColumn(0);
@@ -94,19 +99,27 @@ public class WebtoonsCom extends PluginForDecrypt {
                     /* Maybe we already found everything or there simply ism't anything. */
                     break;
                 }
+                boolean nextPage = false;
                 for (final String singleLink : links) {
-                    decryptedLinks.add(this.createDownloadlink(singleLink));
+                    if (singleLinks.add(singleLink)) {
+                        nextPage = true;
+                        final DownloadLink link = this.createDownloadlink(singleLink);
+                        if (fp != null) {
+                            fp.add(link);
+                        }
+                        distribute(link);
+                        decryptedLinks.add(link);
+                    }
+                }
+                if (nextPage) {
+                    pageIndex++;
+                } else {
+                    break;
                 }
             }
             if (decryptedLinks.size() == 0) {
                 return null;
             }
-        }
-
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
 
         return decryptedLinks;
