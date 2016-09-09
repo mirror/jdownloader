@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" })
 public class UstreamTv extends PluginForHost {
 
     private String DLLINK = null;
@@ -97,6 +97,9 @@ public class UstreamTv extends PluginForHost {
         if (DLLINK == null) {
             /* Sometimes only lower quality flv's are available! */
             DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/flv");
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String user = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
         String title = (String) entries.get("title");
