@@ -95,35 +95,31 @@ public class EmpFlixCom extends PluginForHost {
         DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(\\'|\")(http://cdn\\.empflix\\.com/empflv(\\d+)?/.*?)(\\'|\")").getMatch(1);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(.*?)\"\\)").getMatch(0);
-                    if (DLLINK == null) {
-                        DLLINK = br.getRegex("config\" value=\"(.*?)\"").getMatch(0);
-                    }
-                }
-            }
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(.*?)\"\\)").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("config\" value=\"(.*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("config\\s*=\\s*('|\")(.*?)\1").getMatch(1);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        if (DLLINK.startsWith("//")) {
-            DLLINK = "http:" + DLLINK;
-        }
         br.getPage(Encoding.htmlDecode(DLLINK));
         DLLINK = br.getRegex("<res>480p</res>\\s+<videoLink><\\!\\[CDATA\\[(.*?)\\]\\]></videoLink>").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("<(file|videoLink)>(.*?)</(file|videoLink)>").getMatch(1);
+            DLLINK = br.getRegex("<(file|videoLink)><?(\\!\\[CDATA\\[)?(.*?)(\\]\\])?>?</(file|videoLink)>").getMatch(2);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        if (DLLINK.startsWith("//")) {
-            DLLINK = "http:" + DLLINK;
-        }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();
