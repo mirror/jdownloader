@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,7 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "https?://(?:www\\.)?heavy\\-r\\.com/video/\\d+(?:/.+)?" }) 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "https?://(?:www\\.)?heavy\\-r\\.com/video/\\d+(?:/.+)?" })
 public class HeavyRCom extends antiDDoSForHost {
 
     public HeavyRCom(PluginWrapper wrapper) {
@@ -69,7 +69,10 @@ public class HeavyRCom extends antiDDoSForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        dllink = br.getRegex("file: \'(http://[^<>\"]*?)\'").getMatch(0);
+        dllink = br.getRegex("file: \'(https?://[^<>\"]*?)\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("source\\s*type=\"video/.*?\"\\s*src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
