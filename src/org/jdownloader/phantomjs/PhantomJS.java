@@ -64,11 +64,11 @@ import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
 
 public class PhantomJS implements HttpRequestHandler {
-    private static final boolean DEBUGGER = false;
-    private LogInterface         logger;
-    private File                 exe;
-    private String               accessToken;
-    private WebCache             webCache;
+    private static final boolean  DEBUGGER = false;
+    private volatile LogInterface logger;
+    private File                  exe;
+    private String                accessToken;
+    private WebCache              webCache;
 
     public boolean isAvailable() {
         final File bins = getBinaryPath(true);
@@ -576,6 +576,8 @@ public class PhantomJS implements HttpRequestHandler {
                                     } catch (final Throwable e) {
                                         logger.log(e);
                                     }
+                                } else {
+                                    logger.info("No request available?!");
                                 }
                                 throw new IOException("IPC JD->PJS Failed: '" + result + "'");
                             }
@@ -710,6 +712,8 @@ public class PhantomJS implements HttpRequestHandler {
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
+            } else {
+                logger.info("No request available?!");
             }
             throw new IOException("IPC JD->PJS Failed: '" + result + "'");
         }
@@ -751,6 +755,8 @@ public class PhantomJS implements HttpRequestHandler {
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
+            } else {
+                logger.info("No request available?!");
             }
             throw new IOException("IPC JD->PJS Failed: '" + result + "'");
         }
