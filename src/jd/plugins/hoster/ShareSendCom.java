@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesend.com" }, urls = { "http://(www\\.)?sharesend\\.com/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesend.com" }, urls = { "http://(www\\.)?sharesend\\.com/[a-z0-9]+" })
 public class ShareSendCom extends PluginForHost {
 
     public ShareSendCom(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class ShareSendCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(new int[] { 401, 500 });
+        br.setAllowedResponseCodes(new int[] { 401, 500, 503 });
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() != 200 || br.containsHTML("404 \\- Not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

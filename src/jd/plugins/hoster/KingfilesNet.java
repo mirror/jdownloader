@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kingfiles.net" }, urls = { "https?://(?:www\\.)?kingfiles\\.net/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kingfiles.net" }, urls = { "https?://(?:www\\.)?kingfiles\\.net/[A-Za-z0-9]+" })
 public class KingfilesNet extends PluginForHost {
 
     public KingfilesNet(PluginWrapper wrapper) {
@@ -113,6 +113,8 @@ public class KingfilesNet extends PluginForHost {
     private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
+    private boolean                        maintenancemode                              = false;
+
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -126,6 +128,7 @@ public class KingfilesNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        maintenancemode = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(this.br);
@@ -137,6 +140,9 @@ public class KingfilesNet extends PluginForHost {
             br.getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("class=\"maintenanceContent\"")) {
+                maintenancemode = true;
+                return AvailableStatus.UNCHECKABLE;
             }
             final String[] tableData = this.br.getRegex("class=\"responsiveInfoTable\">([^<>\"/]*?)<").getColumn(0);
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
@@ -200,6 +206,9 @@ public class KingfilesNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink link, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (maintenancemode) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance", 2 * 60 * 60 * 1000l);
+        }
         boolean skipWaittime = false;
         String continue_link = null;
         boolean captcha = false;

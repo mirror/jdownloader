@@ -896,12 +896,17 @@ public class VKontakteRu extends PluginForDecrypt {
         if (numberOfEntrys == null) {
             numberOfEntrys = br.getRegex("class=\"summary\">(\\d+)").getMatch(0);
         }
+        if (numberOfEntrys == null) {
+            /* 2016-09-09 */
+            numberOfEntrys = br.getRegex("class=\"ui_crumb_count\">([0-9,]+)").getMatch(0);
+        }
         final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
         if (numberOfEntrys == null || startOffset == null) {
             logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
             decryptedLinks = null;
             return;
         }
+        numberOfEntrys = numberOfEntrys.replace(",", "");
         /** Photos are placed in different locations, find them all */
         final String[] regexesPage1 = { "class=\"photo_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };
         final String[] regexesAllOthers = { "class=\"photo(?:_album)?_row(?:\\s+[^\"]+)?\" id=\"(tag\\d+|album-?\\d+_\\d+)", "0" };

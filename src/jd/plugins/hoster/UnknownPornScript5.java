@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornpillow.com", "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to" }, urls = { "http://(?:www\\.)?pornpillow\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html", "http://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+",
-        "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" }) 
+        "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" })
 public class UnknownPornScript5 extends PluginForHost {
 
     public UnknownPornScript5(PluginWrapper wrapper) {
@@ -162,7 +162,7 @@ public class UnknownPornScript5 extends PluginForHost {
                     /* E.g. porndoe.com */
                     /* Check for multiple videoqualities --> Find highest quality */
                     int maxquality = 0;
-                    String sources_source = new Regex(jwplayer_source_tmp, "sources:\\s*\\[(.*?)\\]").getMatch(0);
+                    String sources_source = new Regex(jwplayer_source_tmp, "(?:\")?sources(?:\")?\\s*?:\\s*?\\[(.*?)\\]").getMatch(0);
                     if (sources_source != null) {
                         sources_source = sources_source.replace("\\", "");
                         final String[] qualities = new Regex(sources_source, "(file: \".*?)\n").getColumn(0);
@@ -174,7 +174,7 @@ public class UnknownPornScript5 extends PluginForHost {
                             }
                             if (pint > maxquality) {
                                 maxquality = pint;
-                                dllink = new Regex(quality_info, "file: \"(http[^<>\"]*?)\"").getMatch(0);
+                                dllink = new Regex(quality_info, "file[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
                             }
                         }
                     }
