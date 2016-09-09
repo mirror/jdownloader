@@ -638,10 +638,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     okButton.setEnabled(false);
                     destination.setToolTipText(_GUI.T.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);
-                    destination.setForeground((LAFOptions.getInstance().getColorForErrorForeground()));
+                    destination.getTxt().setForeground((LAFOptions.getInstance().getColorForErrorForeground()));
                 } else {
                     destination.setToolTipText(null);
-                    destination.setForeground(null);
+                    destination.getTxt().setForeground(null);
                 }
                 if (okButton.isEnabled()) {
                     if (cancelButton.hasFocus()) {
