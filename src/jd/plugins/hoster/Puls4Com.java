@@ -84,7 +84,8 @@ public class Puls4Com extends PluginForHost {
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* API can even avoid geo blocks! */
-            br.getPage("http://m.puls4.com/api/video/single/" + mobileID + "?version=v4");
+            /* 2016-09-09: Changed from "m.puls4.com" to "www.puls4.com" */
+            br.getPage("http://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
             /* Offline or geo blocked video */
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
