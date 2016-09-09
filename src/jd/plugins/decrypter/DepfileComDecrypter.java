@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" })
 public class DepfileComDecrypter extends PluginForDecrypt {
 
     public DepfileComDecrypter(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class DepfileComDecrypter extends PluginForDecrypt {
     }
 
     private static final String DEPFILEDECRYPTED = "depfiledecrypted.com/";
-    private static final String INVALIDLINKS     = "https?://(www\\.)?depfile\\.com/(uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate|report|data|dmca|favicon|ajax|API|robots)";
+    private static final String INVALIDLINKS     = "https?://(www\\.)?depfile\\.com/(myspace|uploads|support|privacy|checkfiles|register|premium|terms|childpolicy|affiliate|report|data|dmca|favicon|ajax|API|robots)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
