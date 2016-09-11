@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?audiocastle\\.(?:net|co|me|is)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "audiocastle.net" }, urls = { "https?://(www\\.)?(?:audiocastle\\.(?:net|co|me|is)|audiocastle2\\.biz)/(tracks|albums|mixtapes|immortals|videos)/view/\\d+" })
 public class AudCtlNt extends antiDDoSForDecrypt {
 
     public AudCtlNt(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class AudCtlNt extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("://(?:www\\.)?(audiocastle\\.)(?:co|net|me)", "://www.$1is");
+        final String parameter = param.toString().replaceFirst("://(?:www\\.)?[^/]+/", "://www.audiocastle2.biz/");
         br.setFollowRedirects(true);
         getPage(parameter);
         String dl = null;
