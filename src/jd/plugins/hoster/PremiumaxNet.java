@@ -23,6 +23,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,13 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UnavailableHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
@@ -227,6 +227,10 @@ public class PremiumaxNet extends antiDDoSForHost {
                         // not trust worthy in my opinion. see jdlog://0535035891641
                         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         throw new PluginException(LinkStatus.ERROR_FATAL, "They claim file is offline!");
+                    } else if (br.containsHTML("There are too many attempts")) {
+                        logger.info("Re-login is required");
+                        br.clearCookies(MAINPAGE);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Too many attemps, re-login is required");
                     } else {
                         // final failover! dllink == null
                         handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
