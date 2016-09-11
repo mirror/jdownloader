@@ -19,6 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,10 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfiles.net" }, urls = { "https?://(?:www\\.)?upfiles\\.net/f/[a-z0-9]+(?:[^/]+)?" })
 public class UpfilesNet extends PluginForHost {
@@ -74,6 +74,9 @@ public class UpfilesNet extends PluginForHost {
         }
         String filename = br.getRegex("class=\"file\\-heading\">([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex("class=\"file\\-info\">Rozmiar:[\t\n\r ]*?([^<>\"]+)<").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"file\\-info\" style='font-size:20px'>Rozmiar:[\t\n\r ]*?([^<>\"]+)<").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
