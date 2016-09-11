@@ -215,7 +215,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                     } else if (br.toString().equalsIgnoreCase("Traffic limit exceeded")) {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
                         tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
-                    } else if (br.toString().equalsIgnoreCase("nginx error")) {
+                    } else if (br.toString().equalsIgnoreCase("nginx error") || br.containsHTML("There are too many attempts")) {
                         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nginx Error", 30 * 1000l);
                         dumpAccountSessionInfo();
                         throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -227,10 +227,6 @@ public class PremiumaxNet extends antiDDoSForHost {
                         // not trust worthy in my opinion. see jdlog://0535035891641
                         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         throw new PluginException(LinkStatus.ERROR_FATAL, "They claim file is offline!");
-                    } else if (br.containsHTML("There are too many attempts")) {
-                        logger.info("Re-login is required");
-                        br.clearCookies(MAINPAGE);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Too many attemps, re-login is required");
                     } else {
                         // final failover! dllink == null
                         handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
