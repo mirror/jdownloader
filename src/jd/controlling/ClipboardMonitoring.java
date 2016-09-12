@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -62,6 +63,35 @@ public class ClipboardMonitoring {
             this.sourceURL = sourceURL;
             this.fragment = fragment;
         }
+    }
+
+    private static class ClipboardHash {
+        private final int hash;
+        private final int length;
+
+        private ClipboardHash(int hash, int length) {
+            this.hash = hash;
+            this.length = length;
+        }
+
+        private ClipboardHash(String string) {
+            if (string == null) {
+                this.hash = 0;
+                this.length = -1;
+            } else {
+                this.hash = string.hashCode();
+                this.length = string.length();
+            }
+        }
+
+        private boolean equals(String string) {
+            if (string == null) {
+                return length == -1 && hash == 0;
+            } else {
+                return length == string.length() && hash == string.hashCode();
+            }
+        }
+
     }
 
     private static class WindowsClipboardHack {
@@ -190,21 +220,21 @@ public class ClipboardMonitoring {
     private final Clipboard                  clipboard;
     private final AtomicBoolean              skipChangeDetection = new AtomicBoolean(false);
     private final WindowsClipboardHack       windowsClipboardHack;
-    private static boolean                   FIRSTROUNDDONE      = true;
-    private static volatile boolean          HTMLFLAVORALLOWED   = true;
+    private final static AtomicBoolean       SKIP_FIRST_ROUND    = new AtomicBoolean(true);
+    private final static AtomicBoolean       HTML_FLAVOR_ALLOWED = new AtomicBoolean(true);
     private final ClipboardChangeDetector    clipboardChangeDetector;
     private final LogSource                  logger;
 
     public static boolean isHtmlFlavorAllowed() {
-        return HTMLFLAVORALLOWED;
+        return HTML_FLAVOR_ALLOWED.get();
     }
 
-    public static void setHtmlFlavorAllowed(boolean htmlFlavor) {
-        ClipboardMonitoring.HTMLFLAVORALLOWED = htmlFlavor;
+    public static void setHtmlFlavorAllowed(final boolean htmlFlavor) {
+        ClipboardMonitoring.HTML_FLAVOR_ALLOWED.set(htmlFlavor);
     }
 
-    public static void setFirstRoundDone(boolean b) {
-        FIRSTROUNDDONE = b;
+    public static void setSkipFirstRound(final boolean b) {
+        SKIP_FIRST_ROUND.set(b);
     }
 
     private boolean ignoreTransferable(Transferable transferable) {
@@ -241,10 +271,10 @@ public class ClipboardMonitoring {
                 return;
             }
             monitoringThread = new Thread() {
-                private String       oldStringContent = null;
-                private HTMLFragment oldHTMLFragment  = null;
-                private String       oldListContent   = null;
-                private String       lastBrowserUrl   = null;
+                private final AtomicLong roundIndex       = new AtomicLong(0);
+                private ClipboardHash    oldStringContent = new ClipboardHash(0, -1);
+                private ClipboardHash    oldListContent   = new ClipboardHash(0, -1);
+                private ClipboardHash    oldHTMLFragment  = new ClipboardHash(0, -1);
 
                 @Override
                 public void run() {
@@ -259,30 +289,21 @@ public class ClipboardMonitoring {
                             return;
                         }
                         try {
-                            lastBrowserUrl = null;
-                            Transferable currentContent = clipboard.getContents(null);
+                            final Transferable currentContent = clipboard.getContents(null);
                             if (ignoreTransferable(currentContent)) {
                                 continue;
                             }
-
-                            final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
                             String handleThisRound = null;
                             boolean macOSWorkaroundNeeded = false;
                             try {
                                 /* change detection for List/URI content */
-                                String newListContent = getListTransferData(currentContent);
+                                final String newListContent = getListTransferData(currentContent);
                                 try {
-                                    if (changeDetector(oldListContent, newListContent)) {
+                                    if (!oldListContent.equals(newListContent)) {
                                         handleThisRound = newListContent;
-                                    } else if (noChangeDetector(oldListContent, newListContent)) {
-                                        continue;
                                     }
                                 } finally {
-                                    if (!StringUtils.isEmpty(newListContent)) {
-                                        oldListContent = newListContent;
-                                    } else {
-                                        oldListContent = null;
-                                    }
+                                    oldListContent = new ClipboardHash(newListContent);
                                 }
                             } catch (final Throwable e) {
                                 if (CrossSystem.isMac() && e instanceof IOException) {
@@ -293,11 +314,13 @@ public class ClipboardMonitoring {
                                     macOSWorkaroundNeeded = true;
                                 }
                             }
+                            String browserURL = null;
+                            final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
                             if (StringUtils.isEmpty(handleThisRound)) {
                                 /* change detection for String/HTML content */
-                                String newStringContent = getStringTransferData(currentContent);
+                                final String newStringContent = getStringTransferData(currentContent);
                                 try {
-                                    if (changeDetector(oldStringContent, newStringContent)) {
+                                    if (!oldStringContent.equals(newStringContent)) {
                                         /*
                                          * we only use normal String Content to detect a change
                                          */
@@ -311,17 +334,17 @@ public class ClipboardMonitoring {
                                                 /*
                                                  * remember that we had HTML content this round
                                                  */
-                                                oldHTMLFragment = htmlFragment;
+                                                oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
                                                 if (htmlFlavorAllowed) {
                                                     handleThisRound = handleThisRound + "\r\n" + htmlFragment.getFragment();
                                                 }
-                                                lastBrowserUrl = htmlFragment.getSourceURL();
+                                                browserURL = htmlFragment.getSourceURL();
                                             } else {
-                                                oldHTMLFragment = null;
+                                                oldHTMLFragment = new ClipboardHash(null);
                                             }
                                         } catch (final Throwable e) {
                                         }
-                                    } else if (oldHTMLFragment != null) {
+                                    } else {
                                         /*
                                          * no String Content change detected, let's verify if the HTML content hasn't changed
                                          */
@@ -334,27 +357,28 @@ public class ClipboardMonitoring {
                                                 /*
                                                  * remember that we had HTML content this round
                                                  */
-                                                if (changeDetector(oldHTMLFragment, htmlFragment)) {
-                                                    oldHTMLFragment = htmlFragment;
+                                                if (!oldHTMLFragment.equals(htmlFragment)) {
+                                                    oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
                                                     if (htmlFlavorAllowed) {
                                                         handleThisRound = newStringContent + "\r\n" + htmlFragment.getFragment();
                                                     }
-                                                    lastBrowserUrl = htmlFragment.getSourceURL();
+                                                    browserURL = htmlFragment.getSourceURL();
                                                 }
                                             } else {
-                                                oldHTMLFragment = null;
+                                                oldHTMLFragment = new ClipboardHash(null);
                                             }
                                         } catch (final Throwable e) {
                                         }
                                     }
                                 } finally {
-                                    oldStringContent = newStringContent;
+                                    oldStringContent = new ClipboardHash(newStringContent);
                                 }
                             }
                             if (!StringUtils.isEmpty(handleThisRound)) {
-                                if (FIRSTROUNDDONE) {
+                                final long round = roundIndex.getAndIncrement();
+                                if (round > 0 || !SKIP_FIRST_ROUND.get()) {
                                     clipboardChangeDetector.restart();
-                                    LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound);
+                                    final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound);
                                     final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
                                     if (pws != null && pws.size() > 0) {
                                         job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
@@ -365,10 +389,8 @@ public class ClipboardMonitoring {
                                             }
                                         });
                                     }
-                                    job.setCustomSourceUrl(lastBrowserUrl);
+                                    job.setCustomSourceUrl(browserURL);
                                     LinkCollector.getInstance().addCrawlerJob(job);
-                                } else {
-                                    FIRSTROUNDDONE = true;
                                 }
                             }
                             if (macOSWorkaroundNeeded) {
@@ -474,38 +496,6 @@ public class ClipboardMonitoring {
                 skipChangeDetection.set(false);
             }
         }
-    }
-
-    private boolean changeDetector(String oldS, String newS) {
-        if (oldS == null && newS != null) {
-            return true;
-        }
-        if (oldS != null && newS != null && !oldS.equalsIgnoreCase(newS)) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean changeDetector(HTMLFragment oldFragment, HTMLFragment newFragment) {
-        if (oldFragment == null && newFragment != null) {
-            return true;
-        }
-        if (oldFragment != null && newFragment != null) {
-            if (!StringUtils.equals(oldFragment.getSourceURL(), newFragment.getSourceURL())) {
-                return true;
-            }
-            if (!StringUtils.equals(oldFragment.getFragment(), newFragment.getFragment())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean noChangeDetector(String oldS, String newS) {
-        if (oldS != null && newS != null && oldS.equalsIgnoreCase(newS)) {
-            return true;
-        }
-        return false;
     }
 
     public synchronized void stopMonitoring() {

@@ -1080,7 +1080,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     private FilterPanel createSizeFilter() {
         final JLabel to = new JLabel(new AbstractIcon(IconKey.ICON_RIGHT, 14));
 
-        minSizeModel = new SpinnerNumberModel(50000, 0l, Long.MAX_VALUE, 1) {
+        minSizeModel = new SpinnerNumberModel(Long.valueOf(50000l), Long.valueOf(0l), Long.valueOf(Long.MAX_VALUE), Long.valueOf(1l)) {
+
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
 
             @Override
             public Comparable getMaximum() {
@@ -1093,7 +1098,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
         };
 
-        maxSizeModel = new SpinnerNumberModel(100 * 1024l, 0l, Long.MAX_VALUE, 1) {
+        maxSizeModel = new SpinnerNumberModel(Long.valueOf(100 * 1024l), Long.valueOf(0l), Long.valueOf(Long.MAX_VALUE), Long.valueOf(1l)) {
+
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
 
             @Override
             public Comparable getMinimum() {
