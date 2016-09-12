@@ -84,6 +84,14 @@ public class ClipboardMonitoring {
             }
         }
 
+        private boolean equals(final HTMLFragment fragment) {
+            if (fragment != null) {
+                return equals(fragment.getFragment());
+            } else {
+                return equals((String) null);
+            }
+        }
+
         private boolean equals(String string) {
             if (string == null) {
                 return length == -1 && hash == 0;
@@ -357,7 +365,7 @@ public class ClipboardMonitoring {
                                                 /*
                                                  * remember that we had HTML content this round
                                                  */
-                                                if (!oldHTMLFragment.equals(htmlFragment)) {
+                                                if (!oldHTMLFragment.equals(htmlFragment.getFragment())) {
                                                     oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
                                                     if (htmlFlavorAllowed) {
                                                         handleThisRound = newStringContent + "\r\n" + htmlFragment.getFragment();
