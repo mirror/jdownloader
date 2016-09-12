@@ -23,12 +23,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +39,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UnavailableHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -189,47 +190,49 @@ public class PremiumaxNet extends antiDDoSForHost {
         synchronized (LOCK) {
             login(account, true);
             dllink = checkDirectLink(link, "premiumaxnetdirectlink");
-            if (dllink == null) {
-                br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage("/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
-                dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl\\d*/[a-z0-9]+/?)\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Accept", "*/*");
+                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                brc.getHeaders().put("X-JDownloaderPlugin", String.valueOf(getLazyP().getVersion()));
+                postPage(brc, "/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
+                dllink = brc.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl\\d*/[a-z0-9]+/?)\"").getMatch(0);
                 if (dllink == null) {
-                    if (br.getHttpConnection().getResponseCode() == 500) {
+                    if (brc.getHttpConnection().getResponseCode() == 500) {
                         handleErrorRetries("500 Internal Server Error", 20, 5 * 60 * 1000l);
-                    } else if (br.containsHTML("temporary problem")) {
+                    } else if (brc.containsHTML("temporary problem")) {
                         logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
                         tempUnavailableHoster(60 * 60 * 1000l, "Temporary MultiHoster issue (Disabled Host)");
-                    } else if (br.containsHTML("You do not have the rights to download from")) {
+                    } else if (brc.containsHTML("You do not have the rights to download from")) {
                         logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
                         tempUnavailableHoster(60 * 60 * 1000l, "No rights to download from " + link.getHost() + " (Disabled Host)");
-                    } else if (br.containsHTML("We do not support your link")) {
+                    } else if (brc.containsHTML("We do not support your link")) {
                         logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
                         this.currAcc = null;
                         tempUnavailableHoster(3 * 60 * 60 * 1000l, "Unsupported link format (Disabled Host)");
-                    } else if (br.containsHTML("You only can download")) {
+                    } else if (brc.containsHTML("You only can download")) {
                         /* We're too fast - usually this should not happen */
                         handleErrorRetries("Too many active connections", 10, 5 * 60 * 1000l);
-                    } else if (br.containsHTML("> Our server can't connect to")) {
+                    } else if (brc.containsHTML("> Our server can't connect to")) {
                         handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
-                    } else if (br.toString().equalsIgnoreCase("Traffic limit exceeded")) {
+                    } else if (brc.toString().equalsIgnoreCase("Traffic limit exceeded")) {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
                         tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
-                    } else if (br.toString().equalsIgnoreCase("nginx error") || br.containsHTML("There are too many attempts")) {
+                    } else if (brc.toString().equalsIgnoreCase("nginx error") || br.containsHTML("There are too many attempts")) {
                         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nginx Error", 30 * 1000l);
                         dumpAccountSessionInfo();
                         throw new PluginException(LinkStatus.ERROR_RETRY);
-                    } else if (br.containsHTML(">\\s*Our [\\w\\-\\.]+ account has reach bandwidth limit\\s*<")) {
+                    } else if (brc.containsHTML(">\\s*Our [\\w\\-\\.]+ account has reach bandwidth limit\\s*<")) {
                         // global issue
                         this.currAcc = null;
                         tempUnavailableHoster(1 * 60 * 60 * 1000l, "Multihoster has no download traffic for " + link.getHost());
-                    } else if (br.containsHTML("<font color=red>\\s*Link Dead\\s*!!!\\s*</font>")) {
+                    } else if (brc.containsHTML("<font color=red>\\s*Link Dead\\s*!!!\\s*</font>")) {
                         // not trust worthy in my opinion. see jdlog://0535035891641
                         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         throw new PluginException(LinkStatus.ERROR_FATAL, "They claim file is offline!");
                     } else {
                         // final failover! dllink == null
-                        handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
+                        handleErrorRetries("dllinknullerror", 10, 5 * 60 * 1000l);
                     }
                 }
             }
@@ -238,7 +241,6 @@ public class PremiumaxNet extends antiDDoSForHost {
         if (link.getBooleanProperty(PremiumaxNet.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
