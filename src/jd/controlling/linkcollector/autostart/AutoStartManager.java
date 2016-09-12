@@ -44,7 +44,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
         CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getEventSender().addListener(this, true);
         globalAutoStart = CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
         globalAutoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
-        delayer = new DelayedRunnable(CFG_LINKGRABBER.CFG.getAutoConfirmDelay(), -1) {
+        delayer = new DelayedRunnable(Math.max(1, CFG_LINKGRABBER.CFG.getAutoConfirmDelay()), -1) {
 
             @Override
             public String getID() {
