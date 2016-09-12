@@ -17,6 +17,11 @@ import org.jdownloader.gui.translate._GUI;
 
 public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+
     public RunCheckSumAction() {
         super();
         setIconKey(org.jdownloader.gui.IconKey.ICON_HASHSUM);
