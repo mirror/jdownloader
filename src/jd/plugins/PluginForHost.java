@@ -2408,4 +2408,8 @@ public abstract class PluginForHost extends Plugin {
     public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
     }
 
+    public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
+        return downloadProxySelector == candidateProxySelector && downloadAccount == candidateAccount;
+    }
+
 }

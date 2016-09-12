@@ -1329,7 +1329,7 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
-        if (account == null || account.getBooleanProperty("free", false)) {
+        if (isFreeAccount(account)) {
             final AtomicLong[] store;
             synchronized (freeDownloadHandling) {
                 store = freeDownloadHandling.get(proxy);
@@ -1342,6 +1342,20 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         return super.getMaxSimultanDownload(link, account, proxy);
+    }
+
+    protected final boolean isFreeAccount(Account account) {
+        return account == null || account.getBooleanProperty("free", false) || Account.AccountType.FREE.equals(account.getType());
+    }
+
+    @Override
+    public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
+        if (downloadProxySelector == candidateProxySelector) {
+            if (isFreeAccount(downloadAccount) && isFreeAccount(candidateAccount)) {
+                return true;
+            }
+        }
+        return super.isSameAccount(downloadAccount, downloadProxySelector, candidateAccount, candidateProxySelector);
     }
 
     /* Reconnect workaround methods */
