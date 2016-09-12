@@ -92,7 +92,7 @@ public class SystemAPIImpl implements SystemAPI {
     }
 
     public List<StorageInformationStorable> getStorageInfos(final String path) {
-        if (Application.getJavaVersion() >= Application.JAVA17) {
+        if (Application.getJavaVersion() >= Application.JAVA17 && DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().isSupported()) {
             return SystemAPIImpl17.getStorageInfos(path);
         } else {
             final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();

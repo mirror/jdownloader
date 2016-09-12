@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
@@ -14,6 +15,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.system.ProcMounts;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
+
+import de.javasoft.util.OS;
 
 public class DiskSpaceManager {
 
@@ -26,7 +29,7 @@ public class DiskSpaceManager {
 
     private final HashMap<DiskSpaceReservation, Object> reservations;
     private final GeneralSettings                       config;
-    private final boolean                               SUPPORTED = Application.getJavaVersion() >= Application.JAVA16;
+    private final AtomicBoolean                         SUPPORTED = new AtomicBoolean(Application.getJavaVersion() >= Application.JAVA16);
 
     public DiskSpaceManager() {
         reservations = new HashMap<DiskSpaceReservation, Object>();
@@ -90,11 +93,15 @@ public class DiskSpaceManager {
         return bestRootMatch;
     }
 
+    public boolean isSupported() {
+        return SUPPORTED.get();
+    }
+
     public synchronized DISKSPACERESERVATIONRESULT checkAndReserve(DiskSpaceReservation reservation, Object requestor) {
         if (reservation == null) {
             throw new IllegalArgumentException("reservation must not be null!");
         }
-        if (!SUPPORTED) {
+        if (!isSupported()) {
             /*
              * File.getUsableSpace is >=1.6 only
              */
@@ -112,6 +119,11 @@ public class DiskSpaceManager {
                 bestRootMatch = FileStoreHacks.getRootFor(reservation.getDestination());
             } catch (final IOException e) {
                 LogController.CL().log(e);
+                if (OS.FreeBSD.equals(CrossSystem.getOS()) && StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
+                    LogController.CL().info("Possible FreeBSD Jail detected! Disable DiskSpaceManager!");
+                    SUPPORTED.set(false);
+                    return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
+                }
             }
         }
         if (bestRootMatch == null) {
