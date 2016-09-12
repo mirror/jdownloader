@@ -199,7 +199,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                 dllink = brc.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl\\d*/[a-z0-9]+/?)\"").getMatch(0);
                 if (dllink == null) {
                     if (brc.getHttpConnection().getResponseCode() == 500) {
-                        handleErrorRetries("500 Internal Server Error", 20, 5 * 60 * 1000l);
+                        handleErrorRetries(link, "500 Internal Server Error", 20, 5 * 60 * 1000l);
                     } else if (brc.containsHTML("temporary problem")) {
                         logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
                         tempUnavailableHoster(60 * 60 * 1000l, "Temporary MultiHoster issue (Disabled Host)");
@@ -212,9 +212,9 @@ public class PremiumaxNet extends antiDDoSForHost {
                         tempUnavailableHoster(3 * 60 * 60 * 1000l, "Unsupported link format (Disabled Host)");
                     } else if (brc.containsHTML("You only can download")) {
                         /* We're too fast - usually this should not happen */
-                        handleErrorRetries("Too many active connections", 10, 5 * 60 * 1000l);
+                        handleErrorRetries(link, "Too many active connections", 10, 5 * 60 * 1000l);
                     } else if (brc.containsHTML("> Our server can't connect to")) {
-                        handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
+                        handleErrorRetries(link, "cantconnect", 20, 5 * 60 * 1000l);
                     } else if (brc.toString().equalsIgnoreCase("Traffic limit exceeded")) {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
                         tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
@@ -232,7 +232,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "They claim file is offline!");
                     } else {
                         // final failover! dllink == null
-                        handleErrorRetries("dllinknullerror", 10, 5 * 60 * 1000l);
+                        handleErrorRetries(link, "dllinknullerror", 10, 5 * 60 * 1000l);
                     }
                 }
             }
@@ -244,7 +244,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
-                handleErrorRetries("404servererror", 10, 5 * 60 * 1000l);
+                handleErrorRetries(link, "404servererror", 10, 5 * 60 * 1000l);
             }
             br.followConnection();
             logger.info("Unhandled download error on premiumax.net: " + br.toString());
@@ -350,12 +350,13 @@ public class PremiumaxNet extends antiDDoSForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+    private void handleErrorRetries(DownloadLink link, final String error, final int maxRetries, final long disableTime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            sleep(5000l, link);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
