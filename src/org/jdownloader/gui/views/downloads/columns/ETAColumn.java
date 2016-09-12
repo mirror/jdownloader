@@ -42,7 +42,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
 
     private final Icon        wait;
-    private final Icon        ipwait;
     private ColumnHelper      columnHelper     = new ColumnHelper();
 
     @Override
@@ -69,7 +68,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         super(_GUI.T.ETAColumn_ETAColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
         this.wait = NewTheme.I().getIcon(IconKey.ICON_WAIT, 16);
-        this.ipwait = NewTheme.I().getIcon(IconKey.ICON_AUTO_RECONNECT, 16);
 
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             private ColumnHelper helper1 = new ColumnHelper();
