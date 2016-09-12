@@ -258,6 +258,16 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    protected boolean isValidSegment(final String segment) {
+        if (StringUtils.isNotEmpty(segment)) {
+            if ("twitch.tv".equals(link.getHost()) && StringUtils.endsWithCaseInsensitive(segment, "end_offset=-1")) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     protected void runFF(FFMpegProgress set, String extension, String format, FFmpeg ffmpeg, String out) throws IOException, InterruptedException, FFMpegException {
         ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
@@ -388,13 +398,25 @@ public class HLSDownloader extends DownloadInterface {
                                 // http://habrahabr.ru/company/mailru/blog/274855/
                                 logger.severe("possibly malicious: " + line);
                             } else if (line.matches("^https?://.+")) {
-                                final int index = m3u.size();
-                                m3u.add(line);
-                                sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                                if (!m3u.contains(line)) {
+                                    if (isValidSegment(line)) {
+                                        final int index = m3u.size();
+                                        m3u.add(line);
+                                        sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                                    } else if (logger != null) {
+                                        logger.info("Segment '" + line + "' is invalid!");
+                                    }
+                                }
                             } else if (!line.trim().startsWith("#")) {
-                                final int index = m3u.size();
-                                m3u.add(br.getBaseURL() + line);
-                                sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                                if (!m3u.contains(line)) {
+                                    if (isValidSegment(line)) {
+                                        final int index = m3u.size();
+                                        m3u.add(br.getURL(line).toString());
+                                        sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                                    } else if (logger != null) {
+                                        logger.info("Segment '" + line + "' is invalid!");
+                                    }
+                                }
                             } else {
                                 if ("#EXT-X-ENDLIST".equals(line)) {
                                     containsEndList = true;
