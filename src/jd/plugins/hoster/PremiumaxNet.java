@@ -195,6 +195,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                 brc.getHeaders().put("Accept", "*/*");
                 brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 brc.getHeaders().put("X-JDownloaderPlugin", String.valueOf(getLazyP().getVersion()));
+                brc.getHeaders().put("PM-RAY", br.getCookie(getHost(), "premiumax_check"));
                 postPage(brc, "/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
                 dllink = brc.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl\\d*/[a-z0-9]+/?)\"").getMatch(0);
                 if (dllink == null) {
