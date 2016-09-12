@@ -49,7 +49,10 @@ public class WebtoonsCom extends PluginForDecrypt {
         }
         final String titlenumber = new Regex(parameter, "title_no=(\\d+)").getMatch(0);
         final String episodenumber = new Regex(parameter, "episode_no=(\\d+)").getMatch(0);
-        final String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+        String fpName = br.getRegex("\"og:title\"\\s*content=\"(.*?)\"").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
+        }
         final FilePackage fp;
         if (fpName != null) {
             fp = FilePackage.getInstance();
