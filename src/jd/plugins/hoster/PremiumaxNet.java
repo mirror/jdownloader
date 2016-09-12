@@ -23,6 +23,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,13 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UnavailableHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -219,7 +219,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                     } else if (brc.toString().equalsIgnoreCase("Traffic limit exceeded")) {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
                         tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
-                    } else if (brc.toString().equalsIgnoreCase("nginx error") || br.containsHTML("There are too many attempts")) {
+                    } else if (brc.toString().equalsIgnoreCase("nginx error") || brc.containsHTML("There are too many attempts")) {
                         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nginx Error", 30 * 1000l);
                         dumpAccountSessionInfo();
                         throw new PluginException(LinkStatus.ERROR_RETRY);
