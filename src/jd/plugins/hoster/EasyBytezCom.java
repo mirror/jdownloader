@@ -940,7 +940,7 @@ public class EasyBytezCom extends PluginForHost {
                     getPage(br.getRedirectLocation());
                 }
                 // if the cached cookie expired, relogin.
-                if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null || (br.containsHTML(">Become Premium to") && br.containsHTML("download this file fast"))) {
                     synchronized (ACCLOCK) {
                         if (after == account.getProperty("cookies", null)) {
                             account.setProperty("cookies", Property.NULL);
