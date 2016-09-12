@@ -139,6 +139,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("AutoConfirm waits a delay before confirming the links. Default is 15000ms")
     @DefaultIntValue(15000)
+    @SpinnerValidator(min = 1, max = Integer.MAX_VALUE)
     int getAutoConfirmDelay();
 
     void setAutoConfirmDelay(int delay);
