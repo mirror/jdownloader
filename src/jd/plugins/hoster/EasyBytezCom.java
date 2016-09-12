@@ -38,12 +38,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -75,6 +69,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easybytez.com" }, urls = { "https?://(www\\.)?easybytez\\.com/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class EasyBytezCom extends PluginForHost {
@@ -82,7 +82,7 @@ public class EasyBytezCom extends PluginForHost {
     // primary website url, take note of redirects
     public final String                COOKIE_HOST                  = "http://easybytez.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(easybytez\\.com|easybytez\\.to|zingload\\.com|easyload\\.to|ezbytez\\.com|ebytez\\.com)";
+    private final String               DOMAINS                      = "(easybytez\\.com|easybytez\\.co|easybytez\\.to|zingload\\.com|easyload\\.to|ezbytez\\.com|ebytez\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -965,7 +965,7 @@ public class EasyBytezCom extends PluginForHost {
                     checkErrors(downloadLink, account, true);
                     getDllink();
                     if (dllink == null) {
-                        dllink = cbr.getRegex("This direct link[^~]+?<a href=\"(http:.*?)\"").getMatch(0);
+                        dllink = getDllink2(cbr);
                     }
                     if (inValidate(dllink)) {
                         /* Maybe server error */
@@ -1048,6 +1048,17 @@ public class EasyBytezCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String getDllink2(Browser br) {
+        String ret = br.getRegex("<a href=\"(https?://wrk.*?)\"").getMatch(0);
+        if (ret == null) {
+            ret = br.getRegex("<a href=\"(https?://str\\d+.easybytes*?)\"").getMatch(0);
+        }
+        if (ret == null) {
+            ret = br.getRegex("This direct link[^~]+?<a href=\"(https?:.*?)\"").getMatch(0);
+        }
+        return ret;
     }
 
     // ***************************************************************************************************** //
