@@ -36,6 +36,11 @@ public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePac
                             final HashInfo hashInfo = downloadable.getHashInfo();
                             final HashResult result = downloadable.getHashResult(hashInfo, file);
                             if (result != null) {
+                                if (result.match()) {
+                                    final long fileSize = file.length();
+                                    downloadLink.setVerifiedFileSize(fileSize);
+                                    downloadLink.setDownloadCurrent(fileSize);
+                                }
                                 downloadLink.setFinalLinkState(result.getFinalLinkState());
                             }
                         }
