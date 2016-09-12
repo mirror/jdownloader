@@ -126,7 +126,7 @@ public class DownloadLinkCandidateSelector {
 
     private final static AtomicInteger CYCLE = new AtomicInteger(0);
 
-    public List<AbstractProxySelectorImpl> getProxies(final DownloadLinkCandidate candidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
+    public final List<AbstractProxySelectorImpl> getProxies(final DownloadLinkCandidate candidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
         List<AbstractProxySelectorImpl> ret = ProxyController.getInstance().getProxySelectors(candidate, ignoreConnectBans, ignoreAllBans);
         if (candidate.getCachedAccount().getAccount() == null) {
             try {
@@ -163,29 +163,47 @@ public class DownloadLinkCandidateSelector {
         return ret;
     }
 
-    public CachedAccountPermission getCachedAccountPermission(final CachedAccount cachedAccount) {
+    public final CachedAccountPermission getCachedAccountPermission(final CachedAccount cachedAccount) {
         if (cachedAccount != null) {
-            if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) {
+            if (session.isUseAccountsEnabled() == false && !ACCOUNTTYPE.NONE.equals(cachedAccount.getType())) {
                 return CachedAccountPermission.DISABLED;
-            }
-            final Account canidateAccount = cachedAccount.getAccount();
-            if (canidateAccount != null) {
-                if (!canidateAccount.isEnabled()) {
-                    return CachedAccountPermission.DISABLED;
+            } else {
+                final Account canidateAccount = cachedAccount.getAccount();
+                if (canidateAccount != null) {
+                    if (!canidateAccount.isEnabled()) {
+                        return CachedAccountPermission.DISABLED;
+                    }
+                    if (canidateAccount.isTempDisabled()) {
+                        return CachedAccountPermission.TEMP_DISABLED;
+                    }
                 }
-                if (canidateAccount.isTempDisabled()) {
-                    return CachedAccountPermission.TEMP_DISABLED;
-                }
+                return CachedAccountPermission.OK;
             }
-            return CachedAccountPermission.OK;
         }
         return CachedAccountPermission.IMPOSSIBLE;
     }
 
-    public DownloadLinkCandidatePermission getDownloadLinkCandidatePermission(DownloadLinkCandidate candidate) {
+    protected final DomainRuleSet getDomainRuleSet(DownloadLinkCandidate candidate) {
+        final String downloadDomain = candidate.getLink().getDomainInfo().getTld();
+        final CachedAccount cachedAccount = candidate.getCachedAccount();
+        final String pluginDomain = cachedAccount.getHost();
+        final String fileName = candidate.getLink().getName();
+        return DomainRuleController.getInstance().createRuleSet(cachedAccount.getAccount(), downloadDomain, pluginDomain, fileName);
+    }
+
+    public final DownloadLinkCandidatePermission getDownloadLinkCandidatePermission(final DownloadLinkCandidate candidate) {
+        final int maxDownloads = Math.max(1, CFG_GENERAL.CFG.getMaxSimultaneDownloads());
+        DomainRuleSet domainRuleSet = null;
+        if (!candidate.isForced() && session.getControllers().size() >= maxDownloads && (domainRuleSet = getDomainRuleSet(candidate)).size() == 0) {
+            /**
+             * not a forced candidate and no special rules and already reached max concurrent downloads
+             */
+             if (!DownloadWatchDog.getInstance().checkForAdditionalDownloadSlots(session)) {
+                 return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
+             }
+        }
         final DownloadLink candidateLink = candidate.getLink();
         final CachedAccount cachedAccount = candidate.getCachedAccount();
-        final String candidatePlugin = cachedAccount.getPlugin().getHost();
         final Account candidateAccount = cachedAccount.getAccount();
         int maxPluginConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, candidateAccount, candidate.getProxySelector());
         if (maxPluginConcurrentAccount == 0) {
@@ -197,25 +215,11 @@ public class DownloadLinkCandidateSelector {
             }
         }
         int maxPluginConcurrentHost = cachedAccount.getPlugin().getMaxSimultanDownload(candidateLink, candidateAccount, candidate.getProxySelector());
-        int maxConcurrentHost = session.getMaxConcurrentDownloadsPerHost();
-        int maxDownloads = Math.max(1, CFG_GENERAL.CFG.getMaxSimultaneDownloads());
-        int maxDownloadsForced = Math.max(0, CFG_GENERAL.MAX_FORCED_DOWNLOADS.getValue());
-        final DomainRuleSet domainRuleSet;
-        {
-            final String downloadDomain = candidateLink.getDomainInfo().getTld();
-            final String pluginDomain = cachedAccount.getHost();
-            final String fileName = candidate.getLink().getName();
-            domainRuleSet = DomainRuleController.getInstance().createRuleSet(candidateAccount, downloadDomain, pluginDomain, fileName);
-        }
-        if (domainRuleSet.size() == 0 && !candidate.isForced() && session.getControllers().size() >= maxDownloads) {
-            /**
-             * not a forced candidate and no special rules and already reached max concurrent downloads
-             */
-             if (DownloadWatchDog.getInstance().checkForAdditionalDownloadSlots(session)) {
-                 return DownloadLinkCandidatePermission.OK_SPEED_EXTENSION;
-             }
+        if (maxPluginConcurrentHost <= 0) {
             return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
         }
+        int maxConcurrentHost = session.getMaxConcurrentDownloadsPerHost();
+        final String candidatePlugin = cachedAccount.getPlugin().getHost();
         int forcedDownloads = 0;
         for (final SingleDownloadController download : session.getControllers()) {
             final Account downloadAccount = download.getAccount();
@@ -252,7 +256,7 @@ public class DownloadLinkCandidateSelector {
                 /**
                  * same plugin is in use
                  */
-                if (download.getProxySelector() == candidate.getProxySelector() && downloadAccount == candidateAccount) {
+                if (cachedAccount.getPlugin().isSameAccount(downloadAccount, download.getProxySelector(), candidateAccount, candidate.getProxySelector())) {
                     /**
                      * same account is in use
                      */
@@ -278,16 +282,16 @@ public class DownloadLinkCandidateSelector {
             final String downloadDomain = downloadLink.getDomainInfo().getTld();
             final String pluginDomain = downloadCandidate.getCachedAccount().getHost();
             final String fileName = downloadLink.getName();
+            if (domainRuleSet == null) {
+                domainRuleSet = getDomainRuleSet(candidate);
+            }
             for (final Entry<CompiledDomainRule, AtomicInteger> s : domainRuleSet.getMap().entrySet()) {
                 if (s.getKey().matches(downloadCandidate.getCachedAccount().getAccount(), downloadDomain, pluginDomain, fileName)) {
                     s.getValue().incrementAndGet();
                 }
             }
         }
-        if (maxPluginConcurrentHost <= 0 || maxPluginConcurrentAccount <= 0) {
-            return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
-        }
-        if (candidate.isForced() && forcedDownloads < maxDownloadsForced) {
+        if (candidate.isForced() && forcedDownloads < Math.max(0, CFG_GENERAL.MAX_FORCED_DOWNLOADS.getValue())) {
             /**
              * we can still start forced downloads
              */
@@ -298,6 +302,9 @@ public class DownloadLinkCandidateSelector {
             /**
              * max concurrent downloads or max concurrent downloads per host reached
              */
+            if (domainRuleSet == null) {
+                domainRuleSet = getDomainRuleSet(candidate);
+            }
             for (final Entry<CompiledDomainRule, AtomicInteger> s : domainRuleSet.getMap().entrySet()) {
                 if (s.getKey().isAllowToExceedTheGlobalLimit()) {
                     if (s.getValue().get() < s.getKey().getMaxSimultanDownloads()) {
@@ -311,12 +318,14 @@ public class DownloadLinkCandidateSelector {
             return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
         }
 
+        if (domainRuleSet == null) {
+            domainRuleSet = getDomainRuleSet(candidate);
+        }
         for (final Entry<CompiledDomainRule, AtomicInteger> s : domainRuleSet.getMap().entrySet()) {
             if (s.getValue().get() >= s.getKey().getMaxSimultanDownloads()) {
                 return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
             }
         }
-
         return DownloadLinkCandidatePermission.OK;
     }
 
