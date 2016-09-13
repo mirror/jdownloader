@@ -28,6 +28,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
@@ -158,7 +159,7 @@ public abstract class RecaptchaV1Handler {
 
                         Graphics2D niceGraphics = (Graphics2D) niceImage.getGraphics();
                         Graphics2D badGraphics = (Graphics2D) badImage.getGraphics();
-                        Font font = new Font("Arial", Font.BOLD, 18);
+                        Font font = new Font(ImageProvider.getDrawFontName(), Font.BOLD, 18);
 
                         niceGraphics.setColor(Color.GREEN);
                         niceGraphics.setFont(font);

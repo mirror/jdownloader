@@ -15,6 +15,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -23,6 +29,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -43,12 +50,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.components.google.GoogleAccountConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.config.AccountJsonConfig;
-
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.Account;
 
 public class BrowserSolverService extends AbstractSolverService {
     public static final String                ID       = "browser";
@@ -85,7 +86,7 @@ public class BrowserSolverService extends AbstractSolverService {
                                     BufferedImage badImage = IconIO.toBufferedImage(badOrg.get());
                                     Graphics2D niceGraphics = (Graphics2D) niceImage.getGraphics();
                                     Graphics2D badGraphics = (Graphics2D) badImage.getGraphics();
-                                    Font font = new Font("Arial", Font.BOLD, 18);
+                                    Font font = new Font(ImageProvider.getDrawFontName(), Font.BOLD, 18);
                                     niceGraphics.setColor(Color.GREEN);
                                     niceGraphics.setFont(font);
                                     niceGraphics.drawString("Easy Captcha :-) ", 4, niceImage.getHeight() - 4);

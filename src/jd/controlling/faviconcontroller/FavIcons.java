@@ -40,6 +40,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.PublicSuffixList;
@@ -309,7 +310,8 @@ public class FavIcons {
         final Graphics2D g = image.createGraphics();
         try {
             try {
-                g.setFont(new Font("Arial", Font.BOLD, size));
+                final String fontName = ImageProvider.getDrawFontName();
+                g.setFont(new Font(fontName, Font.BOLD, size));
                 g.getFontMetrics(); // check for missing fonts/headless java
                 String tld = Files.getExtension(host);
                 if (tld != null) {
@@ -333,7 +335,7 @@ public class FavIcons {
                 // paint
                 // Graphics2D g = image.createGraphics();
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g.setFont(new Font("Arial", Font.BOLD, size));
+                g.setFont(new Font(fontName, Font.BOLD, size));
                 RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
                 g.setColor(bg);
                 g.fill(roundedRectangle);
@@ -343,7 +345,7 @@ public class FavIcons {
                 Rectangle2D bounds = g.getFontMetrics().getStringBounds(dummy, g);
                 g.drawString(dummy, (int) (w - bounds.getWidth()) / 2, (int) (-bounds.getY() + (h - bounds.getHeight()) / 2) - (tld == null ? 0 : 1));
                 if (tld != null) {
-                    g.setFont(new Font("Arial", 0, 6));
+                    g.setFont(new Font(fontName, 0, 6));
                     bounds = g.getFontMetrics().getStringBounds("." + tld, g);
                     g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (h) - 2);
                 }

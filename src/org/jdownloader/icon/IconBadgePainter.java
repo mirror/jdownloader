@@ -24,7 +24,7 @@ import javax.swing.ImageIcon;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.IconPainter;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -112,7 +112,7 @@ public class IconBadgePainter {
 
     public static void main(String[] args) {
         Application.setApplication(".jd_home");
-        
+
         new EDTRunner() {
 
             @Override
@@ -158,7 +158,7 @@ public class IconBadgePainter {
         m.paint(g2);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
         g2.setColor(Color.BLACK);
-        g2.setFont(new Font("Arial", Font.BOLD, 30));
+        g2.setFont(new Font(ImageProvider.getDrawFontName(), Font.BOLD, 30));
         int w = g2.getFontMetrics().stringWidth(string);
         FontRenderContext renderContext = g2.getFontRenderContext();
         Rectangle bounds = g2.getFont().createGlyphVector(renderContext, string).getPixelBounds(null, 0, 0);

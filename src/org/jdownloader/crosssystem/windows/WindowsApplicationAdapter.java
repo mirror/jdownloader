@@ -13,16 +13,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.logging2.extmanager.Log;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.jdownloader.controlling.AggregatedNumbers;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.WindowsTaskBarProgressDisplay;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -33,6 +23,17 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDownloaderMainFrame;
+
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging2.extmanager.Log;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.jdownloader.controlling.AggregatedNumbers;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.WindowsTaskBarProgressDisplay;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class WindowsApplicationAdapter {
     private static final WindowsApplicationAdapter INSTANCE = new WindowsApplicationAdapter();
@@ -169,7 +170,7 @@ public class WindowsApplicationAdapter {
         final String speedString = Integer.toString(speed);
         final Color fg = Color.WHITE;
         final Color bg = Color.GREEN.darker();
-        final Font font = new Font("Arial", Font.BOLD, 24);
+        final Font font = new Font(ImageProvider.getDrawFontName(), Font.BOLD, 24);
         final Canvas c = new Canvas();
         final FontMetrics fm = c.getFontMetrics(font);
         int stringwidth = Math.max(fm.getAscent(), fm.stringWidth(speedString)) + 6;
