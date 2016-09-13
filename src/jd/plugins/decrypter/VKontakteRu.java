@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -49,19 +52,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
 
-    /* must be static so all plugins share same lock */
-    private static Object LOCK = new Object();
-
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
+        // need this twice, because decrypter plugin might not be loaded yet
         try {
             Browser.setRequestIntervalLimitGlobal("vk.com", 250, 20, 30000);
         } catch (final Throwable e) {
@@ -270,12 +268,8 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         loggedIn = getUserLogin(false);
         try {
-            if (loginrequired) {
-                /* Login process */
-                if (!loggedIn) {
-                    throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
-                }
-                /* Login process end */
+            if (loginrequired && !loggedIn) {
+                throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
             }
             prepCryptedLink(Boolean.valueOf(loggedIn));
             /* Replace section start */
@@ -836,9 +830,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         if (numberOfEntrys == null) {
-            logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-            decryptedLinks = null;
-            return;
+            throw new DecrypterException("Can not find 'numberOfEntries'");
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(?:album|tag)(.+)").getMatch(0));
