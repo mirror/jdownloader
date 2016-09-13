@@ -23,6 +23,7 @@ import jd.controlling.captcha.SkipRequest;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -121,7 +122,7 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             final BufferedImage img = ImageIO.read(getImageFile());
             final int columnWidth = img.getWidth() / 3;
             final int rowHeight = img.getHeight() / 3;
-            final Font font = new Font("Arial", 0, 12).deriveFont(Font.BOLD);
+            final Font font = new Font(ImageProvider.getDrawFontName(), 0, 12).deriveFont(Font.BOLD);
             for (int yslot = 0; yslot < 3; yslot++) {
                 for (int xslot = 0; xslot < 3; xslot++) {
                     int xx = (xslot) * columnWidth;
@@ -179,8 +180,8 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     public BufferedImage getAnnotatedImage() throws IOException {
         final BufferedImage img = ImageIO.read(getImageFile());
         try {
-
-            final Font font = new Font("Arial", 0, 12);
+            final String fontName = ImageProvider.getDrawFontName();
+            final Font font = new Font(fontName, 0, 12);
             final FontMetrics fm = img.getGraphics().getFontMetrics(font.deriveFont(Font.BOLD));
             final String exeplain = getExplain();
             // final Icon icon = getExplainIcon(exeplain);
@@ -236,7 +237,7 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
 
                 Rectangle bounds = new Rectangle((newImage.getWidth() - img.getWidth()) / 2, y, img.getWidth(), img.getHeight());
                 g.drawImage(img, bounds.x, bounds.y, null);
-                g.setFont(new Font("Arial", 0, 16).deriveFont(Font.BOLD));
+                g.setFont(new Font(fontName, 0, 16).deriveFont(Font.BOLD));
                 double columnWidth = bounds.getWidth() / subChallenge.getGridWidth();
                 double rowHeight = bounds.getHeight() / subChallenge.getGridHeight();
                 for (int yslot = 0; yslot < subChallenge.getGridHeight(); yslot++) {
