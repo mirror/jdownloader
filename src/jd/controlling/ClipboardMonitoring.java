@@ -92,6 +92,23 @@ public class ClipboardMonitoring {
             }
         }
 
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            } else if (obj == this) {
+                return true;
+            } else if (obj instanceof String) {
+                return equals((String) obj);
+            } else if (obj instanceof HTMLFragment) {
+                return equals((HTMLFragment) obj);
+            } else if (obj instanceof ClipboardHash) {
+                final ClipboardHash o = (ClipboardHash) obj;
+                return length == o.length && hash == o.hash;
+            }
+            return false;
+        }
+
         private boolean equals(String string) {
             if (string == null) {
                 return length == -1 && hash == 0;

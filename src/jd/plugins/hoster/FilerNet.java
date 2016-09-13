@@ -17,12 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -93,13 +93,13 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser();
         fuid = getFID(link);
         if (fuid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        callAPI("http://api.filer.net/api/status/" + fuid + ".json");
+        callAPI(null, "http://api.filer.net/api/status/" + fuid + ".json");
         if (statusCode == APIDISABLED) {
             link.getLinkStatus().setStatusText(APIDISABLEDTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -130,7 +130,7 @@ public class FilerNet extends PluginForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        callAPI("http://filer.net/get/" + fuid + ".json");
+        callAPI(null, "http://filer.net/get/" + fuid + ".json");
         handleFreeErrorsAPI();
         if (statusCode == 203) {
             final String token = getJson("token", br.toString());
@@ -139,7 +139,7 @@ public class FilerNet extends PluginForHost {
             }
             final int wait = getWait();
             sleep(wait * 1001l, downloadLink);
-            callAPI("http://filer.net/get/" + fuid + ".json?token=" + token);
+            callAPI(null, "http://filer.net/get/" + fuid + ".json?token=" + token);
             handleFreeErrorsAPI();
         }
         String dllink = null;
@@ -264,15 +264,15 @@ public class FilerNet extends PluginForHost {
         return true;
     }
 
-    public void login(final Account account) throws IOException, PluginException, InterruptedException {
+    public void login(final Account account) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
             br.setCookiesExclusive(true);
             prepBrowser();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            callAPI("http://api.filer.net/api/profile.json");
+            callAPI(account, "http://api.filer.net/api/profile.json");
             if (br.getRedirectLocation() != null) {
-                callAPI(br.getRedirectLocation());
+                callAPI(account, br.getRedirectLocation());
             }
         }
     }
@@ -355,7 +355,7 @@ public class FilerNet extends PluginForHost {
             requestFileInformation(downloadLink);
             handleDownloadErrors();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            callAPI("http://filer.net/api/dl/" + fuid + ".json");
+            callAPI(account, "http://filer.net/api/dl/" + fuid + ".json");
             if (statusCode == 504) {
                 logger.info("No traffic available!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -451,8 +451,13 @@ public class FilerNet extends PluginForHost {
         return new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
-    private void callAPI(final String url) throws IOException {
-        br.getPage(url);
+    private void callAPI(final Account account, final String url) throws Exception {
+        final URLConnectionAdapter con = br.openGetConnection(url);
+        if (con.getResponseCode() == 401 && account != null) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.followConnection();
         updateStatuscode();
     }
 
