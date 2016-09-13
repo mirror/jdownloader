@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "http://ardmediathekdecrypted/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "http://ardmediathekdecrypted/\\d+" })
 public class ARDMediathek extends PluginForHost {
 
     private String DLLINK = null;
@@ -92,9 +92,10 @@ public class ARDMediathek extends PluginForHost {
                 DLLINK = DLLINK.split("@")[0];
             }
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
+            if (con.isOK() && !con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
+                br2.followConnection();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
