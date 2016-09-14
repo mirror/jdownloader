@@ -114,11 +114,17 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     boolean isClipboardMonitored();
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isSkipClipboardMonitorFirstRoundV2();
+    public static enum CLIPBOARD_SKIP_MODE {
+        ON_STARTUP,
+        ON_ENABLE,
+        NEVER
+    }
 
-    void setSkipClipboardMonitorFirstRoundV2(boolean b);
+    @AboutConfig
+    @DefaultEnumValue("ON_STARTUP")
+    CLIPBOARD_SKIP_MODE getClipboardSkipMode();
+
+    void setClipboardSkipMode(CLIPBOARD_SKIP_MODE mode);
 
     @AboutConfig
     @DefaultBooleanValue(true)
