@@ -238,4 +238,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         br.setCookie(this.getHost(), "ig_vw", "1680");
     }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 }
