@@ -24,6 +24,12 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -35,13 +41,8 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 public class Account extends Property {
+
     private static final String VALID_UNTIL                    = "VALID_UNTIL";
     private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
     private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
@@ -57,6 +58,36 @@ public class Account extends Property {
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
+    }
+
+    private static final String OBJECT_STORAGE = "OBJECT_STORAGE";
+
+    public synchronized void storeObject(final String storageID, final Object object) {
+        setProperty(OBJECT_STORAGE + ".validation." + storageID, Hash.getSHA256(getUser() + ":" + getPass()));
+        setProperty(OBJECT_STORAGE + ".object." + storageID, JSonStorage.serializeToJson(object));
+        setProperty(OBJECT_STORAGE + ".ts." + storageID, System.currentTimeMillis());
+    }
+
+    public synchronized void clearObject(final String storageID) {
+        removeProperty(OBJECT_STORAGE + ".validation." + storageID);
+        removeProperty(OBJECT_STORAGE + ".object." + storageID);
+        removeProperty(OBJECT_STORAGE + ".ts." + storageID);
+    }
+
+    public synchronized <T> T restoreObject(final String storageID, final TypeRef<T> type) {
+        final boolean containsObject = hasProperty(OBJECT_STORAGE + ".object." + storageID);
+        if (containsObject) {
+            if (StringUtils.equals(getStringProperty(OBJECT_STORAGE + ".validation." + storageID), Hash.getSHA256(getUser() + ":" + getPass()))) {
+                return JSonStorage.restoreFromString(getStringProperty(OBJECT_STORAGE + ".object." + storageID), type, null);
+            } else {
+                clearObject(storageID);
+            }
+        }
+        return null;
+    }
+
+    public synchronized long getObjectTimeStamp(final String storageID) {
+        return getLongProperty(OBJECT_STORAGE + ".ts." + storageID, -1);
     }
 
     public synchronized void saveCookies(final Cookies cookies, final String ID) {
