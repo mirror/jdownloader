@@ -68,6 +68,9 @@ public class EmoHottiesCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("clip: \\{\\s+url: \\'([^\\']+)\\'").getMatch(0);
         }
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"([^\"]+)\"").getMatch(0);
+        }
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + ", DLLINK: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
