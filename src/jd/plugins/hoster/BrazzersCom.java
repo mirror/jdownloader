@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.List;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
@@ -31,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?|embed/\\d+/?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?|embed/\\d+/?)" })
 public class BrazzersCom extends antiDDoSForHost {
 
     public BrazzersCom(PluginWrapper wrapper) {
@@ -106,10 +108,19 @@ public class BrazzersCom extends antiDDoSForHost {
             filename = fid + "_" + filename;
         }
         final Account aa = AccountController.getInstance().getValidAccount(this);
+        Account moch_account = null;
+        final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
+        for (final Account moch_account_temp : moch_accounts) {
+            if (moch_account_temp.isValid() && moch_account_temp.isEnabled()) {
+                moch_account = moch_account_temp;
+                break;
+            }
+        }
         final boolean moch_download_possible = AccountController.getInstance().hasMultiHostAccounts(this.getHost());
+        long filesize_final = 0;
         long filesize_max = -1;
         long filesize_temp = -1;
-        final String[] filesizes = br.getRegex("\\[(\\d{1,5}(?:\\.\\d{1,2})? (?:GiB|MB))\\]").getColumn(0);
+        final String[] filesizes = br.getRegex("\\[(\\d{1,5}(?:\\.\\d{1,2})? (?:GB|GiB|MB))\\]").getColumn(0);
         for (final String filesize_temp_str : filesizes) {
             filesize_temp = SizeFormatter.getSize(filesize_temp_str);
             if (filesize_temp > filesize_max) {
@@ -126,15 +137,25 @@ public class BrazzersCom extends antiDDoSForHost {
         if (filesize_max > -1) {
             if (aa != null) {
                 /* Original brazzers account available --> Set highest filesize found --> Best Quality possible */
-                link.setDownloadSize(filesize_max);
-            } else if (moch_download_possible) {
-                /* Multihosters usually return a medium quality - about 1 / 4 the size of the best possible! */
-                link.setDownloadSize((long) (filesize_max * 0.25));
+                filesize_final = filesize_max;
+            } else if (moch_account != null && moch_account.getHoster().contains("debriditalia")) {
+                /* Multihoster debriditalia usually returns a medium quality - about 1 / 4 the size of the best possible! */
+                filesize_final = (long) (filesize_max * 0.25);
+            } else if (moch_account != null && moch_account.getHoster().contains("premiumize")) {
+                /* Multihoster premiumize usually returns 720p quality (or less, if not possible). */
+                if (this.br.containsHTML("HD MP4 1080P") && filesizes.length == 5) {
+                    final String filesize_720p_temp_str = filesizes[1];
+                    filesize_final = SizeFormatter.getSize(filesize_720p_temp_str);
+                } else {
+                    /* 1080p not available. This else is also used as a fallback! */
+                    filesize_final = filesize_max;
+                }
             } else {
-                link.setDownloadSize(filesize_max);
+                filesize_final = filesize_max;
             }
             link.setProperty("not_yet_released", false);
             not_yet_released = false;
+            link.setDownloadSize(filesize_final);
         } else {
             /* No filesize available --> Content is (probably) not (yet) released/downloadable */
             link.getLinkStatus().setStatusText("Content has not yet been released");

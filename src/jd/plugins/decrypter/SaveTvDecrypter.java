@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -334,7 +335,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void site_decrypt_All(final Account acc) throws Exception {
         boolean is_groups_enabled = false;
         boolean groups_enabled_by_user = false;
@@ -357,6 +358,16 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         int added_entries;
 
+        final long date_current = System.currentTimeMillis();
+        /* 2 months before current date */
+        final long date_start = date_current - 5259492000l;
+        /* One month after current date */
+        final long date_end = date_current + 2629746000l;
+        final String targetFormat = "yyyy-MM-dd";
+        final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+        final String date_start_formatted = formatter.format(date_start);
+        final String date_end_formatted = formatter.format(date_end);
+
         try {
             for (int request_num = 1; request_num <= requestCount; request_num++) {
                 added_entries = 0;
@@ -372,7 +383,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     postPageSafe(acc, this.br, "/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
                     is_groups_enabled = false;
                 }
-                this.postPageSafe(acc, this.br, "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&dStartdate=0");
+                /* 2016-09-14: dStartdate and dEnddate parameters are important now! */
+                this.postPageSafe(acc, this.br, "/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&dStartdate=" + date_start_formatted + "&dEnddate=" + date_end_formatted);
 
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");

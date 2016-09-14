@@ -51,7 +51,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowvideo.to" }, urls = { "http://(?:www\\.)?(?:nowvideo\\.(?:sx|eu|co|ch|ag|at|ec|li|to)/(?:video/|player\\.php\\?v=|share\\.php\\?id=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+" })
 public class NowVideoEu extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet */
@@ -210,7 +210,8 @@ public class NowVideoEu extends PluginForHost {
             }
         }
         filename = filename.trim() + (getPluginConfig().getBooleanProperty(PROPERTY_FILENAME_WITH_FUID, PROPERTY_DEFAULT_FILENAME_WITH_FUID) ? "(" + linkid + ")" : "");
-        link.setName(Encoding.htmlDecode(filename) + ".flv");
+        /* 2016-09-14: Changed default extension from .flv to .mp4 */
+        link.setName(Encoding.htmlDecode(filename) + ".mp4");
         return AvailableStatus.TRUE;
     }
 
