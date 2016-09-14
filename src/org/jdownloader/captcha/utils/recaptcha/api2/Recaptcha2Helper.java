@@ -10,15 +10,15 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 
 public class Recaptcha2Helper {
 
@@ -43,7 +43,6 @@ public class Recaptcha2Helper {
     private int     successIdentifier;
     private int     timeout;
     private long    verifyTime;
-    private String  tokenToReloadFbg;
 
     public static boolean isEmpty(final String ip) {
         return ip == null || ip.trim().length() == 0;
