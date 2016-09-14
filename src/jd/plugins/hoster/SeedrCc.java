@@ -16,15 +16,16 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -39,7 +40,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+|http://seedrdecrypted\\.cc/\\d+" })
 public class SeedrCc extends PluginForHost {
 
     public SeedrCc(PluginWrapper wrapper) {
@@ -53,37 +54,61 @@ public class SeedrCc extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXCHUNKS               = 0;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean       FREE_RESUME                  = true;
+    private final int           FREE_MAXCHUNKS               = -8;
+    private final int           FREE_MAXDOWNLOADS            = 20;
+    private final boolean       ACCOUNT_FREE_RESUME          = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = -8;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -8;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private boolean       server_issues                = false;
-    private String        dllink                       = null;
+    private static final String TYPE_DIRECTLINK              = "https?://[A-Za-z0-9\\-]+\\.seedr\\.cc/downloads/.+";
+    private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/\\d+";
+
+    private boolean             server_issues                = false;
+    private String              dllink                       = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         server_issues = false;
-        dllink = link.getDownloadURL();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(getFileNameFromHeader(con));
-            } else {
-                server_issues = true;
+        String filename = null;
+        if (link.getDownloadURL().matches(TYPE_DIRECTLINK)) {
+            dllink = link.getDownloadURL();
+        } else {
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa == null) {
+                return AvailableStatus.UNCHECKABLE;
             }
-        } finally {
+            this.login(this.br, aa, false);
+            prepAjaxBr(this.br);
+            final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            this.br.postPage("https://www." + this.getHost() + "/content.php?action=fetch_file", "folder_file_id=" + fid);
+            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            filename = PluginJSonUtils.getJsonValue(this.br, "name");
+        }
+        if (filename != null) {
+            link.setFinalFileName(filename);
+        }
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    if (filename == null) {
+                        link.setFinalFileName(getFileNameFromHeader(con));
+                    }
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -103,6 +128,11 @@ public class SeedrCc extends PluginForHost {
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
         // }
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -158,7 +188,7 @@ public class SeedrCc extends PluginForHost {
                     br.setCookies(account.getHoster(), cookies);
                     prepAjaxBr(br);
                     br.postPage("https://www." + this.getHost() + "/content.php?action=get_settings", "");
-                    if (!this.br.containsHTML("\"login_required\"")) {
+                    if (!br.containsHTML("\"login_required\"")) {
                         br.setCookies(account.getHoster(), cookies);
                         return;
                     }
