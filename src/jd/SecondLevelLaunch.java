@@ -968,7 +968,7 @@ public class SecondLevelLaunch {
                                             @Override
                                             protected void runInEDT() {
                                                 /* init clipboardMonitoring stuff */
-                                                ClipboardMonitoring.setSkipFirstRound(guiConfig.isSkipClipboardMonitorFirstRoundV2());
+                                                ClipboardMonitoring.setClipboardSkipMode(guiConfig.getClipboardSkipMode());
                                                 ClipboardMonitoring.setHtmlFlavorAllowed(guiConfig.isClipboardMonitorProcessHTMLFlavor());
                                                 if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                                                     ClipboardMonitoring.getINSTANCE().startMonitoring();

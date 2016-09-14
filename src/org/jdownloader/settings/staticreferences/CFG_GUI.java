@@ -287,8 +287,6 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              SPECIAL_DEAL_OBOOM_DIALOG_VISIBLE_ON_STARTUP            = SH.getKeyHandler("SpecialDealOboomDialogVisibleOnStartup", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler                              SKIP_CLIPBOARD_MONITOR_FIRST_ROUND                      = SH.getKeyHandler("SkipClipboardMonitorFirstRoundV2", BooleanKeyHandler.class);
-
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_LINK_COUNT_VISIBLE              = SH.getKeyHandler("OverviewPanelDownloadLinkCountVisible", BooleanKeyHandler.class);
 
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                       = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
