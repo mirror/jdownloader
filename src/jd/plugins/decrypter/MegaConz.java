@@ -38,7 +38,7 @@ public class MegaConz extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static class MegaFolder {
+    private class MegaFolder {
 
         public String  parent;
         public String  name;
@@ -86,19 +86,19 @@ public class MegaConz extends PluginForDecrypt {
         final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
