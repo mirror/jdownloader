@@ -40,11 +40,11 @@ public class MegaConz extends PluginForDecrypt {
 
     private class MegaFolder {
 
-        public String  parent;
-        public String  name;
+        private String parent;
+        private String name;
         private String id;
 
-        public MegaFolder(String nodeID) {
+        private MegaFolder(String nodeID) {
             id = nodeID;
         }
 
@@ -86,19 +86,19 @@ public class MegaConz extends PluginForDecrypt {
         final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -126,7 +126,7 @@ public class MegaConz extends PluginForDecrypt {
             final String nodeType = getField("t", node);
             if ("1".equals(nodeType)) {
                 /* folder */
-                MegaFolder fo = new MegaFolder(nodeID);
+                final MegaFolder fo = new MegaFolder(nodeID);
                 fo.parent = nodeParentID;
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
@@ -186,22 +186,18 @@ public class MegaConz extends PluginForDecrypt {
         if (folder == null) {
             return "/";
         }
-        StringBuilder ret = new StringBuilder();
+        final StringBuilder ret = new StringBuilder();
         while (true) {
-
             ret.insert(0, folder.name);
             ret.insert(0, "/");
-            MegaFolder parent = folders.get(folder.parent);
+            final MegaFolder parent = folders.get(folder.parent);
             if (parent == null || parent == folder) {
                 //
                 return ret.toString();
             }
             folder = parent;
         }
-
     }
-
-    // include https://svn.jdownloader.org/issues/80776
 
     private String decryptNodeKey(String encryptedNodeKey, String masterKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         byte[] masterKeyBytes = jd.plugins.hoster.MegaConz.b64decode(masterKey);
