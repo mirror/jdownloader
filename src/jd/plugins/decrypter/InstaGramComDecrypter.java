@@ -241,6 +241,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        return 1;
+        return 4;
     }
 }
