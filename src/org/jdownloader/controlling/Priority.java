@@ -7,6 +7,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public enum Priority {
+    // Don't forget to update org.jdownloader.myjdownloader.client.bindings.PriorityStorable
     HIGHEST(3, _GUI.T.gui_treetable_tooltip_priority3()),
     HIGHER(2, _GUI.T.gui_treetable_tooltip_priority2()),
     HIGH(1, _GUI.T.gui_treetable_tooltip_priority1()),
