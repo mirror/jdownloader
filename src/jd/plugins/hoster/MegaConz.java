@@ -508,16 +508,21 @@ public class MegaConz extends PluginForHost {
         if (fileID == null || keyString == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Map<String, Object> response;
+        Map<String, Object> response = null;
         try {
             final String parentNode = getParentNodeID(link);
             response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
         } catch (IOException e) {
-            // java.io.IOException: 500 Server Too Busy
-            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) {
-                return AvailableStatus.UNCHECKABLE;
+            logger.log(e);
+        }
+        if (response == null) {
+            final String error = getError(br);
+            if ("-6".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
             }
-            throw e;
+            checkServerBusy();
+            logger.info("Unhandled error code: " + error);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String fileSize = valueOf(response.get("s"));
         if (fileSize == null) {
@@ -629,14 +634,22 @@ public class MegaConz extends PluginForHost {
                 }
                 final String parentNode = getParentNodeID(link);
                 final Map<String, Object> response = apiRequest(account, sid, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "g", "1" }, new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
-                final String downloadURL = valueOf(response.get("g"));
+                final String downloadURL;
+                if (response != null) {
+                    downloadURL = valueOf(response.get("g"));
+                } else {
+                    downloadURL = null;
+                }
                 if (downloadURL == null) {
-                    String error = getError(br);
+                    final String error = getError(br);
                     /*
                      * https://mega.co.nz/#doc
                      */
-                    if ("-3".equals(error) || br.getRequest().getHtmlCode().trim().equals("-3")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 2 * 60 * 1000l);
+                    if ("-3".equals(error)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
+                    }
+                    if ("-6".equals(error)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
                     }
                     if ("-11".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
@@ -744,7 +757,14 @@ public class MegaConz extends PluginForHost {
         if (br == null) {
             return null;
         }
-        return br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
+        String ret = br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
+        if (ret == null) {
+            ret = br.getRegex("\\s*\\[\\s*(-?\\d+)\\s*\\]").getMatch(0);
+        }
+        if (ret == null) {
+            ret = br.getRegex("\\s*(-?\\d+)").getMatch(0);
+        }
+        return ret;
     }
 
     private void setConfigElements() {
