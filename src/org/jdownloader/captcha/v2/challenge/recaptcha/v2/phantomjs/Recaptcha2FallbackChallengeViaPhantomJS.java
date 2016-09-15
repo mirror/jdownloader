@@ -18,15 +18,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 
-import jd.captcha.gui.BasicWindow;
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.plugins.Account;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -71,7 +62,16 @@ import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
 
-public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2FallbackChallenge {
+import jd.captcha.gui.BasicWindow;
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.Request;
+import jd.plugins.Account;
+
+public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2FallbackChallenge {
     private static LogSource LOGGER;
 
     static {
@@ -411,7 +411,7 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
     }
 
     protected void readChallenge(String initScript) throws IOException, InterruptedException, TimeoutException {
-        final String json = new Regex(initScript, "recaptcha\\.frame\\.Main\\.init\\(\"(.*)\"\\)\\;").getMatch(0);
+        String json = new Regex(initScript, "recaptcha\\.frame\\.Main\\.init\\(\"(.*)\"\\)\\;").getMatch(0);
         if (StringUtils.isEmpty(json)) {
             logger.info("InitScript JSON not found:" + initScript);
             throw new IOException("InitScript JSON not found");
@@ -755,7 +755,6 @@ public final class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecap
     // }
     //
     // }
-
     @Override
     public void reload(int round) throws Throwable {
         if (!phantom.isRunning()) {
