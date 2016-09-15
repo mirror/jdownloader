@@ -184,7 +184,15 @@ public class GoogleDrive extends PluginForDecrypt {
                         addedlinks++;
                         if (result.contains("vnd.google-apps.folder")) {
                             /* Folder */
-                            decryptedLinks.add(createDownloadlink("https://drive.google.com/drive/folders/" + id));
+                            final DownloadLink folderLink = createDownloadlink("https://drive.google.com/drive/folders/" + id);
+                            final String folderName = new Regex(result, "\\\\n,\\\\x22(.*?)\\\\x22").getMatch(0);
+                            if (folderName != null) {
+                                final FilePackage fp = FilePackage.getInstance();
+                                fp.setName(folderName);
+                                fp.add(folderLink);
+                                folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, "/" + folderName);
+                            }
+                            decryptedLinks.add(folderLink);
                         } else {
                             /* Single file */
                             decryptedLinks.add(createDownloadlink("https://drive.google.com/file/d/" + id));
@@ -244,22 +252,6 @@ public class GoogleDrive extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    private void scanLinks(String result, ArrayList<DownloadLink> ret) {
-        if (result != null) {
-            String link = new Regex(result, "\"openURL\":\"(http.+(\\\\/|/)file(\\\\/|/)d(\\\\/|/)[^\"]+)").getMatch(0);
-            String filename = new Regex(result, "\"name\":\"([^\"]+)").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(result, ">(.*?)</a>").getMatch(0);
-            }
-            if (link != null && filename != null) {
-                DownloadLink dl = createDownloadlink(link.replaceAll("\\\\/", "/"));
-                dl.setName(filename);
-                dl.setAvailable(true);
-                ret.add(dl);
-            }
-        }
     }
 
     private static synchronized String unescape(final String s) {
