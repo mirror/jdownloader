@@ -27,12 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -56,6 +50,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.eu" }, urls = { "https?://(www\\.)?rockfile\\.eu/(embed\\-)?[a-z0-9]{12}\\.html" })
 public class RockFileEu extends antiDDoSForHost {
 
@@ -63,7 +63,7 @@ public class RockFileEu extends antiDDoSForHost {
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                  = "http://rockfile.eu";
+    private static final String  COOKIE_HOST                  = "https://rockfile.eu";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -75,8 +75,8 @@ public class RockFileEu extends antiDDoSForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean VIDEOHOSTER_2                = false;
-    private static final boolean SUPPORTSHTTPS                = false;
-    private static final boolean SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean SUPPORTSHTTPS                = true;
+    private static final boolean SUPPORTSHTTPS_FORCED         = true;
     private static final boolean SUPPORTS_ALT_AVAILABLECHECK  = true;
     /* Waittime stuff */
     private static final boolean WAITFORCED                   = true;
@@ -163,7 +163,7 @@ public class RockFileEu extends antiDDoSForHost {
                 if (br.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                getPage(altbr, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+                getPage(altbr, "https://" + NICE_HOST + "/?op=report_file&id=" + fuid);
                 if (altbr.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -273,7 +273,7 @@ public class RockFileEu extends antiDDoSForHost {
     }
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        getPage(br, "https://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -312,7 +312,7 @@ public class RockFileEu extends antiDDoSForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                final String embed_access = "https://" + NICE_HOST + "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
