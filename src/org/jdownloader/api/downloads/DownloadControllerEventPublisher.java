@@ -79,9 +79,9 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private final AtomicLong                                 backEndChangeID         = new AtomicLong(-1);
     private final AtomicLong                                 contentChangesCounter   = new AtomicLong(-1);
     private final Queue                                      queue                   = new Queue("DownloadControllerEventPublisher") {
-        public void killQueue() {
-        };
-    };
+                                                                                         public void killQueue() {
+                                                                                         };
+                                                                                     };
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -456,7 +456,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                     if (hasSubscriptionFor(LINK_UPDATE_priority)) {
                         final HashMap<String, Object> dls = new HashMap<String, Object>();
                         dls.put("uuid", dl.getUniqueID().getID());
-                        dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
+                        dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.get(dl.getPriorityEnum().name()));
                         fire(LINK_UPDATE_priority, dls, LINK_UPDATE_priority + "." + dl.getUniqueID().getID());
                         flush = true;
                     }
@@ -618,7 +618,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                     if (hasSubscriptionFor(PACKAGE_UPDATE_priority)) {
                         final HashMap<String, Object> dls = new HashMap<String, Object>();
                         dls.put("uuid", pkg.getUniqueID().getID());
-                        dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
+                        dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.get(pkg.getPriorityEnum().name()));
                         fire(PACKAGE_UPDATE_priority, dls, PACKAGE_UPDATE_priority + "." + pkg.getUniqueID().getID());
                         flush = true;
                     }

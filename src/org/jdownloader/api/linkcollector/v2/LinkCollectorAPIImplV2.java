@@ -119,7 +119,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
                 }
                 if (queryParams.isPriority()) {
-                    cps.setPriority(PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
+                    cps.setPriority(PriorityStorable.get(pkg.getPriorityEnum().name()));
                 }
                 if (queryParams.isHosts()) {
                     Set<String> hosts = new HashSet<String>();
@@ -274,7 +274,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
 
         if (queryParams.isPriority()) {
-            cls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(cl.getPriority().name()));
+            cls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.get(cl.getPriority().name()));
         }
         if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon() || queryParams.isVariants()) {
             try {
