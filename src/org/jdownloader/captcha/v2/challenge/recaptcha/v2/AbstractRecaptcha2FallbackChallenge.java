@@ -18,8 +18,6 @@ import java.util.Locale;
 
 import javax.imageio.ImageIO;
 
-import jd.controlling.captcha.SkipRequest;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -38,10 +36,11 @@ import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
+import jd.controlling.captcha.SkipRequest;
+
 public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaChallenge {
     private static final int             LINE_HEIGHT = 16;
     protected final RecaptchaV2Challenge owner;
-
     private ArrayList<SubChallenge>      subChallenges;
     private SubChallenge                 subChallenge;
 
@@ -62,7 +61,6 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 return new ArrayList<SubChallenge>(subChallenges);
             }
         }
-
     }
 
     public static enum ChallengeType {
@@ -105,10 +103,8 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     }
 
     protected String           token;
-
     public static final String WITH_OF_ALL_THE = "(?:with|of|all the) (.*?)(?:\\.|\\!|\\?|$)";
     private static final Color COLOR_BG        = new Color(0x4A90E2);
-
     protected boolean          useEnglish;
 
     @Override
@@ -128,7 +124,6 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                     int xx = (xslot) * columnWidth;
                     int yy = (yslot) * rowHeight;
                     if (isSlotAnnotated(xslot, yslot)) {
-
                         int num = xslot + yslot * 3 + 1;
                         final BufferedImage jpg = new BufferedImage(columnWidth, rowHeight, BufferedImage.TYPE_INT_RGB);
                         final Graphics g = jpg.getGraphics();
@@ -160,7 +155,6 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                             }
                         }
                     }
-
                 }
             }
             return data;
@@ -191,10 +185,8 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 lines.add(key.toUpperCase(Locale.ENGLISH) + "?");
             } else {
                 lines.add(subChallenge.getType().toUpperCase(Locale.ENGLISH) + "?");
-
             }
             lines.addAll(split(fm, getExplain().replaceAll("<.*?>", "")));
-
             for (String line : addAnnotationLines()) {
                 lines.addAll(split(fm, line.replaceAll("<.*?>", "")));
             }
@@ -209,12 +201,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             y += 5;
             y += 8;
             width += 10;
-
             final BufferedImage newImage = IconIO.createEmptyImage(Math.max(width, img.getWidth()), img.getHeight() + textHeight);
             final Graphics2D g = (Graphics2D) newImage.getGraphics();
             try {
                 int x = 5;
-
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                 g.setColor(COLOR_BG);
                 g.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
@@ -225,16 +215,12 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 g.drawString(uidd, x + newImage.getWidth() - w - 10, 13);
                 g.setColor(Color.WHITE);
                 g.setFont(font.deriveFont(Font.BOLD));
-
                 g.drawString(lines.remove(0), Math.max(5, (newImage.getWidth() - img.getWidth()) / 2), y);
                 g.setFont(font);
-
                 y += 5;
-
                 g.setColor(Color.WHITE);
                 g.fillRect(0, y, newImage.getWidth(), img.getHeight() + 10);
                 y += 5;
-
                 Rectangle bounds = new Rectangle((newImage.getWidth() - img.getWidth()) / 2, y, img.getWidth(), img.getHeight());
                 g.drawImage(img, bounds.x, bounds.y, null);
                 g.setFont(new Font(fontName, 0, 16).deriveFont(Font.BOLD));
@@ -247,14 +233,11 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                             double yy = (yslot) * rowHeight;
                             int num = xslot + yslot * subChallenge.getGridWidth() + 1;
                             int xOff = xslot < (subChallenge.getGridWidth() - 1) ? 2 : 0;
-
                             xOff -= 1;
-
                             int yOff = yslot > 0 ? 2 : 0;
                             g.setColor(Color.WHITE);
                             g.fillRect(ceil(xx + columnWidth - 20 + bounds.x - xOff), ceil(yy + bounds.y + yOff), 20, 20);
                             g.setColor(COLOR_BG);
-
                             g.drawString(num + "", ceil(xx + columnWidth - 20 + bounds.x + 5 - xOff - (num >= 10 ? 4 : 0)), ceil(yy + bounds.y + 15 + yOff));
                         }
                     }
@@ -264,32 +247,24 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 g.setStroke(new BasicStroke(splitterWidth));
                 for (int yslot = 0; yslot < subChallenge.getGridHeight() - 1; yslot++) {
                     y = ceil((1 + yslot) * rowHeight);
-
                     g.drawLine(bounds.x, bounds.y + y, bounds.x + bounds.width, bounds.y + y);
-
                 }
                 for (int xslot = 0; xslot < subChallenge.getGridWidth() - 1; xslot++) {
                     x = ceil((1 + xslot) * columnWidth);
-
                     g.drawLine(bounds.x + x, bounds.y, bounds.x + x, bounds.y + bounds.height);
                 }
-
                 y = bounds.y + bounds.height;
                 y += 5;
-
                 g.setFont(font);
                 g.setColor(Color.WHITE);
                 for (String line : lines) {
-
                     y += LINE_HEIGHT;
                     if (line == lines.get(lines.size() - 1)) {
                         // g.setColor(Color.RED.brighter());
                         g.setFont(font.deriveFont(Font.BOLD, 14));
                     }
                     g.drawString(line, 5, y);
-
                 }
-
             } finally {
                 g.dispose();
             }
@@ -345,18 +320,15 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
             }
             HashSet<Integer> ret = new HashSet<Integer>();
             String clean = json.replaceAll("[^\\d,]", "");
-
             clean = clean.replaceAll("[,]+$", "");
             boolean bad = !clean.equals(json);
             final StringBuilder sb = new StringBuilder();
             final HashSet<String> dupe = new HashSet<String>();
             while (clean.length() > 0) {
-
                 int index = clean.indexOf(",");
                 if (index == -1) {
                     index = 1;
                 }
-
                 String part = clean.substring(0, index);
                 int i = Integer.parseInt(part);
                 while (i > getSubChallenge().getTileCount() && index > 1) {
@@ -367,12 +339,10 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
                 ret.add(i);
                 clean = clean.substring(index);
                 clean = clean.replaceAll("^[,]+", "");
-
             }
             for (Integer i : ret) {
                 if (sb.length() > 0) {
                     sb.append(",");
-
                 }
                 sb.append(i);
             }
@@ -423,5 +393,4 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     public String getReloadErrorMessage() {
         return null;
     }
-
 }

@@ -1,6 +1,13 @@
 (function() {
 	var initData = eval(initScript);
 	initData = eval(initData);
+	if("multicaptcha"==initData[5][5]){
+		ret= {};
+		ret.x=initData[5][4][5][0][0][4];
+		ret.y=initData[5][4][5][0][0][3];
+		ret.challengeType=initData[5][5];
+		return ret;
+	}
 	ret= {};
 	ret.contentType=initData[5][4][1][0];
 	ret.x=initData[5][4][1][4];
