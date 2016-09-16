@@ -82,7 +82,6 @@ import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> implements MouseListener, MouseMotionListener {
-
     private LocationStorage config;
     protected boolean       hideCaptchasForHost = false;
     private Point           lastMouse;
@@ -107,7 +106,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             }
         }
         lastMouse = e.getPoint();
-
     }
 
     @Override
@@ -136,7 +134,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         boolean is = super.isExpired(currentTimeout);
         boolean cesActive = false;
         SolverJob<?> job = challenge.getJob();
-
         if (challenge != null) {
             // don't autoclose captcha dialog if ces solver is still active
             for (ChallengeSolver s : challenge.getJob().getSolverList()) {
@@ -145,7 +142,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                 }
             }
         }
-
         return is && !cesActive;
     }
 
@@ -159,7 +155,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
     @Override
     public void mouseEntered(MouseEvent e) {
-
         // no cancel here. this would cancel the timeout if the dialog appears under the mouse - even if it does not move
     }
 
@@ -179,7 +174,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         final JPopupMenu popup = new JPopupMenu();
         JMenuItem mi;
         if (getType() == DialogType.HOSTER) {
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(getHost()));
@@ -196,11 +190,8 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_disable_package(getPackageName()));
@@ -213,13 +204,9 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
-
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download());
                     setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_CLEAR, 16));
@@ -231,11 +218,8 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads());
@@ -248,13 +232,9 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
         } else {
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_cancel_linkgrabbing());
@@ -267,11 +247,8 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
-
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI.T.AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs());
@@ -284,17 +261,12 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     setReturnmask(false);
                     dispose();
                 }
-
             });
-
             popup.add(mi);
         }
-
         Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
-
         Dimension pref = popup.getPreferredSize();
         pref.height = popup.getComponentCount() * 24 + insets.top + insets.bottom;
-
         popup.setPreferredSize(pref);
         popup.show(cancelButton, +insets.left - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
     }
@@ -314,7 +286,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
 
     protected boolean      hideCaptchasForPackage = false;
     protected final String explain;
-
     protected boolean      hideAllCaptchas;
     protected DomainInfo   hosterInfo;
     protected JPanel       iconPanel;
@@ -332,7 +303,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
     protected final Challenge<?> challenge;
 
     public AbstractCaptchaDialog(Challenge<?> challenge, int flags, String title, DialogType type, DomainInfo domainInfo, String explain) {
-
         super(flags, title, null, _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), type == DialogType.CRAWLER ? _GUI.T.lit_cancel() : _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
         this.challenge = challenge;
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
@@ -340,7 +310,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         } else {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
-
         this.explain = explain;
         this.hosterInfo = domainInfo;
         this.type = type;
@@ -352,7 +321,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                 return FrameState.TO_FRONT_FOCUSED;
             }
         }
-
         FrameState ret = (FrameState) CFG_GUI.NEW_DIALOG_FRAME_STATE.getValue();
         if (ret == null) {
             ret = FrameState.TO_FRONT;
@@ -362,9 +330,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         case TO_BACK:
             JDGui.getInstance().flashTaskbar();
         }
-
         return ret;
-
     }
 
     public static void playCaptchaSound() {
@@ -384,20 +350,16 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                             clip.open(stream);
                             try {
                                 final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-
                                 float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
-
                                 gainControl.setValue(Math.max(-80f, db));
                                 BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
                                 muteControl.setValue(true);
-
                                 muteControl.setValue(false);
                             } catch (Exception e) {
                                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
                             final AtomicBoolean runningFlag = new AtomicBoolean(true);
                             clip.addLineListener(new LineListener() {
-
                                 @Override
                                 public void update(LineEvent event) {
                                     if (event.getType() == Type.STOP) {
@@ -453,17 +415,13 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         if (!isInitialized()) {
             return;
         }
-
         if (dialog != null) {
             // setx and sety store the dimension/size!
             config.setX(getDialog().getWidth());
             config.setValid(true);
             config.setY(getDialog().getHeight());
-
         }
-
         super.dispose();
-
     }
 
     public String getCrawlerStatus() {
@@ -472,15 +430,12 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             return ((PluginForDecrypt) plugin).getCrawlerStatusString();
         default:
             return null;
-
         }
     }
 
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
-
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
-
             @Override
             public void addOKButton(JButton okButton) {
                 final ExtButton refreshBtn = new ExtButton(new AppAction() {
@@ -492,7 +447,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                             ks = KeyStroke.getKeyStroke("pressed F5");
                         }
                         setAccelerator(ks);
-
                     }
 
                     @Override
@@ -502,44 +456,34 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                         dispose();
                     }
                 }) {
-
                     @Override
                     public int getTooltipDelay(Point mousePositionOnScreen) {
                         return 500;
                     }
-
                 };
                 //
                 refreshBtn.setRolloverEffectEnabled(true);
                 super.add(refreshBtn, "alignx right,width 28!");
                 super.addOKButton(okButton);
-
             }
 
             @Override
             public void addCancelButton(final JButton cancelButton) {
                 super.addCancelButton(cancelButton);
-
                 final JButton bt = new JButton(new AbstractIcon(IconKey.ICON_POPDOWNSMALL, -1)) {
-
                     public void setBounds(int x, int y, int width, int height) {
                         int delta = 5;
                         super.setBounds(x - delta, y, width + delta, height);
                     }
-
                 };
-
                 bt.addActionListener(new ActionListener() {
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         createPopup();
                     }
-
                 });
                 super.add(bt, "gapleft 0,width 8!");
             }
-
         };
         ret.setOpaque(false);
         ExtButton premium = new ExtButton(new AppAction() {
@@ -603,8 +547,9 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             return ((PluginForHost) plugin).getHost(((PluginForHost) plugin).getDownloadLink(), null);
         case CRAWLER:
             return ((PluginForDecrypt) plugin).getHost();
+        default:
+            return challenge.getHost();
         }
-        return null;
     }
 
     protected String getPackageName() {
@@ -614,7 +559,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                 return null;
             }
             return ((PluginForHost) plugin).getDownloadLink().getFilePackage().getName();
-
         case CRAWLER:
             return null;
         }
@@ -682,11 +626,8 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         getDialog().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
         Header headerPanel = null;
         if (type == DialogType.HOSTER) {
-
             // setBorder(new JTextField().getBorder());
-
             headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[]");
-
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -716,15 +657,12 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                         setting = false;
                     }
                     super.paintComponent(g);
-
                 }
 
                 // public Dimension getPreferredSize() {
                 // return new Dimension(10, 10);
                 // }
-
                 public void repaint() {
-
                     if (setting) {
                         return;
                     }
@@ -738,9 +676,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                     super.revalidate();
                 }
             };
-
             header.setIcon(hosterInfo.getFavIcon());
-
             // if (col >= 0) {
             // header.setBackground(new Color(col));
             // header.setOpaque(false);
@@ -748,23 +684,18 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             // header.setOpaque(false);
             // header.setLabelMode(true);
             if (getFilename() != null) {
-
                 headerPanel.add(header);
             } else {
                 headerPanel = null;
             }
-
         } else {
             // setBorder(new JTextField().getBorder());
-
             headerPanel = new Header("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
-
             final String headerText;
             if (getCrawlerStatus() == null) {
                 headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
             } else {
                 headerText = (_GUI.T.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
-
             }
             // headerPanel.setOpaque(false);
             JLabel header = new JLabel() {
@@ -780,19 +711,15 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                             e.printStackTrace();
                             setText(headerText);
                         }
-
                         setting = false;
                     }
                     super.paintComponent(g);
-
                 }
 
                 // public Dimension getPreferredSize() {
                 // return new Dimension(10, 10);
                 // }
-
                 public void repaint() {
-
                     if (setting) {
                         return;
                     }
@@ -807,14 +734,12 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
                 }
             };
             header.setIcon(hosterInfo.getFavIcon());
-
             // if (col >= 0) {
             // header.setBackground(new Color(col));
             // header.setOpaque(false);
             // }
             // header.setOpaque(false);
             // header.setLabelMode(true);
-
             headerPanel.add(header);
         }
         config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getHost())), LocationStorage.class);
@@ -822,32 +747,26 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         addBeforeImage(field);
         iconPanel = createCaptchaPanel();
         SwingUtils.setOpaque(iconPanel, false);
-
         // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
         iconPanel.addMouseMotionListener(this);
         iconPanel.addMouseListener(this);
         field.add(iconPanel);
-
         sp = createHeaderScrollPane(field);
         if (!CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled()) {
             sp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
             SwingUtils.setOpaque(field, false);
-
         }
-
         panel.add(sp);
         if (headerPanel != null) {
             sp.setColumnHeaderView(headerPanel);
             // sp.setMinimumSize(new Dimension(Math.max(images[0].getWidth(null) + 10, headerPanel.getPreferredSize().width + 10),
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
-
         // if (config.isValid()) {
         //
         // getDialog().setSize(new Dimension(Math.max(config.getX(), images[0].getWidth(null)), Math.max(config.getY(),
         // images[0].getHeight(null))));
         // }
-
         return panel;
     }
 
@@ -889,5 +808,4 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
     public void setPlugin(Plugin plugin) {
         this.plugin = plugin;
     }
-
 }

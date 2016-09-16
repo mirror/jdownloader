@@ -28,7 +28,7 @@ var httpListener = function(request, response) {
 		logger(JSON.stringify(request));
 		logger("Forbidden Access.EXIT");
 		response.statusCode = 511;
-		response.write('FORBIDDEN');
+		response.write('\r\nFORBIDDEN');
 		response.close();
 		phantom.exit(1);
 
@@ -45,7 +45,7 @@ var httpListener = function(request, response) {
 		} catch (err) {
 			logger(err);
 			response.statusCode = 511;
-			response.write('Error ' + JSON.stringify(err));
+			response.write('\r\nError ' + JSON.stringify(err));
 			response.close();
 			return;
 		}
@@ -61,7 +61,7 @@ var httpListener = function(request, response) {
 		} catch (err) {
 			logger(err);
 			response.statusCode = 511;
-			response.write('Error ' + JSON.stringify(err));
+			response.write('\r\nError ' + JSON.stringify(err));
 			response.close();
 			return;
 		}
