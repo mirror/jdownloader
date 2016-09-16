@@ -57,7 +57,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadrocket.net" }, urls = { "https?://(www\\.)?uploadrocket\\.net/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadrocket.net" }, urls = { "https?://(www\\.)?uploadrocket\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 public class UploadRocketNet extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -82,10 +82,10 @@ public class UploadRocketNet extends PluginForHost {
     // Connection stuff
     private static final boolean           FREE_RESUME                  = true;
     private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;

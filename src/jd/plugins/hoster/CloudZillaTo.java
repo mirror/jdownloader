@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" })
 public class CloudZillaTo extends PluginForHost {
 
     public CloudZillaTo(PluginWrapper wrapper) {
@@ -84,7 +84,7 @@ public class CloudZillaTo extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -137,6 +137,11 @@ public class CloudZillaTo extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             if (br.containsHTML("Invalid or expired download ticket")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Invalid or expired download ticket'", 1 * 60 * 1000l);

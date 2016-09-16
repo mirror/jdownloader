@@ -51,7 +51,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploading.site" }, urls = { "https?://(www\\.)?uploading\\.site/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploading.site" }, urls = { "https?://(www\\.)?uploading\\.site/(?:embed\\-)?[a-z0-9]{12}" })
 public class UploadingSite extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -118,7 +118,7 @@ public class UploadingSite extends PluginForHost {
 
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(3);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
