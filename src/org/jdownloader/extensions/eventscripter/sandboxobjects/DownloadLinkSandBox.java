@@ -19,6 +19,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
@@ -48,6 +49,24 @@ public class DownloadLinkSandBox {
     public DownloadLinkSandBox() {
         downloadLink = null;
         storable = new DownloadLinkAPIStorableV2();
+    }
+
+    public String getPriority() {
+        if (downloadLink != null) {
+            return downloadLink.getPriorityEnum().name();
+        } else {
+            return Priority.DEFAULT.name();
+        }
+    }
+
+    public void setPriority(final String priority) {
+        if (downloadLink != null) {
+            try {
+                downloadLink.setPriorityEnum(Priority.valueOf(priority));
+            } catch (final Throwable e) {
+                downloadLink.setPriorityEnum(Priority.DEFAULT);
+            }
+        }
     }
 
     /**

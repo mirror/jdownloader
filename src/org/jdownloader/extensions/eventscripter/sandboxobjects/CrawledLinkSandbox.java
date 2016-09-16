@@ -17,6 +17,7 @@ import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.linkcollector.v2.CrawledLinkAPIStorableV2;
 import org.jdownloader.api.linkcollector.v2.CrawledLinkQueryStorable;
 import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
@@ -37,6 +38,24 @@ public class CrawledLinkSandbox {
 
     public String getAvailableState() {
         return storable.getAvailability() + "";
+    }
+
+    public String getPriority() {
+        if (link != null) {
+            return link.getPriority().name();
+        } else {
+            return Priority.DEFAULT.name();
+        }
+    }
+
+    public void setPriority(final String priority) {
+        if (link != null) {
+            try {
+                link.setPriority(Priority.valueOf(priority));
+            } catch (final Throwable e) {
+                link.setPriority(Priority.DEFAULT);
+            }
+        }
     }
 
     public long getAddedDate() {

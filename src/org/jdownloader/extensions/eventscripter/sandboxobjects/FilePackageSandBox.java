@@ -11,6 +11,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 
 import org.appwork.utils.Application;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
@@ -176,6 +177,24 @@ public class FilePackageSandBox {
     @Override
     public String toString() {
         return "FilePackage Instance: " + getName();
+    }
+
+    public String getPriority() {
+        if (filePackage != null) {
+            return filePackage.getPriorityEnum().name();
+        } else {
+            return Priority.DEFAULT.name();
+        }
+    }
+
+    public void setPriority(final String priority) {
+        if (filePackage != null) {
+            try {
+                filePackage.setPriorityEnum(Priority.valueOf(priority));
+            } catch (final Throwable e) {
+                filePackage.setPriorityEnum(Priority.DEFAULT);
+            }
+        }
     }
 
     public String getName() {
