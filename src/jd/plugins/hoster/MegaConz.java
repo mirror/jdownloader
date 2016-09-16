@@ -520,6 +520,9 @@ public class MegaConz extends PluginForHost {
             if ("-6".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
             }
+            if ("-9".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             checkServerBusy();
             logger.info("Unhandled error code: " + error);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -723,7 +726,7 @@ public class MegaConz extends PluginForHost {
      */
     public void checkServerBusy() throws PluginException {
         if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 10 * 60 * 1000l);
         }
     }
 
