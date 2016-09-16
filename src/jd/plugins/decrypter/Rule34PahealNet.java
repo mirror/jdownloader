@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/(list/[\\w\\-\\.%!]+|view)/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "https?://(?:www\\.)?rule34\\.paheal\\.net/post/(list/[\\w\\-\\.%!]+|view)/\\d+" })
 public class Rule34PahealNet extends PluginForDecrypt {
 
     public Rule34PahealNet(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class Rule34PahealNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "rule34\\.paheal\\.net/post/list/(.*?)/\\d+").getMatch(0));
+        fp.setName(new Regex(parameter, "/post/list/(.*?)/\\d+").getMatch(0));
         String next = null;
         do {
             if (this.isAbort()) {

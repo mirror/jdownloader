@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -48,7 +49,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.decryptedrutube\\.ru/[0-9a-f]{32}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.decryptedrutube\\.ru/[0-9a-f]{32}" })
 public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(final PluginWrapper wrapper) {
@@ -77,6 +78,8 @@ public class RuTubeRu extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
+
+    private String privatevalue = null;
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -111,12 +114,13 @@ public class RuTubeRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        privatevalue = downloadLink.getStringProperty("privatevalue", null);
         RuTubeVariant var = downloadLink.getVariant(RuTubeVariant.class);
         String dllink = downloadLink.getDownloadURL();
         String regId = "http://video\\.rutube\\.ru/([0-9a-f]{32})";
         String nextId = new Regex(dllink, regId).getMatch(0);
         br.setCustomCharset("utf-8");
-        br.getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "/");
+        getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "/");
         if (br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -133,10 +137,10 @@ public class RuTubeRu extends PluginForHost {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + var.getHeight() + "p" + ".mp4");
         }
         final String vid = br.getRegex("/embed/(\\d+)").getMatch(0);
-        br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
+        getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
         // swf requests over json
         Browser ajax = cloneBrowser(br);
-        ajax.getPage("/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
+        getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
         final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
 
@@ -217,6 +221,22 @@ public class RuTubeRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
+    }
+
+    private void getPage(final String url) throws IOException {
+        getPage(this.br, url);
+    }
+
+    private void getPage(final Browser br, String url) throws IOException {
+        if (privatevalue != null) {
+            if (!url.contains("?")) {
+                url += "?";
+            } else {
+                url += "&";
+            }
+            url += "p=" + Encoding.urlEncode(privatevalue);
+        }
+        br.getPage(url);
     }
 
     private Browser cloneBrowser(Browser br) {

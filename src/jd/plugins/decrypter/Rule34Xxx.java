@@ -40,7 +40,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32224 $", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "http://(www\\.)?rule34\\.xxx/index\\.php\\?page=post&s=(view&id=\\d+|list&tags=.+)" }) 
+@DecrypterPlugin(revision = "$Revision: 32224 $", interfaceVersion = 3, names = { "rule34.xxx" }, urls = { "https?://(?:www\\.)?rule34\\.xxx/index\\.php\\?page=post\\&s=(view\\&id=\\d+|list\\&tags=.+)" })
 public class Rule34Xxx extends PluginForDecrypt {
 
     private final String prefixLinkID = getHost().replaceAll("[\\.\\-]+", "") + "://";

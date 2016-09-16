@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -37,7 +38,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li" }, urls = { "http://fas\\.li/[A-Za-z0-9]{4,}" }) 
+@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li", "unskip.me" }, urls = { "https?://(?:www\\.)?fas\\.li/(?:go/)?[A-Za-z0-9]{4,}", "https?://(?:www\\.)?uskip\\.me/(?:go/)?[A-Za-z0-9]{4,}" })
 public class FasLi extends antiDDoSForDecrypt {
 
     public FasLi(PluginWrapper wrapper) {
@@ -59,8 +60,9 @@ public class FasLi extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        parameter = "http://" + Browser.getHost(parameter) + "/" + this.fuid;
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(fuid)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -71,6 +73,8 @@ public class FasLi extends antiDDoSForDecrypt {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
+            form.put("s_width", "1680");
+            form.put("s_height", "890");
             br.submitForm(form);
         }
         final String finallink = getFinalLink();
@@ -83,7 +87,11 @@ public class FasLi extends antiDDoSForDecrypt {
     }
 
     private String getFinalLink() {
-        final String finallink = br.getRegex("\\s+id=(\"|'|)btn-main\\1[^>]+href=(\"|')\\s*([^\r\n]+)\\s*\\2").getMatch(2);
+        String finallink = br.getRegex("\\s+id=(\"|'|)btn-main\\1[^>]+href=(\"|')\\s*([^\r\n]+)\\s*\\2").getMatch(2);
+        if (finallink == null) {
+            /* 2016-09-16: Required for unskip.me */
+            finallink = br.getRegex("<a href=\"(http[^<>\"]+)\" id=\"btn\\-main\"").getMatch(0);
+        }
         return finallink;
     }
 

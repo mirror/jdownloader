@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
 public class KumpulbagiId extends PluginForHost {
 
     public KumpulbagiId(PluginWrapper wrapper) {
@@ -56,7 +56,7 @@ public class KumpulbagiId extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
         if (host == null || "kbagi.com".equals(host) || "kumpulbagi.id".equals(host) || "kumpulbagi.com".equals(host)) {
-            return "kumpulbagi.id";
+            return "kbagi.com";
         }
         return super.rewriteHost(host);
     }

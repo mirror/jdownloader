@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -96,7 +96,7 @@ public class MegaDebridEu extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        String[] hosts = br.getRegex("\\[\"([a-z0-9\\.]+)\"").getColumn(0);
+        String[] hosts = br.getRegex("\\[\"([a-z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         account.setValid(true);
         ac.setMultiHostSupport(this, supportedHosts);
