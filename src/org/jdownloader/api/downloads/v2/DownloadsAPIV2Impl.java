@@ -44,7 +44,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public DownloadsAPIV2Impl() {
         RemoteAPIController.validateInterfaces(DownloadsAPIV2.class, DownloadsListInterface.class);
         packageControllerUtils = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
-
     }
 
     @Override
