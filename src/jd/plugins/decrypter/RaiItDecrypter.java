@@ -36,14 +36,14 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" })
 public class RaiItDecrypter extends PluginForDecrypt {
 
     public RaiItDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     TYPE_DAY         = "https?://[A-Za-z0-9\\.]*?rai\\.tv/dl/replaytv/replaytv\\.html\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
+    private static final String     TYPE_DAY         = ".+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
     private static final String     TYPE_CONTENTITEM = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
 
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
