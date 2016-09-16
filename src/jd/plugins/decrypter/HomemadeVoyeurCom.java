@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "http://(?:www\\.)?homemade\\-voyeur\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "http://(?:www\\.)?(homemade\\-voyeur|yourvoyeurvideos)\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" })
 public class HomemadeVoyeurCom extends PluginForDecrypt {
 
     public HomemadeVoyeurCom(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
         // Invalid link
-        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<") || br.containsHTML("<title>Homemade Voyeur - Hosted Voyeur Videos - Biggest Voyeur Vids Archive on the Net</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -61,7 +61,10 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
 
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.+) \\- Voyeur (Videos|Pics) \\- .+</title>").getMatch(0);
+            filename = br.getRegex("<title>Your Voyeur (Videos|Pics) \\-\\s*(.*?)\\s*</title>").getMatch(1);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.+) \\- Voyeur (Videos|Pics) \\- .+</title>").getMatch(0);
+            }
             if (filename == null) {
                 filename = br.getRegex("<div class=\"titlerr\"[^>]+>([^\r\n]+)</div>").getMatch(0);
             }
