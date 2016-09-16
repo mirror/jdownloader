@@ -254,7 +254,7 @@ public class TheVideoMe extends antiDDoSForHost {
         boolean is_correct_finallink = false;
         String special_js_bullshit = getSpecialJsBullshit();
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        dllink = null;
+        // dllink = null;
         if (dllink != null) {
             is_saved_directlink = true;
         }
