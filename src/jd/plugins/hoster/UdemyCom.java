@@ -282,6 +282,9 @@ public class UdemyCom extends PluginForHost {
          * response 400.
          */
         this.br = new Browser();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (dllink.contains(".m3u8")) {
             /* 2016-08-23: HLS is preferred over http by their system */
             this.br.getPage(this.dllink);

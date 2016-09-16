@@ -9,6 +9,7 @@ import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.utils.Application;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
@@ -31,6 +32,24 @@ public class CrawledPackageSandbox {
             return filePackage.getCreated();
         }
         return -1;
+    }
+
+    public String getPriority() {
+        if (filePackage != null) {
+            return filePackage.getPriorityEnum().name();
+        } else {
+            return Priority.DEFAULT.name();
+        }
+    }
+
+    public void setPriority(final String priority) {
+        if (filePackage != null) {
+            try {
+                filePackage.setPriorityEnum(Priority.valueOf(priority));
+            } catch (final Throwable e) {
+                filePackage.setPriorityEnum(Priority.DEFAULT);
+            }
+        }
     }
 
     public ArchiveSandbox[] getArchives() {
