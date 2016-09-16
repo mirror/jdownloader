@@ -23,6 +23,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,12 +48,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class StreaminTo extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -574,6 +574,10 @@ public class StreaminTo extends antiDDoSForHost {
             if (in != null) {
                 String out1 = PluginJSonUtils.getJsonValue(in, "file");
                 String out0 = PluginJSonUtils.getJsonValue(in, "streamer");
+                if (out1 != null && out1.startsWith("http")) {
+                    // http link
+                    return out1;
+                }
                 if (out0 == null || out1 == null) {
                     return null;
                 }
