@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+)" })
 public class EfuktComDecrypter extends PluginForDecrypt {
 
     public EfuktComDecrypter(PluginWrapper wrapper) {
@@ -60,7 +60,7 @@ public class EfuktComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(main);
             return decryptedLinks;
         }
-        if (br.containsHTML("flashplayer")) {
+        if (br.containsHTML("flashplayer") || br.containsHTML("videoplayer_contents")) {
             decryptedLinks.add(main);
         } else {
             /* We should have a picture gallery */

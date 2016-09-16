@@ -64,11 +64,17 @@ public class EfuktCom extends PluginForHost {
         if (br.getURL().equals("http://efukt.com/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("id=\"movie_title\" style=\"[^<>\"]+\">([^<>]*?)</div>").getMatch(0);
+        String filename = br.getRegex("<h1\\s*class=\"title\">(.*?)</h1").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("id=\"movie_title\" style=\"[^<>\"]+\">([^<>]*?)</div>").getMatch(0);
+        }
         if (filename == null) {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)").getMatch(0);
         }
-        dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        dllink = br.getRegex("source\\s*src=\"(https?[^<>\"]*?)\"\\s*type=\"video").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(https?[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -97,7 +103,7 @@ public class EfuktCom extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
