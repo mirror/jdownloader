@@ -74,7 +74,7 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = true;
-    private static final boolean           VIDEOHOSTER_3                = true;
+    private static final boolean           VIDEOHOSTER_3                = false;
     private static final boolean           SUPPORTSHTTPS                = false;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
     private final boolean                  ENABLE_RANDOM_UA             = true;
@@ -251,8 +251,10 @@ public class TheVideoMe extends antiDDoSForHost {
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
         boolean is_saved_directlink = false;
-        final String special_js_stuff = new Regex(correctedBR, "(https?://(?:www\\.)?thevideo\\.me/jwv/[A-Za-z0-9]+)").getMatch(0);
+        boolean is_correct_finallink = false;
+        String special_js_bullshit = getSpecialJsBullshit();
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        dllink = null;
         if (dllink != null) {
             is_saved_directlink = true;
         }
@@ -277,6 +279,7 @@ public class TheVideoMe extends antiDDoSForHost {
             }
         }
         if (dllink == null && VIDEOHOSTER_3) {
+            /* TODO 2016-09-16: Fix this! */
             try {
                 // getPage(brv, "/download/" + fuid);
                 /* 2016-08-31: New - but the old one still works: /download/getversions/<FUID> */
@@ -297,14 +300,29 @@ public class TheVideoMe extends antiDDoSForHost {
                     getPage(brv, "http://thevideo.me/download/" + vid + "/" + q + "/" + dlid);
                     dllink = this.getDllink(brv.toString());
                     if (dllink == null) {
-                        dllink = brv.getRegex("\"(https?://[^<>\"]+\\.thevideo\\.[^/]+/[^<>\"]*?)\"").getMatch(0);
+                        dllink = brv.getRegex("\"(https?://(?!stats)[^<>\"]+\\.thevideo\\.[^/]+/[^<>\"]*?)\"").getMatch(0);
+                    }
+                    if (dllink == null) {
+                        final Form origdl = brv.getFormByInputFieldKeyValue("op", "download_orig");
+                        if (origdl != null) {
+                            origdl.setAction("/download/" + this.fuid + "/" + q + "/" + dlid);
+                            origdl.remove("dl");
+                            brv.submitForm(origdl);
+                            dllink = this.getDllink(brv.toString());
+                        }
                     }
                     if (dllink != null) {
+                        /* Do not modify dllink because of special_js_bullshit later! */
+                        is_correct_finallink = true;
                         logger.info("VIDEOHOSTER_3 handling: success!");
-                        brv.getPage("/dljsv/" + this.fuid);
-                        final String special_id = brv.getRegex("each\\|([A-Za-z0-9]+)").getMatch(0);
-                        if (special_id != null) {
-                            dllink += "?download=true&vt=" + special_id;
+                        // http://thevideo.me/dljsv/xme2krekhp78
+                        special_js_bullshit = brv.getRegex("/dljsv/([^<>\"\\'/]+)\"").getMatch(0);
+                        if (special_js_bullshit != null) {
+                            brv.getPage("/dljsv/" + this.fuid);
+                            final String special_id = brv.getRegex("each\\|([A-Za-z0-9]+)").getMatch(0);
+                            if (special_id != null) {
+                                dllink += "?download=true&vt=" + special_id;
+                            }
                         }
                         break;
                     } else {
@@ -323,6 +341,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
                 getPage(embed_access);
+                special_js_bullshit = getSpecialJsBullshit();
                 dllink = getDllink();
                 if (dllink == null) {
                     logger.info("Failed to get link via embed because: " + br.toString());
@@ -336,16 +355,6 @@ public class TheVideoMe extends antiDDoSForHost {
                 /* If failed, go back to the beginning */
                 getPage(downloadLink.getDownloadURL());
             }
-        }
-        if (special_js_stuff != null && dllink != null && !is_saved_directlink) {
-            /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
-            getPage(brv, special_js_stuff);
-            final String extra_id = brv.getRegex("jwConfig\\|([A-Za-z0-9]+)").getMatch(0);
-            if (extra_id != null) {
-                dllink += "?direct=false&ua=1&vt=" + extra_id;
-            }
-        } else if (special_js_stuff == null && dllink != null && !is_saved_directlink) {
-            logger.info("JDownloader might have been blocked by this host");
         }
         /* Fourth, continue like normal */
         if (dllink == null) {
@@ -513,6 +522,16 @@ public class TheVideoMe extends antiDDoSForHost {
                 }
             }
         }
+        if (!is_correct_finallink && special_js_bullshit != null && dllink != null && !is_saved_directlink) {
+            /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
+            getPage(brv, "http://thevideo.me/jwv/" + special_js_bullshit);
+            final String extra_id = brv.getRegex("jwConfig\\|([A-Za-z0-9]+)").getMatch(0);
+            if (extra_id != null) {
+                dllink += "?direct=false&ua=1&vt=" + extra_id;
+            }
+        } else if (special_js_bullshit == null && dllink != null && !is_saved_directlink) {
+            logger.info("JDownloader might have been blocked by this host");
+        }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -539,6 +558,10 @@ public class TheVideoMe extends antiDDoSForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private String getSpecialJsBullshit() {
+        return new Regex(correctedBR, "var mpri_Key=\\'([^<>\"\\']+)\\';").getMatch(0);
     }
 
     private boolean isFakeDllink(final URLConnectionAdapter con) {
@@ -646,6 +669,9 @@ public class TheVideoMe extends antiDDoSForHost {
                     }
                 }
             }
+        }
+        if (dllink == null) {
+            dllink = new Regex(source, "(https?://[a-z0-9]+\\.thevideo\\.me:\\d+/[^<>\"\\']+)").getMatch(0);
         }
         if (dllink == null) {
             final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
