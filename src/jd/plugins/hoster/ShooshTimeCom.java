@@ -64,7 +64,10 @@ public class ShooshTimeCom extends PluginForHost {
         }
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = br.getRegex("class=\"download\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("source\\s* type=\"video/.*?\"\\s* src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("class=\"download\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = br.getRegex("\"file\"[\t\n\r]*?:[\t\n\r]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
@@ -100,7 +103,10 @@ public class ShooshTimeCom extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
+                if (con.getLongContentLength() <= 40140) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
