@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 // DEV NOTES:
 // 162.158.0.0/15 cloudflare
@@ -51,7 +51,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "miniurls.co", "zatnawqy.net", "sasontnwc.net", "eafyfsuh.net", "fuestfka.com", "tnabucks.com", "cash4files.com", "megaline.co", "qqc.co", "theseblogs.com", "theseforums.com", "ultrafiles.net", "urlbeat.net", "whackyvidz.com", "yyv.co", "drstickyfingers.com", "fapoff.com", "freean.us", "galleries.bz", "hornywood.tv", "picbucks.com", "poontown.net", "rqq.co", "youfap.me", "zff.co", "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" };
+        return new String[] { "zytpirwai.net", "miniurls.co", "zatnawqy.net", "sasontnwc.net", "eafyfsuh.net", "fuestfka.com", "tnabucks.com", "cash4files.com", "megaline.co", "qqc.co", "theseblogs.com", "theseforums.com", "ultrafiles.net", "urlbeat.net", "whackyvidz.com", "yyv.co", "drstickyfingers.com", "fapoff.com", "freean.us", "galleries.bz", "hornywood.tv", "picbucks.com", "poontown.net", "rqq.co", "youfap.me", "zff.co", "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" };
     }
 
     /**
