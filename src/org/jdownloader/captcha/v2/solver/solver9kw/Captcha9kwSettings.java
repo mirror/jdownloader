@@ -48,13 +48,6 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setpuzzle(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the Slider Captchas")
-    boolean isslider();
-
-    void setslider(boolean b);
-
-    @AboutConfig
     @DefaultStringValue("")
     @DescriptionForConfigEntry("Hosteroptions for 9kw.eu")
     String gethosteroptions();
@@ -98,14 +91,14 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setblacklistprio(String jser);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the blacklist with prio")
     boolean getblacklistpriocheck();
 
     void setblacklistpriocheck(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the whitelist with prio")
     boolean getwhitelistpriocheck();
 
@@ -149,14 +142,14 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setblacklist(String jser);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the blacklist")
     boolean getblacklistcheck();
 
     void setblacklistcheck(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the whitelist")
     boolean getwhitelistcheck();
 
@@ -208,14 +201,14 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setblacklisttimeout(String jser);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the blacklist with timeout")
     boolean getblacklisttimeoutcheck();
 
     void setblacklisttimeoutcheck(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the whitelist with timeout")
     boolean getwhitelisttimeoutcheck();
 
@@ -277,19 +270,4 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     HashMap<String, Integer> getBubbleTimeoutByHostMap();
 
     void setBubbleTimeoutByHostMap(HashMap<String, Integer> map);
-
-    @AboutConfig
-    @DefaultIntValue(4)
-    @SpinnerValidator(min = 3, max = 50)
-    @DescriptionForConfigEntry("Max. captchas per download")
-    int getmaxcaptchaperdl();
-
-    void setmaxcaptchaperdl(int size);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate max. captchas per download")
-    boolean getmaxcaptcha();
-
-    void setmaxcaptcha(boolean b);
 }

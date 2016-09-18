@@ -32,11 +32,6 @@ public class CFG_9KWCAPTCHA {
     public static final StringKeyHandler                   API_KEY                  = SH.getKeyHandler("ApiKey", StringKeyHandler.class);
 
     /**
-     * Activate the Slider Captchas
-     **/
-    public static final BooleanKeyHandler                  SLIDER                   = SH.getKeyHandler("slider", BooleanKeyHandler.class);
-
-    /**
      * Activate the Captcha Feedback
      **/
     public static final BooleanKeyHandler                  FEEDBACK                 = SH.getKeyHandler("feedback", BooleanKeyHandler.class);
@@ -50,16 +45,6 @@ public class CFG_9KWCAPTCHA {
      * Max. Captchas Parallel
      **/
     public static final IntegerKeyHandler                  THREADPOOL_SIZE          = SH.getKeyHandler("ThreadpoolSize", IntegerKeyHandler.class);
-
-    /**
-     * Max. Captchas per Download
-     **/
-    public static final IntegerKeyHandler                  MAXCAPTCHADL_SIZE        = SH.getKeyHandler("maxcaptchaperdl", IntegerKeyHandler.class);
-
-    /**
-     * Activate max. Captchas per Download
-     **/
-    public static final BooleanKeyHandler                  MAXCAPTCHADL_YES         = SH.getKeyHandler("maxcaptcha", BooleanKeyHandler.class);
 
     /**
      * Other max. timeout only for 9kw Service

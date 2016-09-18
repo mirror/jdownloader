@@ -14,6 +14,18 @@ import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileFilter;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
+import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
@@ -38,18 +50,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
-import jd.http.Browser;
-import net.miginfocom.swing.MigLayout;
 
 public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
     private ExtButton                      btnRegister;
@@ -187,16 +187,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         }
         toolbar3.add(puzzlecaptchas);
         toolbar3.add(label(_GUI.T.NinekwService_createPanel_puzzlecaptchas()));
-
-        Checkbox slidercaptchas = new Checkbox(CFG_9KWCAPTCHA.SLIDER);
-        slidercaptchas.setToolTipText(_GUI.T.NinekwService_createPanel_slidercaptchas_tooltiptext());
-        if (config.isslider()) {
-            slidercaptchas.setEnabled(true);
-        } else {
-            slidercaptchas.setEnabled(false);// TODO: Slider Captchas for 9kw.eu
-        }
-        toolbar3.add(slidercaptchas);
-        toolbar3.add(label(_GUI.T.NinekwService_createPanel_slidercaptchas()));
         Tab1_9kw.add(toolbar3, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar4 = new MigPanel("ins 0", "[][][][]", "[]");
@@ -317,15 +307,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         poolcaptchas.setToolTipText(_GUI.T.NinekwService_createPanel_threadsizepool_tooltiptext());
         toolbar9.add(poolcaptchas);
         toolbar9.add(label(_GUI.T.NinekwService_createPanel_threadsizepool()));
-
-        Checkbox MAXCAPTCHADL_YES = new Checkbox(CFG_9KWCAPTCHA.MAXCAPTCHADL_YES);
-        Spinner maxcaptchasperdl = new Spinner(CFG_9KWCAPTCHA.MAXCAPTCHADL_SIZE);
-        maxcaptchasperdl.setToolTipText(_GUI.T.NinekwService_createPanel_maxcaptchasperdl_tooltiptext());
-        MAXCAPTCHADL_YES.setToolTipText(_GUI.T.NinekwService_createPanel_maxcaptchasperdl_tooltiptext());
-        toolbar9.add(maxcaptchasperdl);
-        toolbar9.add(MAXCAPTCHADL_YES);
-        toolbar9.add(label(_GUI.T.NinekwService_createPanel_maxcaptchasperdl()));
-
         Tab1_9kw.add(toolbar9, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar9a = new MigPanel("ins 0", "[][][][]", "[]");
@@ -683,25 +664,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         btnUserDebugStatReset.setToolTipText(_GUI.T.NinekwService_createPanel_btnUserDebugStatReset_tooltiptext());
         toolbardebug1.add(btnUserDebugStatReset);
 
-        btnUserDebugBlacklistReset = new ExtButton(new AppAction() {
-            private static final long serialVersionUID = -4020410143121908004L;
-
-            {
-                setName(_GUI.T.NinekwService_createPanel_btnUserDebugBlacklistReset());
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                synchronized (AbstractCaptcha9kwSolver.CAPTCHA_MAP) {
-                    AbstractCaptcha9kwSolver.CAPTCHA_MAP.clear();
-                }
-
-                jd.gui.UserIO.getInstance().requestMessageDialog("9kw debug ", _GUI.T.NinekwService_createPanel_btnUserDebugBlacklistReset_text());
-            }
-        });
-        btnUserDebugBlacklistReset.setToolTipText(_GUI.T.NinekwService_createPanel_btnUserDebugBlacklistReset_tooltiptext());
-        toolbardebug1.add(btnUserDebugBlacklistReset);
-
         btnUserDebugStatShow = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
 
@@ -731,33 +693,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
             }
         });
         toolbardebug1.add(btnUserDebugStatShow);
-
-        btnUserDebugBlacklistShow = new ExtButton(new AppAction() {
-            private static final long serialVersionUID = -4020410143121908004L;
-
-            {
-                setName("Show Blacklist");
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                String crazylist;
-
-                synchronized (AbstractCaptcha9kwSolver.CAPTCHA_MAP) {
-                    crazylist = AbstractCaptcha9kwSolver.CAPTCHA_MAP.toString();
-                }
-
-                try {
-                    Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, "9kw stats", null, crazylist, NewTheme.getInstance().getIcon("proxy", 32), null, null);
-                } catch (DialogClosedException e2) {
-                    e2.printStackTrace();
-                } catch (DialogCanceledException e2) {
-                    e2.printStackTrace();
-                }
-            }
-        });
-        toolbardebug1.add(btnUserDebugBlacklistShow);
 
         btnUserDebugBubbleShow = new ExtButton(new AppAction() {
             private static final long serialVersionUID = -4020410143121908004L;
