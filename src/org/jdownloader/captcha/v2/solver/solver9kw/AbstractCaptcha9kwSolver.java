@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -15,8 +18,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
-import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverService;
@@ -34,24 +35,19 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-
 public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> {
-    private String                                     accountStatusString;
-    protected final Captcha9kwSettings                 config;
-    AtomicInteger                                      counter            = new AtomicInteger();
-    AtomicInteger                                      counterInterrupted = new AtomicInteger();
-    AtomicInteger                                      counterNotOK       = new AtomicInteger();
-    AtomicInteger                                      counterOK          = new AtomicInteger();
-    AtomicInteger                                      counterSend        = new AtomicInteger();
-    AtomicInteger                                      counterSendError   = new AtomicInteger();
-    AtomicInteger                                      counterSolved      = new AtomicInteger();
-    AtomicInteger                                      counterUnused      = new AtomicInteger();
-    public static final HashMap<DownloadLink, Integer> CAPTCHA_MAP        = new HashMap<DownloadLink, Integer>();
-    private volatile NineKWAccount                     lastAccount        = null;
-    private String                                     long_debuglog      = "";
+    private String                     accountStatusString;
+    protected final Captcha9kwSettings config;
+    AtomicInteger                      counter            = new AtomicInteger();
+    AtomicInteger                      counterInterrupted = new AtomicInteger();
+    AtomicInteger                      counterNotOK       = new AtomicInteger();
+    AtomicInteger                      counterOK          = new AtomicInteger();
+    AtomicInteger                      counterSend        = new AtomicInteger();
+    AtomicInteger                      counterSendError   = new AtomicInteger();
+    AtomicInteger                      counterSolved      = new AtomicInteger();
+    AtomicInteger                      counterUnused      = new AtomicInteger();
+    private volatile NineKWAccount     lastAccount        = null;
+    private String                     long_debuglog      = "";
 
     public AbstractCaptcha9kwSolver() {
         super(NineKwSolverService.getInstance(), Math.max(1, Math.min(25, NineKwSolverService.getInstance().getConfig().getThreadpoolSize())));
@@ -470,21 +466,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-        synchronized (CAPTCHA_MAP) {
-            if (config.getmaxcaptcha() == true) {
-                if (CAPTCHA_MAP.containsKey(captchaChallenge.getDownloadLink())) {
-                    if (CAPTCHA_MAP.get(captchaChallenge.getDownloadLink()) >= config.getmaxcaptchaperdl()) {
-                        setdebug(solverJob, "Link to BlacklistByLink: " + captchaChallenge.getDownloadLink().getPluginPatternMatcher());
-                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(captchaChallenge.getDownloadLink()));
-                    } else {
-                        setdebug(solverJob, "BlacklistByLink +1: " + captchaChallenge.getDownloadLink().getPluginPatternMatcher());
-                        CAPTCHA_MAP.put(captchaChallenge.getDownloadLink(), CAPTCHA_MAP.get(captchaChallenge.getDownloadLink()) + 1);
-                    }
-                } else {
-                    CAPTCHA_MAP.put(captchaChallenge.getDownloadLink(), 1);
-                }
-            }
-        }
+
         boolean badfeedbackstemp = config.getbadfeedbacks();
         if (badfeedbackstemp == true && config.isfeedback() == true) {
             if (counterNotOK.get() > 10 && counterSend.get() > 10 && counterSolved.get() > 10 && counter.get() > 10 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
