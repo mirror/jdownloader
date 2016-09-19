@@ -216,7 +216,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                         handleErrorRetries(link, "Too many active connections", 10, 5 * 60 * 1000l);
                     } else if (brc.containsHTML("> Our server can't connect to")) {
                         handleErrorRetries(link, "cantconnect", 20, 5 * 60 * 1000l);
-                    } else if (brc.toString().equalsIgnoreCase("Traffic limit exceeded")) {
+                    } else if (brc.toString().equalsIgnoreCase("Traffic limit exceeded") || brc.toString().equals("<div class=\"res_bad\">Traffic limit exceeded</div>")) {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
                         tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
                     } else if (brc.toString().equalsIgnoreCase("nginx error") || brc.containsHTML("There are too many attempts")) {
