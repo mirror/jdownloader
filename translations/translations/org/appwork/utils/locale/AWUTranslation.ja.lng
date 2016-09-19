@@ -116,6 +116,7 @@ please_wait=ダウンロードが完了するまで暫くお待ち下さい
 progress=%s3% %s1/%s2
 proxy_direct=直接 %s1
 proxy_http=%s1:%s2 (HTTPプロキシ)
+proxy_https=%s1:%s2 (HTTPSﾌﾟﾛｷｼ)
 proxy_none=直接接続
 proxy_socks4=%s1:%s2 (Socks4プロキシ)
 proxy_socks5=%s1:%s2 (Socks5プロキシ)
