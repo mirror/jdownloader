@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -30,20 +31,24 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+" }) 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemy\\.com/.+" })
 public class UdemyComDecrypter extends PluginForDecrypt {
 
     public UdemyComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String decrypter_domain = "udemydecrypted.com";
+    private static final String     decrypter_domain = "udemydecrypted.com";
+
+    private String                  course_id        = null;
+    private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM)) {
+        if (parameter.matches(jd.plugins.hoster.UdemyCom.TYPE_SINGLE_PREMIUM_WEBSITE)) {
             /* Single links --> Host plugin */
             decryptedLinks.add(this.createDownloadlink(parameter.replace(this.getHost() + "/", decrypter_domain + "/")));
             return decryptedLinks;
@@ -63,12 +68,12 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String courseid = jd.plugins.hoster.UdemyCom.getCourseID(this.br);
-        if (courseid == null) {
+        course_id = jd.plugins.hoster.UdemyCom.getCourseIDFromHtml(this.br);
+        if (course_id == null) {
             logger.info("Could not find any downloadable content");
             return decryptedLinks;
         }
-        this.br.getPage("https://www.udemy.com/api-2.0/courses/" + courseid + "/subscriber-curriculum-items?fields%5Basset%5D=@default&fields%5Bchapter%5D=@default,object_index&fields%5Blecture%5D=@default,asset,content_summary,num_discussions,num_external_link_assets,num_notes,num_source_code_assets,object_index,url&fields%5Bquiz%5D=@default,content_summary,object_index,url&page_size=9999");
+        this.br.getPage("https://www.udemy.com/api-2.0/courses/" + course_id + "/subscriber-curriculum-items?fields%5Basset%5D=@min,title,filename,asset_type,external_url,length&fields%5Bchapter%5D=@min,description,object_index,title,sort_order&fields%5Blecture%5D=@min,object_index,asset,supplementary_assets,sort_order,is_published,is_free&fields%5Bquiz%5D=@min,object_index,title,sort_order,is_published&page_size=9999");
         if (this.br.getHttpConnection().getResponseCode() == 403) {
             logger.info("User tried to download content which he did not pay for --> Impossible");
             return decryptedLinks;
@@ -78,23 +83,41 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = new Regex(parameter, "udemy\\.com/([^/]+)").getMatch(0);
-        final String[] links = br.getRegex("\"(/[^/]+/learn/[^<>\"]+/lecture/\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String singleLink : links) {
-            final String fid = new Regex(singleLink, "(\\d+)$").getMatch(0);
-            final String temp_filename = new Regex(singleLink, "^/([^/]+)/").getMatch(0);
-            if (fid == null || temp_filename == null) {
-                return null;
+        // final String[] links = br.getRegex("\"(/[^/]+/learn/[^<>\"]+/lecture/\\d+)\"").getColumn(0);
+        // if (links == null || links.length == 0) {
+        // logger.warning("Decrypter broken for link: " + parameter);
+        // return null;
+        // }
+
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("results");
+        ArrayList<Object> ressourcelist_2 = null;
+
+        for (final Object courseo : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) courseo;
+            final String lecture_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+            final String _class = (String) entries.get("_class");
+            final Object supplementary_assets = entries.get("supplementary_assets");
+            if (lecture_id.equals("0") || !_class.equalsIgnoreCase("lecture")) {
+                /* Hm maybe some type we don't support (yet). */
+                continue;
             }
-            final DownloadLink dl = createDownloadlink("http://" + decrypter_domain + singleLink);
-            dl.setName(temp_filename + "_" + fid + ".mp4");
-            dl.setContentUrl("https://www." + this.getHost() + singleLink);
-            dl.setAvailable(true);
-            dl.setLinkID(fid);
-            decryptedLinks.add(dl);
+            entries = (LinkedHashMap<String, Object>) entries.get("asset");
+            if (entries == null) {
+                continue;
+            }
+            decryptAsset(entries, lecture_id);
+
+            if (supplementary_assets != null) {
+                /* Most likely files ... */
+                ressourcelist_2 = (ArrayList<Object>) supplementary_assets;
+                for (final Object supplementary_asseto : ressourcelist_2) {
+                    entries = (LinkedHashMap<String, Object>) supplementary_asseto;
+                    decryptAsset(entries, lecture_id);
+                }
+            }
+
         }
 
         final FilePackage fp = FilePackage.getInstance();
@@ -102,6 +125,46 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    private void decryptAsset(final LinkedHashMap<String, Object> entries, final String lecture_id) {
+        String asset_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+        final String title = (String) entries.get("title");
+        final String filename = (String) entries.get("filename");
+        /* E.g. Video, Article, File */
+        final String asset_type = (String) entries.get("asset_type");
+
+        if (asset_id.equals("0") || title == null || title.equals("") || asset_type == null || asset_type.equals("")) {
+            return;
+        }
+        String filename_temp;
+        if (filename != null) {
+            filename_temp = filename;
+        } else {
+            filename_temp = title;
+        }
+        filename_temp = course_id + "_" + lecture_id + "_" + asset_id + "_" + filename_temp;
+        final DownloadLink dl;
+        if (asset_type.equalsIgnoreCase("ExternalLink")) {
+            /* Add external urls as our plugins might be able to parse some of them. */
+            /* TODO: Check if normal (e.g. "Video") assets can also contain an "external_url" object. */
+            final String external_url = (String) entries.get("external_url");
+            if (external_url == null || external_url.equals("")) {
+                return;
+            }
+            dl = createDownloadlink(external_url);
+        } else {
+            dl = createDownloadlink("http://" + decrypter_domain + "/lecture_id/" + asset_id);
+            dl.setName(filename_temp);
+            dl.setContentUrl("https://www." + this.getHost() + "/learn/v4/t/lecture/" + lecture_id);
+            dl.setAvailable(true);
+            dl.setProperty("asset_type", asset_type);
+            dl.setProperty("filename_decrypter", filename_temp);
+            dl.setProperty("lecture_id", lecture_id);
+            dl.setProperty("course_id", course_id);
+            dl.setLinkID(asset_id);
+        }
+        decryptedLinks.add(dl);
     }
 
 }

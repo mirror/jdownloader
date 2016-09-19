@@ -23,6 +23,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +39,7 @@ public class MyStreamLa extends PluginForHost {
         super(wrapper);
     }
 
+    private String fuid   = null;
     private String dllink = null;
 
     @Override
@@ -48,6 +50,7 @@ public class MyStreamLa extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        fuid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]{12})$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(500);
@@ -58,11 +61,16 @@ public class MyStreamLa extends PluginForHost {
         String filename = PluginJSonUtils.getJsonValue(br, "title");
         final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2016-09-19: Fallback to fuid as we do not always have a title/filename available. */
+            filename = fuid;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
+        final String ext = getFileNameExtensionFromString(filename, ".mp4");
+        if (!filename.endsWith(ext)) {
+            filename += ext;
+        }
         downloadLink.setFinalFileName(filename);
         if (filesize != null) {
             downloadLink.setDownloadSize(Long.parseLong(filesize));
@@ -70,7 +78,6 @@ public class MyStreamLa extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);

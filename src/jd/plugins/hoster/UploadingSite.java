@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -116,9 +118,10 @@ public class UploadingSite extends PluginForHost {
     private String                         fuid                               = null;
     private String                         passCode                           = null;
 
+    private static final int               FREE_MAXDOWNLOADS                  = 5;
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(3);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
@@ -162,12 +165,14 @@ public class UploadingSite extends PluginForHost {
     @SuppressWarnings("deprecation")
     public UploadingSite(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        totalMaxSimultanFreeDownload.set(getMaxSimultanFreeDls());
         final String[] fileInfo = new String[3];
         Browser altbr = null;
         this.br.setFollowRedirects(true);
@@ -1345,6 +1350,23 @@ public class UploadingSite extends PluginForHost {
     // dl.startDownload();
     // }
     // }
+
+    private int getMaxSimultanFreeDls() {
+        if (this.getPluginConfig().getBooleanProperty(ENABLE_UNLIMITED_DOWNLOADS, defaultENABLE_UNLIMITED_DOWNLOADS)) {
+            /* 2016-09-19: Requested by forum user. */
+            return 20;
+        } else {
+            /* 2016-09-19: Tested, 5dls * 2connections = 10connections in total works fine. */
+            return FREE_MAXDOWNLOADS;
+        }
+    }
+
+    private static final String  ENABLE_UNLIMITED_DOWNLOADS        = "ENABLE_UNLIMITED_DOWNLOADS";
+    private static final boolean defaultENABLE_UNLIMITED_DOWNLOADS = false;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_UNLIMITED_DOWNLOADS, "Enable unlimited (=20) simultaneous (free) downloads?\r\nWARNING: This may cause download failures / loops!").setDefaultValue(defaultENABLE_UNLIMITED_DOWNLOADS));
+    }
 
     @Override
     public void reset() {

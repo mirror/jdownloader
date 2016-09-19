@@ -16,6 +16,10 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -36,12 +40,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|.+/[^<>\"]+/lecture/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
 
     public UdemyCom(PluginWrapper wrapper) {
@@ -55,19 +60,20 @@ public class UdemyCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension          = ".mp4";
+    private static final String  default_Extension              = ".mp4";
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                = true;
-    private static final int     FREE_MAXCHUNKS             = 0;
-    private static final int     FREE_MAXDOWNLOADS          = 20;
+    private static final boolean FREE_RESUME                    = true;
+    private static final int     FREE_MAXCHUNKS                 = 0;
+    private static final int     FREE_MAXDOWNLOADS              = 20;
 
-    private String               dllink                     = null;
-    private boolean              invalidAssetType           = false;
-    private boolean              is_officially_downloadable = true;
+    private String               dllink                         = null;
+    private boolean              textAssetType                  = false;
+    private boolean              is_officially_downloadable     = true;
 
-    private static final String  TYPE_SINGLE_FREE_OLD       = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
-    public static final String   TYPE_SINGLE_PREMIUM        = ".+/lecture/\\d+$";
+    private static final String  TYPE_SINGLE_FREE_OLD           = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
+    public static final String   TYPE_SINGLE_PREMIUM_WEBSITE    = ".+/lecture/\\d+$";
+    public static final String   TYPE_SINGLE_PREMIUM__DECRYPRED = ".+/lecture_id/\\d+$";
 
     @Override
     public String getAGBLink() {
@@ -82,17 +88,21 @@ public class UdemyCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM_WEBSITE)) {
+            /* Some errorhandling for old urls. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dllink = null;
-        invalidAssetType = false;
+        textAssetType = false;
         is_officially_downloadable = true;
 
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = null;
+        String filename = downloadLink.getStringProperty("filename_decrypter", null);
         String url_embed = null;
         boolean loggedin = false;
         String description = null;
-        final String fid_accountneeded = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String asset_id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
@@ -102,100 +112,104 @@ public class UdemyCom extends PluginForHost {
             }
         }
         String ext = null;
-        String asset_type = "Video";
-        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
-            downloadLink.setName(fid_accountneeded);
+        String asset_type = downloadLink.getStringProperty("asset_type", "Video");
+        final String lecture_id = downloadLink.getStringProperty("lecture_id", null);
+        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+            downloadLink.setName(asset_id);
             downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
             return AvailableStatus.TRUE;
-        } else if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
+        } else if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             /* Prepare the API-Headers to get the videourl */
             if (!downloadLink.isNameSet()) {
-                downloadLink.setName(fid_accountneeded);
+                downloadLink.setName(asset_id);
             }
-            this.br.getPage(downloadLink.getDownloadURL());
-            final String courseid = getCourseID(this.br);
+            final String courseid = downloadLink.getStringProperty("course_id", null);
             if (courseid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            prepBRAPI(this.br);
-            /*
-             * 2016-04-08: Changed parameters - parameters before:
-             * ?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset
-             * %5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False
-             */
-            this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + fid_accountneeded + "?fields%5Basset%5D=@min,download_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4");
-            if (this.br.getHttpConnection().getResponseCode() == 403) {
-                /* E.g. {"detail": "You do not have permission to perform this action."} */
-                /* User tries to download content which he did not buy/subscribe to. */
-                logger.info("You need to have an account with permission (e.g. you need to buy this content) to download this content");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-            // this.br.getPage("https://www.udemy.com/api-2.0/lectures/" + fid_accountneeded +
-            // "/content?videoOnly=0&instructorPreviewMode=False");
-            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-            is_officially_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
-            final String title_cleaned = (String) entries.get("title_cleaned");
-            description = (String) entries.get("description");
-            String json_view_html = (String) entries.get("view_html");
-            entries = (LinkedHashMap<String, Object>) entries.get("asset");
-            asset_type = (String) entries.get("asset_type");
-            if (asset_type == null) {
-                asset_type = "Video";
-            } else if (asset_type.equalsIgnoreCase("Article")) {
-                /* 2016-08-24: Such Articles are not downloadable but we can at least set the correct extension! */
-                ext = ".txt";
-                invalidAssetType = true;
+            prepBRAPI(this.br);
+            if (asset_type.equalsIgnoreCase("File")) {
+                /* Download File (usually .jpg pictures). */
+                this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "/supplementary-assets/" + asset_id + "?fields%5Basset%5D=download_urls");
+                dllink = PluginJSonUtils.getJsonValue(this.br, "file");
             } else {
-                if (!asset_type.equals("Video")) {
-                    /* We assume it is a PDF. */
-                    ext = ".pdf";
+                /* Download Video/Article/PDF. */
+                /*
+                 * 2016-04-08: Changed parameters - parameters before:
+                 * ?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset
+                 * %5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False
+                 */
+                this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "?fields%5Basset%5D=@min,download_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4&tracking_tag=ctp_lecture");
+                if (this.br.getHttpConnection().getResponseCode() == 403) {
+                    /* E.g. {"detail": "You do not have permission to perform this action."} */
+                    /* User tries to download content which he did not buy/subscribe to. */
+                    logger.info("You need to have an account with permission (e.g. you need to buy this content) to download this content");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
-            }
-            final String json_download_path = "download_urls/" + asset_type;
-            final Object download_urls_o = entries.get("download_urls");
-            if (download_urls_o != null) {
-                filename = (String) entries.get("title");
-                final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, json_download_path);
-                dllink = (String) JavaScriptEngineFactory.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
-                if (dllink != null) {
-                    if (filename == null) {
-                        filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
-                        if (filename == null) {
-                            filename = fid_accountneeded;
-                        } else {
-                            filename = fid_accountneeded + "_" + filename;
-                        }
-                    }
-                }
-            } else {
-                /* json handling did not work or officially there are no downloadlinks --> Grab links from html inside json */
-                if (json_view_html == null) {
+                // this.br.getPage("https://www.udemy.com/api-2.0/lectures/" + fid_accountneeded +
+                // "/content?videoOnly=0&instructorPreviewMode=False");
+                if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                json_view_html = json_view_html.replace("\\", "");
-                final String[] possibleQualities = { "HD", "SD", "1080", "720", "480", "360", "240" };
-                for (final String possibleQuality : possibleQualities) {
-                    dllink = new Regex(json_view_html, "<source src=\"(http[^<>\"]+)\"[^>]+data\\-res=\"" + possibleQuality + "\" />").getMatch(0);
-                    if (dllink != null) {
-                        break;
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                is_officially_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
+                final String title_cleaned = (String) entries.get("title_cleaned");
+                description = (String) entries.get("description");
+                String json_view_html = (String) entries.get("view_html");
+                entries = (LinkedHashMap<String, Object>) entries.get("asset");
+                if (asset_type.equalsIgnoreCase("Article")) {
+                    ext = ".txt";
+                    textAssetType = true;
+                } else {
+                    if (!asset_type.equals("Video")) {
+                        /* We assume it is a PDF. */
+                        ext = ".pdf";
                     }
                 }
-                if (dllink == null) {
-                    /* Last chance -see if we can find ANY video-url */
-                    dllink = new Regex(json_view_html, "\"(https?://udemy\\-assets\\-on\\-demand\\.udemy\\.com/[^<>\"]+\\.mp4[^<>\"]+)\"").getMatch(0);
-                }
-                if (dllink != null) {
-                    /* Important! */
-                    dllink = Encoding.htmlDecode(dllink);
-                }
-                if (filename == null) {
-                    if (title_cleaned != null) {
-                        filename = fid_accountneeded + "_" + title_cleaned;
-                    } else {
-                        filename = fid_accountneeded;
+                final String json_download_path = "download_urls/" + asset_type;
+                final Object download_urls_o = entries.get("download_urls");
+                if (download_urls_o != null) {
+                    if (filename == null) {
+                        filename = (String) entries.get("title");
+                    }
+                    final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, json_download_path);
+                    dllink = (String) JavaScriptEngineFactory.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
+                    if (dllink != null && filename == null) {
+                        filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                        if (filename == null) {
+                            filename = asset_id;
+                        } else {
+                            filename = asset_id + "_" + filename;
+                        }
+                    }
+                } else {
+                    /* json handling did not work or officially there are no downloadlinks --> Grab links from html inside json */
+                    if (json_view_html == null) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    json_view_html = json_view_html.replace("\\", "");
+                    final String[] possibleQualities = { "HD", "SD", "1080", "720", "480", "360", "240" };
+                    for (final String possibleQuality : possibleQualities) {
+                        dllink = new Regex(json_view_html, "<source src=\"(http[^<>\"]+)\"[^>]+data\\-res=\"" + possibleQuality + "\" />").getMatch(0);
+                        if (dllink != null) {
+                            break;
+                        }
+                    }
+                    if (dllink == null) {
+                        /* Last chance -see if we can find ANY video-url */
+                        dllink = new Regex(json_view_html, "\"(https?://udemy\\-assets\\-on\\-demand\\.udemy\\.com/[^<>\"]+\\.mp4[^<>\"]+)\"").getMatch(0);
+                    }
+                    if (dllink != null) {
+                        /* Important! */
+                        dllink = Encoding.htmlDecode(dllink);
+                    }
+                    if (filename == null) {
+                        if (title_cleaned != null) {
+                            filename = asset_id + "_" + title_cleaned;
+                        } else {
+                            filename = asset_id;
+                        }
                     }
                 }
             }
@@ -263,57 +277,75 @@ public class UdemyCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM)) {
+        if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (invalidAssetType) {
-            /* is_officially_downloadable might even have a "true" state here but download is not possible! */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This is neither a video nor a pdf - plain articles are not downloadable");
-        } else if (dllink == null && !is_officially_downloadable) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDownload(downloadLink);
     }
 
     public void handleDownload(final DownloadLink downloadLink) throws Exception {
-        /*
-         * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server
-         * response 400.
-         */
-        this.br = new Browser();
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink.contains(".m3u8")) {
-            /* 2016-08-23: HLS is preferred over http by their system */
-            this.br.getPage(this.dllink);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
+        if (textAssetType) {
+            /* Download text/"Article" */
+            final String html = PluginJSonUtils.getJsonValue(this.br, "view_html");
+            if (html == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String url_hls = hlsbest.downloadurl;
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
-            dl.startDownload();
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 400) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                br.followConnection();
+            /* TODO: Maybe download nothing at all but write the found html directly into the file --> done. */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, this.br.getURL(), FREE_RESUME, FREE_MAXCHUNKS);
+            if (this.dl.startDownload()) {
+                final File file_dest = new File(downloadLink.getFileOutput());
+                BufferedWriter out = null;
                 try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
+                    out = new BufferedWriter(new FileWriter(file_dest));
+                    out.write(html);
+                } finally {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                    }
                 }
+            }
+        } else {
+            if (dllink == null && !is_officially_downloadable) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
+            } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
+            /*
+             * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server
+             * response 400.
+             */
+            this.br = new Browser();
+            if (dllink.contains(".m3u8")) {
+                /* 2016-08-23: HLS is preferred over http by their system */
+                this.br.getPage(this.dllink);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                if (hlsbest == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String url_hls = hlsbest.downloadurl;
+                checkFFmpeg(downloadLink, "Download a HLS Stream");
+                dl = new HLSDownloader(downloadLink, br, url_hls);
+                dl.startDownload();
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    if (dl.getConnection().getResponseCode() == 400) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    }
+                    br.followConnection();
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.startDownload();
+            }
         }
     }
 
@@ -396,7 +428,7 @@ public class UdemyCom extends PluginForHost {
         br.getHeaders().put("X-Udemy-Authorization", "Bearer " + bearertoken);
     }
 
-    public static String getCourseID(final Browser br) {
+    public static String getCourseIDFromHtml(final Browser br) {
         String courseid = br.getRegex("data\\-course\\-id=\"(\\d+)\"").getMatch(0);
         if (courseid == null) {
             courseid = br.getRegex("&quot;id&quot;:\\s*(\\d+)").getMatch(0);
