@@ -54,7 +54,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cosmobox.org" }, urls = { "https?://(?:www\\.)?cosmobox\\.org/(?:(?:embed\\-)?[a-z0-9]{12}|/d/[A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cosmobox.org" }, urls = { "https?://(?:www\\.)?cosmobox\\.org/(?:(?:embed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" })
 public class CosmoBoxOrg extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -141,20 +141,22 @@ public class CosmoBoxOrg extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
-        final String protocol;
-        /* link cleanup, prefer https if possible */
-        if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
-            protocol = "https://";
-        } else {
-            protocol = "http://";
+        if (fuid != null) {
+            final String protocol;
+            /* link cleanup, prefer https if possible */
+            if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
+                protocol = "https://";
+            } else {
+                protocol = "http://";
+            }
+            final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+            if (link.getDownloadURL().matches(TYPE_EMBED)) {
+                final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+                /* Make sure user gets the kind of content urls that he added to JD. */
+                link.setContentUrl(url_embed);
+            }
+            link.setUrlDownload(corrected_downloadurl);
         }
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
-        if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
-            /* Make sure user gets the kind of content urls that he added to JD. */
-            link.setContentUrl(url_embed);
-        }
-        link.setUrlDownload(corrected_downloadurl);
     }
 
     @Override
@@ -184,12 +186,14 @@ public class CosmoBoxOrg extends PluginForHost {
         /* 2016-09-19: Some extra code for special urls. */
         if (!link.getDownloadURL().matches(TYPE_NORMAL)) {
             /* We need to find the currect fuid and correct that url. */
-            fuid = new Regex(correctedBR, "name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
+            fuid = new Regex(correctedBR, "name=\"id\" value=\"([A-Za-z0-9]{12})\"").getMatch(0);
             if (fuid == null) {
                 /* Plugin error or offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setUrlDownload("http://" + this.getHost() + "/" + this.fuid);
+            correctDownloadLink(link);
+            getPage(link.getDownloadURL());
         } else {
             setFUID(link);
         }
