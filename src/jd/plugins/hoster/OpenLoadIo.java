@@ -26,17 +26,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -53,6 +42,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -263,7 +263,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                     }
                 }
             } catch (PluginException e1) {
-                if (e1.getMessage().contains("The owner of this file doesn't allow API downloads") || e1.getMessage().contains("out of capacity for non-browser")) {
+                if (e1.getMessage() != null && (e1.getMessage().contains("The owner of this file doesn't allow API downloads") || e1.getMessage().contains("out of capacity for non-browser"))) {
                 } else {
                     throw e1;
                 }
