@@ -815,11 +815,12 @@ public class Multi extends IExtraction {
 
                 @Override
                 public int getNumberOfItems() {
-                    final Integer ret = (Integer) invoke(getNumberOfItems);
+                    final Number ret = (Number) invoke(getNumberOfItems);
                     if (ret == null) {
                         return 0;
+                    } else {
+                        return ret.intValue();
                     }
-                    return ret.intValue();
                 }
 
                 @Override
@@ -852,12 +853,22 @@ public class Multi extends IExtraction {
 
                 @Override
                 public Long getSize(int index) {
-                    return (Long) invoke(getProperty, index, PropID.SIZE);
+                    final Number ret = (Number) invoke(getProperty, index, PropID.SIZE);
+                    if (ret != null) {
+                        return ret.longValue();
+                    } else {
+                        return null;
+                    }
                 }
 
                 @Override
-                public long getPackedSize(int index) {
-                    return (Long) invoke(getProperty, index, PropID.PACKED_SIZE);
+                public Long getPackedSize(int index) {
+                    final Number ret = (Number) invoke(getProperty, index, PropID.PACKED_SIZE);
+                    if (ret != null) {
+                        return ret.longValue();
+                    } else {
+                        return null;
+                    }
                 }
 
                 @Override
@@ -872,15 +883,21 @@ public class Multi extends IExtraction {
 
                 @Override
                 public Integer getAttributes(int index) {
-                    return (Integer) invoke(getProperty, index, PropID.ATTRIBUTES);
+                    final Number ret = (Number) invoke(getProperty, index, PropID.ATTRIBUTES);
+                    if (ret != null) {
+                        return ret.intValue();
+                    } else {
+                        return 0;
+                    }
                 }
 
                 @Override
                 public Date getLastWriteTime(int index) {
                     if (propIDLastWriteTime != null) {
                         return (Date) invoke(getProperty, index, propIDLastWriteTime);
+                    } else {
+                        return null;
                     }
-                    return null;
                 }
 
                 @Override
