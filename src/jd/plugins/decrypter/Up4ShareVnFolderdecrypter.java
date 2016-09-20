@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up.4share.vn" }, urls = { "http://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up.4share.vn" }, urls = { "http://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
 public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
 
     public Up4ShareVnFolderdecrypter(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
         br.setConnectTimeout(2 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("\\[Empty Folder\\]") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
+        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("File suspended:") || br.containsHTML("\\[Empty Folder\\]") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
