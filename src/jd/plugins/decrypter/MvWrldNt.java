@@ -33,7 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?\\.html" })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
@@ -97,33 +97,35 @@ public class MvWrldNt extends PluginForDecrypt {
         final String MAINPAGE = "http://" + br.getHost();
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
         ArrayList<String> pwList = null;
-        String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
         final Form captchaForm = br.getForm(0);
-        if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) {
-            return null;
-        }
-        captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
-        Browser brc = br.cloneBrowser();
-        captchaUrl = MAINPAGE + captchaUrl;
-        final File captchaFile = getLocalCaptchaFile();
-        brc.getDownload(captchaFile, captchaUrl);
-        String code = null;
-        for (int i = 0; i <= 5; i++) {
-            if (i > 0) {
-                // Recognition failed, ask the user!
-                code = getCaptchaCode(null, captchaFile, param);
-            } else {
-                code = getCaptchaCode("mov-world.net", captchaFile, param);
+        if (captchaForm != null) {
+            String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
+            if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) {
+                return null;
             }
-            captchaForm.put("code", code);
-            br.submitForm(captchaForm);
+            captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
+            Browser brc = br.cloneBrowser();
+            captchaUrl = MAINPAGE + captchaUrl;
+            final File captchaFile = getLocalCaptchaFile();
+            brc.getDownload(captchaFile, captchaUrl);
+            String code = null;
+            for (int i = 0; i <= 5; i++) {
+                if (i > 0) {
+                    // Recognition failed, ask the user!
+                    code = getCaptchaCode(null, captchaFile, param);
+                } else {
+                    code = getCaptchaCode("mov-world.net", captchaFile, param);
+                }
+                captchaForm.put("code", code);
+                br.submitForm(captchaForm);
+                if (br.containsHTML("\"Der Sicherheits Code")) {
+                    continue;
+                }
+                break;
+            }
             if (br.containsHTML("\"Der Sicherheits Code")) {
-                continue;
+                throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            break;
-        }
-        if (br.containsHTML("\"Der Sicherheits Code")) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         /* Base64 Decode */
         final byte[] cDecode = Base64.decodeFast(br.getRegex("html\":\"(.*?)\"").getMatch(0).replace("\\", "").toCharArray());
@@ -156,7 +158,7 @@ public class MvWrldNt extends PluginForDecrypt {
             if (!dl.startsWith("http")) {
                 dl = MAINPAGE + dl;
             }
-            brc = br.cloneBrowser();
+            Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(false);
             if (dl.startsWith(MAINPAGE)) {
                 brc.getPage(dl);
