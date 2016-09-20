@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,13 +29,16 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
 
     /**
@@ -59,19 +63,35 @@ public class GoogleDrive extends PluginForDecrypt {
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        String fid;
+        if (parameter.contains("open?id")) {
+            br.getPage(parameter);
+            if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "google.com/file/")) {
+                decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation(), false));
+                return decryptedLinks;
+            } else if (!StringUtils.containsIgnoreCase(br.getRedirectLocation(), "google.com/folderview")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        final String fid;
         if (parameter.matches(FOLDER_NORMAL) || parameter.matches(FOLDER_CURRENT)) {
             fid = new Regex(parameter, "([^/]+)$").getMatch(0);
         } else {
             fid = new Regex(parameter, "id=([^\\&=]+)").getMatch(0);
         }
         parameter = "https://drive.google.com/drive/folders/" + fid;
-
         final PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
         ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br);
+
+        final CrawledLink source = getCurrentLink().getSourceLink();
+        final String subfolder;
+        if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
+            final DownloadLink downloadLink = source.getDownloadLink();
+            subfolder = downloadLink.getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+        } else {
+            subfolder = null;
+        }
 
         int retry = 0;
         do {
@@ -190,7 +210,11 @@ public class GoogleDrive extends PluginForDecrypt {
                                 final FilePackage fp = FilePackage.getInstance();
                                 fp.setName(folderName);
                                 fp.add(folderLink);
-                                folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, "/" + folderName);
+                                if (subfolder != null) {
+                                    folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + folderName);
+                                } else {
+                                    folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, "/" + folderName);
+                                }
                             }
                             decryptedLinks.add(folderLink);
                         } else {
