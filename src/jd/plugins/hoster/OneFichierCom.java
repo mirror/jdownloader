@@ -20,6 +20,7 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -51,7 +52,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?|https?://(?:www\\.)?(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/\\?[a-z0-9]+" })
 public class OneFichierCom extends PluginForHost {
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe)";
     private final String         PROPERTY_FREELINK            = "freeLink";
@@ -718,21 +719,38 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
+    private static AtomicReference<String> lastSessionPassword = new AtomicReference<String>();
+
     private String handlePassword() throws IOException, PluginException {
-        logger.info("This link seems to be password protected, continuing...");
-        String passCode = this.currDownloadLink.getStringProperty("pass", null);
-        if (passCode == null) {
-            passCode = Plugin.getUserInput("Password?", this.currDownloadLink);
+        synchronized (lastSessionPassword) {
+            logger.info("This link seems to be password protected, continuing...");
+            String passCode = lastSessionPassword.get();
+            final String url = br.getURL();
+            if (passCode != null) {
+                String postData = "pass=" + Encoding.urlEncode(passCode) + "&" + getSSLFormValue();
+                br.postPage(url, postData);
+                if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
+                    lastSessionPassword.set(passCode);
+                    this.currDownloadLink.setProperty("pass", passCode);
+                    return passCode;
+                }
+            }
+            passCode = this.currDownloadLink.getStringProperty("pass", null);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", this.currDownloadLink);
+            }
+            String postData = "pass=" + Encoding.urlEncode(passCode) + "&" + getSSLFormValue();
+            br.postPage(url, postData);
+            if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
+                lastSessionPassword.set(null);
+                this.currDownloadLink.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            }
+            // set after regex checks
+            lastSessionPassword.set(passCode);
+            this.currDownloadLink.setProperty("pass", passCode);
+            return passCode;
         }
-        String postData = "pass=" + Encoding.urlEncode(passCode) + "&" + getSSLFormValue();
-        br.postPage(br.getURL(), postData);
-        if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
-            this.currDownloadLink.setProperty("pass", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
-        }
-        // set after regex checks
-        this.currDownloadLink.setProperty("pass", passCode);
-        return passCode;
     }
 
     /* Returns postPage key + data based on the users' SSL preference. */
