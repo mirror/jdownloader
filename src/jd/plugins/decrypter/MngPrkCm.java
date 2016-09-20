@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" })
 public class MngPrkCm extends PluginForDecrypt {
     /**
      * @author raztoki
@@ -66,14 +66,9 @@ public class MngPrkCm extends PluginForDecrypt {
         }
         final Regex srv_info = br.getRegex("target=\"_blank\" href=\"(https?://(?:[a-z0-9]+\\.){1,}mpcdn\\.net/[^<>\"]*?)(\\d+)(\\.(?:jpg|png))(?:\\?\\d+)?\"");
         final String srv_link = srv_info.getMatch(0);
-        final String extension = srv_info.getMatch(2);
+        String extension = srv_info.getMatch(2);
         String[] fpname = br.getRegex(">([^<>\"]+)\\s*</a>\\s*/\\s*([^<>]+)<em class=\"refresh\"").getRow(0);
-        if (srv_link == null || fpname == null || extension == null) {
-            if (br.containsHTML("class=\"manga\"")) {
-                logger.info("Link offline (unsupported link): " + parameter);
-                return decryptedLinks;
-            }
-            logger.warning("Issue with getThis! : " + parameter);
+        if (fpname == null) {
             return null;
         }
         String fpName = (fpname[0] != null ? fpname[0] : "") + (fpname[1] != null ? " - " + fpname[1] : "");
@@ -99,14 +94,31 @@ public class MngPrkCm extends PluginForDecrypt {
         fp.setName(fpName);
 
         final DecimalFormat df = new DecimalFormat("00");
-
-        for (int i = 1; i <= numberOfPages; i++) {
-            final String img = srv_link + i + extension;
-            final DownloadLink link = createDownloadlink("directhttp://" + img);
-            link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
-            link.setAvailable(true);
-            fp.add(link);
-            decryptedLinks.add(link);
+        if (srv_link != null && extension != null) {
+            for (int i = 1; i <= numberOfPages; i++) {
+                final String img = srv_link + i + extension;
+                final DownloadLink link = createDownloadlink("directhttp://" + img);
+                link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
+                link.setAvailable(true);
+                fp.add(link);
+                decryptedLinks.add(link);
+            }
+        } else {
+            int i = 1;
+            while (true) {
+                final String url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"(https?://[^<>]+/" + String.valueOf(i) + "\\.(jpg|png))\"").getMatch(0);
+                if (url != null) {
+                    final DownloadLink link = createDownloadlink("directhttp://" + url);
+                    extension = getFileNameExtensionFromURL(url);
+                    link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
+                    i++;
+                    link.setAvailable(true);
+                    fp.add(link);
+                    decryptedLinks.add(link);
+                } else {
+                    break;
+                }
+            }
         }
         logger.warning("Task Complete! : " + parameter);
         HOST = "";
