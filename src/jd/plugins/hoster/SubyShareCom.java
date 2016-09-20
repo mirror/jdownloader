@@ -58,7 +58,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -594,12 +594,22 @@ public class SubyShareCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
+    private void getPage(String page) throws Exception {
+        if (SUPPORTSHTTPS && ENFORCESHTTPS) {
+            page = page.replaceFirst("http://", "https://");
+        } else if (!SUPPORTSHTTPS) {
+            page = page.replaceFirst("https://", "http://");
+        }
         br.getPage(page);
         correctBR();
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        if (SUPPORTSHTTPS && ENFORCESHTTPS) {
+            page = page.replaceFirst("http://", "https://");
+        } else if (!SUPPORTSHTTPS) {
+            page = page.replaceFirst("https://", "http://");
+        }
         br.postPage(page, postdata);
         correctBR();
     }

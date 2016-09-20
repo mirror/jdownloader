@@ -55,7 +55,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* Add slash to the end to prevent 302 redirect to speed up the crawl process a tiny bit. */
             parameter += "/";
         }
-        final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
+        final PluginForHost hostplugin = JDUtilities.getPluginForHost(this.getHost());
         boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
         if (aa != null) {
@@ -86,6 +86,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
         final boolean abort_on_rate_limit_reached = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.QUIT_ON_RATE_LIMIT_REACHED, jd.plugins.hoster.InstaGramCom.defaultQUIT_ON_RATE_LIMIT_REACHED);
         final boolean prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
+        final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
+        final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
         String nextid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
         final String maxid = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
         ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
@@ -106,6 +108,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (this.isAbort()) {
                 logger.info("User aborted decryption");
                 return decryptedLinks;
+            } else if (only_grab_x_items && decryptedLinks.size() >= maX_items) {
+                logger.info("Number of items selected by user has been crawled --> Done");
+                break;
             }
             if (page > 0) {
                 Browser br = null;

@@ -62,7 +62,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(?:www\\.)?save\\.tv/STV/M/obj/(?:archive/VideoArchiveDetails|TC/SendungsDetails)\\.cfm\\?TelecastID=\\d+(?:\\&adsfree=(?:true|false|unset))?(?:\\&preferformat=[3456])?|https?://[A-Za-z0-9\\-]+\\.save\\.tv/\\d+_\\d+_.+" })
 public class SaveTv extends PluginForHost {
     /**
      * Status 2015-06-26: HD downloads via API work fine again. They have not been working for ~ a month but it's all back to normal now!
@@ -2114,15 +2114,12 @@ public class SaveTv extends PluginForHost {
                         message += "Hallo lieber save.tv Nutzer.\r\n";
                         message += "Um über JDownloader Videos aus deinem save.tv Archiv herunterladen zu können musst du\r\nzunächst deinen save.tv Account in JDownloader eintragen.";
                         message += "\r\n";
-                        message += "In JDownloader 0.9.581 geht das unter:\r\n";
-                        message += "Einstellungen -> Anbieter -> -> Premium -> Account hinzufügen save.tv\r\n";
-                        message += "\r\n";
-                        message += "In der JDownloader 2 BETA geht das unter:\r\n";
+                        message += "Das geht unter:\r\n";
                         message += "Einstellungen -> Accountverwaltung -> Hinzufügen -> save.tv\r\n";
                         message += "\r\n";
                         message += "Sobald du deinen Account eingetragen hast kannst du aus deinem save.tv Archiv\r\n";
                         message += "Links dieses Formats in JDownloader einfügen und herunterladen:\r\n";
-                        message += "save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=XXXXXXX";
+                        message += "https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {
