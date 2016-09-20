@@ -4,12 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
 import jd.captcha.utils.RecaptchaTypeTester;
 import jd.captcha.utils.RecaptchaTypeTester.RecaptchaType;
 import jd.http.Browser;
@@ -21,6 +15,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class Recaptcha {
     private static final int MAX_TRIES    = 5;
@@ -190,7 +190,7 @@ public class Recaptcha {
             if (challenge != null) {
                 helperID = "BrowserLoop";
 
-                server = "http://www.google.com/recaptcha/api/";
+                server = "https://www.google.com/recaptcha/api/";
                 this.captchaAddress = this.server + "image?c=" + this.challenge;
             }
         } catch (Throwable e) {
@@ -200,7 +200,7 @@ public class Recaptcha {
             /* follow redirect needed as google redirects to another domain */
             this.rcBr.setFollowRedirects(true);
             // new primary. 20141211
-            this.rcBr.getPage("http://www.google.com/recaptcha/api/challenge?k=" + this.id);
+            this.rcBr.getPage("https://www.google.com/recaptcha/api/challenge?k=" + this.id);
             // old
             // this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
             this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
@@ -308,7 +308,7 @@ public class Recaptcha {
             e.printStackTrace();
         }
         if (newChallenge == null) {
-            this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
+            this.rcBr.getPage("https://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
             newChallenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'").getMatch(0);
 
         }
