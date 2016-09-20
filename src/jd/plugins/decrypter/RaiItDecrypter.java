@@ -63,11 +63,22 @@ public class RaiItDecrypter extends PluginForDecrypt {
     }
 
     private void decryptWholeDay() throws Exception {
+        final String mainlink_urlpart = new Regex(parameter, "\\?(.+)").getMatch(0);
         final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
         final String[] channels = new Regex(parameter, "ch=(\\d+)").getColumn(0);
         final String[] videoids = new Regex(parameter, "v=(\\d+)").getColumn(0);
         final String date = dates[dates.length - 1];
         final String date_underscore = date.replace("-", "_");
+
+        final DownloadLink offline = this.createOfflinelink(parameter);
+        final String filename_offline;
+        if (mainlink_urlpart != null) {
+            filename_offline = date + "_" + mainlink_urlpart + ".mp4";
+        } else {
+            filename_offline = date + ".mp4";
+        }
+        offline.setFinalFileName(filename_offline);
+
         try {
             String id_of_single_video_which_user_wants_to_have_only = null;
             String chnumber_str = null;
@@ -107,7 +118,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.getPage("http://www.rai.tv/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html");
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(offline);
                 return;
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -129,7 +140,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
                     if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
                         logger.info("User wants to have a single video only but this appears to be offline");
-                        final DownloadLink offline = this.createOfflinelink(parameter);
                         offline.setFinalFileName(id_of_single_video_which_user_wants_to_have_only + ".mp4");
                         /* Remove previously found content */
                         decryptedLinks.clear();
@@ -155,8 +165,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
         } finally {
             if (decryptedLinks.size() == 0) {
                 /* Probably none of the urls was downloadable ... */
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                offline.setName(date + ".mp4");
                 decryptedLinks.add(offline);
             }
         }
@@ -335,14 +343,32 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            /* Single http url */
-            final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
-            dl.setFinalFileName(title + "." + extension);
-            dl._setFilePackage(fp);
-            if (description != null) {
-                dl.setComment(description);
+            /* Single http url --> We can sometimes grab multiple qualities */
+            if (dllink.contains("_1800.mp4")) {
+                /* Multiple qualities availab.e */
+                final String[][] bitrates = { { "1800", "_1800.mp4" }, { "800", "_800.mp4" } };
+                for (final String[] qualityInfo : bitrates) {
+                    final String bitrate = qualityInfo[0];
+                    final String url_bitrate_string = qualityInfo[1];
+                    final String directlink = dllink.replace("_1800.mp4", url_bitrate_string);
+                    final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
+                    dl.setFinalFileName(title + "_" + bitrate + "." + extension);
+                    dl._setFilePackage(fp);
+                    if (description != null) {
+                        dl.setComment(description);
+                    }
+                    this.decryptedLinks.add(dl);
+                }
+            } else {
+                /* Only one quality available. */
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
+                dl.setFinalFileName(title + "." + extension);
+                dl._setFilePackage(fp);
+                if (description != null) {
+                    dl.setComment(description);
+                }
+                this.decryptedLinks.add(dl);
             }
-            this.decryptedLinks.add(dl);
         }
     }
 
