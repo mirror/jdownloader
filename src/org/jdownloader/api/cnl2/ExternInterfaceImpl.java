@@ -26,8 +26,6 @@ import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICOEncoder;
 
@@ -58,8 +56,6 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
@@ -580,6 +576,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
+    private String getValue(final String[] values, final int index) {
+        if (values != null && index >= 0 && index < values.length && StringUtils.isNotEmpty(values[index])) {
+            return values[index];
+        } else {
+            return null;
+        }
+    }
+
     public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request, null, null);
@@ -595,11 +599,16 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final String referer = request.getParameterbyKey("referer");
                 final String downloadPasswords[] = Regex.getLines(request.getParameterbyKey("dpass"));
                 final String archivePasswords[] = Regex.getLines(request.getParameterbyKey("apass"));
-                final boolean finalAutostart = "1".equals(request.getParameterbyKey("autostart"));
+                final Boolean finalAutostart;
+                if (request.getParameterbyKey("autostart") != null) {
+                    finalAutostart = "1".equals(request.getParameterbyKey("autostart"));
+                } else {
+                    finalAutostart = null;
+                }
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
-                LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
+                final LinkCollectingJob job = new LinkCollectingJob(LinkOriginDetails.getInstance(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
                 final String finalPackageName = request.getParameterbyKey("package");
                 String dir = request.getParameterbyKey("dir");
                 if (dir != null && dir.matches("^[a-zA-Z]{1}:$")) {
@@ -607,147 +616,98 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     dir = dir + "/";
                 }
                 final String finalDestination = dir;
-
-                final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-                    private HashSet<String> pws = null;
-
-                    {
-                        if (archivePasswords != null) {
-                            pws = new HashSet<String>();
-                            for (String p : archivePasswords) {
-                                if (StringUtils.isNotEmpty(p)) {
-                                    pws.add(p);
-                                }
-                            }
-                            if (pws.size() == 0) {
-                                pws = null;
-                            }
+                final HashSet<String> pws = new HashSet<String>();
+                if (archivePasswords != null) {
+                    for (String p : archivePasswords) {
+                        if (StringUtils.isNotEmpty(p)) {
+                            pws.add(p);
                         }
                     }
+                }
+                if (finalAutostart != null || pws.size() > 0) {
+                    final CrawledLinkModifier preModifier = new CrawledLinkModifier() {
 
-                    @Override
-                    public void modifyCrawledLink(CrawledLink link) {
-                        if (StringUtils.isNotEmpty(finalPackageName)) {
-                            PackageInfo packageInfo = link.getDesiredPackageInfo();
-                            if (packageInfo == null) {
-                                packageInfo = new PackageInfo();
+                        @Override
+                        public void modifyCrawledLink(CrawledLink link) {
+                            if (pws.size() > 0) {
+                                link.getArchiveInfo().getExtractionPasswords().addAll(pws);
                             }
-                            packageInfo.setName(finalPackageName);
-                            packageInfo.setUniqueId(null);
-                            packageInfo.setIgnoreVarious(true);
-                            link.setDesiredPackageInfo(packageInfo);
-                        }
-                        if (StringUtils.isNotEmpty(finalDestination)) {
-                            PackageInfo packageInfo = link.getDesiredPackageInfo();
-                            if (packageInfo == null) {
-                                packageInfo = new PackageInfo();
+                            if (finalAutostart != null) {
+                                link.setAutoConfirmEnabled(finalAutostart);
+                                link.setAutoStartEnabled(finalAutostart);
                             }
-                            packageInfo.setDestinationFolder(finalDestination);
-                            packageInfo.setIgnoreVarious(true);
-                            packageInfo.setUniqueId(null);
-                            link.setDesiredPackageInfo(packageInfo);
                         }
-                        if (pws != null && pws.size() > 0) {
-                            link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                    };
+                    job.setCrawledLinkModifierPrePackagizer(preModifier);
+                }
+                if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
+                    final CrawledLinkModifier postModifier = new CrawledLinkModifier() {
+
+                        @Override
+                        public void modifyCrawledLink(CrawledLink link) {
+                            if (StringUtils.isNotEmpty(finalPackageName)) {
+                                PackageInfo packageInfo = link.getDesiredPackageInfo();
+                                if (packageInfo == null) {
+                                    packageInfo = new PackageInfo();
+                                }
+                                packageInfo.setName(finalPackageName);
+                                packageInfo.setUniqueId(null);
+                                packageInfo.setIgnoreVarious(true);
+                                link.setDesiredPackageInfo(packageInfo);
+                            }
+                            if (StringUtils.isNotEmpty(finalDestination)) {
+                                PackageInfo packageInfo = link.getDesiredPackageInfo();
+                                if (packageInfo == null) {
+                                    packageInfo = new PackageInfo();
+                                }
+                                packageInfo.setDestinationFolder(finalDestination);
+                                packageInfo.setIgnoreVarious(true);
+                                packageInfo.setUniqueId(null);
+                                link.setDesiredPackageInfo(packageInfo);
+                            }
                         }
-                        if (finalAutostart) {
-                            link.setAutoConfirmEnabled(true);
-                            link.setAutoStartEnabled(true);
+                    };
+                    job.setCrawledLinkModifierPostPackagizer(postModifier);
+                }
+
+                final UnknownCrawledLinkHandler unknownCrawledLinkHandler = new UnknownCrawledLinkHandler() {
+
+                    public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                        final DownloadLink dl = link.getDownloadLink();
+                        if (dl != null && !StringUtils.startsWithCaseInsensitive(dl.getPluginPatternMatcher(), "directhttp://")) {
+                            dl.setPluginPatternMatcher("directhttp://" + dl.getPluginPatternMatcher());
                         }
                     }
                 };
-                job.setCrawledLinkModifierPrePackagizer(modifier);
-                if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
-                    job.setCrawledLinkModifierPostPackagizer(modifier);
-                }
-
-                LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
-                final PluginForHost defaultplg = lazyp.getPrototype(null);
-
-                java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
-                for (int index = 0; index <= urls.length - 1; index++) {
-                    CrawledLink link = new CrawledLink(urls[index]);
-                    String tmpDownloadPassword = null;
-                    if (downloadPasswords != null && downloadPasswords.length > 0) {
-                        if (downloadPasswords.length == urls.length) {
-                            tmpDownloadPassword = downloadPasswords[index];
-                        } else {
-                            tmpDownloadPassword = downloadPasswords[0];
-                        }
+                final List<CrawledLink> links = new ArrayList<CrawledLink>();
+                for (int index = 0; index < urls.length; index++) {
+                    final DownloadLink downloadLink = new DownloadLink(null, null, null, urls[index], true);
+                    downloadLink.setProperty("referer", referer);
+                    downloadLink.setDownloadPassword(getValue(downloadPasswords, index));
+                    downloadLink.setComment(getValue(desc, index));
+                    downloadLink.setForcedFileName(getValue(fnames, index));
+                    if (StringUtils.isNotEmpty(cookies)) {
+                        downloadLink.setProperty("cookies", cookies);
                     }
-                    final String downloadPassword = tmpDownloadPassword;
+                    if (StringUtils.isNotEmpty(post)) {
+                        downloadLink.setProperty("post", post);
+                    }
+                    final CrawledLink crawledLink = new CrawledLink(downloadLink);
+                    if (StringUtils.isNotEmpty(referer)) {
+                        crawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
 
-                    final int index2 = index;
-                    link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
-
-                        public void modifyCrawledLink(CrawledLink link) {
-                            final DownloadLink dl = link.getDownloadLink();
-                            if (dl != null) {
-                                if (StringUtils.isNotEmpty(downloadPassword)) {
-                                    dl.setDownloadPassword(downloadPassword);
-                                }
-                                if (StringUtils.isEmpty(dl.getReferrerUrl()) && StringUtils.isNotEmpty(referer)) {
-                                    dl.setReferrerUrl(referer);
-                                }
-                                if (index2 < desc.length && StringUtils.isNotEmpty(desc[index2])) {
-                                    dl.setComment(desc[index2]);
-                                }
-                                if (index2 < fnames.length && StringUtils.isNotEmpty(fnames[index2])) {
-                                    dl.setForcedFileName(fnames[index2]);
-                                }
-                                if (StringUtils.isNotEmpty(cookies)) {
-                                    dl.setProperty("cookies", cookies);
-                                }
-                                if (StringUtils.isNotEmpty(post)) {
-                                    dl.setProperty("post", post);
-                                }
-                                if (StringUtils.isNotEmpty(referer)) {
-                                    dl.setProperty("referer", referer);
+                            public void modifyCrawledLink(CrawledLink link) {
+                                final DownloadLink dl = link.getDownloadLink();
+                                if (dl != null) {
+                                    if (StringUtils.isEmpty(dl.getReferrerUrl())) {
+                                        dl.setReferrerUrl(referer);
+                                    }
                                 }
                             }
-                        }
-                    });
-                    link.setUnknownHandler(new UnknownCrawledLinkHandler() {
-
-                        /*
-                         * this handler transforms unknown links into directhttp links with all information given by flashgot
-                         */
-                        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                            String url = link.getURL();
-                            String name = null;
-                            try {
-                                name = Plugin.extractFileNameFromURL(url);
-                            } catch (final Throwable e) {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                            }
-                            final DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
-                            if (StringUtils.isNotEmpty(downloadPassword)) {
-                                direct.setDownloadPassword(downloadPassword);
-                            }
-                            if (index2 < desc.length && StringUtils.isNotEmpty(desc[index2])) {
-                                direct.setComment(desc[index2]);
-                            }
-                            if (StringUtils.isNotEmpty(cookies)) {
-                                direct.setProperty("cookies", cookies);
-                            }
-                            if (StringUtils.isNotEmpty(post)) {
-                                direct.setProperty("post", post);
-                            }
-                            if (StringUtils.isNotEmpty(referer)) {
-                                direct.setProperty("referer", referer);
-                            }
-                            if (index2 < fnames.length && StringUtils.isNotEmpty(fnames[index2])) {
-                                direct.setProperty("fixName", fnames[index2]);
-                            }
-                            try {
-                                defaultplg.correctDownloadLink(direct);
-                            } catch (final Throwable e) {
-                                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                            }
-                            link.setDownloadLink(direct);
-                        }
-                    });
-                    links.add(link);
+                        });
+                    }
+                    crawledLink.setUnknownHandler(unknownCrawledLinkHandler);
+                    links.add(crawledLink);
                 }
                 LinkCollector.getInstance().addCrawlerJob(links, job);
             }
@@ -757,5 +717,4 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             throw new InternalApiException(e);
         }
     }
-
 }

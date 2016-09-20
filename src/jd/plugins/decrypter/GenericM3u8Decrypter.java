@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.plugins.CryptedLink;
@@ -52,7 +53,16 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         CrawledLink source = getCurrentLink();
         String referer = null;
+        String cookiesString = null;
         while (source != null) {
+            if (source.getDownloadLink() != null && StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
+                final DownloadLink downloadLink = source.getDownloadLink();
+                cookiesString = downloadLink.getStringProperty("cookies", null);
+                if (cookiesString != null) {
+                    final String host = Browser.getHost(source.getURL());
+                    br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
+                }
+            }
             if (!StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
                 if (source.getCryptedLink() != null) {
                     referer = source.getURL();
@@ -79,6 +89,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (referer != null) {
                         link.setProperty("Referer", referer);
                     }
+                    if (cookiesString != null) {
+                        link.setProperty("cookies", cookiesString);
+                    }
                     addToResults(ret, br, url, link);
                     infos.clear();
                 } else {
@@ -89,6 +102,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink("m3u8" + param.getCryptedUrl().substring(4));
             if (referer != null) {
                 link.setProperty("Referer", referer);
+            }
+            if (cookiesString != null) {
+                link.setProperty("cookies", cookiesString);
             }
             if (br.containsHTML("EXT-X-KEY")) {
                 link.setProperty("ENCRYPTED", true);

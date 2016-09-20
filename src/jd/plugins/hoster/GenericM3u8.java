@@ -20,6 +20,7 @@ import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -80,6 +81,11 @@ public class GenericM3u8 extends PluginForHost {
         }
         checkFFProbe(downloadLink, "Download a HLS Stream");
         this.setBrowserExclusive();
+        final String cookiesString = downloadLink.getStringProperty("cookies", null);
+        if (cookiesString != null) {
+            final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
+            br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
+        }
         final String referer = downloadLink.getStringProperty("Referer", null);
         if (referer != null) {
             br.getPage(referer);
@@ -137,6 +143,11 @@ public class GenericM3u8 extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
         }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
+        final String cookiesString = downloadLink.getStringProperty("cookies", null);
+        if (cookiesString != null) {
+            final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
+            br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
+        }
         final String referer = downloadLink.getStringProperty("Referer", null);
         if (referer != null) {
             br.getPage(referer);

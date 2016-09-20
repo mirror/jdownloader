@@ -484,13 +484,16 @@ public class AbstractFFmpegBinary {
                 try {
                     final int exitCode = process.exitValue();
                     reader2.join();
+                    final String lastStdStream = sdtStream.toString();
                     logger.info("LastErrorStream:" + errorStreamString);
-                    logger.info("LastStdStream:" + sdtStream.toString());
+                    logger.info("LastStdStream:" + lastStdStream);
                     logger.info("ExitCode:" + exitCode);
                     final boolean okay = exitCode == 0;
                     if (!okay) {
-
-                        throw new FFMpegException("FFmpeg Failed", sdtStream.toString(), errorStreamString);
+                        if (errorStreamString.contains("Unrecognized option 'c:v'")) {
+                            throw new FFMpegException("FFmpeg version too old", lastStdStream, errorStreamString);
+                        }
+                        throw new FFMpegException("FFmpeg Failed", lastStdStream, errorStreamString);
                     } else {
                         return sdtStream.toString();
                     }
