@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "limefile.com" }, urls = { "https?://(www\\.)?limefile\\.com/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "limefile.com" }, urls = { "https?://(www\\.)?limefile\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class LimeFileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -193,6 +193,9 @@ public class LimeFileCom extends PluginForHost {
         }
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            if (correctedBR.contains("This file is available for Premium Users only.")) {
+                return AvailableStatus.UNCHECKABLE;
+            }
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
