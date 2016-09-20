@@ -38,7 +38,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     };
 
     private final User32    user32;
-    private int             lastClipboardSequenceNumber = -1;
+    private Integer         lastClipboardSequenceNumber = null;
     private final psapi     psapi;
     private final Kernel32  kernel32;
     private final Pattern[] blackListPatterns;
@@ -116,7 +116,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     protected boolean hasChanges() {
         final int currentClipboardSequenceNumber = user32.GetClipboardSequenceNumber();
         if (currentClipboardSequenceNumber != 0) {
-            if (currentClipboardSequenceNumber != lastClipboardSequenceNumber) {
+            if (lastClipboardSequenceNumber == null || (currentClipboardSequenceNumber != lastClipboardSequenceNumber.intValue())) {
                 lastClipboardSequenceNumber = currentClipboardSequenceNumber;
                 if (isProcessBlacklisted) {
                     final String process = getClipboardOwnerProcess();
