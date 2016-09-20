@@ -231,6 +231,15 @@ public class PremiumaxNet extends antiDDoSForHost {
                         // not trust worthy in my opinion. see jdlog://0535035891641
                         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         throw new PluginException(LinkStatus.ERROR_FATAL, "They claim file is offline!");
+                    } else if (brc.containsHTML("^<b><font color=red>\\s*There's no \\S+ account in database\\. Contact admin!\\s*</font></b>")) {
+                        // <b><font color=red> There's no zippyshare.com account in database. Contact admin! </font></b>
+                        /*
+                         * <b><font color=red> There's no zippyshare.com account in database. Contact admin! </font></b>||var el =
+                         * document.createElement("iframe");...
+                         */
+                        // this error is multihoster wide, not specific to account... -raztoki20160921
+                        this.currAcc = null;
+                        tempUnavailableHoster(15 * 60 * 1000l, "Provider has no account's available to download with.");
                     } else {
                         // final failover! dllink == null
                         handleErrorRetries(link, "dllinknullerror", 10, 5 * 60 * 1000l);
