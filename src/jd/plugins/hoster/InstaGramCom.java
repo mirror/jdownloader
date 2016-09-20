@@ -43,7 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 
@@ -79,8 +78,12 @@ public class InstaGramCom extends PluginForHost {
     private static final String  MAINPAGE                          = "https://www.instagram.com";
     public static final String   QUIT_ON_RATE_LIMIT_REACHED        = "QUIT_ON_RATE_LIMIT_REACHED";
     public static final String   PREFER_SERVER_FILENAMES           = "PREFER_SERVER_FILENAMES";
+    public static final String   ONLY_GRAB_X_ITEMS                 = "ONLY_GRAB_X_ITEMS";
+    public static final String   ONLY_GRAB_X_ITEMS_NUMBER          = "ONLY_GRAB_X_ITEMS_NUMBER";
     public static final boolean  defaultPREFER_SERVER_FILENAMES    = false;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED = false;
+    public static final boolean  defaultONLY_GRAB_X_ITEMS          = false;
+    public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER   = 25;
 
     private static Object        LOCK                              = new Object();
 
@@ -339,8 +342,11 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, JDL.L("plugins.hoster.InstaGramCom.preferServerFilenames", "Use server-filenames whenever possible?")).setDefaultValue(defaultPREFER_SERVER_FILENAMES));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, JDL.L("plugins.hoster.InstaGramCom.quitOnRateLimitReached", "Abort crawl process once rate limit is reached?")).setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
+        final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
+        getConfig().addEntry(grabXitems);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_NUMBER, "How many items shall be grabbed?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER).setEnabledCondidtion(grabXitems, true));
     }
 
     @Override

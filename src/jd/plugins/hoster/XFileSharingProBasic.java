@@ -145,7 +145,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.2.9<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.0<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -917,26 +917,51 @@ public class XFileSharingProBasic extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    private void getPage(String page) throws Exception {
+        page = correctProtocol(page);
         getPage(br, page, true);
     }
 
-    private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
+    private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.getPage(page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
-    private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
+    private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.postPage(page, postdata);
         if (correctBr) {
             correctBR();
         }
+    }
+
+    // /* Handles redirects to prevent getDllink method from picking invalid final download_url in case of a redirect. */
+    // private void handleRedirects(final Browser br, final boolean correctBr) throws Exception {
+    // String redirect = br.getRedirectLocation();
+    // final int redirect_limit = 5;
+    // int counter = 0;
+    // while (redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}.*?") && counter <= redirect_limit) {
+    // br.getPage(redirect);
+    // redirect = br.getRedirectLocation();
+    // counter++;
+    // }
+    // }
+
+    private String correctProtocol(String url) {
+        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
+            url = url.replaceFirst("http://", "https://");
+        } else if (!SUPPORTS_HTTPS) {
+            url = url.replaceFirst("https://", "http://");
+        }
+        return url;
     }
 
     private void submitForm(final Form form) throws Exception {
