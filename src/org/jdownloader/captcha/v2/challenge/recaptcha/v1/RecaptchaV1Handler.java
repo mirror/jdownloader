@@ -121,7 +121,7 @@ public abstract class RecaptchaV1Handler {
         ref.open();
         try {
             synchronized (url) {
-                url.wait(15000);
+                url.wait(30000);
             }
         } finally {
             ref.dispose();
