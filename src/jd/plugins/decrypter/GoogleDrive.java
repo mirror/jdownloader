@@ -92,7 +92,6 @@ public class GoogleDrive extends PluginForDecrypt {
         } else {
             subfolder = null;
         }
-
         int retry = 0;
         do {
             try {
