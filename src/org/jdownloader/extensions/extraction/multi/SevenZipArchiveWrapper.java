@@ -22,7 +22,7 @@ public interface SevenZipArchiveWrapper {
 
     Long getSize(int index);
 
-    long getPackedSize(int index);
+    Long getPackedSize(int index);
 
     String getPath(int index);
 
