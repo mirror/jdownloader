@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "neo-magazin-royale.de", "heute.de", "zdfneo.de", "zdfkultur.de", "zdfinfo.de", "zdfsport.de", "tivi.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+", "https?://(?:www\\.)?zdfneo\\.de/.+", "https?://(?:www\\.)?zdfkultur\\.de/.+", "https?://(?:www\\.)?zdfinfo\\.de/.+", "https?://(?:www\\.)?zdfsport\\.de/.+", "https?://(?:www\\.)?tivi\\.de/(mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?|tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "neo-magazin-royale.de", "heute.de", "zdfneo.de", "zdfkultur.de", "zdfinfo.de", "zdfsport.de", "tivi.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+", "https?://(?:www\\.)?zdfneo\\.de/.+", "https?://(?:www\\.)?zdfkultur\\.de/.+", "https?://(?:www\\.)?zdfinfo\\.de/.+", "https?://(?:www\\.)?zdfsport\\.de/.+", "https?://(?:www\\.)?tivi\\.de/(mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?|tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES        = "Q_SUBTITLES";
@@ -211,14 +211,33 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
                         return decryptedLinks;
                     }
+                    final boolean neomagazinroyale_only_add_current_episode = cfg.getBooleanProperty(jd.plugins.hoster.ZdfDeMediathek.NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, jd.plugins.hoster.ZdfDeMediathek.defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE);
+                    final String[] neomagazin_titles = this.br.getRegex("class=\"headline\"><h3 class=\"h3 zdf\\-\\-primary\\-light\">([^<>]+)<").getColumn(0);
                     /* neo-magazin-royale.de, heute.de */
                     final String[] regexes = { "data\\-assetid=\"(\\d+)\"", "\"videoId\"[\t\n\r ]*?:[\t\n\r ]*?\"(\\d+)\"" };
+                    int counter;
                     for (final String regex : regexes) {
                         ids = this.br.getRegex(regex).getColumn(0);
                         if (ids != null && ids.length > 0) {
+                            counter = 0;
                             for (final String videoid : ids) {
                                 final String video_mainlink = createZdfLink(videoid);
+                                final String neomagazin_title;
+                                if (neomagazin_titles != null && counter <= neomagazin_titles.length - 1) {
+                                    neomagazin_title = neomagazin_titles[counter];
+                                    if (neomagazin_title.matches(".*?NEO MAGAZIN ROYALE.*?vom.*?") && neomagazinroyale_only_add_current_episode) {
+                                        /* Clear list */
+                                        decryptedLinks.clear();
+                                        /* Only add this one entry */
+                                        decryptedLinks.add(this.createDownloadlink(video_mainlink));
+                                        /* Return --> Done */
+                                        return decryptedLinks;
+                                    }
+                                } else {
+                                    neomagazin_title = null;
+                                }
                                 decryptedLinks.add(this.createDownloadlink(video_mainlink));
+                                counter++;
                             }
                         }
                     }
@@ -447,15 +466,32 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
                     return decryptedLinks;
                 }
+                final boolean neomagazinroyale_only_add_current_episode = cfg.getBooleanProperty(jd.plugins.hoster.ZdfDeMediathek.NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, jd.plugins.hoster.ZdfDeMediathek.defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE);
+                final String[] neomagazin_titles = this.br.getRegex("class=\"headline\"><h3 class=\"h3 zdf\\-\\-primary\\-light\">([^<>]+)<").getColumn(0);
+                int counter = 0;
                 /* neo-magazin-royale.de, heute.de */
                 final String[] regexes = { "data\\-assetid=\"(\\d+)\"", "\"videoId\"[\t\n\r ]*?:[\t\n\r ]*?\"(\\d+)\"" };
                 for (final String regex : regexes) {
+                    counter = 0;
                     ids = this.br.getRegex(regex).getColumn(0);
-                    if (ids != null && ids.length > 0) {
-                        for (final String videoid : ids) {
-                            final String video_mainlink = createZdfLink(videoid);
-                            decryptedLinks.add(this.createDownloadlink(video_mainlink));
+                    for (final String videoid : ids) {
+                        final String video_mainlink = createZdfLink(videoid);
+                        final String neomagazin_title;
+                        if (neomagazin_titles != null && counter <= neomagazin_titles.length - 1) {
+                            neomagazin_title = neomagazin_titles[counter];
+                            if (neomagazin_title.matches(".*?NEO MAGAZIN ROYALE.*?vom.*?") && neomagazinroyale_only_add_current_episode) {
+                                /* Clear list */
+                                decryptedLinks.clear();
+                                /* Only add this one entry */
+                                decryptedLinks.add(this.createDownloadlink(video_mainlink));
+                                /* Return --> Done */
+                                return decryptedLinks;
+                            }
+                        } else {
+                            neomagazin_title = null;
                         }
+                        decryptedLinks.add(this.createDownloadlink(video_mainlink));
+                        counter++;
                     }
                 }
                 return decryptedLinks;

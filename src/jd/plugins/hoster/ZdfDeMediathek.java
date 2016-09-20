@@ -27,7 +27,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -39,18 +38,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "tivi.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "tivi.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" })
 public class ZdfDeMediathek extends PluginForHost {
 
-    private static final String Q_SUBTITLES   = "Q_SUBTITLES";
-    private static final String Q_BEST        = "Q_BEST";
-    private static final String Q_LOW         = "Q_LOW";
-    private static final String Q_HIGH        = "Q_HIGH";
-    private static final String Q_VERYHIGH    = "Q_VERYHIGH";
-    private static final String Q_HD          = "Q_HD";
-    private static final String FASTLINKCHECK = "FASTLINKCHECK";
-
-    private String              dllink        = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,6 +68,7 @@ public class ZdfDeMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        server_issues = false;
         final String filename = link.getStringProperty("directName", null);
         prepBR(this.br);
         dllink = link.getStringProperty("directURL", null);
@@ -85,13 +78,11 @@ public class ZdfDeMediathek extends PluginForHost {
         link.setFinalFileName(link.getStringProperty("directName", null));
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
+            } else {
+                server_issues = true;
             }
         } finally {
             try {
@@ -117,7 +108,9 @@ public class ZdfDeMediathek extends PluginForHost {
 
     private void download(final DownloadLink downloadLink) throws Exception {
         final String dllink = downloadLink.getStringProperty("directURL", null);
-        if (dllink == null) {
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("hinweis_fsk")) {
@@ -326,6 +319,16 @@ public class ZdfDeMediathek extends PluginForHost {
         return "JDownloader's ZDF Plugin helps downloading videoclips from zdf.de. ZDF provides different video qualities.";
     }
 
+    private static final String Q_SUBTITLES                                         = "Q_SUBTITLES";
+    private static final String Q_BEST                                              = "Q_BEST";
+    private static final String Q_LOW                                               = "Q_LOW";
+    private static final String Q_HIGH                                              = "Q_HIGH";
+    private static final String Q_VERYHIGH                                          = "Q_VERYHIGH";
+    private static final String Q_HD                                                = "Q_HD";
+    private static final String FASTLINKCHECK                                       = "FASTLINKCHECK";
+    public static final String  NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE        = "NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE";
+    public static final boolean defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE = false;
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -337,6 +340,7 @@ public class ZdfDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.zdf.fastlinkcheck", "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, JDL.L("plugins.hoster.zdf.neomagazin_royale_de_current_episode", "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?")).setDefaultValue(defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE));
     }
 
 }
