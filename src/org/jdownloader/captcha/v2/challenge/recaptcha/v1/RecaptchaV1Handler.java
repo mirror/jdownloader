@@ -150,7 +150,7 @@ public abstract class RecaptchaV1Handler {
                         con = new Browser().openGetConnection(url.get());
                         BufferedImage niceImage = IconIO.toBufferedImage(ImageIO.read(con.getInputStream()));
                         Browser br = new Browser();
-                        br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
+                        br.getPage("https://www.google.com/recaptcha/api/challenge?k=" + siteKey);
 
                         String challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
                         String server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
