@@ -131,6 +131,9 @@ public class GenericM3u8 extends PluginForHost {
             name += " (" + videoq + ")";
         } else if (audioq != null) {
             name += " (" + audioq + ")";
+            if (StringUtils.containsIgnoreCase(audioq, "mp3")) {
+                extension = "mp3";
+            }
         }
         name += "." + extension;
         downloadLink.setName(name);
