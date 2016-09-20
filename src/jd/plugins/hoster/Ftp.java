@@ -54,7 +54,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/[^\"\r\n ]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftpviajd://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/[^\"\r\n ]+" })
 public class Ftp extends PluginForHost {
 
     public Ftp(PluginWrapper wrapper) {
@@ -122,8 +122,8 @@ public class Ftp extends PluginForHost {
             /* cut off all ?xyz at the end */
             final String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             connect(ftp, downloadLink, url);
-            checkFile(ftp, downloadLink, filePath);
-            dl = new SimpleFTPDownloadInterface(ftp, downloadLink, filePath);
+            final String downloadFilePath = checkFile(ftp, downloadLink, filePath);
+            dl = new SimpleFTPDownloadInterface(ftp, downloadLink, downloadFilePath);
             dl.startDownload();
         } catch (HTTPProxyException e) {
             ProxyController.getInstance().reportHTTPProxyException(ftp.getProxy(), url, e);
@@ -170,23 +170,32 @@ public class Ftp extends PluginForHost {
         return list;
     }
 
-    private void checkFile(SimpleFTP ftp, DownloadLink downloadLink, String filePath) throws Exception {
+    private String buildFilePath(final String currentDirectory, final String filePath) {
+        final String ret;
+        if (!filePath.startsWith("/")) {
+            ret = "/" + filePath;
+        } else {
+            ret = filePath;
+        }
+        if (currentDirectory != null && !ret.startsWith(currentDirectory)) {
+            if (currentDirectory.endsWith("/")) {
+                return currentDirectory + ret.substring(1);
+            } else {
+                return currentDirectory + ret;
+            }
+        } else {
+            return ret;
+        }
+    }
+
+    private String checkFile(SimpleFTP ftp, DownloadLink downloadLink, String filePath) throws Exception {
         final String currentDir = ftp.getDir();
         /* switch binary mode */
         ftp.bin();
         /*
          * some servers do not allow to list the folder, so this may fail but file still might be online
          */
-        if (!filePath.startsWith("/")) {
-            filePath = "/" + filePath;
-        }
-        if (!filePath.startsWith(currentDir)) {
-            if (currentDir.endsWith("/")) {
-                filePath = currentDir + filePath.substring(1);
-            } else {
-                filePath = currentDir + filePath;
-            }
-        }
+        filePath = buildFilePath(currentDir, filePath);
         long size = ftp.getSize(filePath);
         String name = null;
         if (size == -1) {
@@ -223,6 +232,7 @@ public class Ftp extends PluginForHost {
         if (size >= 0 && downloadLink.getVerifiedFileSize() < 0) {
             downloadLink.setVerifiedFileSize(size);
         }
+        return filePath;
     }
 
     @Override
