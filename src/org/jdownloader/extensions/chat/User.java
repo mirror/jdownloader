@@ -20,8 +20,8 @@ import java.awt.Color;
 
 public class User implements Comparable<User> {
     public static final int RANK_DEFAULT = -1;
-    public static final int RANK_OP = 0;
-    public static final int RANK_VOICE = 1;
+    public static final int RANK_OP      = 0;
+    public static final int RANK_VOICE   = 1;
 
     public String getColor() {
         String col = Integer.toHexString(new Color(name.hashCode()).getRGB());
@@ -31,8 +31,8 @@ public class User implements Comparable<User> {
         return col.substring(col.length() - 6);
     }
 
-    public String name;
-    public int rank = RANK_DEFAULT;
+    public final String name;
+    public int          rank = RANK_DEFAULT;
 
     public User(String name) {
         if (name.startsWith("@")) {
