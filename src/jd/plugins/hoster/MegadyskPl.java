@@ -16,7 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,9 +34,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadysk.pl" }, urls = { "http://(?:www\\.)?megadysk\\.pl/s/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadysk.pl" }, urls = { "https?://(?:www\\.)?megadysk\\.pl/s/[A-Za-z0-9]+" })
 public class MegadyskPl extends PluginForHost {
 
     public MegadyskPl(PluginWrapper wrapper) {
@@ -49,16 +56,6 @@ public class MegadyskPl extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -66,13 +63,12 @@ public class MegadyskPl extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Nothing has been found|Make sure that URL is proper")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        String filesize = br.getRegex("Size<[^>]+><[^>]+>[^>]+<[^>]+><[^>]+>([^<>\"]+)<").getMatch(0);
+        final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        final String filesize = br.getRegex("Size<[^>]+><[^>]+>[^>]+<[^>]+><[^>]+>([^<>\"]+)<").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        link.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -85,14 +81,50 @@ public class MegadyskPl extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    private String xorDecode(final String key, final String data) throws IOException {
+        byte[] input = Base64.decode(data);
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
+        for (int index = 0; index < input.length; index++) {
+            byte in = input[index];
+            byte out = (byte) (0xff & (in ^ key.charAt(index % key.length())));
+            os.write(out);
+        }
+        return URLDecoder.decode(os.toString(), "UTF-8");
+    }
+
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            if (true) {
-                /* TODO: Fix me */
+            final String data = br.getRegex("window\\['.*?'\\]\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (data == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = br.getRegex("").getMatch(0);
+            final Browser keyBr = br.cloneBrowser();
+            keyBr.getPage("/dist/index.js");
+            final String key = keyBr.getRegex("INITIAL_STATE_FIELD\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (key == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String jsonString = xorDecode(key, data);
+            final Map<String, Object> json = JSonStorage.restoreFromString(jsonString, TypeRef.HASHMAP);
+            final Map<String, Object> app = (Map<String, Object>) json.get("app");
+            if (Boolean.TRUE.equals(app.get("maintenance"))) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maintenance", 60 * 60 * 1000l);
+            }
+            final List<Map<String, Object>> files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("files");
+            if (files.size() != 1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Map<String, Object> file = files.get(0);
+            if (Boolean.FALSE.equals(file.get("uploaded"))) {
+                // TODO: parse uploadProgress info
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is still being uploaded", 10 * 60 * 1000l);
+            }
+            if (file.get("size") != null) {
+                final Number number = (Number) file.get("size");
+                downloadLink.setVerifiedFileSize(number.longValue());
+            }
+            dllink = (String) file.get("downloadUrl");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -114,7 +146,7 @@ public class MegadyskPl extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
