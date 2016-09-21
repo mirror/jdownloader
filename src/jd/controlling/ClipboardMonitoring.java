@@ -407,9 +407,9 @@ public class ClipboardMonitoring {
                                         oldStringContent = new ClipboardHash(newStringContent);
                                     }
                                 }
-                                if (!StringUtils.isEmpty(handleThisRound)) {
+                                if (handleThisRound != null) {
                                     final long round = roundIndex.getAndIncrement();
-                                    if (round > 0 || !skipFirstRound) {
+                                    if (StringUtils.isNotEmpty(handleThisRound) && (round > 0 || !skipFirstRound)) {
                                         clipboardChangeDetector.restart();
                                         final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD.getLinkOriginDetails(), handleThisRound);
                                         final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
