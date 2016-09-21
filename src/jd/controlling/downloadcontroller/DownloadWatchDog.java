@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -2129,22 +2130,36 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void delete(final List<DownloadLink> deleteFiles, final DeleteOption deleteTo) {
+        delete(deleteFiles, deleteTo, false);
+    }
+
+    public Map<DownloadLink, Map<File, Boolean>> delete(final List<DownloadLink> deleteFiles, final DeleteOption deleteTo, final boolean waitForDeletion) {
         if (deleteFiles == null || deleteFiles.size() == 0) {
-            return;
+            return null;
         }
+        final HashSet<DownloadLink> todo = new HashSet<DownloadLink>(deleteFiles);
+        final Map<DownloadLink, Map<File, Boolean>> ret = new HashMap<DownloadLink, Map<File, Boolean>>();
         enqueueJob(new DownloadWatchDogJob() {
 
             @Override
             public void execute(DownloadSession currentSession) {
                 if (currentSession != null) {
-                    currentSession.getActivationRequests().removeAll(deleteFiles);
-                    currentSession.getForcedLinks().removeAll(deleteFiles);
+                    currentSession.getActivationRequests().removeAll(todo);
+                    currentSession.getForcedLinks().removeAll(todo);
                 }
-                for (final DownloadLink link : deleteFiles) {
+                for (final DownloadLink link : todo) {
                     final SingleDownloadController con = link.getDownloadLinkController();
                     if (con == null || con.isAlive() == false) {
                         /* link has no/no alive singleDownloadController, so delete it now */
-                        deleteFile(link, deleteTo);
+                        Map<File, Boolean> result = null;
+                        try {
+                            result = deleteFile(link, deleteTo);
+                        } finally {
+                            synchronized (ret) {
+                                ret.put(link, result);
+                                ret.notifyAll();
+                            }
+                        }
                     } else {
                         /* link has a running singleDownloadController, abort it and delete it after */
                         con.abort();
@@ -2152,7 +2167,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             @Override
                             public void execute(DownloadSession currentSession) {
                                 /* now we can delete the link */
-                                deleteFile(link, deleteTo);
+                                Map<File, Boolean> result = null;
+                                try {
+                                    deleteFile(link, deleteTo);
+                                } finally {
+                                    synchronized (ret) {
+                                        ret.put(link, result);
+                                        ret.notifyAll();
+                                    }
+                                }
                                 return;
                             }
 
@@ -2179,49 +2202,71 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 return false;
             }
         });
+        if (waitForDeletion) {
+            while (true) {
+                synchronized (ret) {
+                    if (ret.size() != todo.size()) {
+                        try {
+                            ret.wait();
+                        } catch (InterruptedException e) {
+                            logger.log(e);
+                            return new HashMap<DownloadLink, Map<File, Boolean>>(ret);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+            return ret;
+        } else {
+            return null;
+        }
     }
 
-    private void deleteFile(DownloadLink link, DeleteOption deleteTo) {
+    private Map<File, Boolean> deleteFile(DownloadLink link, DeleteOption deleteTo) {
         if (deleteTo == null) {
             deleteTo = DeleteOption.NULL;
         }
         if (DeleteOption.NO_DELETE == deleteTo) {
-            return;
+            return null;
         }
-        final ArrayList<File> deleteFiles = new ArrayList<File>();
+        final Map<File, Boolean> deleteFiles = new HashMap<File, Boolean>();
         try {
-            for (File deleteFile : link.getDefaultPlugin().listProcessFiles(link)) {
+            for (final File deleteFile : link.getDefaultPlugin().listProcessFiles(link)) {
                 if (deleteFile.exists() && deleteFile.isFile()) {
                     try {
                         getSession().getFileAccessManager().lock(deleteFile, this);
-                        deleteFiles.add(deleteFile);
+                        deleteFiles.put(deleteFile, null);
                     } catch (FileIsLockedException e) {
                         logger.log(e);
                     }
                 }
             }
 
-            for (File deleteFile : deleteFiles) {
+            for (final File deleteFile : new ArrayList<File>(deleteFiles.keySet())) {
                 switch (deleteTo) {
                 case NULL:
                     if (deleteFile.delete() == false) {
+                        deleteFiles.put(deleteFile, Boolean.FALSE);
                         logger.info("Could not delete file: " + deleteFile + " for " + link + " exists: " + deleteFile.exists());
                     } else {
-
+                        deleteFiles.put(deleteFile, Boolean.TRUE);
                         logger.info("Deleted file: " + deleteFile + " for " + link);
                     }
                     break;
                 case RECYCLE:
                     try {
                         JDFileUtils.moveToTrash(deleteFile);
+                        deleteFiles.put(deleteFile, Boolean.TRUE);
                         logger.info("Recycled file: " + deleteFile + " for " + link);
                     } catch (IOException e) {
+                        deleteFiles.put(deleteFile, Boolean.FALSE);
                         logger.log(e);
                         logger.info("Could not recycle file: " + deleteFile + " for " + link + " exists: " + deleteFile.exists());
                     }
                     break;
                 case NO_DELETE:
-                    return;
+                    return null;
                 }
             }
             /* try to delete folder (if its empty and NOT the default downloadfolder */
@@ -2235,8 +2280,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
             }
+            return deleteFiles;
         } finally {
-            for (File deleteFile : deleteFiles) {
+            for (File deleteFile : deleteFiles.keySet()) {
                 getSession().getFileAccessManager().unlock(deleteFile, this);
             }
         }
@@ -3336,39 +3382,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
 
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
 
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-                                });
-                            }
-                        };
+                                                                  @Override
+                                                                  public boolean isHighPriority() {
+                                                                      return false;
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
