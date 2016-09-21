@@ -118,7 +118,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public List<DownloadLink> getDownloadLinks() {
         return downloadLinks;
-
     }
 
     public String getName() {
