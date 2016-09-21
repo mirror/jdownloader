@@ -112,7 +112,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public void deleteFile(DeleteOption option) {
-        DownloadWatchDog.getInstance().delete(new ArrayList<DownloadLink>(getDownloadLinks()), option);
+        DownloadWatchDog.getInstance().delete(new ArrayList<DownloadLink>(getDownloadLinks()), option, true);
         setFileArchiveFileExists(false);
     }
 
