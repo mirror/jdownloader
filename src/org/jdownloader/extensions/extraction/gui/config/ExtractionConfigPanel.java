@@ -67,8 +67,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             final Method method = SevenZip.class.getMethod("getSevenZipJBindingVersion");
             return (String) method.invoke(null, new Object[0]);
         } catch (Throwable e) {
-            e.printStackTrace();
-            return "4.65 " + e.getMessage();
+            return "4.65";
         }
     }
 
