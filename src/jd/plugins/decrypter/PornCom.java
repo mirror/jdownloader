@@ -46,7 +46,7 @@ public class PornCom extends PluginForDecrypt {
         }
         String url = parameter.getCryptedUrl();
         br.getPage(url.replace("/embed/", "/"));
-        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed.png)") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca)?.png)") || this.br.getHttpConnection().getResponseCode() == 404) {
             links.add(this.createOfflinelink(parameter.getCryptedUrl()));
             return links;
         }
