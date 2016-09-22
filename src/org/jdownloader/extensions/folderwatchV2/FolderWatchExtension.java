@@ -36,6 +36,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.parser.html.HTMLParser;
 import jd.plugins.AddonPanel;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
@@ -330,17 +331,22 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             CrawlJobStorable entry = null;
             final HashSet<String> entryDelimiter = new HashSet<String>();
             StringBuilder restText = null;
+            final StringBuilder rawFile = new StringBuilder();
             parserLoop: for (String line : Regex.getLines(str)) {
                 line = line.trim();
                 if (restText != null) {
                     if (StringUtils.isNotEmpty(line)) {
-                        restText.append("\r\n");
                         restText.append(line);
+                        restText.append("\r\n");
                     }
                     continue parserLoop;
                 }
                 if (line.startsWith("#")) {
                     /* comment line */
+                    continue parserLoop;
+                } else if (HTMLParser.getProtocol(line) != null) {
+                    rawFile.append(line);
+                    rawFile.append("\r\n");
                     continue parserLoop;
                 }
                 final int i = line.indexOf("=");
@@ -360,6 +366,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     final String value = line.substring(i + 1).trim();
                     if (StringUtils.isNotEmpty(value)) {
                         restText.append(value);
+                        restText.append("\r\n");
                     }
                     continue parserLoop;
                 }
@@ -391,7 +398,19 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 if (entry == null) {
                     entry = (CrawlJobStorable) cc.getInstance();
                 }
+                if (entry.getText() != null) {
+                    restText.append(entry.getText());
+                }
                 entry.setText(restText.toString());
+            }
+            if (rawFile.length() > 0) {
+                if (entry == null) {
+                    entry = (CrawlJobStorable) cc.getInstance();
+                }
+                if (entry.getText() != null) {
+                    rawFile.append(entry.getText());
+                }
+                entry.setText(rawFile.toString());
             }
             if (entry != null && StringUtils.isNotEmpty(entry.getText())) {
                 /* last entry */
