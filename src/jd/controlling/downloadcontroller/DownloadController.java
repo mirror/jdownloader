@@ -874,7 +874,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                         newDefaultHost = null;
                                     }
                                     if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
-                                        logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
+                                        logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + ":" + currentDefaultVersion + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
                                         if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
                                             link.setFinalLinkState(null);
                                         }
