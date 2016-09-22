@@ -446,7 +446,6 @@ public class ClipboardMonitoring {
                         oldListContent = null;
                     }
                 }
-
             };
             monitoringThread.setName("ClipboardMonitor");
             monitoringThread.setDaemon(true);
