@@ -61,7 +61,7 @@ public class VKontakteRu extends PluginForDecrypt {
         super(wrapper);
         // need this twice, because decrypter plugin might not be loaded yet
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 750, 20, 30000);
+            Browser.setRequestIntervalLimitGlobal("vk.com", 334, 20, 30000);
         } catch (final Throwable e) {
         }
     }
