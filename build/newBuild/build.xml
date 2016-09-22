@@ -268,7 +268,7 @@
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
-			<attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" />
+			<!-- <attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" /> -->
 
 		</manifest>
 		<!--CORE-->
@@ -452,6 +452,7 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and Friends" />
 		</manifest>
+		<buildAddon package="PTC" include="ptcer" />
 		<buildAddon package="EventScripter" include="eventscripter" />
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
