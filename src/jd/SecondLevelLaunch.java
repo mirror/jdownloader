@@ -127,6 +127,7 @@ import org.jdownloader.scripting.JSRhinoPermissionRestricter;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -968,10 +969,21 @@ public class SecondLevelLaunch {
                                             @Override
                                             protected void runInEDT() {
                                                 /* init clipboardMonitoring stuff */
-                                                ClipboardMonitoring.setClipboardSkipMode(guiConfig.getClipboardSkipMode());
+                                                CLIPBOARD_SKIP_MODE skipMode = guiConfig.getClipboardSkipMode();
+                                                if (skipMode == null) {
+                                                    skipMode = CLIPBOARD_SKIP_MODE.NEVER;
+                                                }
                                                 ClipboardMonitoring.setHtmlFlavorAllowed(guiConfig.isClipboardMonitorProcessHTMLFlavor());
                                                 if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
+                                                    ClipboardMonitoring.setClipboardSkipMode(skipMode);
                                                     ClipboardMonitoring.getINSTANCE().startMonitoring();
+                                                } else {
+                                                    switch (skipMode) {
+                                                    case NEVER:
+                                                    case ON_ENABLE:
+                                                        ClipboardMonitoring.setClipboardSkipMode(skipMode);
+                                                        break;
+                                                    }
                                                 }
                                                 org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
