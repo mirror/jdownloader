@@ -301,7 +301,7 @@ public class ClipboardMonitoring {
             if (isMonitoring()) {
                 return;
             }
-            final boolean skipFirstRound = (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP.equals(CLIPBOARD_SKIP_MODE.get()) && monitoringThread == null) || (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_ENABLE.equals(CLIPBOARD_SKIP_MODE.get()) && monitoringThread != null);
+            final boolean skipFirstRound = (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP.equals(CLIPBOARD_SKIP_MODE.get()) && monitoringThread == null) || (GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_ENABLE.equals(CLIPBOARD_SKIP_MODE.get()));
             monitoringThread = new Thread() {
                 private final AtomicLong roundIndex       = new AtomicLong(0);
                 private ClipboardHash    oldStringContent = new ClipboardHash(0, -1);
