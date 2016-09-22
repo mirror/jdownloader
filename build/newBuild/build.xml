@@ -452,7 +452,7 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and Friends" />
 		</manifest>
-		<buildAddon package="PTC" include="ptcer" />
+		
 		<buildAddon package="EventScripter" include="eventscripter" />
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
