@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.gui.config;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,6 +12,15 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.text.BadLocationException;
+
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextArea;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import net.sf.sevenzipjbinding.SevenZip;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -33,14 +43,6 @@ import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.utils.JDFileUtils;
 
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextArea;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
     private static final long                                serialVersionUID = 1L;
     private Pair<Checkbox>                                   toggleCustomizedPath;
@@ -59,6 +61,20 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<Checkbox>                                   toggleDefaultEnabled;
     private Pair<Spinner>                                    subPathMinFolders;
     private Pair<Spinner>                                    subPathMinFilesOrFolders;
+
+    private final String getSevenZipJBindingVersion() {
+        try {
+            final Method method = SevenZip.class.getMethod("getSevenZipJBindingVersion");
+            return (String) method.invoke(null, new Object[0]);
+        } catch (Throwable e) {
+            return "4.65";
+        }
+    }
+
+    @Override
+    protected String getHeaderName(ExtractionExtension plg) {
+        return super.getHeaderName(plg) + ": (7Zip Binding Version: " + getSevenZipJBindingVersion() + ")";
+    }
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);

@@ -52,6 +52,10 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
         return configInterfaces;
     }
 
+    protected String getHeaderName(T plg) {
+        return plg.getName();
+    }
+
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();
         this.extension = plg;
@@ -59,7 +63,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
         plg.getSettings()._getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
-            final Header header = new Header(plg.getName(), NewTheme.I().getIcon(extension.getIconKey(), 32), keyHandlerEnabled, extension.getVersion());
+            final Header header = new Header(getHeaderName(plg), NewTheme.I().getIcon(extension.getIconKey(), 32), keyHandlerEnabled, extension.getVersion());
 
             add(header, "spanx,growx,pushx");
 
