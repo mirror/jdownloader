@@ -21,7 +21,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Files;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision: 31682 $", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+-\\d+(\\.html)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+-\\d+(\\.html)?" })
 public class PornCom extends PluginForDecrypt {
 
     public PornCom(PluginWrapper wrapper) {
