@@ -13,12 +13,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.controlling.downloadcontroller.FileStoreHacks;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
-
-import jd.controlling.downloadcontroller.FileStoreHacks;
 
 public class SystemAPIImpl17 {
 
@@ -26,7 +26,7 @@ public class SystemAPIImpl17 {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
         final List<String> filterList;
         if (CrossSystem.isUnix()) {
-            filterList = Arrays.asList("fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs");
+            filterList = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs");
         } else {
             filterList = Arrays.asList(new String[0]);
         }
