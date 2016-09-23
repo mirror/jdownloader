@@ -287,7 +287,7 @@ public class ExtensionController implements MenuExtenderHandler {
             main: for (File jar : addons) {
                 try {
 
-                    URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, null);
+                    URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, getClass().getClassLoader());
                     String resource = AbstractExtension.class.getPackage().getName().replace('.', '/');
                     final Enumeration<URL> urls = cl.getResources(resource);
 

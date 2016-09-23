@@ -16,15 +16,14 @@ import jd.plugins.ExtensionConfigInterface;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
-
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
  * Wraps around an extension to avoid extension init if the extension is not enabled
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public class LazyExtension implements Storable, CheckBoxedEntry {
 
@@ -136,7 +135,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     /**
      * get the internal Extension Object. <br>
      * <b>do not remove the "_" in methodname. it is important to ignore this getter during Storable serialisation<b><br>
-     * 
+     *
      * @return
      */
     public AbstractExtension<?, ?> _getExtension() {
@@ -147,7 +146,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     /**
      * creates an icon in the given size. <br>
      * <b>do not remove the "_" in methodname. it is important to ignore this getter during Storable serialisation<b><br>
-     * 
+     *
      * @param size
      * @return
      */
@@ -220,7 +219,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     /**
      * inits the extensions. afterwards, you can access the extensionby calling {@link #_getExtension()}
-     * 
+     *
      * @throws InstantiationException
      * @throws IllegalAccessException
      * @throws ClassNotFoundException
@@ -239,7 +238,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     /**
      * Checks whether this extension is enabled or not.<br>
      * <b>do not remove the "_" in methodname. it is important to ignore this getter during Storable serialisation<b><br>
-     * 
+     *
      * @return
      */
     public boolean _isEnabled() {
@@ -257,7 +256,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     /**
      * Starts or stops the extension. If the extension has not been initialized yet, we do this
-     * 
+     *
      * @param b
      * @throws StopException
      * @throws StartException
@@ -297,24 +296,21 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     private synchronized ClassLoader getClassLoader() {
-
         if (classLoader == null) {
             if (jarPath == null || !jarPath.endsWith(".jar")) {
-
                 classLoader = LazyExtension.class.getClassLoader();
             } else {
                 // jared cache loader
                 try {
-                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Use " + jarPath + " classloader");
-                    classLoader = new URLClassLoader(new URL[] { new File(jarPath).toURI().toURL() });
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Use " + jarPath + " classloader");
+                    classLoader = new URLClassLoader(new URL[] { new File(jarPath).toURI().toURL() }, getClass().getClassLoader());
                 } catch (MalformedURLException e) {
-                          org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("WTF");
+                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("WTF");
                     e.printStackTrace();
                     throw new WTFException(e);
                 }
             }
         }
-
         return classLoader;
     }
 
