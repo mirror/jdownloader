@@ -22,6 +22,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
 
     // DEV NOTES
@@ -156,8 +156,11 @@ public class ImgSrcRu extends PluginForHost {
             if (best == null) {
                 best = new Regex(js, "'(big_?pic)'").getMatch(0);
                 if (best == null) {
-                    logger.warning("determining best!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    best = new Regex(js, "main_?pic").getMatch(-1);
+                    if (best == null) {
+                        logger.warning("determining best!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
             String x = new Regex(js, "document\\.getElementById\\('" + best + "'\\).(\\w+)").getMatch(0);
