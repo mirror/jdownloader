@@ -845,7 +845,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         if (StringUtils.isEmpty(path)) {
             return null;
         }
-
         if (!raw) {
             path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME, null);
         }
