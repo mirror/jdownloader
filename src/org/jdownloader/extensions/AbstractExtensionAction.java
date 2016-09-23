@@ -1,11 +1,10 @@
 package org.jdownloader.extensions;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
-
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>> extends CustomizableAppAction {
 
@@ -20,9 +19,9 @@ public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>>
         main: while (myClass != null && extension == null) {
             try {
                 Type supClass = myClass.getGenericSuperclass();
-                if (supClass instanceof ParameterizedTypeImpl) {
+                if (supClass instanceof ParameterizedType) {
 
-                    ParameterizedTypeImpl sc = ((ParameterizedTypeImpl) supClass);
+                    ParameterizedType sc = ((ParameterizedType) supClass);
                     for (Type t : sc.getActualTypeArguments()) {
                         if (t instanceof Class && AbstractExtension.class.isAssignableFrom((Class<?>) t)) {
                             Class<? extends AbstractExtension> clazz = (Class<? extends AbstractExtension>) t;
@@ -33,7 +32,7 @@ public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>>
                         }
                     }
 
-                    myClass = ((ParameterizedTypeImpl) supClass).getRawType();
+                    myClass = (Class<?>) ((ParameterizedType) supClass).getRawType();
 
                 } else if (supClass instanceof Class) {
                     myClass = (Class<?>) supClass;
@@ -49,7 +48,7 @@ public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>>
         }
         if (extension == null) {
 
-        throw new WTFException();
+            throw new WTFException();
 
         }
     }
