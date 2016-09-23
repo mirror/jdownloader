@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -188,7 +189,14 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             this.description = message;
             this.stateIcon = icon2;
         }
+    }
 
+    public static class ExtractionPluginState extends PluginState {
+        protected final Map<String, DownloadLink> archives = new HashMap<String, DownloadLink>();
+
+        protected ExtractionPluginState(String message, Icon icon2) {
+            super(message, icon2);
+        }
     }
 
     private final static AbstractIcon           EXTRACTICONOK        = new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16);
@@ -198,11 +206,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
 
-                                                                         @Override
-                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
-                                                                             return o1.getTld().compareTo(o2.getTld());
-                                                                         }
-                                                                     };
+        @Override
+        public int compare(DomainInfo o1, DomainInfo o2) {
+            return o1.getTld().compareTo(o2.getTld());
+        }
+    };
 
     @Override
     public FilePackageView setItems(List<DownloadLink> updatedItems) {
@@ -211,25 +219,25 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-            final boolean readL = fp.getModifyLock().readLock();
-            try {
-                for (final DownloadLink link : fp.getChildren()) {
-                    tmp.newInfos.add(link.getDomainInfo());
-                    addLinkToTemp(tmp, link);
-                }
-            } finally {
-                fp.getModifyLock().readUnlock(readL);
-            }
-            if (updatedItems == null) {
-                tmp.items = 0;
-            } else {
-                tmp.items = updatedItems.size();
-            }
-            writeTempToFields(tmp);
-            updatesDone = lupdatesRequired;
-            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-            Collections.sort(lst, DOMAININFOCOMPARATOR);
-            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+                    final boolean readL = fp.getModifyLock().readLock();
+                    try {
+                        for (final DownloadLink link : fp.getChildren()) {
+                            tmp.newInfos.add(link.getDomainInfo());
+                            addLinkToTemp(tmp, link);
+                        }
+                    } finally {
+                        fp.getModifyLock().readUnlock(readL);
+                    }
+                    if (updatedItems == null) {
+                        tmp.items = 0;
+                    } else {
+                        tmp.items = updatedItems.size();
+                    }
+                    writeTempToFields(tmp);
+                    updatesDone = lupdatesRequired;
+                    final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
+                    Collections.sort(lst, DOMAININFOCOMPARATOR);
+                    infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
         return this;
     }
@@ -509,29 +517,57 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     case ERROR_NOT_ENOUGH_SPACE:
                     case ERRROR_FILE_NOT_FOUND:
                         if (extractionStatus.getExplanation() != null) {
-                            id = "extractError:".concat(archiveID);
-                            if (!tmp.pluginStates.containsKey(id)) {
-                                ps = new PluginState(null, EXTRACTICONERROR) {
+                            id = "extractError:" + extractionStatus.name();
+                            ps = tmp.pluginStates.get(id);
+                            if (ps == null) {
+                                ps = new ExtractionPluginState(null, EXTRACTICONERROR) {
                                     @Override
                                     public String getDescription() {
-                                        return extractionStatus.getExplanation() + " (" + link.getName() + ")";
+                                        final StringBuilder sb = new StringBuilder();
+                                        sb.append(extractionStatus.getExplanation());
+                                        for (final DownloadLink archive : archives.values()) {
+                                            sb.append("\r\n");
+                                            sb.append(archive.getName());
+                                        }
+                                        return sb.toString();
                                     };
                                 };
                                 tmp.pluginStates.put(id, ps);
+                                final ExtractionPluginState eps = (ExtractionPluginState) ps;
+                                eps.archives.put(archiveID, link);
+                            } else {
+                                final ExtractionPluginState eps = (ExtractionPluginState) ps;
+                                if (!eps.archives.containsKey(archiveID)) {
+                                    eps.archives.put(archiveID, link);
+                                }
                             }
                         }
                         break;
                     case SUCCESSFUL:
                         if (extractionStatus.getExplanation() != null) {
-                            id = "ExtractSuccess:".concat(archiveID);
-                            if (!tmp.pluginStates.containsKey(id)) {
-                                ps = new PluginState(null, EXTRACTICONOK) {
+                            id = "extractSuccess";
+                            ps = tmp.pluginStates.get(id);
+                            if (ps == null) {
+                                ps = new ExtractionPluginState(null, EXTRACTICONOK) {
                                     @Override
                                     public String getDescription() {
-                                        return extractionStatus.getExplanation() + " (" + link.getName() + ")";
+                                        final StringBuilder sb = new StringBuilder();
+                                        sb.append(extractionStatus.getExplanation());
+                                        for (final DownloadLink archive : archives.values()) {
+                                            sb.append("\r\n");
+                                            sb.append(archive.getName());
+                                        }
+                                        return sb.toString();
                                     };
                                 };
                                 tmp.pluginStates.put(id, ps);
+                                final ExtractionPluginState eps = (ExtractionPluginState) ps;
+                                eps.archives.put(archiveID, link);
+                            } else {
+                                final ExtractionPluginState eps = (ExtractionPluginState) ps;
+                                if (!eps.archives.containsKey(archiveID)) {
+                                    eps.archives.put(archiveID, link);
+                                }
                             }
                         }
                         break;
