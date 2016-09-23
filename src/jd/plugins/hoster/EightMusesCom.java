@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,7 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" }) 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(www\\.)?8muses\\.com/picture/.+" })
 public class EightMusesCom extends antiDDoSForHost {
 
     public EightMusesCom(PluginWrapper wrapper) {
@@ -63,7 +63,9 @@ public class EightMusesCom extends antiDDoSForHost {
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
-        dllink = br.getRegex("\"(//\\w+\\.8muses\\.com/(?:.{2}/_?data|data/.{2})/[^<>\"]*?)\"").getMatch(0);
+        String imageDir = br.getRegex("imageDir\" value=\"(/data/.{2}/)\"").getMatch(0);
+        String imageName = br.getRegex("imageName\" value=\"([^<>\"]*?)\"").getMatch(0);
+        dllink = imageDir + imageName;
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
