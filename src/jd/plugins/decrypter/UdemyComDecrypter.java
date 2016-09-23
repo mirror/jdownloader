@@ -129,21 +129,27 @@ public class UdemyComDecrypter extends PluginForDecrypt {
 
     private void decryptAsset(final LinkedHashMap<String, Object> entries, final String lecture_id) {
         String asset_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
-        final String title = (String) entries.get("title");
+        String title = (String) entries.get("title");
         final String filename = (String) entries.get("filename");
         /* E.g. Video, Article, File */
         final String asset_type = (String) entries.get("asset_type");
 
-        if (asset_id.equals("0") || title == null || title.equals("") || asset_type == null || asset_type.equals("")) {
+        if (asset_id.equals("0") || asset_type == null || asset_type.equals("")) {
             return;
         }
         String filename_temp;
-        if (filename != null) {
+        if (filename != null && !filename.equals("")) {
             filename_temp = filename;
-        } else {
+            filename_temp = course_id + "_" + lecture_id + "_" + asset_id + "_" + filename_temp;
+        } else if (title != null && !title.equals("")) {
             filename_temp = title;
+            filename_temp = course_id + "_" + lecture_id + "_" + asset_id + "_" + filename_temp;
+        } else {
+            filename_temp = course_id + "_" + lecture_id + "_" + asset_id;
+            if ("Article".equalsIgnoreCase(asset_type)) {
+                filename_temp += ".txt";
+            }
         }
-        filename_temp = course_id + "_" + lecture_id + "_" + asset_id + "_" + filename_temp;
         final DownloadLink dl;
         if (asset_type.equalsIgnoreCase("ExternalLink")) {
             /* Add external urls as our plugins might be able to parse some of them. */

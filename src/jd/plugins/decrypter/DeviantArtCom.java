@@ -64,29 +64,31 @@ public class DeviantArtCom extends PluginForDecrypt {
     // much, content as they wish. Hopefully this wont create any
     // issues.
 
-    private static Object         LOCK             = new Object();
+    private static Object         LOCK              = new Object();
 
-    private static final String   FASTLINKCHECK_2  = "FASTLINKCHECK_2";
-    private static final String   TYPE_COLLECTIONS = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
-    private static final String   TYPE_CATPATH_ALL = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
-    private static final String   TYPE_CATPATH_1   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
-    private static final String   TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
-    private static final String   TYPE_JOURNAL     = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
-    private static final String   LINKTYPE_JOURNAL = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
-    private static final String   TYPE_BLOG        = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
+    private static final String   FASTLINKCHECK_2   = "FASTLINKCHECK_2";
+    private static final String   TYPE_COLLECTIONS  = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
+    private static final String   TYPE_CATPATH_ALL  = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
+    private static final String   TYPE_CATPATH_1    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
+    private static final String   TYPE_CATPATH_2    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
+    private static final String   TYPE_JOURNAL      = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
+    private static final String   LINKTYPE_JOURNAL  = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
+    private static final String   TYPE_BLOG         = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
 
     // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
 
-    final ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
+    final ArrayList<DownloadLink> decryptedLinks    = new ArrayList<DownloadLink>();
 
-    private String                parameter        = null;
-    private boolean               fastLinkCheck    = false;
+    private String                parameter         = null;
+    private boolean               fastLinkCheck     = false;
+    private boolean               forceHtmlDownload = false;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         JDUtilities.getPluginForHost("deviantart.com");
         jd.plugins.hoster.DeviantArtCom.prepBR(this.br);
-        fastLinkCheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
+        fastLinkCheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FASTLINKCHECK_2, false);
+        forceHtmlDownload = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FORCEHTMLDOWNLOAD, false);
         parameter = param.toString();
         /* Remove trash */
         final String replace = new Regex(parameter, "(#.+)").getMatch(0);
@@ -195,6 +197,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                 /* No reason to hide their single links */
                 dl.setContentUrl(link);
                 dl.setName(urltitle + ".html");
+                dl.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
                 dl._setFilePackage(fp);
                 distribute(dl);
                 decryptedLinks.add(dl);
@@ -219,6 +222,11 @@ public class DeviantArtCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(aLink);
             if (fastLinkCheck) {
                 dl.setAvailable(true);
+            }
+            if (forceHtmlDownload) {
+                dl.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
+            } else {
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
             }
             decryptedLinks.add(dl);
         }
@@ -251,6 +259,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                 if (fastLinkCheck) {
                     dl.setAvailable(true);
                 }
+                dl.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
                 decryptedLinks.add(dl);
             }
             currentOffset += 5;
@@ -353,11 +362,8 @@ public class DeviantArtCom extends PluginForDecrypt {
             } else if (counter > 1) {
                 accessOffset(currentOffset);
             }
-            if (this.br.containsHTML("475970334")) {
-                logger.info("WTF");
-            }
             try {
-                final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
+                final String grab = br.getRegex("class=\"gr\\-body\"(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
                 String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
                 if ((links == null || links.length == 0) && counter == 1) {
                     logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + parameter);
@@ -384,7 +390,11 @@ public class DeviantArtCom extends PluginForDecrypt {
                         if (fp != null) {
                             fp.add(fina);
                         }
-                        fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+                        if (forceHtmlDownload) {
+                            fina.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
+                        } else {
+                            fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                        }
                         distribute(fina);
                         decryptedLinks.add(fina);
                     }

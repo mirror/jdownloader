@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?rai\\.(?:tv|it)/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html" })
 public class RaiItDecrypter extends PluginForDecrypt {
 
     public RaiItDecrypter(PluginWrapper wrapper) {
@@ -45,6 +45,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
 
     private static final String     TYPE_DAY         = ".+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*";
     private static final String     TYPE_CONTENTITEM = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
+
+    private static final String     TYPE_RAIPLAY_IT  = "https?://.+raiplay\\.it/.+";
 
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
     private String                  parameter        = null;
@@ -172,6 +174,12 @@ public class RaiItDecrypter extends PluginForDecrypt {
 
     private void decryptSingleVideo() throws DecrypterException, Exception {
         String dllink = null;
+        String title = null;
+        String extension = ".mp4";
+        String date = null;
+        String date_formatted = null;
+        String description = null;
+
         this.br.getPage(this.parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(this.parameter));
@@ -183,6 +191,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
         String content_id_from_url = null;
         if (this.parameter.matches(TYPE_CONTENTITEM)) {
             content_id_from_url = new Regex(this.parameter, "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
+        } else if (parameter.matches(TYPE_RAIPLAY_IT)) {
+            dllink = findRelinkerUrl();
+            title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+            date = this.br.getRegex("content=\"(\\d{4}\\-\\d{2}\\-\\d{2}) \\d{2}:\\d{2}:\\d{2}\" property=\"gen\\-date\"").getMatch(0);
         }
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
@@ -191,18 +203,17 @@ public class RaiItDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
         }
-        String title = null;
-        String extension = ".mp4";
-        String date = null;
-        String date_formatted = null;
-        String description = null;
         if (dllink != null) {
-            /* Streamurls directly in html */
-            title = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
+            if (title == null) {
+                /* Streamurls directly in html */
+                title = this.br.getRegex("id=\"idMedia\">([^<>]+)<").getMatch(0);
+            }
             if (title == null) {
                 title = this.br.getRegex("var videoTitolo\\d*?=\\d*?\"([^<>\"]+)\";").getMatch(0);
             }
-            date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
+            if (date == null) {
+                date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
+            }
             if (date == null) {
                 date = this.br.getRegex("data\\-date=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
             }
@@ -370,6 +381,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 this.decryptedLinks.add(dl);
             }
         }
+    }
+
+    private String findRelinkerUrl() {
+        return this.br.getRegex("(https?://mediapolisvod\\.rai\\.it/relinker/relinkerServlet\\.htm\\?cont=[A-Za-z0-9]+)").getMatch(0);
     }
 
 }
