@@ -257,8 +257,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             }
             crashLog.write("Prepare");
             if (extractor.prepare()) {
-                extractToFolder = getExtension().getFinalExtractToFolder(archive, false);
-                crashLog.write("Extract To: " + extractToFolder);
                 if (archive.isProtected()) {
                     final boolean isPasswordFindOptimizationEnabled = getExtension().getSettings().isPasswordFindOptimizationEnabled();
                     crashLog.write("Archive is Protected");
@@ -330,6 +328,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         getExtension().addPassword(archive.getFinalPassword());
                     }
                 }
+                extractToFolder = getExtension().getFinalExtractToFolder(archive, false);
+                crashLog.write("Extract To: " + extractToFolder);
+
                 final DiskSpaceReservation extractReservation = new DiskSpaceReservation() {
 
                     @Override
