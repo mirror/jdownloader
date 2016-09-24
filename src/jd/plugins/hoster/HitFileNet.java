@@ -57,7 +57,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" })
 public class HitFileNet extends PluginForHost {
 
     /* Settings */
@@ -320,6 +320,9 @@ public class HitFileNet extends PluginForHost {
             /* ReCaptchaV2 */
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            captchaform.put("captcha_ajax", "true");
+            captchaform.put("captcha_type", "recaptcha2");
+            captchaform.put("captcha_subtype", "");
             br.submitForm(captchaform);
         } else {
             if (!br.containsHTML(HTML_CAPTCHATEXT)) {

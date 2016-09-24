@@ -246,7 +246,16 @@ public class TransloadMe extends PluginForHost {
         synchronized (LOCK) {
             newBrowser(this.br);
             br.setFollowRedirects(true);
-            this.getAPISafe("action=getaccountdetails");
+            this.getPage("action=getaccountdetails");
+            /* Special case: Free accfounts cannot be used via API. */
+            if (this.statuscode == 6) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (Free-Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (free-account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            handleAPIErrors(this.br);
         }
     }
 
@@ -266,11 +275,16 @@ public class TransloadMe extends PluginForHost {
     }
 
     private void getAPISafe(final String parameters) throws IOException, PluginException {
+        getPage(parameters);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+    }
+
+    private void getPage(final String parameters) throws IOException {
         String accesslink = API_BASE + "?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass());
         accesslink += "&" + parameters;
         br.getPage(accesslink);
         updatestatuscode();
-        handleAPIErrors(this.br);
     }
 
     /* Please do not remove this function - future usage!! */

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com" }, urls = { "http://(www\\.)?theisozone\\.com/downloads/[^<>\"/]+/[^<>\"/]+/(?!page\\-)[^<>\"/]{4,}/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com" }, urls = { "http://(www\\.)?theisozone\\.com/downloads/[^<>\"/]+/[^<>\"/]+/(?!page\\-)[^<>\"/]{4,}/" })
 public class XboxSoZoneCom extends PluginForDecrypt {
 
     public XboxSoZoneCom(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class XboxSoZoneCom extends PluginForDecrypt {
             fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);
         }
         final String host = "http://theisozonedecrypted.com";
-        final String[] externalLinks = br.getRegex("\"(http://(www\\.)?cloudstor\\.es/(f|file)/[A-Za-z0-9_]+/)\"").getColumn(0);
+        final String[] externalLinks = br.getRegex("(https?://(?:www\\.)?(?:cloudstor\\.es|firedrop\\.com|frd\\.li)/[^<>\"]+)").getColumn(0);
         final String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
         if (links != null && links.length != 0) {
             for (String finallink : links) {
