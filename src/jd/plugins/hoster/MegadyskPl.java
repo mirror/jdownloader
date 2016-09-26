@@ -39,7 +39,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadysk.pl" }, urls = { "https?://(?:www\\.)?megadysk\\.pl/s/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadysk.pl" }, urls = { "https?://(?:www\\.)?megadysk\\.pl/s/[A-Za-z0-9]+(?:/n/[^/]+)?" })
 public class MegadyskPl extends PluginForHost {
 
     public MegadyskPl(PluginWrapper wrapper) {
