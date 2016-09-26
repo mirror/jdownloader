@@ -55,7 +55,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" })
 public class NovaFileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -720,7 +720,7 @@ public class NovaFileCom extends PluginForHost {
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
                 maxPrem.set(10);
                 try {
                     account.setMaxSimultanDownloads(maxPrem.get());
