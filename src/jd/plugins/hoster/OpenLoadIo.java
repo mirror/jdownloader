@@ -54,7 +54,7 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+|https?://(?:www\\.)?openload\\.co/stream/[A-Za-z0-9_\\-]+~.+" })
 public class OpenLoadIo extends antiDDoSForHost {
     public OpenLoadIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -97,13 +97,18 @@ public class OpenLoadIo extends antiDDoSForHost {
     private static final boolean          ACCOUNT_PREMIUM_RESUME       = true;
     private static final int              ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int              ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    private static final String           type_directurl               = "https?://(?:www\\.)?openload\\.co/stream/[A-Za-z0-9_\\-]+~.+";
+
     /* don't touch the following! */
     private static AtomicInteger          maxPrem                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Force https & correct embedded urls */
-        link.setUrlDownload("https://openload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
+        if (!link.getDownloadURL().matches(type_directurl)) {
+            link.setUrlDownload("https://openload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
+        }
     }
 
     @Override
@@ -221,8 +226,14 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty, final Account account) throws Exception, PluginException {
+        final boolean is_directurl = downloadLink.getDownloadURL().matches(type_directurl);
         final String fid = getFID(downloadLink);
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink;
+        if (is_directurl) {
+            dllink = downloadLink.getDownloadURL();
+        } else {
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
+        }
         if (dllink == null) {
             String ticket;
             String waittime;
@@ -292,6 +303,10 @@ public class OpenLoadIo extends antiDDoSForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (is_directurl) {
+                logger.info("directurl seems to have expired");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -303,7 +318,9 @@ public class OpenLoadIo extends antiDDoSForHost {
             /* We usually use their API so no matter what goes wrong here - a retry should help! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        if (!is_directurl) {
+            downloadLink.setProperty(directlinkproperty, dllink);
+        }
         dl.startDownload();
     }
 
@@ -350,7 +367,13 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        return dl.getDownloadURL().substring(dl.getDownloadURL().lastIndexOf("/") + 1);
+        final String fid;
+        if (dl.getDownloadURL().matches(type_directurl)) {
+            fid = new Regex(dl.getDownloadURL(), "/stream/([A-Za-z0-9_\\-]+)").getMatch(0);
+        } else {
+            fid = dl.getDownloadURL().substring(dl.getDownloadURL().lastIndexOf("/") + 1);
+        }
+        return fid;
     }
 
     @Override
@@ -624,7 +647,6 @@ public class OpenLoadIo extends antiDDoSForHost {
     /**
      * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
      */
-    @SuppressWarnings("unused")
     private void waitTime(long timeBefore, int wait, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         wait -= passedTime;
