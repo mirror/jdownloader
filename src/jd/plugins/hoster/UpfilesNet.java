@@ -19,10 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +37,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfiles.net" }, urls = { "https?://(?:www\\.)?upfiles\\.net/f/[a-z0-9]+(?:[^/]+)?" })
 public class UpfilesNet extends PluginForHost {
 
@@ -54,16 +54,18 @@ public class UpfilesNet extends PluginForHost {
         return "https://upfiles.net/regulamin";
     }
 
+    private static final String HTML_LOGGEDIN                = "/logout\"";
+
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXCHUNKS               = 0;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean       FREE_RESUME                  = true;
+    private final int           FREE_MAXCHUNKS               = 0;
+    private final int           FREE_MAXDOWNLOADS            = 20;
+    private final boolean       ACCOUNT_FREE_RESUME          = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
+    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -199,9 +201,14 @@ public class UpfilesNet extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    this.br.getPage("https://" + this.getHost() + "/profile/news");
+                    if (this.br.containsHTML(HTML_LOGGEDIN)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    }
+                    this.br = new Browser();
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://" + this.getHost() + "/login");
@@ -224,7 +231,7 @@ public class UpfilesNet extends PluginForHost {
                     loginform.put("submit", "");
                 }
                 this.br.submitForm(loginform);
-                if (!this.br.containsHTML("/logout\"")) {
+                if (!this.br.containsHTML(HTML_LOGGEDIN)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

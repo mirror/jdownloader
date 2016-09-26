@@ -363,7 +363,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                 accessOffset(currentOffset);
             }
             try {
-                final String grab = br.getRegex("class=\"gr\\-body\"(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
+                final String grab = br.getRegex("class=\"gallery\\-topbar\"(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
                 String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
                 if ((links == null || links.length == 0) && counter == 1) {
                     logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + parameter);

@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -121,13 +120,6 @@ public class SeedrCc extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        // String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        // if (dllink == null) {
-        // dllink = br.getRegex("").getMatch(0);
-        // if (dllink == null) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // }
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -145,30 +137,6 @@ public class SeedrCc extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     @Override
@@ -213,7 +181,9 @@ public class SeedrCc extends PluginForHost {
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
-                this.setDownloadLink(dlinkbefore);
+                if (dlinkbefore != null) {
+                    this.setDownloadLink(dlinkbefore);
+                }
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
