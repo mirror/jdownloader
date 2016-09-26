@@ -319,6 +319,10 @@ public class OpenLoadIo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
         }
         if (!is_directurl) {
+            /*
+             * It makes no sense to save the directurl property on a DownloadLink which already is a directlink, especially because we want
+             * to display the user a "FILE_NOT_FOUND" message once such directurls expire.
+             */
             downloadLink.setProperty(directlinkproperty, dllink);
         }
         dl.startDownload();

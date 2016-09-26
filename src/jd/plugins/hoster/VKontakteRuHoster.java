@@ -262,7 +262,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
@@ -323,8 +323,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     final String photoID = getPhotoID(link);
                     if (module != null && photo_list_id != null) {
                         /* Access photo inside wall-post */
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        setHeadersPhoto(this.br);
                         postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&list=" + photo_list_id + "&module=" + module + "&photo=" + photoID);
                     } else {
                         /* Access normal photo / photo inside album */
@@ -357,8 +356,7 @@ public class VKontakteRuHoster extends PluginForHost {
                                 }
                             }
                             link.setProperty("albumid", albumID);
-                            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                            setHeadersPhoto(this.br);
                             postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
                             if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -405,6 +403,12 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         handleServerErrors(downloadLink);
         dl.startDownload();
+    }
+
+    private void setHeadersPhoto(final Browser br) {
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br.getHeaders().put("Referer", "https://" + this.getHost() + "/al_photos.php");
     }
 
     public static void accessVideo(final Browser br, final String oid, final String id, final String listID, final boolean useApi) throws IOException {

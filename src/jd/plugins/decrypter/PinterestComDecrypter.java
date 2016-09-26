@@ -45,14 +45,14 @@ import org.appwork.uio.UIOManager;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/|resource/)[^/]+/[^/]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.com/(?!pin/)[^/]+/[^/]+/" })
 public class PinterestComDecrypter extends PluginForDecrypt {
 
     public PinterestComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     unsupported_urls                    = "https://(?:www\\.)?pinterest\\.com/(business/create/|android\\-app:/.+|ios\\-app:/.+)";
+    private static final String     unsupported_urls                    = "https://(?:www\\.)?pinterest\\.com/(business/create/|android\\-app:/.+|ios\\-app:/.+|categories/.+|resource/.+|explore/.+)";
     private static final boolean    force_api_usage                     = true;
 
     private ArrayList<DownloadLink> decryptedLinks                      = null;
@@ -80,6 +80,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         String fpName = null;
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        } else if (!this.br.containsHTML("\"followers\"")) {
+            /* Probably invalid url (no profile url). */
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
