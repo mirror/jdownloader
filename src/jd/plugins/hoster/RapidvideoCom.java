@@ -105,6 +105,9 @@ public class RapidvideoCom extends PluginForHost {
                     dllink = new Regex(quality_info, "file(?:\")?[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
                 }
             }
+            if (dllink == null) {
+                dllink = PluginJSonUtils.getJsonValue(sources_source, "file");
+            }
         }
 
         if (filename == null) {
