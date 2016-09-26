@@ -47,6 +47,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UnavailableHost;
 
 import org.appwork.storage.JSonStorage;
@@ -65,7 +66,8 @@ import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }) public class PremiumizeMe extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" })
+public class PremiumizeMe extends UseNet {
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
     private static final String                                       SENDDEBUGLOG       = "SENDDEBUGLOG";
     private static final String                                       NOCHUNKS           = "NOCHUNKS";
@@ -463,9 +465,9 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
         if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) {
             response = new HashMap<String, Object>();
         }
-        String HostsJSON = new Regex(hostsSup, "\"tldlist\":\\[([^\\]]+)\\]").getMatch(0);
-        String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
-        ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        final String HostsJSON = PluginJSonUtils.getJsonArray(this.br, "tldlist");
+        final String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         if ("premium".equals(type)) {
             account.setType(AccountType.PREMIUM);
             supportedHosts.add("usenet");
@@ -541,13 +543,13 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
                 break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
