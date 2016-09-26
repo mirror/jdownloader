@@ -1171,7 +1171,7 @@ public class CosmoBoxOrg extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
-            ai.setValidUntil(expire_milliseconds);
+            ai.setValidUntil(expire_milliseconds + (24 * 60 * 60 * 1000l));
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
