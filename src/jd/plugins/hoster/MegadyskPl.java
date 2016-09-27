@@ -60,7 +60,7 @@ public class MegadyskPl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Nothing has been found|Make sure that URL is proper")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Nothing has been found|Make sure that URL is proper|There are no files to be shown")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -68,8 +68,10 @@ public class MegadyskPl extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename).trim());
-        if (filesize != null) {
+        if (link.getFinalFileName() == null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        }
+        if (link.getVerifiedFileSize() == -1 && filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -101,7 +103,7 @@ public class MegadyskPl extends PluginForHost {
             }
             final Browser keyBr = br.cloneBrowser();
             keyBr.getPage("/dist/index.js");
-            final String key = keyBr.getRegex("INITIAL_STATE_FIELD\\s*=\\s*\"(.*?)\"").getMatch(0);
+            final String key = keyBr.getRegex("INITIAL_STATE_(FIELD|KEY)\\s*=\\s*\"(.*?)\"").getMatch(1);
             if (key == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -123,6 +125,9 @@ public class MegadyskPl extends PluginForHost {
             if (file.get("size") != null) {
                 final Number number = (Number) file.get("size");
                 downloadLink.setVerifiedFileSize(number.longValue());
+            }
+            if (file.get("name") != null) {
+                downloadLink.setFinalFileName((String) file.get("name"));
             }
             dllink = (String) file.get("downloadUrl");
             if (dllink == null) {

@@ -172,6 +172,7 @@ public class InstallThread extends Thread {
                 dest.getParentFile().mkdirs();
                 dest.delete();
                 final File binarySource = new File(extractTo, binaryPath);
+                LogController.CL(false).info("Before: " + binarySource + "|Exists:" + binarySource.exists());
                 if (extractTo.exists()) {
                     Files.deleteRecursiv(extractTo);
                 }
@@ -190,6 +191,7 @@ public class InstallThread extends Thread {
                         try {
                             boolean wait = true;
                             while (wait) {
+                                Thread.sleep(1000);
                                 wait = false;
                                 for (final ExtractionController job : extraction.getJobQueue().getJobs()) {
                                     if (archive == job.getArchive()) {
@@ -219,9 +221,15 @@ public class InstallThread extends Thread {
                     }
                     break;
                 }
-                if (binarySource.exists()) {
-                    if (binarySource.renameTo(dest)) {
-                        dest.setExecutable(true);
+                Thread.sleep(1000);
+                boolean ret = binarySource.exists();
+                LogController.CL(false).info("After: " + binarySource + "|Exists:" + ret);
+                if (ret) {
+                    ret = binarySource.renameTo(dest);
+                    LogController.CL(false).info("Move: " + binarySource + "|RenameTo|" + dest + ":" + ret);
+                    if (ret) {
+                        ret = dest.setExecutable(true) || dest.canExecute();
+                        LogController.CL(false).info("Exec: " + dest + ":" + ret);
                     }
                 }
             } finally {
