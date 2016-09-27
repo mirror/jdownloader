@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -25,11 +26,17 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/galleries/\\d+\\.html" }) 
+/**
+ *
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html)" })
 public class HitomiLa extends antiDDoSForDecrypt {
 
     public HitomiLa(PluginWrapper wrapper) {
@@ -38,27 +45,33 @@ public class HitomiLa extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        /* Avoid https, prefer http */
-        final String parameter = param.toString().replace("https://", "http://");
-        final String gid = new Regex(parameter, "galleries/(\\d+)").getMatch(0);
+        final String parameter = param.toString();
+        final String guid = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
-        getPage(parameter);
+        /* Avoid https, prefer http */
+        getPage("http://hitomi.la/reader/" + guid + ".html");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
-        final String[] links = br.getRegex("(/" + gid + "/[^<>\"]*?\\.[a-z]+)").getColumn(0);
+        final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
+        // get the image host.
+        final String imghost = getImageHost(guid);
+        final String[] links = br.getRegex("(/" + guid + "/[^<>\"]*?\\.[a-z]+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final int numberOfPages = links.length;
+        final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
+        int i = 0;
         for (final String singleLink : links) {
-            final DownloadLink dl = createDownloadlink("directhttp://http://g.hitomi.la/galleries" + singleLink);
+            ++i;
+            final DownloadLink dl = createDownloadlink("directhttp://http://" + imghost + ".hitomi.la/galleries" + singleLink);
             dl.setAvailable(true);
+            dl.setFinalFileName(df.format(i) + getFileNameExtensionFromString(singleLink, ".jpg"));
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -66,6 +79,21 @@ public class HitomiLa extends antiDDoSForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    /**
+     * they do some javascript trickery (check reader.js). rewritten in java.
+     *
+     * @param guid
+     * @return
+     * @throws DecrypterException
+     */
+    private String getImageHost(final String guid) throws DecrypterException {
+        // number of subdmains.
+        final int i = 6;
+        // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
+        final String subdomain = Character.toString((char) (97 + (Integer.parseInt(guid) % i)));
+        return subdomain;
     }
 
 }
