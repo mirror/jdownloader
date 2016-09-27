@@ -47,10 +47,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dix3.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
 
-    private static final String            MAINPAGE    = "http://dix3.com/";
+    private static final String            MAINPAGE    = "http://yunfile.com/";
     private static final String            CAPTCHAPART = "/verifyimg/getPcv";
     private static Object                  LOCK        = new Object();
     private static AtomicReference<String> agent       = new AtomicReference<String>();
@@ -64,15 +64,15 @@ public class YunFileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:yunfile|filemarkets|yfdisk|needisk|5xpan)\\.com/", "dix3.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3)\\.com/", "yunfile.com/"));
 
     }
 
     @Override
     public String rewriteHost(final String host) {
-        if ("dix3.com".equals(this.getHost())) {
-            if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host) || "needisk.com".equals(host) || "5xpan.com".equals(host) || "yunfile.com".equals(host)) {
-                return "dix3.com";
+        if ("yunfile.com".equals(this.getHost())) {
+            if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host) || "needisk.com".equals(host) || "5xpan.com".equals(host) || "dix3.com".equals(host)) {
+                return "yunfile.com";
             }
         }
         return super.rewriteHost(host);
