@@ -23,6 +23,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -43,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
 
@@ -54,6 +54,7 @@ public class YunFileCom extends PluginForHost {
     private static final String            CAPTCHAPART = "/verifyimg/getPcv";
     private static Object                  LOCK        = new Object();
     private static AtomicReference<String> agent       = new AtomicReference<String>();
+    private static final String            DOMAINS     = "(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3)\\.com";
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
@@ -195,10 +196,10 @@ public class YunFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
             }
             checkErrors();
-            final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(http://[a-z0-9]+\\.(?:yunfile|dix3)\\.com)/ls/([A-Za-z0-9\\-_]+)/\"");
+            final Regex siteInfo = br.getRegex("<span style=\"font-weight:bold;\">&nbsp;&nbsp;<a href=\"(https?://[a-z0-9]+\\." + DOMAINS + "/ls/([A-Za-z0-9\\-_]+)/\"");
             userid = siteInfo.getMatch(1);
             if (userid == null) {
-                userid = new Regex(downloadLink.getDownloadURL(), "(?:yunfile|dix3)\\.com/file/(.*?)/").getMatch(0);
+                userid = new Regex(downloadLink.getDownloadURL(), "/file/(.*?)/").getMatch(0);
             }
             if (fileid == null) {
                 fileid = br.getRegex("&fileId=([A-Za-z0-9]+)&").getMatch(0);
@@ -296,7 +297,7 @@ public class YunFileCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "language", language);
                 br.getPage(link.getDownloadURL());
                 final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
-                for (String dllink : br.getRegex("\"(http://dl\\d+\\.(?:yunfile|dix3)?\\.com/downfile/[^<>\"]*?)\"").getColumn(0)) {
+                for (String dllink : br.getRegex("\"(https?://dl\\d+\\." + DOMAINS + "/downfile/[^<>\"]*?)\"").getColumn(0)) {
                     dllinkVidMap.put(dllink, vid1);
                 }
                 if (dllinkVidMap.size() == 0) { // try to login if not found
