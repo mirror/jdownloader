@@ -615,11 +615,11 @@ public class UpstoRe extends antiDDoSForHost {
         String dllink = br.getRedirectLocation();
         // No directdownload? Let's "click" on download
         if (dllink == null) {
-            postPage("http://upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            postPage("//upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             if (br.containsHTML(premDlLimit)) {
                 trafficLeft(account);
             }
-            dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"ok\":\"(https?:[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             handleErrorsJson();
