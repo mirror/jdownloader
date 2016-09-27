@@ -29,6 +29,11 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,6 +44,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.CaptchaException;
@@ -47,11 +53,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -97,7 +98,7 @@ public class UpstoRe extends antiDDoSForHost {
     private static final String            PROPERTY_LASTDOWNLOAD         = "UPSTORE_lastdownload_timestamp";
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
+        link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
     }
 
     @Override
@@ -165,8 +166,12 @@ public class UpstoRe extends antiDDoSForHost {
         long passedTimeSinceLastDl = 0;
         String dllink = checkDirectLink(downloadLink, "freelink");
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-            postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
+            {
+                final Form f = br.getFormBySubmitvalue("Slow+download");
+                if (f != null) {
+                    submitForm(f);
+                }
+            }
             handleErrorsHTML();
             /**
              * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
@@ -183,39 +188,45 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
             }
+            // USE FORMS !!!!
+            // captcha form
+            final Form captcha = br.getFormBySubmitvalue("Get+download+link");
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
-            if (rcID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.setId(rcID);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = null;
-            try {
-                c = getCaptchaCode("recaptcha", cf, downloadLink);
-            } catch (final Throwable e) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            int wait = 60;
-            String waittime = br.getRegex("var sec = (\\d+)").getMatch(0);
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
-            }
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-            wait -= passedTime;
-            if (wait > 0) {
-                sleep(wait * 1000l, downloadLink);
-            }
-            // some javascript crapola
-            final String antispam = Encoding.urlEncode(getSoup());
-            final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
-            postPage(downloadLink.getDownloadURL(), "antispam=" + antispam + "&" + (kpw != null ? kpw : "kpw") + "=" + antispam + "&free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-            if (br.containsHTML("limit for today|several files recently")) {
-                setDownloadStarted(downloadLink, 0);
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+            if (rcID != null && captcha != null) {
+                final Recaptcha rc = new Recaptcha(br, this);
+                rc.setId(rcID);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = null;
+                try {
+                    c = getCaptchaCode("recaptcha", cf, downloadLink);
+                } catch (final Throwable e) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                int wait = 60;
+                String waittime = br.getRegex("var sec = (\\d+)").getMatch(0);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
+                int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                wait -= passedTime;
+                if (wait > 0) {
+                    sleep(wait * 1000l, downloadLink);
+                }
+                final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
+                captcha.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
+                captcha.put("recaptcha_response_field", Encoding.urlEncode(c));
+                // some javascript crapola
+                final String antispam = Encoding.urlEncode(getSoup());
+                captcha.put("antispam", antispam);
+                captcha.put((kpw != null ? kpw : "kpw"), antispam);
+                submitForm(captcha);
+                if (br.containsHTML("limit for today|several files recently")) {
+                    setDownloadStarted(downloadLink, 0);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+                }
             }
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -450,15 +461,16 @@ public class UpstoRe extends antiDDoSForHost {
     private final String regexLoginCaptcha = "/captcha/\\?\\d+";
 
     private long getPremiumTill(Browser br) {
-        String expire = br.getRegex("premium till\\s*(\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+        long result = -1;
+        String expire = br.getRegex("premium till\\s*(\\d{1,2}/\\d{1,2}/\\d{2})").getMatch(0);
         if (expire != null) {
-            return TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null);
+            result = TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null);
         }
         expire = br.getRegex("premium till\\s*([a-zA-Z.]+\\s*\\d{1,2}\\s*,\\s*(\\d{4}|\\d{2}))").getMatch(0);
-        if (expire != null) {
-            return TimeFormatter.getMilliSeconds(expire, "MMMM dd','yyyy", Locale.ENGLISH);
+        if (expire != null && result == -1) {
+            result = TimeFormatter.getMilliSeconds(expire, "MMMM dd','yyyy", Locale.ENGLISH);
         }
-        return -1;
+        return result;
     }
 
     @Override
