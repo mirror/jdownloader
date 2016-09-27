@@ -51,6 +51,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" })
 public class TwitchTv extends PluginForHost {
@@ -115,14 +116,19 @@ public class TwitchTv extends PluginForHost {
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
                 br.getHeaders().put("Referer", downloadLink.getContentUrl());
-                HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
-                StreamInfo streamInfo = downloader.getProbe();
+                final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
+                final StreamInfo streamInfo = downloader.getProbe();
                 if (streamInfo == null) {
                     return AvailableStatus.FALSE;
                 }
-
+                final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
+                final long estimatedSize = m3u8PlayList.getEstimatedSize();
+                if (downloadLink.getKnownDownloadSize() == -1) {
+                    downloadLink.setDownloadSize(estimatedSize);
+                } else {
+                    downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                }
                 String extension = ".m4a";
-
                 for (Stream s : streamInfo.getStreams()) {
                     if ("video".equalsIgnoreCase(s.getCodec_type())) {
                         extension = ".mp4";
@@ -142,7 +148,6 @@ public class TwitchTv extends PluginForHost {
                     }
                 }
                 downloadLink.setProperty("extension", extension);
-
                 downloadLink.setName(getFormattedFilename(downloadLink));
                 return AvailableStatus.TRUE;
             }
@@ -524,6 +529,7 @@ public class TwitchTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.twitchtv.check360p", "Grab 360p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.twitchtv.check240p", "Grab 240p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "avoidChunked", JDL.L("plugins.hoster.twitchtv.avoidChunked", "Avoid source quality (chunked)?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "expspeed", JDL.L("plugins.hoster.twitchtv.expspeed", "Increase download speed (experimental)? ")).setDefaultValue(false));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), grabChatHistory,
         // JDL.L("plugins.hoster.twitchtv.grabChatHistory", "Download given videos chat
         // history.")).setDefaultValue(defaultGrabChatHistory));

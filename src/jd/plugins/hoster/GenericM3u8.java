@@ -33,6 +33,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 
 /**
  * @author raztoki
@@ -97,6 +98,13 @@ public class GenericM3u8 extends PluginForHost {
         }
         if (streamInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
+        final long estimatedSize = m3u8PlayList.getEstimatedSize();
+        if (downloadLink.getKnownDownloadSize() == -1) {
+            downloadLink.setDownloadSize(estimatedSize);
+        } else {
+            downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
         }
         String videoq = null;
         String audioq = null;
