@@ -43,7 +43,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://info\\.arte\\.tv/.+", "" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://info\\.arte\\.tv/.+", "" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
@@ -59,9 +59,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     API_TYPE_GUIDE                              = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
     private static final String     API_TYPE_CINEMA                             = "^https?://api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)\\?vector=.+";
     private static final String     API_TYPE_OEMBED                             = "https://api.arte.tv/api/player/v1/oembed/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?platform=.+)";
+    private static final String     API_TYPE_OTHER                              = "https://api.arte.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?.+)";
 
     private static final String     API_HYBRID_URL_1                            = "https://api.arte.tv/api/player/v1/config/%s/%s";
     private static final String     API_HYBRID_URL_2                            = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+    private static final String     API_HYBRID_URL_3                            = "https://api-preprod.arte.tv/api/player/v1/config/%s/%s";
 
     private static final String     V_NORMAL                                    = "V_NORMAL";
     private static final String     V_SUBTITLED                                 = "V_SUBTITLED";
@@ -135,6 +137,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
             /* First we need to have some basic data - this part is link-specific. */
             if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
+                final String videoid_base = new Regex(this.parameter, "/guide/(?:de|fr)/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
                 int status = br.getHttpConnection().getResponseCode();
                 if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
@@ -155,7 +158,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
                     return decryptedLinks;
                 }
-                if (this.example_arte_vp_url.matches(API_TYPE_OEMBED)) {
+                if (this.example_arte_vp_url.matches(API_TYPE_OTHER)) {
+                    fid = videoid_base;
+                    hybridAPIUrl = API_HYBRID_URL_3;
+
+                } else if (this.example_arte_vp_url.matches(API_TYPE_OEMBED)) {
                     /*
                      * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
                      * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
@@ -198,7 +205,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     hybridAPIUrl = player_host + "/%s/player/%s";
                 } else {
                     /* Fallback - maybe they simply embed a normal ARTE TYPE_GUIDE video ... */
-                    playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?vector=[^<>\"\\']+)");
+                    playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v1/config/[a-z]{2}/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
                     final String link_ending = playerinfo.getMatch(1);
                     fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
                     if (fid == null || link_ending == null) {
@@ -462,6 +469,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String vp_url = new Regex(source, "arte_vp_url=(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         if (vp_url == null) {
             vp_url = new Regex(source, "arte_vp_url_oembed=(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+        }
+        if (vp_url == null) {
+            vp_url = new Regex(source, "(https?%3A%2F%2Fapi\\.arte\\.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2F(?:de|fr)%2FPWA12573%3Fplatform%3D[A-Za-z0-9\\-_]+)%26autostart%3D0\\&amp;").getMatch(0);
         }
         if (vp_url != null) {
             vp_url = Encoding.htmlDecode(vp_url);
