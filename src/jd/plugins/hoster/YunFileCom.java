@@ -19,18 +19,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -46,6 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
@@ -80,10 +79,10 @@ public class YunFileCom extends PluginForHost {
     }
 
     private Browser prepBrowser(final Browser prepBr) {
-        // // define custom browser headers and language settings.
-        do {
-            agent.set(UserAgents.stringUserAgent());
-        } while (!StringUtils.contains(agent.get(), " Chrome/"));
+        // define custom browser headers and language settings.
+        if (agent.get() == null) {
+            agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
+        }
         prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
@@ -286,16 +285,16 @@ public class YunFileCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
         if (AccountType.FREE.equals(account.getType())) {
+            br.getPage(link.getDownloadURL());
             doFree(link);
         } else {
             final Map<String, String> dllinkVidMap = new HashMap<String, String>();
-
             // get download links, sites with different language have different links (servers)
             for (String language : new String[] { "zh_cn", "en_au" }) {
-                br.setCookie(MAINPAGE, "language", language);
-                br.getPage(link.getDownloadURL());
+                br.setCookie(br.getURL(), "language", language);
+                br.getPage(br.getURL());
                 final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
                 for (String dllink : br.getRegex("\"(https?://dl\\d+\\." + DOMAINS + "/downfile/[^<>\"]*?)\"").getColumn(0)) {
                     dllinkVidMap.put(dllink, vid1);
@@ -308,12 +307,14 @@ public class YunFileCom extends PluginForHost {
 
             final String[] counter = br.getRegex("document.getElementById\\('.*?'\\)\\.src = \"([^\"]+)").getColumn(0);
             if (counter != null && counter.length > 0) {
-                String referer = br.getURL();
                 for (String count : counter) {
                     // need the cookies to update after each response!
-                    br.getHeaders().put("Referer", referer);
+                    Browser br = this.br.cloneBrowser();
+                    br.getHeaders().put("Accept", "*/*");
+                    br.getHeaders().put("Cache-Control", null);
+                    br.getHeaders().put("Accept-Language", null);
                     try {
-                        br.getPage(count);
+                        br.cloneBrowser().getPage(count);
                     } catch (Throwable e) {
                     }
                 }
@@ -325,23 +326,31 @@ public class YunFileCom extends PluginForHost {
 
             final java.util.List<String> dllinks = new ArrayList<String>(dllinkVidMap.keySet());
             java.util.Collections.shuffle(dllinks); // Shuffle for load balancing
-            for (String dllink : dllinks) {
-                br.setCookie(MAINPAGE, "vid1", dllinkVidMap.get(dllink));
+            final Iterator<String> it = dllinks.iterator();
+            while (it.hasNext()) {
+                final String dllink = it.next();
+                br.setCookie(dllink, "vid1", dllinkVidMap.get(dllink));
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
                 if (dl.getConnection().getResponseCode() == 503 || dl.getConnection().getResponseCode() == 404) {
                     logger.warning("server is busy, try next one");
+                    if (it.hasNext()) {
+                        continue;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + dl.getConnection().getResponseCode(), 1 * 60 * 1001l);
                 } else if (dl.getConnection().getContentType().contains("html")) {
                     handleServerErrors();
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
+                    if (it.hasNext()) {
+                        continue;
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else { // success
+                } else {
+                    // success
                     dl.startDownload();
                     return;
                 }
             }
-
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1001l);
         }
     }
 
@@ -383,57 +392,46 @@ public class YunFileCom extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
-            // Load/Save cookies, if we do NOT do this parallel downloads fail
-            prepBrowser(br);
-            br.setCookiesExclusive(true);
-            br.setFollowRedirects(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
-            if (acmatch) {
-                acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
-            }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("jforumUserHash") && account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(MAINPAGE, key, value);
-                    }
+            final boolean ifr = br.isFollowingRedirects();
+            try {
+                if (!force && account.loadCookies(br, "")) {
                     return;
                 }
-            }
-            br.getPage(MAINPAGE);
-            Form login = br.getFormbyProperty("id", "login_form");
-            final String lang = System.getProperty("user.language");
-            if (login == null) {
-                logger.warning("Could not find login form");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                prepBrowser(br);
+                br.setFollowRedirects(true);
+                if (br.getURL() == null) {
+                    // only load page if page hasn't already been requested
+                    br.getPage(MAINPAGE);
                 }
-            }
-            login.put("username", Encoding.urlEncode(account.getUser()));
-            login.put("password", Encoding.urlEncode(account.getPass()));
-            login.put("remember", "on");
-            br.submitForm(login);
-            if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                Form login = br.getFormbyProperty("id", "login_form");
+                final String lang = System.getProperty("user.language");
+                if (login == null) {
+                    logger.warning("Could not find login form");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                login.put("remember", "on");
+                login.put("returnPath", Encoding.urlEncode(br.getURL()));
+                br.submitForm(login);
+                if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies - ALL OF THEM! they will save cookies to multiple domains! JD stores them in separate keys within hashmap.
+                account.saveCookies(br, "");
+                account.setProperty("name", account.getUser());
+                account.setProperty("pass", account.getPass());
+            } finally {
+                br.setFollowRedirects(ifr);
             }
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", account.getUser());
-            account.setProperty("pass", account.getPass());
-            account.setProperty("cookies", cookies);
         }
     }
 
