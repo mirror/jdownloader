@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,7 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "http://mangakoidecrypted\\.com/\\d+" }) 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "http://mangakoidecrypted\\.com/\\d+" })
 public class MangakoiCom extends antiDDoSForHost {
 
     public MangakoiCom(PluginWrapper wrapper) {
@@ -72,7 +72,7 @@ public class MangakoiCom extends antiDDoSForHost {
 
         DLLINK = br.getRegex("\"(http[^<>\"]*?)\" id=\"image\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://a\\.mangakoi\\.com/store/manga/[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://a\\.(mangahome|mangakoi)\\.com/store/manga/[^<>\"]*?)\"").getMatch(0);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -89,7 +89,7 @@ public class MangakoiCom extends antiDDoSForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

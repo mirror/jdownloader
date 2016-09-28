@@ -20,8 +20,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -30,7 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "https?://(?:www\\.)?mangakoi\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" }) 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" })
 public class MangakoiCom extends antiDDoSForDecrypt {
 
     public MangakoiCom(PluginWrapper wrapper) {
@@ -46,8 +46,8 @@ public class MangakoiCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "https?://(?:www\\.)?mangakoi\\.com/manga/([A-Za-z0-9\\-_]+)/c(\\d+(?:\\.\\d+)?)");
-        final String chapter_str = urlinfo.getMatch(1);
+        final Regex urlinfo = new Regex(parameter, "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/([A-Za-z0-9\\-_]+)/c(\\d+(?:\\.\\d+)?)");
+        final String chapter_str = urlinfo.getMatch(2);
         final String chapter_str_main;
         String chapter_str_extra = "";
         if (chapter_str.contains(".")) {
