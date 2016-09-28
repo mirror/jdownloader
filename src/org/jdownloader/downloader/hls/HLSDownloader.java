@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
@@ -88,6 +89,7 @@ public class HLSDownloader extends DownloadInterface {
     protected MeteredThrottledInputStream     meteredThrottledInputStream;
     protected final AtomicReference<byte[]>   instanceBuffer = new AtomicReference<byte[]>();
     private final boolean                     isTwitch;
+    private final boolean                     isTwitchOptimized;
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
@@ -95,6 +97,7 @@ public class HLSDownloader extends DownloadInterface {
         this.link = link;
         logger = initLogger(link);
         isTwitch = "twitch.tv".equals(link.getHost());
+        isTwitchOptimized = isTwitch && Boolean.TRUE.equals(SubConfiguration.getConfig(link.getHost()).getBooleanProperty("expspeed", false));
     }
 
     public LogInterface initLogger(final DownloadLink link) {
@@ -295,7 +298,7 @@ public class HLSDownloader extends DownloadInterface {
 
     protected String optimizeM3U8Playlist(String m3u8Playlist) {
         if (m3u8Playlist != null) {
-            if (isTwitch && link.getDefaultPlugin().getPluginConfig().getBooleanProperty("expspeed", false)) {
+            if (isTwitchOptimized) {
                 final StringBuilder sb = new StringBuilder();
                 long lastSegmentDuration = 0;
                 String lastSegment = null;
@@ -608,8 +611,8 @@ public class HLSDownloader extends DownloadInterface {
                                 Thread.sleep(250);
                                 continue retryLoop;
                             }
-                            if (connection != null && connection.getResponseCode() == 400 && isTwitch) {
-                                link.getDefaultPlugin().getPluginConfig().setProperty("expspeed", false);
+                            if (connection != null && connection.getResponseCode() == 400 && isTwitchOptimized) {
+                                SubConfiguration.getConfig(link.getHost()).setProperty("expspeed", false);
                             }
                             byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
                             final boolean instanceBuffer;
