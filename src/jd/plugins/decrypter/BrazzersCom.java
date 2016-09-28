@@ -1,0 +1,154 @@
+//jDownloader - Downloadmanager
+//Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.plugins.decrypter;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/scene/(?:view/\\d+/[a-z0-9\\-]+/?|hqpics/\\d+/?)" })
+public class BrazzersCom extends PluginForDecrypt {
+
+    public BrazzersCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    private static final String type_video = "https?://ma\\.brazzers\\.com/scene/view/\\d+/[a-z0-9\\-]+/?";
+    private static final String type_pics  = "https?://ma\\.brazzers\\.com/scene/hqpics/\\d+/?";
+
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final Account aa = AccountController.getInstance().getValidAccount(plg);
+        final String fid = new Regex(parameter, "^.+/(\\d+)/").getMatch(0);
+        if (aa == null) {
+            logger.info("Account needed to use this crawler");
+            return decryptedLinks;
+        }
+        ((jd.plugins.hoster.BrazzersCom) plg).login(this.br, aa, false);
+        this.br.getPage(parameter);
+        if (isOffline(this.br)) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        String title = this.br.getRegex(">([^<>\"]+)<span class=\"icon\\-new").getMatch(0);
+        if (title == null) {
+            title = this.br.getRegex("<title>([^<>\"]+) \\- BRAZZERS</title>").getMatch(0);
+        }
+        if (title == null) {
+            /* Fallback */
+            title = fid;
+        }
+        title = Encoding.htmlDecode(title).trim();
+        if (parameter.matches(type_video)) {
+            final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
+            final String[] dlinfo = htmldownload.split("</li>");
+            for (final String video : dlinfo) {
+                final String dlurl = new Regex(video, "(/download/[^<>\"]+/)\"").getMatch(0);
+                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
+                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
+                if (dlurl == null || quality == null || filesize == null) {
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink("http://ma.brazzers.com" + dlurl);
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                dl.setName(title + "_" + quality + ".mp4");
+                dl.setAvailable(true);
+                dl.setProperty("fid", fid);
+                dl.setProperty("quality", quality);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            // this.br.getPage("/scene/hqpics/" + fid + "/");
+            final String json_pictures = getPictureJson(this.br);
+            if (json_pictures == null) {
+                return null;
+            }
+            final String pic_format_string = getPicFormatString(this.br);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_pictures);
+            final int count_pics = (int) JavaScriptEngineFactory.toLong(entries.get("length"), 0);
+            if (pic_format_string == null || count_pics == 0) {
+                return null;
+            }
+            final DecimalFormat df = new DecimalFormat("0000");
+            for (int i = 1; i <= count_pics; i++) {
+                final String number_formatted = df.format(i);
+                final String finallink = String.format(pic_format_string, number_formatted);
+                final DownloadLink dl = this.createDownloadlink(finallink);
+                dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
+                dl.setAvailable(true);
+                dl.setProperty("fid", fid);
+                dl.setProperty("picnumber_formatted", number_formatted);
+                decryptedLinks.add(dl);
+            }
+        }
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(title.trim()));
+        fp.addLinks(decryptedLinks);
+
+        return decryptedLinks;
+    }
+
+    public static String getPicUrl(final String fid) {
+        return "http://ma.brazzers.com/scene/hqpics/" + fid + "/";
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
+    }
+
+    public static String getPictureJson(final Browser br) {
+        return br.getRegex("var\\s*?gallerySource\\s*?=\\s*?(\\{.*?\\});").getMatch(0);
+    }
+
+    public static String getPicFormatString(final Browser br) {
+        String pic_format_string = null;
+        try {
+            final String json_pictures = getPictureJson(br);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_pictures);
+            entries = (LinkedHashMap<String, Object>) entries.get("fullsize");
+            final String path = (String) entries.get("path");
+            final String hash = (String) entries.get("hash");
+            if (path != null && !path.equals("") && hash != null && !hash.equals("")) {
+                pic_format_string = path + "%s" + ".jpg" + hash;
+            }
+        } catch (final Throwable e) {
+        }
+        return pic_format_string;
+    }
+
+}

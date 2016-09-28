@@ -321,6 +321,8 @@ public class DeviantArtCom extends PluginForDecrypt {
 
         int currentOffset = 0;
         int maxOffset = 0;
+        int timesNoItems = 0;
+        final int times_No_Items_Max = 20;
         final int offsetIncrease = 24;
         int counter = 1;
         if (parameter.contains("offset=")) {
@@ -375,29 +377,35 @@ public class DeviantArtCom extends PluginForDecrypt {
                         logger.info("This offset only contains dummy links --> Continuing");
                         continue;
                     }
-                    /* We went too far - we should already have links */
-                    logger.info("Current offset contains no links --> Stopping");
-                    break;
-                }
-                if (links != null && links.length != 0) {
-                    for (final String artlink : links) {
-                        final DownloadLink fina = createDownloadlink(artlink);
-                        if (fastLinkCheck) {
-                            fina.setAvailable(true);
-                        }
-                        /* No reason to hide their single links */
-                        fina.setContentUrl(artlink);
-                        if (fp != null) {
-                            fp.add(fina);
-                        }
-                        if (forceHtmlDownload) {
-                            fina.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
-                        } else {
-                            fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-                        }
-                        distribute(fina);
-                        decryptedLinks.add(fina);
+                    if (timesNoItems <= times_No_Items_Max) {
+                        /* No items on this page but maybe later. */
+                        logger.info("Current offset contains no items: " + currentOffset);
+                        timesNoItems++;
+                        continue;
                     }
+                    /* We went too far - we should already have links --> Stop (fail safe) */
+                    logger.info("No items found on " + times_No_Items_Max + "pages --> Stopping");
+                    break;
+                } else {
+                    timesNoItems = 0;
+                }
+                for (final String artlink : links) {
+                    final DownloadLink fina = createDownloadlink(artlink);
+                    if (fastLinkCheck) {
+                        fina.setAvailable(true);
+                    }
+                    /* No reason to hide their single links */
+                    fina.setContentUrl(artlink);
+                    if (fp != null) {
+                        fp.add(fina);
+                    }
+                    if (forceHtmlDownload) {
+                        fina.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.HTML);
+                    } else {
+                        fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                    }
+                    distribute(fina);
+                    decryptedLinks.add(fina);
                 }
             } finally {
                 currentOffset += offsetIncrease;
