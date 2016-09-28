@@ -261,6 +261,9 @@ public class NowVideoEu extends PluginForHost {
                     continue;
                 }
                 if (!dl.getConnection().getContentType().contains("html")) {
+                    if (downloadLink.getFinalFileName() == null) {
+                        downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(d, ".mp4"));
+                    }
                     dl.startDownload();
                     return;
                 }
@@ -302,7 +305,9 @@ public class NowVideoEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // set correct file extension, flv != avi!
-        downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".flv"));
+        if (downloadLink.getFinalFileName() == null) {
+            downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".mp4"));
+        }
         // end of final filename correction
         while (true) {
             if (errCount >= 1) {
@@ -470,7 +475,9 @@ public class NowVideoEu extends PluginForHost {
             }
         }
         // set correct file extension, flv != avi!
-        link.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".mp4"));
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".mp4"));
+        }
         // end of final filename correction
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
