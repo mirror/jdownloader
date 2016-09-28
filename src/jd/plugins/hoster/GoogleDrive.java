@@ -15,14 +15,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -36,6 +34,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -259,6 +262,25 @@ public class GoogleDrive extends PluginForHost {
             maxChunks = 1;
         }
         br.setFollowRedirects(true);
+        if (downloadLink.getVerifiedFileSize() == -1) {
+            final Browser brc = br.cloneBrowser();
+            final GetRequest request = new GetRequest(brc.getURL(dllink));
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
+            URLConnectionAdapter con = null;
+            try {
+                con = brc.openRequestConnection(request);
+                if (con.isOK()) {
+                    if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
+                        downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                    } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
+                        downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+            } finally {
+                con.disconnect();
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
