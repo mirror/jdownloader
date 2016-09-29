@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,9 +31,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
@@ -104,7 +104,7 @@ public class BcVc extends antiDDoSForDecrypt {
             logger.info("Link can't be decrypted because of server problems: " + parameter);
             return decryptedLinks;
         }
-        final String[] matches = br.getRegex("aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\,ref\\: ?\\'(.*?)\\'\\}").getRow(0);
+        final String[] matches = br.getRegex("aid\\s*:\\s*(.*?)\\s*,\\s*lid\\s*:\\s*(.*?)\\s*,\\s*oid:\\s*(.*?)\\s*,\\s*ref\\s*:\\s*\\'(.*?)\\'\\s*\\}").getRow(0);
         if (matches == null || matches.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
