@@ -471,7 +471,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             vp_url = new Regex(source, "arte_vp_url_oembed=(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         }
         if (vp_url == null) {
-            vp_url = new Regex(source, "(https?%3A%2F%2Fapi\\.arte\\.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2F(?:de|fr)%2FPWA12573%3Fplatform%3D[A-Za-z0-9\\-_]+)%26autostart%3D0\\&amp;").getMatch(0);
+            // https%3A%2F%2Fapi.arte.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2Fde%2F062222-000-A%3Fautostart%3D0%26lifeCycle%3D1&amp;lang=de_DE&amp;config=arte_tvguide
+            vp_url = new Regex(source, "(https?%3A%2F%2Fapi\\.arte\\.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2F(?:de|fr)%2F[A-Za-z0-9\\-_%]+)\\&amp;").getMatch(0);
         }
         if (vp_url != null) {
             vp_url = Encoding.htmlDecode(vp_url);

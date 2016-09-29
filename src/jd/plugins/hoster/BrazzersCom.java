@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://(?:www\\.)?brazzers\\.com/(scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?|embed/\\d+/?)|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+" })
 public class BrazzersCom extends antiDDoSForHost {
 
     public BrazzersCom(PluginWrapper wrapper) {
@@ -64,19 +64,27 @@ public class BrazzersCom extends antiDDoSForHost {
 
     private boolean              not_yet_released             = false;
 
-    private final String         type_embed                   = "https?://(?:www\\.)?brazzers\\.com/embed/\\d+/?";
-    private final String         type_normal                  = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+(?:/[a-z0-9\\-]+/?)?";
+    private final String         type_normal_moch             = "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/";
     private final String         type_premium_video           = "https?://ma\\.brazzers\\.com/download/.+";
     private final String         type_premium_pic             = "https?://photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+";
+
+    public static final String   html_loggedin                = "id=\"my\\-account\"";
 
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
-    @SuppressWarnings("deprecation")
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        /* Skips redirect to stupid advertising page after login. */
+        br.setCookie("ma.brazzers.com", "skipPostLogin", "1");
+        return br;
+    }
+
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_embed)) {
-            final String fid = new Regex(link.getDownloadURL(), "/embed/(\\d+)").getMatch(0);
-            link.setUrlDownload("http://www.brazzers.com/scenes/view/id/" + fid + "/");
+        if (link.getDownloadURL().matches(type_normal_moch)) {
+            /* Make MOCH download possible --> We have to correct the downloadurl again! */
+            final String fid = getFidMOCH(link);
+            link.setUrlDownload(jd.plugins.decrypter.BrazzersCom.getVideoUrlFree(fid));
         }
     }
 
@@ -150,14 +158,14 @@ public class BrazzersCom extends antiDDoSForHost {
                 }
             }
         } else {
-            getPage(link.getDownloadURL());
+            fid = getFidMOCH(link);
+            getPage(jd.plugins.decrypter.BrazzersCom.getVideoUrlFree(fid));
             /* Offline will usually return 404 */
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            fid = new Regex(link.getDownloadURL(), "/id/(\\d+)/?").getMatch(0);
             final String url_name = new Regex(link.getDownloadURL(), "/id/\\d+/([^/]+)").getMatch(0);
-            String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
+            String filename = br.getRegex("<h1[^>]*?itemprop=\"name\">([^<>\"]+)<span").getMatch(0);
 
             /* This way we have a better dupe-detection! */
             link.setLinkID(fid);
@@ -241,8 +249,12 @@ public class BrazzersCom extends antiDDoSForHost {
         }
     }
 
+    private String getFidMOCH(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "^.+/(\\d+)/?").getMatch(0);
+    }
+
     private boolean isMOCHUrlOnly(final DownloadLink dl) {
-        return dl.getDownloadURL().matches(type_normal) || dl.getDownloadURL().matches(type_embed);
+        return dl.getDownloadURL().matches(type_normal_moch) || dl.getDownloadURL().matches(jd.plugins.decrypter.BrazzersCom.type_video_free);
     }
 
     @Override
@@ -265,7 +277,7 @@ public class BrazzersCom extends antiDDoSForHost {
             return true;
         } else {
             /* Multihosts should not be tried if we know that content is not yet downloadable! */
-            return !contentHasNotYetBeenReleased(downloadLink);
+            return !contentHasNotYetBeenReleased(downloadLink) && isMOCHUrlOnly(downloadLink);
         }
     }
 
@@ -274,18 +286,18 @@ public class BrazzersCom extends antiDDoSForHost {
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                br.setFollowRedirects(true);
+                prepBR(br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* Try to avoid login captcha at all cost! */
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("http://ma." + account.getHoster() + "/home/");
-                    if (br.containsHTML("id=\"my\\-account\"")) {
+                    if (br.containsHTML(html_loggedin)) {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
-                    br = new Browser();
+                    br = prepBR(new Browser());
                 }
                 br.getPage("http://ma.brazzers.com/access/login/");
                 final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -308,7 +320,7 @@ public class BrazzersCom extends antiDDoSForHost {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (br.getCookie(account.getHoster(), "login_usr") == null) {
+                if (br.getCookie(account.getHoster(), "login_usr") == null || !br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
