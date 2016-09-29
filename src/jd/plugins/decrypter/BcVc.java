@@ -35,7 +35,7 @@ import jd.plugins.components.PluginJSonUtils;
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/([A-Za-z0-9]{5,7}$|\\d+/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/(\\d+/.+|[A-Za-z0-9]{5,7})" })
 public class BcVc extends antiDDoSForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
