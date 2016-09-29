@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,28 +39,46 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/scene/(?:view/\\d+/[a-z0-9\\-]+/?|hqpics/\\d+/?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "https?://ma\\.brazzers\\.com/(?:scene/view/\\d+/[a-z0-9\\-]+/?|scene/hqpics/\\d+/?)|https?://(?:www\\.)?brazzers\\.com/(?:scenes/view/id/\\d+/[a-z0-9\\-]+/?|embed/\\d+)" })
 public class BrazzersCom extends PluginForDecrypt {
 
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_video = "https?://ma\\.brazzers\\.com/scene/view/\\d+/[a-z0-9\\-]+/?";
-    private static final String type_pics  = "https?://ma\\.brazzers\\.com/scene/hqpics/\\d+/?";
+    public static final String  type_video_free    = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+/?(?:[a-z0-9\\-]+/?)?";
+    private static final String type_video_premium = "https?://ma\\.brazzers\\.com/scene/view/\\d+/[a-z0-9\\-]+/?";
+    private static final String type_video_embed   = "https?://ma\\.brazzers\\.com/embed/\\d+";
+    private static final String type_pics          = "https?://ma\\.brazzers\\.com/scene/hqpics/\\d+/?";
+
+    private static final String brazzers_decrypted = "http://brazzersdecrypted.com/scenes/view/id/%s/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(plg);
-        final String fid = new Regex(parameter, "^.+/(\\d+)/").getMatch(0);
-        if (aa == null) {
-            logger.info("Account needed to use this crawler");
-            return decryptedLinks;
+        final String fid = new Regex(parameter, "^.+/(\\d+)/?").getMatch(0);
+        if (aa != null) {
+            ((jd.plugins.hoster.BrazzersCom) plg).login(this.br, aa, false);
         }
-        ((jd.plugins.hoster.BrazzersCom) plg).login(this.br, aa, false);
-        this.br.getPage(parameter);
+        if (parameter.matches(type_pics)) {
+            if (aa == null) {
+                logger.info("Account needed to use this crawler for this linktype (pictures)");
+                return decryptedLinks;
+            }
+            this.br.getPage(parameter);
+        } else {
+            final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
+            if (aa == null && moch_accounts != null && moch_accounts.size() > 0) {
+                /* Only MOCH download possible --> Add link for hostplugin */
+                final DownloadLink dl = this.createDownloadlink(String.format(brazzers_decrypted, fid));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            } else {
+                this.br.getPage(getVideoUrlPremium(fid));
+            }
+        }
         if (isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -73,7 +92,7 @@ public class BrazzersCom extends PluginForDecrypt {
             title = fid;
         }
         title = Encoding.htmlDecode(title).trim();
-        if (parameter.matches(type_video)) {
+        if (parameter.matches(type_video_premium) || parameter.matches(type_video_free) || parameter.matches(type_video_embed)) {
             final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
             final String[] dlinfo = htmldownload.split("</li>");
             for (final String video : dlinfo) {
@@ -92,7 +111,6 @@ public class BrazzersCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            // this.br.getPage("/scene/hqpics/" + fid + "/");
             final String json_pictures = getPictureJson(this.br);
             if (json_pictures == null) {
                 return null;
@@ -121,6 +139,14 @@ public class BrazzersCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    public static String getVideoUrlFree(final String fid) {
+        return "http://www.brazzers.com/scenes/view/id/" + fid + "/";
+    }
+
+    public static String getVideoUrlPremium(final String fid) {
+        return "http://ma.brazzers.com/scene/view/" + fid + "/";
     }
 
     public static String getPicUrl(final String fid) {

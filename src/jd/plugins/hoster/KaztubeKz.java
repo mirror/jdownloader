@@ -132,6 +132,9 @@ public class KaztubeKz extends PluginForHost {
                 break;
             }
         }
+        if (!finallink.startsWith("http")) {
+            finallink = dllink.replace("/manifest.f4m", "/") + finallink;
+        }
         dl = new HDSDownloader(downloadLink, br, finallink);
         dl.startDownload();
     }

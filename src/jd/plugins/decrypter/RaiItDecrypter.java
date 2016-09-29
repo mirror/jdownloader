@@ -181,6 +181,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
         String description = null;
 
         this.br.getPage(this.parameter);
+        final String jsredirect = this.br.getRegex("document\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+        if (jsredirect != null) {
+            this.br.getPage(jsredirect.trim());
+        }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
@@ -191,11 +195,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
         String content_id_from_url = null;
         if (this.parameter.matches(TYPE_CONTENTITEM)) {
             content_id_from_url = new Regex(this.parameter, "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
-        } else if (parameter.matches(TYPE_RAIPLAY_IT)) {
-            dllink = findRelinkerUrl();
-            title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-            date = this.br.getRegex("content=\"(\\d{4}\\-\\d{2}\\-\\d{2}) \\d{2}:\\d{2}:\\d{2}\" property=\"gen\\-date\"").getMatch(0);
         }
+        if (dllink == null) {
+            dllink = findRelinkerUrl();
+        }
+        title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        date = this.br.getRegex("content=\"(\\d{4}\\-\\d{2}\\-\\d{2}) \\d{2}:\\d{2}:\\d{2}\" property=\"gen\\-date\"").getMatch(0);
+
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || (contentset_id == null && content_id_from_html == null && dllink == null)) {
