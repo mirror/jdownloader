@@ -20,7 +20,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" }) public class XSUseNetCom extends UseNet {
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" })
+public class XSUseNetCom extends UseNet {
     public XSUseNetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.xsusenet.com/sign-up/");
@@ -161,8 +162,9 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("newsreader124.eweka.nl", false, 119));// do not change position! see getUsenetServer
-        ret.addAll(UsenetServer.createServerList("sslreader.eweka.nl", true, 563, 443));
+        ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", false, 80, 119));
+        ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", true, 563, 443));
+        // ret.addAll(UsenetServer.createServerList("free.xsusenet.com", false, 119));//free not supported
         return ret;
     }
 }
