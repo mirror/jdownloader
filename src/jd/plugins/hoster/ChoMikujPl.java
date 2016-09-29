@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends PluginForHost {
 
     private String              DLLINK                      = null;
@@ -73,6 +73,7 @@ public class ChoMikujPl extends PluginForHost {
     private int                 account_maxdls              = -1;
     private boolean             serverIssue                 = false;
     private boolean             premiumonly                 = false;
+    private boolean             plus18                      = false;
 
     /* ChomikujPlScript */
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -90,6 +91,7 @@ public class ChoMikujPl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         serverIssue = false;
         premiumonly = false;
+        plus18 = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         final String mainlink = link.getStringProperty("mainlink", null);
@@ -113,41 +115,43 @@ public class ChoMikujPl extends PluginForHost {
                 logger.info("Failed to find html filename for single link");
             }
         }
-        if (!getDllink(link, br.cloneBrowser(), false)) {
-            premiumonly = true;
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-            return AvailableStatus.TRUE;
-        }
-        if (cbr.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (cbr.containsHTML(PREMIUMONLY)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-            return AvailableStatus.TRUE;
-        }
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // In case the link redirects to the finallink
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                // Only set final filename if it wasn't set before as video and
-                // audio streams can have bad filenames
-                if (link.getFinalFileName() == null) {
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                }
-            } else {
-                /* Just because we get html here that doesn't mean that the file is offline ... */
-                serverIssue = true;
+        plus18 = this.br.containsHTML("\"FormAdultViewAccepted\"");
+        if (!plus18) {
+            if (!getDllink(link, br.cloneBrowser(), false)) {
+                premiumonly = true;
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+                return AvailableStatus.TRUE;
             }
-        } finally {
+            if (cbr.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (cbr.containsHTML(PREMIUMONLY)) {
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+                return AvailableStatus.TRUE;
+            }
+        }
+        if (DLLINK != null) {
+            // In case the link redirects to the finallink
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    // Only set final filename if it wasn't set before as video and
+                    // audio streams can have bad filenames
+                    if (link.getFinalFileName() == null) {
+                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    }
+                } else {
+                    /* Just because we get html here that doesn't mean that the file is offline ... */
+                    serverIssue = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -454,10 +458,13 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (cbr.containsHTML(PREMIUMONLY) || premiumonly) {
+        if (plus18) {
+            logger.info("Adult content only downloadable when logged in");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (serverIssue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        } else if (cbr.containsHTML(PREMIUMONLY) || premiumonly) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (!isVideo(downloadLink)) {
             if (!getDllink(downloadLink, br, false)) {

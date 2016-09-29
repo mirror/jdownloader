@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to", "m2k.to" }, urls = { "https?://(www\\.)?movie4k\\.to/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?", "https?://(?:www\\.)?(?:m2k\\.to|movie2k\\.com|movie2k\\.com|movie2k\\.me|movie2k\\.ws)/[a-zA-Z0-9\\-]+\\d+[a-zA-Z0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to", "m2k.to" }, urls = { "https?://(www\\.)?movie4k\\.to/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?", "https?://(?:www\\.)?(?:m2k\\.to|movie2k\\.com|movie2k\\.com|movie2k\\.me|movie2k\\.ws)/[a-zA-Z0-9\\-]+\\d+[a-zA-Z0-9\\-]+\\.html" })
 public class Mv2kTo extends PluginForDecrypt {
 
     // note: movie2k.to no dns record raztoki20160308
@@ -90,7 +90,7 @@ public class Mv2kTo extends PluginForDecrypt {
                 fp.setName(Encoding.htmlDecode(fpName.trim() + (mirror > 1 ? "@Mirror " + i : "")));
                 secondary: for (int j = 1; j <= part; j++) {
                     final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"((?!http://get\\.adobe\\.com/flashplayer/)(?:https?://)?[^<>\"]*?)\"", "0" }, { "<a href=\"((?!http://get\\.adobe\\.com/flashplayer/)(?:https?://)?[^<>\"]+)\" target=\"_blank\"", "0" }, { "<IFRAME SRC=\"(https?://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(https?://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(https?://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(https?://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(https?://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" }, { "(https?://embed\\.yesload\\.net/[\\w\\?]+)", "0" },
-                            { "\"(https?://(www\\.)?videoweed\\.es/embed\\.php\\?v=[a-z0-9]+)\"", "0" } };
+                            { "\"(https?://(www\\.)?videoweed\\.es/embed\\.php\\?v=[a-z0-9]+)\"", "0" }, { "<param name=\"movie\" value=\"(https?://(?:www\\.)?userporn\\.com/[^<>\"]*?)\"></param>", "0" } };
                     for (String[] regex : regexes) {
                         String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
                         if (finallink != null) {

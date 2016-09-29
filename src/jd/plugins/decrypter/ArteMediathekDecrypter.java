@@ -63,7 +63,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String     API_HYBRID_URL_1                            = "https://api.arte.tv/api/player/v1/config/%s/%s";
     private static final String     API_HYBRID_URL_2                            = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
-    private static final String     API_HYBRID_URL_3                            = "https://api-preprod.arte.tv/api/player/v1/config/%s/%s";
+    /* ?autostart=0&lifeCycle=1 = get lower qualities too. */
+    private static final String     API_HYBRID_URL_3                            = "https://api-preprod.arte.tv/api/player/v1/config/%s/%s?autostart=0&lifeCycle=1";
 
     private static final String     V_NORMAL                                    = "V_NORMAL";
     private static final String     V_SUBTITLED                                 = "V_SUBTITLED";
@@ -471,7 +472,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             vp_url = new Regex(source, "arte_vp_url_oembed=(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         }
         if (vp_url == null) {
-            // https%3A%2F%2Fapi.arte.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2Fde%2F062222-000-A%3Fautostart%3D0%26lifeCycle%3D1&amp;lang=de_DE&amp;config=arte_tvguide
+            /*
+             * E.g.
+             * https%3A%2F%2Fapi.arte.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2Fde%2F062222-000-A%3Fautostart%3D0%26lifeCycle%3D1&amp;lang=de_DE
+             * &amp;config=arte_tvguide
+             */
+            /* We actually don't necessarily use these urls but the existance of them is an indicator for us on which API-url to use. */
             vp_url = new Regex(source, "(https?%3A%2F%2Fapi\\.arte\\.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2F(?:de|fr)%2F[A-Za-z0-9\\-_%]+)\\&amp;").getMatch(0);
         }
         if (vp_url != null) {

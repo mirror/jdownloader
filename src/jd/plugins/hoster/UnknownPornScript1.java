@@ -80,6 +80,10 @@ public class UnknownPornScript1 extends PluginForHost {
         } else {
             /* E.g. xtwisted.com */
             dllink = br.getRegex("(?:\"|\\')(?:file|url)(?:\"|\\'):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?\\.(?:mp4|flv))(?:\"|\\')").getMatch(0);
+            if (dllink == null) {
+                /* E.g. xtwisted.com */
+                dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

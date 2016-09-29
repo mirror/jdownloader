@@ -46,7 +46,7 @@ public class MegarapidoNet extends PluginForHost {
 
     /* Tags: conexaomega.com.br, megarapido.net */
 
-    private static final String                            DOMAIN                       = "http://megarapido.net/";
+    private static final String                            DOMAIN                       = "https://megarapido.net/";
     private static final String                            NICE_HOST                    = "megarapido.net";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|-)", "");
     private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
@@ -66,17 +66,18 @@ public class MegarapidoNet extends PluginForHost {
 
     public MegarapidoNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://megarapido.net/planos");
+        this.enablePremium("https://megarapido.net/planos");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://megarapido.net/termos-e-condicoes";
+        return "https://megarapido.net/termos-e-condicoes";
     }
 
     private Browser newBrowser() {
         br = new Browser();
         br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", default_UA);
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
@@ -144,7 +145,7 @@ public class MegarapidoNet extends PluginForHost {
         login(account);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            this.getAPISafe("http://" + this.getHost() + "/_gerar.php?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=1." + System.currentTimeMillis());
+            this.getAPISafe("https://" + this.getHost() + "/_gerar.php?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=1." + System.currentTimeMillis());
             dllink = this.br.getRegex("(http[^<>\"\\|\\']+)").getMatch(0);
             if (dllink == null || dllink.length() > 500) {
                 /* Should never happen */
@@ -156,8 +157,6 @@ public class MegarapidoNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        /* we want to follow redirects in final stage */
-        br.setFollowRedirects(true);
         int maxChunks = ACCOUNT_PREMIUM_MAXCHUNKS;
         if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
             maxChunks = 1;
@@ -301,8 +300,8 @@ public class MegarapidoNet extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    br.getPage("http://megarapido.net/");
-                    if (br.containsHTML("/sair\\.php\">SAIR</a>")) {
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (br.containsHTML("/sair\\.php")) {
                         /* Existing cookies are valid --> Save new timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
@@ -312,9 +311,8 @@ public class MegarapidoNet extends PluginForHost {
                         br.clearCookies(DOMAIN);
                     }
                 }
-                br.setFollowRedirects(true);
                 String postData = "login=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
-                this.getAPISafe("http://megarapido.net/login");
+                this.getAPISafe("https://" + this.getHost() + "/login");
 
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "megarapido.net", DOMAIN, true);
                 this.setDownloadLink(dummyLink);
