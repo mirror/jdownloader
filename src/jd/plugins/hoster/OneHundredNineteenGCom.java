@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "119g.com" }, urls = { "http://(www\\.)?d\\.119g\\.com/f/[A-Z0-9]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "119g.com" }, urls = { "http://(www\\.)?d\\.119g\\.com/f/[A-Z0-9]+\\.html" })
 public class OneHundredNineteenGCom extends PluginForHost {
 
     public OneHundredNineteenGCom(PluginWrapper wrapper) {
@@ -46,20 +46,34 @@ public class OneHundredNineteenGCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">404 \\- 找不到文件或目录。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 \\- 找不到文件或目录。")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* Abused */
-        if (br.containsHTML("\\- 该文件涉及违法，已经屏蔽\\!</font>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"downfile\\-type kz\\-[a-z0-9]+\"></i>([^<>\"]*?)</div>").getMatch(0);
+        if (br.containsHTML("\\- 该文件涉及违法，已经屏蔽\\!</font>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // q class="downfile-type kz-重命名"></i> 整蛊专家.mkv.重命名</div>
+        String filename = br.getRegex("class=\"downfile\\-type kz\\-[^\"]+\"></i>([^<>\"]*?)<").getMatch(0);
         final String filesize = br.getRegex("<strong>文件大小：</strong>([^<>\"]*?)</div>").getMatch(0);
         String extension = br.getRegex("<strong>文件类型：</strong>([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null || extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null || extension == null) {
+            if (this.br.containsHTML("id=\"file_code\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         extension = extension.trim();
-        if (!filename.endsWith(extension)) filename += extension;
+        if (!filename.endsWith(extension)) {
+            filename += extension;
+        }
         link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         final String sha1 = br.getRegex("<strong>SHA1值：</strong>([^<>\"]*?)</div>").getMatch(0);
-        if (sha1 != null) link.setSha1Hash(sha1.trim());
+        if (sha1 != null) {
+            link.setSha1Hash(sha1.trim());
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -69,11 +83,15 @@ public class OneHundredNineteenGCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL().replace(".html", "_bak.html"));
         String authURL = br.getRegex("src=\\\\'(http:\\\\/\\\\/\\d+\\.down\\.119g\\.com(:\\d+)?\\\\/AyangAuth\\\\)'").getMatch(0);
         final String linkPart = br.getRegex("var thunder_url = \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (authURL == null || linkPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (authURL == null || linkPart == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible, GEO-blocked?!");
+        }
         authURL = authURL.replace("\\", "");
         br.getPage(authURL);
         final String key = br.getRegex("key=\\'([a-z0-9]+)\\';").getMatch(0);
-        if (key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (key == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String dllink = linkPart + key;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

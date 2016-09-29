@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userporn.com" }, urls = { "http://(www\\.)?userporn\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userporn.com" }, urls = { "http://(www\\.)?userporn\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" })
 public class UserPornCom extends PluginForHost {
 
     private static int[] internalKeys = { 526729, 269502, 264523, 130622, 575869 };
@@ -51,7 +51,9 @@ public class UserPornCom extends PluginForHost {
     /* See jd.plugin.hoster.VideoBbCom */
     private String getFinalLink(final DownloadLink downloadLink, final String token) throws Exception {
         final String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
-        if (setting == null || !setting.startsWith("http://")) { return null; }
+        if (setting == null || !setting.startsWith("http://")) {
+            return null;
+        }
         br.getPage(setting);
         try {
             /* you have to make sure the plugin is loaded! */
@@ -76,9 +78,13 @@ public class UserPornCom extends PluginForHost {
         if (br.containsHTML("<title>Userporn \\- Your Best Private Porn Site</title>")) {
             br.getPage(downloadLink.getDownloadURL());
         }
-        if (br.containsHTML("(>Video is not available<|>The page or video you are looking for cannot|<title>Userporn \\- Your Best Private Porn Site</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(>Video is not available<|>The page or video you are looking for cannot|<title>Userporn \\- Your Best Private Porn Site</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\- Userporn \\- Your Best Private Porn Site</title>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         if (Boolean.FALSE.equals(downloadLink.getBooleanProperty("nameok"))) {
             downloadLink.setName(Encoding.htmlDecode(filename) + ".flv");
@@ -90,13 +96,24 @@ public class UserPornCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final String dllink = getFinalLink(downloadLink, "token1");
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, VideoBbCom.ALGOCONTROLERROR, 15 * 1000l); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink.equals("ALGO_CONTROL_ERROR")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, VideoBbCom.ALGOCONTROLERROR, 15 * 1000l);
+        }
         sleep(3 * 1000l, downloadLink); // Flasplayer to slow
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
-            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: ", 30 * 1000l); }
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: ", 30 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String tempName = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));

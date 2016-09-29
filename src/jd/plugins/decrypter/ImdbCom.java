@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+|title/tt\\d+/videogallery)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+|title/tt\\d+/videogallery)" })
 public class ImdbCom extends PluginForDecrypt {
 
     public ImdbCom(PluginWrapper wrapper) {
@@ -49,6 +49,12 @@ public class ImdbCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (this.br.containsHTML("id=\"no_content\"")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (this.br.containsHTML("class=\"ilm_notice\"")) {
+            /*
+             * E.g. <div class="ilm_notice"> <p>We're sorry. We don't have any videos that match your search.</p> </div>
+             */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
