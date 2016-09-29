@@ -113,7 +113,10 @@ public class MegadyskPl extends PluginForHost {
             if (Boolean.TRUE.equals(app.get("maintenance"))) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maintenance", 60 * 60 * 1000l);
             }
-            final List<Map<String, Object>> files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("files");
+            List<Map<String, Object>> files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("files");
+            if (files == null || files.size() == 0) {
+                files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("items");
+            }
             if (files.size() != 1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
