@@ -50,7 +50,10 @@ public class MegadyskPl extends PluginForDecrypt {
         final String jsonString = xorDecode(key, data);
         final Map<String, Object> json = JSonStorage.restoreFromString(jsonString, TypeRef.HASHMAP);
         final Map<String, Object> app = (Map<String, Object>) json.get("app");
-        final List<Map<String, Object>> files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("files");
+        List<Map<String, Object>> files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("files");
+        if (files == null || files.size() == 0) {
+            files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("items");
+        }
         if (files.size() == 1) {
             final Map<String, Object> file = files.get(0);
             final DownloadLink link = createDownloadlink(parameter.getCryptedUrl());

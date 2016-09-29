@@ -1274,12 +1274,19 @@ public class SecondLevelLaunch {
                 for (SecuritySoftwareInfo s : sw) {
                     names.add(s.getName());
                     if (OperatingSystem.WINDOWS_XP == CrossSystem.getOS()) {
-                        signedProductExe.add(new File(s.get("pathToEnableOnAccessUI")).getName());
-                        signedReportingExe.add(new File(s.get("pathToUpdateUI")).getName());
-
+                        if (s.get("pathToEnableOnAccessUI") != null) {
+                            signedProductExe.add(new File(s.get("pathToEnableOnAccessUI")).getName());
+                        }
+                        if (s.get("pathToUpdateUI") != null) {
+                            signedReportingExe.add(new File(s.get("pathToUpdateUI")).getName());
+                        }
                     } else {
-                        signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
-                        signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
+                        if (s.get("pathToSignedReportingExe") != null) {
+                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
+                        }
+                        if (s.get("pathToSignedProductExe") != null) {
+                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
+                        }
                     }
                     state.add(s.get("productState"));
 

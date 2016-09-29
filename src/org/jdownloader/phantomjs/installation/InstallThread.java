@@ -15,6 +15,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.DownloadProgress;
 import org.appwork.utils.os.CrossSystem;
@@ -168,11 +169,17 @@ public class InstallThread extends Thread {
                 }
                 installing = true;
                 StatsManager.I().track("installing/extractStart", CollectionName.PJS);
-                final File dest = new PhantomJS().getBinaryPath(false);
-                dest.getParentFile().mkdirs();
-                dest.delete();
+                final File binaryDest = new PhantomJS().getBinaryPath(false);
+                final File binaryParent = binaryDest.getParentFile();
+                LogController.CL(false).info("BinaryDest: " + binaryDest + "|Exists:" + binaryDest.exists());
+                if (binaryDest.exists()) {
+                    binaryDest.delete();
+                }
+                if (!binaryParent.exists()) {
+                    binaryParent.mkdirs();
+                }
+                LogController.CL(false).info("BinaryParent: " + binaryParent + "|Exists:" + binaryParent.exists());
                 final File binarySource = new File(extractTo, binaryPath);
-                LogController.CL(false).info("Before: " + binarySource + "|Exists:" + binarySource.exists());
                 if (extractTo.exists()) {
                     Files.deleteRecursiv(extractTo);
                 }
@@ -225,11 +232,24 @@ public class InstallThread extends Thread {
                 boolean ret = binarySource.exists();
                 LogController.CL(false).info("After: " + binarySource + "|Exists:" + ret);
                 if (ret) {
-                    ret = binarySource.renameTo(dest);
-                    LogController.CL(false).info("Move: " + binarySource + "|RenameTo|" + dest + ":" + ret);
+                    if (!binaryParent.exists()) {
+                        binaryParent.mkdirs();
+                    }
+                    LogController.CL(false).info("DestParent: " + binaryParent + "|Exists:" + binaryParent.exists());
+                    ret = binarySource.renameTo(binaryDest);
+                    LogController.CL(false).info("Move: " + binarySource + "|RenameTo|" + binaryDest + ":" + ret);
+                    if (!ret) {
+                        try {
+                            IO.copyFile(binarySource, binaryDest);
+                            ret = binaryDest.exists();
+                        } catch (final IOException e) {
+                            LogController.CL(false).log(e);
+                        }
+                        LogController.CL(false).info("Move: " + binarySource + "|Copy|" + binaryDest + ":" + ret);
+                    }
                     if (ret) {
-                        ret = dest.setExecutable(true) || dest.canExecute();
-                        LogController.CL(false).info("Exec: " + dest + ":" + ret);
+                        ret = binaryDest.setExecutable(true) || binaryDest.canExecute();
+                        LogController.CL(false).info("Exec: " + binaryDest + ":" + ret);
                     }
                 }
             } finally {
