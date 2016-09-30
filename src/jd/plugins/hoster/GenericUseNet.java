@@ -40,7 +40,8 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "genericusenet" }, urls = { "" }) public class GenericUseNet extends UseNet {
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "genericusenet" }, urls = { "" })
+public class GenericUseNet extends UseNet {
     public GenericUseNet(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium();
@@ -110,6 +111,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
             final AccountInfo ai = new AccountInfo();
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             ai.setStatus("Generic usenet:maxDownloads(current)=" + account.getMaxSimultanDownloads());
+            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
             return ai;
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
