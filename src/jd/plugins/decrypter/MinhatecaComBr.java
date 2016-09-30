@@ -131,7 +131,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("mainlink", parameter);
             dl.setProperty("pass", passCode);
             dl.setContentUrl(parameter);
-            dl.setLinkID(fid);
+            dl.setLinkID(getHost() + "://" + fid);
 
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -188,9 +188,13 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     } else {
                         content_url = parameter;
                     }
-                    String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
-                    if (fid == null && url_filename != null) {
-                        fid = new Regex(url_filename, ",(\\d+)\\..+$").getMatch(0);
+                    String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction").getMatch(0);
+                    if (filename == null) {
+                        filename = url_filename;
+                    }
+                    String fid = new Regex(filename, ",(\\d+)\\..+$").getMatch(0);
+                    if (fid == null) {
+                        fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
                     }
                     final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
                     String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
@@ -203,10 +207,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     String ext = null;
-                    String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction").getMatch(0);
-                    if (filename == null) {
-                        filename = url_filename;
-                    }
+
                     final String finfoName;
                     if (finfo.getMatch(0) != null && finfo.getMatch(1) != null) {
                         finfoName = Encoding.htmlDecode(finfo.getMatch(0)).trim() + Encoding.htmlDecode(finfo.getMatch(1)).trim();
@@ -245,7 +246,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     dl.setProperty("pass", passCode);
 
                     dl.setContentUrl(content_url);
-                    dl.setLinkID(fid);
+                    dl.setLinkID(getHost() + "://" + fid);
 
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
