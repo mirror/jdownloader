@@ -40,16 +40,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" })
 public class MinhatecaComBr extends PluginForHost {
 
     @Override
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        } else {
+            return downloadLink.getStringProperty("mainlink", null);
+        }
     }
 
     public MinhatecaComBr(PluginWrapper wrapper) {

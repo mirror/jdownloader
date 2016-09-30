@@ -50,8 +50,8 @@ public class SuperdownComBr extends antiDDoSForHost {
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     private static Object                                  LOCK               = new Object();
-    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "Bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "Letitbit", "letitbit.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "Megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" },
-            { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
+    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "Bitshare", "bitshare.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "Letitbit", "letitbit.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "Megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "novafile", "novafile.com" },
+            { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -189,7 +189,6 @@ public class SuperdownComBr extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -205,14 +204,13 @@ public class SuperdownComBr extends antiDDoSForHost {
                 }
             }
         }
-
         showMessage(link, "Task 1: Generating Link");
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
-            getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=0." + System.currentTimeMillis());
+            getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&rnd=0." + System.currentTimeMillis());
             dllink = br.getRegex("(https?://[^<>\"]*?)\\|").getMatch(0);
             if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade\\. Efetue o login novamente\\.")) {
                 account.setProperty("cookies", Property.NULL);
@@ -251,7 +249,7 @@ public class SuperdownComBr extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (!con.isOK() || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
