@@ -10,6 +10,16 @@ import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.FilePackageView.PluginState;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -34,16 +44,6 @@ import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.FilePackageView.PluginState;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
@@ -277,7 +277,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     columnHelper.tooltip = null;
                     return;
                 }
-                ExtractionStatus extractionStatus = link.getExtractionStatus();
+                final ExtractionStatus extractionStatus = link.getExtractionStatus();
                 if (extractionStatus != null) {
                     switch (extractionStatus) {
                     case ERROR:
@@ -286,12 +286,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     case ERROR_NOT_ENOUGH_SPACE:
                     case ERRROR_FILE_NOT_FOUND:
                         columnHelper.icon = trueIconExtractedFailed;
-                        columnHelper.string = extractionStatus.getExplanation();
+                        columnHelper.string = extractionStatus.getExplanation() + "-" + finalLinkState.getExplanation(this, link);
                         columnHelper.tooltip = null;
                         return;
                     case SUCCESSFUL:
                         columnHelper.icon = trueIconExtracted;
-                        columnHelper.string = extractionStatus.getExplanation();
+                        columnHelper.string = extractionStatus.getExplanation() + "-" + finalLinkState.getExplanation(this, link);
                         columnHelper.tooltip = null;
                         return;
                     case RUNNING:
