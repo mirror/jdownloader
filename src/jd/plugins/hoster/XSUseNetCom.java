@@ -1,22 +1,36 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.controlling.proxy.ProxyController;
 import jd.http.Cookies;
+import jd.http.SocketConnectionFactory;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.appwork.utils.net.usenet.InvalidAuthException;
+import org.appwork.utils.net.usenet.SimpleUseNet;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForPasswordDialog;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -37,9 +51,16 @@ public class XSUseNetCom extends UseNet {
 
     private final String USENET_USERNAME = "USENET_USERNAME";
 
+    private final String USENET_PASSWORD = "USENET_PASSWORD";
+
     @Override
     protected String getUsername(Account account) {
         return account.getStringProperty(USENET_USERNAME, account.getUser());
+    }
+
+    @Override
+    protected String getPassword(Account account) {
+        return account.getStringProperty(USENET_PASSWORD, account.getUser());
     }
 
     @Override
@@ -47,8 +68,7 @@ public class XSUseNetCom extends UseNet {
         final UsenetServer ret = super.getUsenetServer(account);
         final AccountInfo ai = account.getAccountInfo();
         if (account.getMaxSimultanDownloads() == 5 || (ai != null && StringUtils.contains(ai.getStatus(), "free"))) {
-            // ssl is not supported for free accounts
-            return getAvailableUsenetServer().get(0);
+            return new UsenetServer("free.xsusenet.com", 119);
         } else {
             return ret;
         }
@@ -146,7 +166,27 @@ public class XSUseNetCom extends UseNet {
                             }
                         }
                         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-                        return ai;
+                        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+                        try {
+                            loginUseNet(account);
+                            return ai;
+                        } catch (InvalidAuthException e) {
+                            logger.log(e);
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account:" + getUsername(account), getHost(), "https://www.xsusenet.com/", true);
+                            final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog("Please enter your XSUsenet Usenet Password", dummyLink));
+                            if (handle.getCloseReason() == CloseReason.OK) {
+                                final String password = handle.getText();
+                                if (StringUtils.isNotEmpty(password)) {
+                                    account.setProperty(USENET_PASSWORD, password);
+                                    try {
+                                        loginUseNet(account);
+                                        return ai;
+                                    } catch (InvalidAuthException e2) {
+                                        logger.log(e2);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -154,8 +194,37 @@ public class XSUseNetCom extends UseNet {
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.clearCookies("");
+                account.removeProperty(USENET_PASSWORD);
             }
             throw e;
+        }
+    }
+
+    public void loginUseNet(Account account) throws Exception, InvalidAuthException {
+        final UsenetServer server = getUsenetServer(account);
+        final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
+        final List<HTTPProxy> proxies = selectProxies(url);
+        final HTTPProxy proxy = proxies.get(0);
+        final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
+            @Override
+            protected Socket createSocket() {
+                return SocketConnectionFactory.createSocket(getProxy());
+            }
+        };
+        try {
+            client.connect(server.getHost(), server.getPort(), server.isSSL(), getUsername(account), getPassword(account));
+        } catch (HTTPProxyException e) {
+            ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
+            throw e;
+        } finally {
+            try {
+                if (client.isConnected()) {
+                    client.quit();
+                } else {
+                    client.disconnect();
+                }
+            } catch (final IOException ignore) {
+            }
         }
     }
 
@@ -164,7 +233,6 @@ public class XSUseNetCom extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", false, 80, 119));
         ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", true, 563, 443));
-        // ret.addAll(UsenetServer.createServerList("free.xsusenet.com", false, 119));//free not supported
         return ret;
     }
 }
