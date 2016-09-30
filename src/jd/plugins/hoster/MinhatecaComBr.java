@@ -53,6 +53,10 @@ public class MinhatecaComBr extends PluginForHost {
         if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
             return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         } else {
+            final String contentURL = downloadLink.getContentUrl();
+            if (contentURL != null) {
+                return contentURL;
+            }
             return downloadLink.getStringProperty("mainlink", null);
         }
     }
