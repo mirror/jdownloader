@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smotri.com" }, urls = { "http://(www\\.)?smotri\\.com/video/view/\\?id=v[a-z0-9]+" })
 public class SmotriCom extends PluginForHost {
@@ -74,7 +75,8 @@ public class SmotriCom extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("\"_vidURL_mp4\":\"(http[^<>\"]*?)\"").getMatch(0);
+        // dllink = br.getRegex("\"_vidURL_mp4\":\"(http[^<>\"]*?)\"").getMatch(0);
+        dllink = PluginJSonUtils.getJsonValue(br, "_vidURL_mp4");
         if (dllink == null) {
             dllink = br.getRegex("\"_vidURL\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
