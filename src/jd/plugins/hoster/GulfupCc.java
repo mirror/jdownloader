@@ -54,7 +54,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gulfup.cc" }, urls = { "https?://(www\\.)?gulfup\\.cc/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gulfup.cc" }, urls = { "https?://(www\\.)?(gulfup\\.cc|gulf4up\\.com)/(?:embed\\-)?[a-z0-9]{12}" })
 public class GulfupCc extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -63,11 +63,11 @@ public class GulfupCc extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://gulfup.cc";
+    private static final String            COOKIE_HOST                     = "http://gulf4up.com";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(gulfup\\.cc)";
+    private static final String            DOMAINS                         = "(gulf4up\\.com)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
