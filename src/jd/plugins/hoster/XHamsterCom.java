@@ -25,9 +25,6 @@ import java.util.Random;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,6 +50,9 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" })
 public class XHamsterCom extends PluginForHost {
@@ -481,7 +481,7 @@ public class XHamsterCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.getPage("https://xhamster.com/login.php");
                 final Form login = br.getFormbyProperty("name", "loginForm");
                 if (login == null) {
