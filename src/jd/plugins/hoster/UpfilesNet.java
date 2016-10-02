@@ -19,6 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,10 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfiles.net" }, urls = { "https?://(?:www\\.)?upfiles\\.net/f/[a-z0-9]+(?:[^/]+)?" })
 public class UpfilesNet extends PluginForHost {
@@ -66,6 +66,7 @@ public class UpfilesNet extends PluginForHost {
     private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
     private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final String        ACCOUNT_DAILY_LIMIT          = "30GB";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -175,18 +176,22 @@ public class UpfilesNet extends PluginForHost {
         return dllink;
     }
 
-    private String getDllinkPremium() throws PluginException {
+    private String getDllinkPremium(String downloadID) throws PluginException {
         final String token = PluginJSonUtils.getJsonValue(this.br, "token");
         final String ip = PluginJSonUtils.getJsonValue(this.br, "ip");
         if (token == null || token.equals("") || ip == null || ip.equals("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String dllink = "http://" + ip + "/vd/" + token + "?forced=false";
+        final String dllink = "http://" + ip + "/vd/" + token + downloadID;
         return dllink;
     }
 
     private String getDownloadAction() {
         return this.br.getRegex("(/queue/[a-f0-9\\-]+)").getMatch(0);
+    }
+
+    private String getDownloadID() {
+        return this.br.getRegex("window\\.location\\.href = 'http://' \\+ r\\.ip \\+ '/vd/' \\+ r\\.token \\+ '/([a-f0-9\\-]+)';").getMatch(0);
     }
 
     @Override
@@ -283,6 +288,11 @@ public class UpfilesNet extends PluginForHost {
             /* free accounts still have captcha */
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
+        } else {
+            br.getPage("https://upfiles.net/profile/used-transfer");
+            String transferUsed = this.br.getRegex("(-?\\d+?\\.*?\\d+?[MG]B)").getMatch(0);
+            long transferLeft = SizeFormatter.getSize("30GB") - SizeFormatter.getSize(transferUsed);
+            ai.setTrafficLeft(transferLeft);
         }
         account.setValid(true);
         return ai;
@@ -300,13 +310,14 @@ public class UpfilesNet extends PluginForHost {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
                 dllink = getDownloadAction();
+                String downloadId = "/" + getDownloadID();
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.br.setFollowRedirects(false);
                 prepBRAjax();
                 this.br.postPage(dllink, "refPage=");
-                dllink = getDllinkPremium();
+                dllink = getDllinkPremium(downloadId);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
