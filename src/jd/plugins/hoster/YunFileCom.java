@@ -24,6 +24,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -42,9 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
@@ -120,7 +124,8 @@ public class YunFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br = new Browser();
-        // this.setBrowserExclusive();
+        // need to correct links that are added prior to fixing!
+        correctDownloadLink(link);
         prepBrowser(br);
         br.setFollowRedirects(true);
         final URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
@@ -166,9 +171,24 @@ public class YunFileCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(filename.trim());
+        link.setName(decode("111", filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    private String decode(final String key, final String data) throws IOException {
+        final String js1 = "function codeAndEncode(_key,_str) {\r\n\t var keyUnicodeSum = 0;\r\n\t var codedStr = \"\";\r\n\t for (j = 0; j < _key.length; j++) {\r\n\t\t  keyUnicodeSum += _key.charCodeAt(j);\r\n\t }\r\n\t for (i = 0; i < _str.length; i++) {\r\n\t\t  var _strXOR = _str.charCodeAt(i) ^ keyUnicodeSum;\r\n\t\t  codedStr += String.fromCharCode(_strXOR);\r\n\t }\r\n\t return codedStr;\r\n}";
+        final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        final Invocable inv = (Invocable) engine;
+        String result = null;
+        try {
+            engine.eval(js1);
+            result = (String) inv.invokeFunction("codeAndEncode", key, data);
+        } catch (final Throwable e) {
+            // e.printStackTrace();
+        }
+        return result;
     }
 
     @Override
