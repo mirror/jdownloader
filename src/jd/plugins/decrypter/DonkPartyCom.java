@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donkparty.com" }, urls = { "http://(www\\.)?donkparty\\.com/\\d+/.{1}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donkparty.com" }, urls = { "http://(www\\.)?donkparty\\.com/\\d+/.{1}" })
 public class DonkPartyCom extends PluginForDecrypt {
 
     public DonkPartyCom(PluginWrapper wrapper) {
@@ -55,13 +55,21 @@ public class DonkPartyCom extends PluginForDecrypt {
         }
         String filename = br.getRegex("<span style=\"font\\-weight: bold; font\\-size: 18px;\">(.*?)</span><br").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- Donk Party</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) (free sex video)? ?\\- Donk\\s*Party</title>").getMatch(0);
         }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         filename = filename.trim();
+        String sources = br.getRegex("sources\":\\[\\{\"src\":\"(.*?)\"").getMatch(0);
+        if (sources != null) {
+            String finallink = sources;
+            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         tempID = br.getRegex("settings=(http://secret\\.shooshtime\\.com/playerConfig\\.php?.*?)\"").getMatch(0);
         if (tempID != null) {
             br.getPage(tempID);
