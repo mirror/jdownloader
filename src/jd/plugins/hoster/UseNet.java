@@ -42,7 +42,8 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }) public class UseNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" })
+public class UseNet extends PluginForHost {
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -76,6 +77,34 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
                 extend(this, getHost(), getAvailableUsenetServer(), getAccountJsonConfig(acc));
             }
         };
+    }
+
+    protected void verifyUseNetLogins(Account account) throws Exception, InvalidAuthException {
+        final UsenetServer server = getUsenetServer(account);
+        final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
+        final List<HTTPProxy> proxies = selectProxies(url);
+        final HTTPProxy proxy = proxies.get(0);
+        final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
+            @Override
+            protected Socket createSocket() {
+                return SocketConnectionFactory.createSocket(getProxy());
+            }
+        };
+        try {
+            client.connect(server.getHost(), server.getPort(), server.isSSL(), getUsername(account), getPassword(account));
+        } catch (HTTPProxyException e) {
+            ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
+            throw e;
+        } finally {
+            try {
+                if (client.isConnected()) {
+                    client.quit();
+                } else {
+                    client.disconnect();
+                }
+            } catch (final IOException ignore) {
+            }
+        }
     }
 
     @Override

@@ -1,19 +1,13 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
-import java.io.IOException;
-import java.net.Socket;
-import java.net.URL;
 import java.util.Arrays;
-import java.util.List;
 
 import javax.swing.JLabel;
 import javax.swing.SpinnerNumberModel;
 
 import jd.PluginWrapper;
-import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
-import jd.http.SocketConnectionFactory;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DefaultEditAccountPanel;
@@ -27,10 +21,7 @@ import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
@@ -96,18 +87,8 @@ public class GenericUseNet extends UseNet {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        final UsenetServer server = getUsenetServer(account);
-        final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
-        final List<HTTPProxy> proxies = selectProxies(url);
-        final HTTPProxy proxy = proxies.get(0);
-        final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
-            @Override
-            protected Socket createSocket() {
-                return SocketConnectionFactory.createSocket(getProxy());
-            }
-        };
         try {
-            client.connect(server.getHost(), server.getPort(), server.isSSL(), getUsername(account), getPassword(account));
+            verifyUseNetLogins(account);
             final AccountInfo ai = new AccountInfo();
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             ai.setStatus("Generic usenet:maxDownloads(current)=" + account.getMaxSimultanDownloads());
@@ -115,18 +96,6 @@ public class GenericUseNet extends UseNet {
             return ai;
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } catch (HTTPProxyException e) {
-            ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
-            throw e;
-        } finally {
-            try {
-                if (client.isConnected()) {
-                    client.quit();
-                } else {
-                    client.disconnect();
-                }
-            } catch (final IOException ignore) {
-            }
         }
     }
 
