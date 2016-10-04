@@ -39,7 +39,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadysk.pl" }, urls = { "https?://(?:www\\.)?megadysk\\.pl/s/[A-Za-z0-9]+(?:/n/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megadysk.pl" }, urls = { "https?://(?:www\\.)?megadysk\\.pl/(f|s)/[A-Za-z0-9\\.]+(?:/n/[^/]+)?" })
 public class MegadyskPl extends PluginForHost {
 
     public MegadyskPl(PluginWrapper wrapper) {
@@ -116,6 +116,9 @@ public class MegadyskPl extends PluginForHost {
             List<Map<String, Object>> files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("files");
             if (files == null || files.size() == 0) {
                 files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("items");
+            }
+            if (files == null || files.size() == 0) {
+                files = (List<Map<String, Object>>) ((Map<String, Object>) app.get("folderView")).get("elements");
             }
             if (files.size() != 1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
