@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com|com\\.au|co\\.uk|fr)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com|com\\.au|co\\.uk|fr|ca)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" })
 public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     public AmazonCloudDecrypter(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
         parameter = param.toString();
 
         plain_folder_id = new Regex(parameter, "[\\?\\&]s=([A-Za-z0-9\\-_^&]+)").getMatch(0);
-        plain_domain = new Regex(parameter, "(amazon\\.(de|es|com|com\\.au|co\\.uk|fr))").getMatch(0);
+        plain_domain = new Regex(parameter, "(amazon\\.(de|es|com|com\\.au|co\\.uk|fr|ca))").getMatch(0);
         if (plain_folder_id == null) {
 
             // there are dummy ?md5=..&name=... links. see below
@@ -189,7 +189,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
