@@ -181,9 +181,12 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 }
                 for (final String lnkinfo : linkinfo) {
                     String url_filename = null;
-                    String content_url = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
+                    String content_url = new Regex(lnkinfo, "\"(/[^<>\"]*?)\" class=\"downloadAction").getMatch(0);
+                    if (content_url == null) {
+                        content_url = new Regex(lnkinfo, "\"(/[^<>\"]*?)\"").getMatch(0);
+                    }
                     if (content_url != null) {
-                        content_url = "http://minhateca.com.br" + content_url;
+                        content_url = br.getURL(content_url).toString();
                         url_filename = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
                     } else {
                         content_url = parameter;
