@@ -55,7 +55,7 @@ public class HashInfo {
     public static HashInfo parse(final String hash) {
         if (hash != null) {
             for (final TYPE type : TYPE.values()) {
-                if (type.size == hash.length()) {
+                if (type.getSize() == hash.length()) {
                     return new HashInfo(hash, type, true);
                 }
             }
