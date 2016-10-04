@@ -73,13 +73,16 @@ public class EfuktComDecrypter extends PluginForDecrypt {
             }
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            final String[] pics = br.getRegex("<a target=\"_blank\" href=\"(/content/[^<>\"]*?)\"").getColumn(0);
+            String[] pics = br.getRegex("<a target=\"_blank\" href=\"(/content/[^<>\"]*?)\"").getColumn(0);
+            if (pics == null || pics.length == 0) {
+                pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://cdn\\.efukt\\.com/[^\"<>]*)\"\\s*onerror=").getColumn(0);
+            }
             if (pics == null || pics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String pic : pics) {
-                final DownloadLink dl = createDownloadlink("directhttp://http://efukt.com" + pic);
+                final DownloadLink dl = createDownloadlink("directhttp://" + br.getURL(pic));
                 decryptedLinks.add(dl);
             }
             final FilePackage fp = FilePackage.getInstance();
