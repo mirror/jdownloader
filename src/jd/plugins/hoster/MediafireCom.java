@@ -49,13 +49,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
+import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" })
 public class MediafireCom extends PluginForHost {
 
     /** Settings stuff */
@@ -695,7 +696,7 @@ public class MediafireCom extends PluginForHost {
                             dl.setAvailableStatus(AvailableStatus.TRUE);
                             final String name = PluginJSonUtils.getJsonValue(result, "filename");
                             final String size = PluginJSonUtils.getJsonValue(result, "size");
-                            final String sha256 = PluginJSonUtils.getJsonValue(result, "hash");
+                            final String hash = PluginJSonUtils.getJsonValue(result, "hash");
                             final String privacy = PluginJSonUtils.getJsonValue(result, "privacy");
                             final String pass = PluginJSonUtils.getJsonValue(result, "password_protected");
                             if (StringUtils.isNotEmpty(name)) {
@@ -704,8 +705,8 @@ public class MediafireCom extends PluginForHost {
                             if (size != null && size.matches("^\\d+$")) {
                                 dl.setVerifiedFileSize(Long.parseLong(size));
                             }
-                            if (StringUtils.isNotEmpty(sha256)) {
-                                dl.setSha256Hash(sha256);
+                            if (StringUtils.isNotEmpty(hash)) {
+                                dl.setHashInfo(HashInfo.parse(hash));
                             }
                             if (privacy != null) {
                                 dl.setProperty("privacy", privacy);
