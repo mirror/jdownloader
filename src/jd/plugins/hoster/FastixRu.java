@@ -48,12 +48,12 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class FastixRu extends antiDDoSForHost {
 
     /** Using API: http://fastix.ru/apidoc */
     private final String                                   NOCHUNKS                     = "NOCHUNKS";
-    private final String                                   DOMAIN                       = "http://fastix.ru/api_v2/";
+    private final String                                   DOMAIN                       = "https://fastix.ru/api_v2/";
     private final String                                   NICE_HOST                    = "fastix.ru";
     private final String                                   NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
