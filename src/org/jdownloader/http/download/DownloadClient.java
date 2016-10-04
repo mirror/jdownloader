@@ -2,7 +2,6 @@ package org.jdownloader.http.download;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -156,14 +155,20 @@ public class DownloadClient {
         this.resumePosition = resumePosition;
     }
 
-    public void setOutputFile(File file) throws FileNotFoundException {
-        file.getParentFile().mkdirs();
-        BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file, true));
-        setResumePosition(file.length());
-        setOutputStream(outputStream);
+    public void setOutputFile(final File file) throws IOException {
+        setOutputStream(null);
+        if (file != null) {
+            file.getParentFile().mkdirs();
+            final BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file, true));
+            setOutputStream(outputStream);
+            setResumePosition(file.length());
+        }
     }
 
-    private void setOutputStream(OutputStream outputStream) {
+    private void setOutputStream(OutputStream outputStream) throws IOException {
+        if (this.outputStream != null) {
+            this.outputStream.close();
+        }
         this.outputStream = outputStream;
     }
 
