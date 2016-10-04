@@ -1,19 +1,18 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.controlling.proxy.ProxyController;
+import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.SocketConnectionFactory;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -22,13 +21,9 @@ import jd.plugins.PluginException;
 
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.usenet.InvalidAuthException;
-import org.appwork.utils.net.usenet.SimpleUseNet;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskForPasswordDialog;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
@@ -66,12 +61,25 @@ public class XSUseNetCom extends UseNet {
     @Override
     protected UsenetServer getUsenetServer(Account account) throws Exception {
         final UsenetServer ret = super.getUsenetServer(account);
-        final AccountInfo ai = account.getAccountInfo();
-        if (account.getMaxSimultanDownloads() == 5 || (ai != null && StringUtils.contains(ai.getStatus(), "free"))) {
-            return new UsenetServer("free.xsusenet.com", 119);
+        if (AccountType.FREE.equals(account.getType())) {
+            if (ret.getHost().startsWith("free")) {
+                return ret;
+            } else {
+                return new UsenetServer("free.xsusenet.com", 119);
+            }
         } else {
             return ret;
         }
+    }
+
+    private boolean containsSessionCookie(Browser br) {
+        final Cookies cookies = br.getCookies(getHost());
+        for (final Cookie cookie : cookies.getCookies()) {
+            if (cookie.getKey().startsWith("WHMCS") && !"deleted".equals(cookie.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -84,52 +92,55 @@ public class XSUseNetCom extends UseNet {
             Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://my.xsusenet.com/index.php");
-                login = br.getFormbyActionRegex("checklogin");
+                br.getPage("https://portal.xsusenet.com/clientarea.php");
+                login = br.getFormbyActionRegex("dologin");
                 if (login != null && login.containsHTML("name=\"username\"") && login.containsHTML("name=\"password\"")) {
                     br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                } else if (!containsSessionCookie(br)) {
                     br.getCookies(getHost()).clear();
                 } else {
-                    br.getPage("https://my.xsusenet.com/packages.php");
+                    br.getPage("https://portal.xsusenet.com/clientarea.php?action=services");
                 }
             }
-            if (br.getCookie(getHost(), "PHPSESSID") == null) {
+            if (!containsSessionCookie(br)) {
                 account.clearCookies("");
                 final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for xsusenet.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getPage("https://my.xsusenet.com/index.php");
-                login = br.getFormbyActionRegex("checklogin");
+                br.getPage("https://portal.xsusenet.com/clientarea.php");
+                login = br.getFormbyActionRegex("dologin");
                 login.put("username", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                login = br.getFormbyActionRegex("checklogin");
+                login = br.getFormbyActionRegex("dologin");
                 if (login != null && login.containsHTML("name=\"username\"") && login.containsHTML("name=\"password\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                } else if (!containsSessionCookie(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://my.xsusenet.com/packages.php")) {
-                br.getPage("https://my.xsusenet.com/packages.php");
+            if (!StringUtils.containsIgnoreCase(br.getURL(), "https://portal.xsusenet.com/clientarea.php?action=services")) {
+                br.getPage("https://portal.xsusenet.com/clientarea.php?action=services");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String[] ids = br.getRegex("<tr>(.*?)</tr>").getColumn(0);
+            final HashSet<String> idMap = new HashSet<String>();
+            final String[] ids = br.getRegex("clientarea\\.php\\?action=productdetails&amp;id=(\\d+)").getColumn(0);
             for (final String id : ids) {
-                if (StringUtils.containsIgnoreCase(id, "<td>active</td>") && StringUtils.contains(id, "Usenet")) {
-                    final String detailsID = new Regex(id, "details\\.php\\?id=(\\d+)").getMatch(0);
-                    if (detailsID != null) {
-                        br.getPage("https://my.xsusenet.com/details.php?id=" + detailsID);
-                        final String userName = br.getRegex("<li><strong>Usenet username</strong></li>.*?<li><strong>(.*?)</strong>").getMatch(0);
+                if (idMap.add(id)) {
+                    br.getPage("https://portal.xsusenet.com/clientarea.php?action=productdetails&id=" + id);
+                    final boolean isActive = br.containsHTML("product-status-text\">\\s*Active");
+                    if (isActive) {
+                        final boolean isFree = br.containsHTML("<h4>FREE</h4>") || br.containsHTML("free\\.xsusenet\\.com");
+                        final String userName = br.getRegex("<strong>Your Username</strong>.*?>\\s*(\\d+)\\s*<").getMatch(0);
                         if (userName == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else {
                             account.setProperty(USENET_USERNAME, userName.trim());
                         }
                         final String packageType = br.getRegex("<li>Package</li>.*?<li>(.*?)</li>").getMatch(0);
-                        if (packageType != null) {
+                        if (packageType != null && !isFree) {
+                            account.setType(Account.AccountType.PREMIUM);
                             ai.setStatus(packageType);
                             if (packageType.contains("200")) {
                                 // 200 Mbit package: 50 connection
@@ -154,12 +165,12 @@ public class XSUseNetCom extends UseNet {
                                 account.setMaxSimultanDownloads(5);
                             }
                         } else {
-                            ai.setStatus("Unknown packageType! Please contact JDownloader support at support@jdownloader.org");
                             // Free account: 5 connections
+                            account.setType(Account.AccountType.FREE);
                             account.setMaxSimultanDownloads(5);
                         }
                         final String endDate = br.getRegex("<li>End date</li>.*?<li>(\\d+-\\d+-\\d+)</li>").getMatch(0);
-                        if (endDate != null) {
+                        if (endDate != null && !isFree) {
                             final long date = TimeFormatter.getMilliSeconds(endDate, "yyyy'-'MM'-'dd", null);
                             if (date > 0) {
                                 ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
@@ -168,7 +179,7 @@ public class XSUseNetCom extends UseNet {
                         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                         account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
                         try {
-                            loginUseNet(account);
+                            verifyUseNetLogins(account);
                             return ai;
                         } catch (InvalidAuthException e) {
                             logger.log(e);
@@ -179,7 +190,7 @@ public class XSUseNetCom extends UseNet {
                                 if (StringUtils.isNotEmpty(password)) {
                                     account.setProperty(USENET_PASSWORD, password);
                                     try {
-                                        loginUseNet(account);
+                                        verifyUseNetLogins(account);
                                         return ai;
                                     } catch (InvalidAuthException e2) {
                                         logger.log(e2);
@@ -200,39 +211,12 @@ public class XSUseNetCom extends UseNet {
         }
     }
 
-    public void loginUseNet(Account account) throws Exception, InvalidAuthException {
-        final UsenetServer server = getUsenetServer(account);
-        final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
-        final List<HTTPProxy> proxies = selectProxies(url);
-        final HTTPProxy proxy = proxies.get(0);
-        final SimpleUseNet client = new SimpleUseNet(proxy, getLogger()) {
-            @Override
-            protected Socket createSocket() {
-                return SocketConnectionFactory.createSocket(getProxy());
-            }
-        };
-        try {
-            client.connect(server.getHost(), server.getPort(), server.isSSL(), getUsername(account), getPassword(account));
-        } catch (HTTPProxyException e) {
-            ProxyController.getInstance().reportHTTPProxyException(proxy, url, e);
-            throw e;
-        } finally {
-            try {
-                if (client.isConnected()) {
-                    client.quit();
-                } else {
-                    client.disconnect();
-                }
-            } catch (final IOException ignore) {
-            }
-        }
-    }
-
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", false, 80, 119));
         ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", true, 563, 443));
+        ret.addAll(UsenetServer.createServerList("free.xsusenet.com ", false, 119, 443, 23, 80, 81, 8080, 2323, 8181));
         return ret;
     }
 }
