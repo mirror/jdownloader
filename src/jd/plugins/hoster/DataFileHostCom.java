@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,6 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "https?://((www\\.)?datafilehost\\.com/(download\\-[a-z0-9]+\\.html|d/[a-z0-9]+)|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" })
 public class DataFileHostCom extends PluginForHost {
@@ -65,6 +65,10 @@ public class DataFileHostCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0");
+        br.getHeaders().put("Cache-Control", "");
+        br.getHeaders().put("Accept-Language", "de,de-DE;q=0.7,en;q=0.3");
+        br.getHeaders().put("Connection", "keep-alive");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"alert alert\\-danger\"") || this.br.containsHTML("The file that you are looking for is either|an invalid file name|has been removed due to|Please check the file name again and|>The file you requested \\(id [a-z0-9]+\\) does not exist.")) {
@@ -94,9 +98,12 @@ public class DataFileHostCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.cloneBrowser().openHeadConnection("//img.datafilehost.com/bg.jpg").disconnect();
+        br.cloneBrowser().openHeadConnection("//img.datafilehost.com/download.png").disconnect();
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        final String dllink = "https://www.datafilehost.com/download/" + fid;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "progress=1", true, 1);
+        final String dllink = br.getURL("/get.php?file=" + fid).toString();
+        br.setRequest(null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getHttpConnection().getResponseCode() == 404) {
