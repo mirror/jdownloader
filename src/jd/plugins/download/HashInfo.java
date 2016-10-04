@@ -52,6 +52,17 @@ public class HashInfo {
         return getType() + "|" + (isTrustworthy() ? "1" : "0") + "|" + getHash();
     }
 
+    public static HashInfo parse(final String hash) {
+        if (hash != null) {
+            for (final TYPE type : TYPE.values()) {
+                if (type.size == hash.length()) {
+                    return new HashInfo(hash, type, true);
+                }
+            }
+        }
+        return null;
+    }
+
     public static HashInfo importFromString(final String hashInfo) {
         if (hashInfo != null) {
             try {
