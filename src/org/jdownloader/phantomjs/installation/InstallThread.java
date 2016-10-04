@@ -2,6 +2,7 @@ package org.jdownloader.phantomjs.installation;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 
@@ -68,6 +69,14 @@ public class InstallThread extends Thread {
 
     private DownloadClient   br;
 
+    private boolean          abort = false;
+
+    @Override
+    public void interrupt() {
+        abort = true;
+        super.interrupt();
+    }
+
     public InstallThread(String task) {
     }
 
@@ -132,31 +141,40 @@ public class InstallThread extends Thread {
             file.getParentFile().mkdirs();
             final File extractTo = new File(file.getAbsolutePath() + "_extracted");
             try {
-                br.setOutputFile(file);
-                boolean tryIt = true;
-                boolean tryToResume = file.exists();
-                downloading = true;
-                StatsManager.I().track("installing/downloadstart", CollectionName.PJS);
-                while (tryToResume || tryIt) {
-                    try {
-                        tryIt = false;
-                        if (!file.exists() || file.length() == 0) {
-                            tryToResume = false;
-                        }
-                        br.download(url);
-                        break;
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                        if (tryToResume) {
-                            tryToResume = true;
+                if (!file.exists() || file.length() != size || !sha256.equalsIgnoreCase(Hash.getSHA256(file))) {
+                    br.setOutputFile(file);
+                    boolean tryIt = true;
+                    boolean tryToResume = file.exists();
+                    downloading = true;
+                    StatsManager.I().track("installing/downloadstart", CollectionName.PJS);
+                    while (tryToResume || tryIt && (!Thread.interrupted() && !abort)) {
+                        try {
+                            tryIt = false;
+                            if (!file.exists() || file.length() == 0) {
+                                tryToResume = false;
+                            }
+                            br.download(url);
+                            break;
+                        } catch (Throwable e) {
+                            LogController.CL(false).log(e);
                             br.getOutputStream().close();
-                            file.delete();
-                            br.setOutputFile(file);
+                            if (tryToResume) {
+                                tryToResume = true;
+                                file.delete();
+                                br.setOutputFile(file);
+                            }
                         }
                     }
                 }
             } finally {
                 downloading = false;
+                try {
+                    final OutputStream os = br.getOutputStream();
+                    if (os != null) {
+                        os.close();
+                    }
+                } catch (final Throwable ignore) {
+                }
             }
             StatsManager.I().track("installing/downloadend", CollectionName.PJS);
             try {
@@ -337,6 +355,10 @@ public class InstallThread extends Thread {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
             e.printStackTrace();
+        } finally {
+            if (thread != null && thread.isAlive()) {
+                thread.interrupt();
+            }
         }
     }
 
