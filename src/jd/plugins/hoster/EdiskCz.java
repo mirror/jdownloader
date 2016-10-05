@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" })
 public class EdiskCz extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.edisk.cz/";
@@ -71,7 +71,7 @@ public class EdiskCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("id=\"error_msg\"")) {
+        if (br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<span class=\"fl\" title=\"([^<>\"]*?)\"").getMatch(0);
