@@ -81,6 +81,10 @@ public class MegaDebridEu extends PluginForHost {
         final String daysLeft = getJson("vip_end");
         if (daysLeft != null && !"0".equals(daysLeft)) {
             ac.setValidUntil(Long.parseLong(daysLeft) * 1000l);
+        } else if ("0".equals(daysLeft)) {
+            ac.setExpired(true);
+            ac.setStatus("No vip? Expired?");
+            return ac;
         } else {
             ac.setStatus("Can not determine account expire time!");
             logger.severe("Error, can not parse left days. API response:\r\n\r\n" + br.toString());
