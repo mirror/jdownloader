@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktComDecrypter extends PluginForDecrypt {
 
     public EfuktComDecrypter(PluginWrapper wrapper) {
@@ -51,6 +51,7 @@ public class EfuktComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else if (redirect != null) {
             br.getPage(redirect);
+            br.followRedirect(true);
         }
         final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
         if (br.getURL().equals("http://efukt.com/")) {
@@ -69,6 +70,9 @@ public class EfuktComDecrypter extends PluginForDecrypt {
                 title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)").getMatch(0);
             }
             if (title == null) {
+                title = br.getRegex("<title>eFukt.com\\s*\\|\\s*(.*?)\\s*\\|").getMatch(0);
+            }
+            if (title == null) {
                 title = new Regex(parameter, "efukt\\.com/(\\d+[A-Za-z0-9_\\-]+)\\.html").getMatch(0);
             }
             title = Encoding.htmlDecode(title);
@@ -76,6 +80,9 @@ public class EfuktComDecrypter extends PluginForDecrypt {
             String[] pics = br.getRegex("<a target=\"_blank\" href=\"(/content/[^<>\"]*?)\"").getColumn(0);
             if (pics == null || pics.length == 0) {
                 pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://cdn\\.efukt\\.com/[^\"<>]*)\"\\s*onerror=").getColumn(0);
+            }
+            if (pics == null || pics.length == 0) {
+                pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://cdn\\.efukt\\.com/[^\"<>]*\\.(gif|webm))\"\\s*alt=\".*?\"\\s*class=\"image_content\"").getColumn(0);
             }
             if (pics == null || pics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
