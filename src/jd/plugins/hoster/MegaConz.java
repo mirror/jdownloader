@@ -691,6 +691,7 @@ public class MegaConz extends PluginForHost {
                 link.setProperty("usedPlugin", getHost());
                 if (dl.startDownload()) {
                     if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
+
                         decrypt(encryptionDone, link, keyString);
                     }
                 }
