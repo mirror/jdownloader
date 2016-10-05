@@ -785,14 +785,16 @@ public class Multi extends IExtraction {
         }
     }
 
-    private SevenZipArchiveWrapper createSevenZipArchiveWrapper(final Object o) throws SevenZipException {
+    private SevenZipArchiveWrapper createSevenZipArchiveWrapper(ArchiveFormat format, IInStream inStream, IArchiveOpenCallback callBackformat) throws SevenZipException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         try {
-            final Method getArchiveFormat = o.getClass().getMethod("getArchiveFormat");
-            final Method getNumberOfItems = o.getClass().getMethod("getNumberOfItems");
-            final Method getArchiveProperty = o.getClass().getMethod("getArchiveProperty", new Class[] { PropID.class });
-            final Method getProperty = o.getClass().getMethod("getProperty", new Class[] { int.class, PropID.class });
-            final Method getSimpleInterface = o.getClass().getMethod("getSimpleInterface");
-            final Method close = o.getClass().getMethod("close");
+            final Method createArchive = SevenZip.class.getMethod("openInArchive", new Class<?>[] { ArchiveFormat.class, IInStream.class, IArchiveOpenCallback.class });
+            final Object archive = createArchive.invoke(null, new Object[] { format, inStream, callBackformat });
+            final Method getArchiveFormat = archive.getClass().getMethod("getArchiveFormat");
+            final Method getNumberOfItems = archive.getClass().getMethod("getNumberOfItems");
+            final Method getArchiveProperty = archive.getClass().getMethod("getArchiveProperty", new Class[] { PropID.class });
+            final Method getProperty = archive.getClass().getMethod("getProperty", new Class[] { int.class, PropID.class });
+            final Method getSimpleInterface = archive.getClass().getMethod("getSimpleInterface");
+            final Method close = archive.getClass().getMethod("close");
             final Object propIDLastWriteTime;
             PropID propID = null;
             try {
@@ -807,7 +809,7 @@ public class Multi extends IExtraction {
             }
             propIDLastWriteTime = propID;
             final boolean slowDownWorkaroundNeeded = propID != null && !"LAST_MODIFICATION_TIME".equals(propID.name());
-            final Method extract = o.getClass().getMethod("extract", new Class[] { int[].class, boolean.class, IArchiveExtractCallback.class });
+            final Method extract = archive.getClass().getMethod("extract", new Class[] { int[].class, boolean.class, IArchiveExtractCallback.class });
 
             return new SevenZipArchiveWrapper() {
 
@@ -835,7 +837,7 @@ public class Multi extends IExtraction {
 
                 protected Object invoke(Method method, Object... args) {
                     try {
-                        return method.invoke(o, args);
+                        return method.invoke(archive, args);
                     } catch (IllegalAccessException e) {
                         logger.log(e);
                     } catch (IllegalArgumentException e) {
@@ -905,8 +907,8 @@ public class Multi extends IExtraction {
                     if (closedFlag.compareAndSet(false, true)) {
                         // it is important to call close only once, because new sevenzipjbinding will crash on second close call
                         try {
-                            if (o instanceof Closeable) {
-                                ((Closeable) o).close();
+                            if (archive instanceof Closeable) {
+                                ((Closeable) archive).close();
                             } else {
                                 invoke(close);
                             }
@@ -1001,7 +1003,7 @@ public class Multi extends IExtraction {
                 logger.info("Failed to open Stream: " + firstArchiveFile);
             }
             if (inStream != null && closable != null) {
-                inArchive = createSevenZipArchiveWrapper(SevenZip.openInArchive(format, inStream, callBack));
+                inArchive = createSevenZipArchiveWrapper(format, inStream, callBack);
             } else {
                 return false;
             }
@@ -1263,7 +1265,7 @@ public class Multi extends IExtraction {
                 }
             }
             if (inStream != null && closable != null) {
-                inArchive = createSevenZipArchiveWrapper(SevenZip.openInArchive(format, inStream, callBack));
+                inArchive = createSevenZipArchiveWrapper(format, inStream, callBack);
             } else {
                 return false;
             }
