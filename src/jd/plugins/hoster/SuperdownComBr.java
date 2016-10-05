@@ -210,11 +210,21 @@ public class SuperdownComBr extends antiDDoSForHost {
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
-            getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&rnd=0." + System.currentTimeMillis());
+            final String passCode = link.getStringProperty("pass", null);
+            final String passwordParam;
+            if (StringUtils.isNotEmpty(passCode)) {
+                passwordParam = "&password=" + Encoding.urlEncode(passCode);
+            } else {
+                passwordParam = "";
+            }
+            getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&rnd=0." + System.currentTimeMillis() + passwordParam);
             dllink = br.getRegex("(https?://[^<>\"]*?)\\|").getMatch(0);
             if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade\\. Efetue o login novamente\\.")) {
                 account.setProperty("cookies", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("Password Request")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password Request");
             }
             if (dllink == null && br.containsHTML("não é um servidor suportado pelo")) {
                 // host has been picked up due to generic supported host adding (matches)

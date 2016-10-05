@@ -1128,44 +1128,57 @@ public class Multi extends IExtraction {
         return crack;
     }
 
+    private boolean isRAR5Supported() {
+        try {
+            final Method method = SevenZip.class.getMethod("getSevenZipJBindingVersion");
+            return method.invoke(null, new Object[0]) != null;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
     @Override
     public boolean prepare() throws ExtractionException {
         final Archive archive = getExtractionController().getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         try {
             if (ArchiveFormat.RAR == archive.getArchiveType().getArchiveFormat()) {
-                /* check for unsupported rar5 */
                 try {
                     final String signatureString = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()), 14);
                     if (signatureString.length() >= 16 && StringUtils.startsWithCaseInsensitive(signatureString, "526172211a070100")) {
-                        logger.severe("RAR5 is not supported:" + signatureString);
-                        return false;
+                        /* check for rar5 */
+                        if (isRAR5Supported()) {
+                            logger.severe("RAR5 is supported:" + signatureString);
+                        } else {
+                            logger.severe("RAR5 is not supported:" + signatureString);
+                            return false;
+                        }
                     }
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
-                        final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
+                        // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
 
                         final int headerByte1 = Integer.parseInt(headerBitFlags1, 16);
                         // final int headerByte2 = Integer.parseInt(headerBitFlags2, 16);

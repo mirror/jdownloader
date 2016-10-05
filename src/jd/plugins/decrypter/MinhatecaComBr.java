@@ -52,6 +52,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
         String passCode = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setAllowedResponseCodes(new int[] { 401 });
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
