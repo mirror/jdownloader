@@ -17,10 +17,13 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import net.sf.sevenzipjbinding.ArchiveFormat;
 
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.ArchiveFile.ArchiveID;
@@ -189,6 +192,20 @@ public class Archive {
             return getParentArchive().getRootArchive();
         }
         return this;
+    }
+
+    private volatile ArchiveFormat cachedArchiveFormat = null;
+
+    public ArchiveFormat getArchiveFormat() throws IOException {
+        final ArchiveType archiveType = getArchiveType();
+        if (archiveType != null) {
+            if (cachedArchiveFormat == null) {
+                cachedArchiveFormat = archiveType.getArchiveFormat(this);
+            }
+            return cachedArchiveFormat;
+        } else {
+            return null;
+        }
     }
 
     public boolean isProtected() {
