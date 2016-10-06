@@ -30,11 +30,11 @@ public enum FinalLinkState {
 
     PLUGIN_DEFECT(_JDT.T.downloadlink_status_error_defect(), IconKey.ICON_FALSE);
 
-    private final String exp;
-    private String       iconKey;
-    private AbstractIcon icon16;
+    private final String       exp;
+    private final String       iconKey;
+    private final AbstractIcon icon16;
 
-    public String getIconKey() {
+    public final String getIconKey() {
         return iconKey;
     }
 
@@ -44,7 +44,7 @@ public enum FinalLinkState {
         icon16 = new AbstractIcon(iconKey, 16);
     }
 
-    public Icon getIcon(int size) {
+    public final Icon getIcon(int size) {
         switch (size) {
         case 16:
             return icon16;
@@ -52,7 +52,7 @@ public enum FinalLinkState {
         return new AbstractIcon(iconKey, 16);
     }
 
-    public String getExplanation(Object requestor, DownloadLink link) {
+    public final String getExplanation(Object requestor, DownloadLink link) {
         if (this == FAILED_FATAL && link != null) {
             String ret = link.getStringProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, null);
             if (ret != null) {
@@ -62,7 +62,7 @@ public enum FinalLinkState {
         return exp;
     }
 
-    public boolean isFinished() {
+    public final boolean isFinished() {
         switch (this) {
         case FINISHED:
         case FINISHED_MIRROR:
@@ -77,11 +77,11 @@ public enum FinalLinkState {
 
     }
 
-    public boolean isFailed() {
+    public final boolean isFailed() {
         return !isFinished();
     }
 
-    public boolean isFailedHash() {
+    public final boolean isFailedHash() {
         switch (this) {
         case FAILED_CRC32:
         case FAILED_MD5:
@@ -93,11 +93,11 @@ public enum FinalLinkState {
         }
     }
 
-    public static boolean CheckFinished(FinalLinkState state) {
+    public final static boolean CheckFinished(FinalLinkState state) {
         return state != null && state.isFinished();
     }
 
-    public static boolean CheckFailed(FinalLinkState state) {
+    public final static boolean CheckFailed(FinalLinkState state) {
         return state != null && state.isFailed();
     }
 

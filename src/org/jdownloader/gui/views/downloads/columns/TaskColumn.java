@@ -79,8 +79,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     private final Icon         trueIconExtracted;
 
-    private final Icon         trueIconExtractedFailed;
-
     private final Icon         extracting;
 
     private final ColumnHelper columnHelper     = new ColumnHelper();
@@ -91,6 +89,20 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     private final String       startingString;
 
     private final Icon         startingIcon;
+
+    private final Icon         okIconExtracted;
+
+    private final Icon         trueOrangaIconExtracted;
+
+    private final Icon         falseIconExtracted;
+
+    private final Icon         trueIconExtractedFailed;
+
+    private final Icon         okIconExtractedFailed;
+
+    private final Icon         trueOrangaIconExtractedFailed;
+
+    private final Icon         falseIconExtractedFailed;
 
     @Override
     public int getDefaultWidth() {
@@ -115,7 +127,14 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
 
         trueIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
+        falseIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_FALSE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
+        okIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_OK, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
+        trueOrangaIconExtracted = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE_ORANGE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_OK, 16), 16, 0);
+
         trueIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
+        falseIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_FALSE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
+        okIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_OK, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
+        trueOrangaIconExtractedFailed = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_TRUE_ORANGE, 16)).add(new AbstractIcon(IconKey.ICON_EXTRACT_ERROR, 16), 16, 0);
 
         startingString = _GUI.T.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
@@ -241,7 +260,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             return new MultiLineLabelTooltip(lbls);
         }
         return super.createToolTip(position, value);
-
     }
 
     public void fillColumnHelper(ColumnHelper columnHelper, AbstractNode value) {
@@ -279,18 +297,39 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 }
                 final ExtractionStatus extractionStatus = link.getExtractionStatus();
                 if (extractionStatus != null) {
+                    final String iconKey = finalLinkState.getIconKey();
                     switch (extractionStatus) {
                     case ERROR:
                     case ERROR_PW:
                     case ERROR_CRC:
                     case ERROR_NOT_ENOUGH_SPACE:
                     case ERRROR_FILE_NOT_FOUND:
-                        columnHelper.icon = trueIconExtractedFailed;
+                        if (IconKey.ICON_FALSE.equals(iconKey)) {
+                            columnHelper.icon = falseIconExtractedFailed;
+                        } else if (IconKey.ICON_TRUE.equals(iconKey)) {
+                            columnHelper.icon = trueIconExtractedFailed;
+                        } else if (IconKey.ICON_OK.equals(iconKey)) {
+                            columnHelper.icon = okIconExtractedFailed;
+                        } else if (IconKey.ICON_TRUE_ORANGE.equals(iconKey)) {
+                            columnHelper.icon = trueOrangaIconExtractedFailed;
+                        } else {
+                            columnHelper.icon = trueIconExtractedFailed;
+                        }
                         columnHelper.string = extractionStatus.getExplanation() + "-" + finalLinkState.getExplanation(this, link);
                         columnHelper.tooltip = null;
                         return;
                     case SUCCESSFUL:
-                        columnHelper.icon = trueIconExtracted;
+                        if (IconKey.ICON_FALSE.equals(iconKey)) {
+                            columnHelper.icon = falseIconExtracted;
+                        } else if (IconKey.ICON_TRUE.equals(iconKey)) {
+                            columnHelper.icon = trueIconExtracted;
+                        } else if (IconKey.ICON_OK.equals(iconKey)) {
+                            columnHelper.icon = okIconExtracted;
+                        } else if (IconKey.ICON_TRUE_ORANGE.equals(iconKey)) {
+                            columnHelper.icon = trueOrangaIconExtracted;
+                        } else {
+                            columnHelper.icon = trueIconExtracted;
+                        }
                         columnHelper.string = extractionStatus.getExplanation() + "-" + finalLinkState.getExplanation(this, link);
                         columnHelper.tooltip = null;
                         return;
