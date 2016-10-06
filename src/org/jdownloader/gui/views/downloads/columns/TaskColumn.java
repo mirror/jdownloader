@@ -122,6 +122,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     public TaskColumn() {
         super(_GUI.T.StatusColumn_StatusColumn2());
+
         this.trueIcon = NewTheme.I().getIcon(IconKey.ICON_TRUE, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 16);
         startingIcon = NewTheme.I().getIcon(IconKey.ICON_RUN, 16);
