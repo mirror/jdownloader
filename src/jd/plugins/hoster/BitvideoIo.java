@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
@@ -86,6 +86,14 @@ public class BitvideoIo extends PluginForHost {
                 filename = url_filename;
             }
         }
+        if (filename.length() > 246) {
+            int dash = filename.indexOf('-', 234);
+            if (dash >= 0) {
+                filename = filename.substring(0, dash);
+            } else {
+                filename = filename.substring(0, 246);
+            }
+        }
         if (this.br.containsHTML(html_video_encoding)) {
             return AvailableStatus.TRUE;
         }
@@ -112,7 +120,8 @@ public class BitvideoIo extends PluginForHost {
                 entries = (LinkedHashMap<String, Object>) videoo;
                 tempquality = (String) entries.get("label");
                 dllink_temp = (String) entries.get("file");
-                if ("Source File".equalsIgnoreCase(tempquality)) {
+                // if ("Source( File)?".equalsIgnoreCase(tempquality)) {
+                if (tempquality.contains("Source")) {
                     /* That IS the highest quality */
                     dllink = dllink_temp;
                     break;
