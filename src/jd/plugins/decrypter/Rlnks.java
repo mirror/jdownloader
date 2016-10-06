@@ -125,7 +125,11 @@ public class Rlnks extends antiDDoSForDecrypt {
         }
 
         final String page = br.toString();
-        final String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
+        String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
+        if (title != null && title.contains("No title")) {
+            /* E.g. <i>No title</i> */
+            title = null;
+        }
         FilePackage fp = null;
         if (title != null && title.trim().length() > 0) {
             fp = FilePackage.getInstance();

@@ -54,8 +54,8 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gulfup.cc" }, urls = { "https?://(www\\.)?(gulfup\\.cc|gulf4up\\.com)/(?:embed\\-)?[a-z0-9]{12}" })
-public class GulfupCc extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gulf4up.com" }, urls = { "https?://(?:www\\.)?(?:gulfup\\.cc|gulf4up\\.com)/(?:embed\\-)?[a-z0-9]{12}" })
+public class Gulf4upCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
@@ -137,6 +137,16 @@ public class GulfupCc extends antiDDoSForHost {
     private static AtomicInteger           maxPrem                         = new AtomicInteger(1);
     private static Object                  LOCK                            = new Object();
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("gulfup.cc".equals(getHost())) {
+            if (host == null || "gulfup.cc".equals(host)) {
+                return "gulf4up.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.5<br />
      * Tags: Script, template<br />
@@ -145,7 +155,7 @@ public class GulfupCc extends antiDDoSForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia recaptcha<br />
+     * captchatype: null<br />
      * other: has cloudflare on /login.html page<br />
      */
 
@@ -174,8 +184,7 @@ public class GulfupCc extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    @SuppressWarnings("deprecation")
-    public GulfupCc(PluginWrapper wrapper) {
+    public Gulf4upCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }

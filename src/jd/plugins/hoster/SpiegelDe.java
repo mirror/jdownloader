@@ -320,6 +320,11 @@ public class SpiegelDe extends PluginForHost {
         }
     }
 
+    /* Prevent multihoster download as it makes absolutely no sense at all for all SPIEGEL services! */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
     public void reset() {
     }
 
