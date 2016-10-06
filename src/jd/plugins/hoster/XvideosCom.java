@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+/|\\w+\\.xvideos\\.com/embedframe/\\d+|(www\\.)?xvideos\\.com/[a-z0-9\\-]+/upload/[a-z0-9\\-]+/\\d+|(www\\.)?xvideos\\.com/prof\\-video\\-click/pornstar/[a-z0-9\\-]+/\\d+)" })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
@@ -79,7 +79,7 @@ public class XvideosCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_special)) {
+        if (link.getDownloadURL().matches(type_embed) || link.getDownloadURL().matches(type_special)) {
             link.setUrlDownload("http://www.xvideos.com/video" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
             link.setContentUrl(link.getDownloadURL());
         }
@@ -87,26 +87,17 @@ public class XvideosCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        parameter.setName(new Regex(parameter.getDownloadURL(), "xvideos\\.com/(.+)").getMatch(0));
+        link.setName(new Regex(link.getDownloadURL(), "xvideos\\.com/(.+)").getMatch(0));
         br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Language", "en-gb");
-        br.getPage(parameter.getDownloadURL());
-        // fixes embed links back to normal links
-        if (parameter.getDownloadURL().contains(".com/embedframe/")) {
-            String id = new Regex(parameter.getDownloadURL(), "\\.com/embedframe/(\\d+)").getMatch(0);
-            br.getPage("http://www.xvideos.com/video" + id);
-            if (br.getRedirectLocation() != null) {
-                br.getPage(br.getRedirectLocation());
-            }
-            parameter.setUrlDownload(br.getURL());
-        }
+        br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             logger.info("Setting new downloadlink: " + br.getRedirectLocation());
-            parameter.setUrlDownload(br.getRedirectLocation());
-            br.getPage(parameter.getDownloadURL());
+            link.setUrlDownload(br.getRedirectLocation());
+            br.getPage(link.getDownloadURL());
         }
         if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -119,7 +110,7 @@ public class XvideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.trim() + ".flv";
-        parameter.setFinalFileName(Encoding.htmlDecode(filename));
+        link.setFinalFileName(Encoding.htmlDecode(filename));
         dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
         if (dllink == null) {
             dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
@@ -132,7 +123,7 @@ public class XvideosCom extends PluginForHost {
         try {
             con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                parameter.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
