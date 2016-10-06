@@ -58,9 +58,6 @@ public abstract class RecaptchaV1Handler {
         if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
             return null;
         }
-        if (!BrowserSolverService.getInstance().isEnabled()) {
-            return null;
-        }
         if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopDuringSilentModeEnabled() && JDGui.getInstance().isSilentModeActive()) {
             return null;
         }
