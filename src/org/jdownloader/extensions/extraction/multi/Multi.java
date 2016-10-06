@@ -463,8 +463,8 @@ public class Multi extends IExtraction {
     @Override
     public void extract(final ExtractionController ctrl) {
         final Archive archive = getExtractionController().getArchive();
-        final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
         try {
+            final ArchiveFormat format = archive.getArchiveFormat();
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
             final boolean isSolid = Boolean.TRUE.equals(inArchive.getArchiveProperty(PropID.SOLID));// solid archives are much much much
@@ -947,8 +947,6 @@ public class Multi extends IExtraction {
     @Override
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         final Archive archive = getExtractionController().getArchive();
-        final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
-        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         crack++;
         if (StringUtils.isEmpty(password)) {
             /* This should never happen */
@@ -956,6 +954,8 @@ public class Multi extends IExtraction {
         }
         final AtomicBoolean passwordfound = new AtomicBoolean(false);
         try {
+            final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+            final ArchiveFormat format = archive.getArchiveFormat();
             final ReusableByteArrayOutputStream buffer = new ReusableByteArrayOutputStream(64 * 1024);
             try {
                 if (inArchive != null) {
@@ -1003,7 +1003,15 @@ public class Multi extends IExtraction {
                 logger.info("Failed to open Stream: " + firstArchiveFile);
             }
             if (inStream != null && closable != null) {
-                inArchive = createSevenZipArchiveWrapper(format, inStream, callBack);
+                try {
+                    inArchive = createSevenZipArchiveWrapper(format, inStream, callBack);
+                } catch (InvocationTargetException e) {
+                    if (e.getTargetException() != null) {
+                        throw e.getTargetException();
+                    } else {
+                        throw e;
+                    }
+                }
             } else {
                 return false;
             }
@@ -1130,26 +1138,18 @@ public class Multi extends IExtraction {
         return crack;
     }
 
-    private boolean isRAR5Supported() {
-        try {
-            final Method method = SevenZip.class.getMethod("getSevenZipJBindingVersion");
-            return method.invoke(null, new Object[0]) != null;
-        } catch (Throwable e) {
-            return false;
-        }
-    }
-
     @Override
     public boolean prepare() throws ExtractionException {
         final Archive archive = getExtractionController().getArchive();
-        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         try {
-            if (ArchiveFormat.RAR == archive.getArchiveType().getArchiveFormat()) {
+            final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+            final ArchiveFormat format = archive.getArchiveFormat();
+            if (format.name().startsWith("RAR")) {
                 try {
                     final String signatureString = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()), 14);
                     if (signatureString.length() >= 16 && StringUtils.startsWithCaseInsensitive(signatureString, "526172211a070100")) {
                         /* check for rar5 */
-                        if (isRAR5Supported()) {
+                        if (ArchiveType.isRAR5Supported()) {
                             logger.severe("RAR5 is supported:" + signatureString);
                         } else {
                             logger.severe("RAR5 is not supported:" + signatureString);
@@ -1184,7 +1184,8 @@ public class Multi extends IExtraction {
 
                         final int headerByte1 = Integer.parseInt(headerBitFlags1, 16);
                         // final int headerByte2 = Integer.parseInt(headerBitFlags2, 16);
-                        if (BinaryLogic.containsAll(headerByte1, 1 << 7)) {
+                        if (BinaryLogic.containsAll(headerByte1, 1 << 7) && !format.name().startsWith("RAR5")) {
+                            // TODO: RAR5 encryption detection
                             logger.severe("Encrypted RAR headers:" + signatureString);
                             archive.setProtected(true);
                             archive.setPasswordRequiredToOpen(true);
@@ -1208,26 +1209,25 @@ public class Multi extends IExtraction {
                     }
                 }
             }
-            final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
             try {
                 final String sig = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()));
                 final Signature signature = new FileSignatures().getSignature(sig);
                 if (signature != null) {
-                    final ArchiveFormat signatureFormat;
+                    final String signatureFormat;
                     if ("7Z".equalsIgnoreCase(signature.getId())) {
-                        signatureFormat = ArchiveFormat.SEVEN_ZIP;
+                        signatureFormat = ArchiveFormat.SEVEN_ZIP.name();
                     } else if ("RAR".equalsIgnoreCase(signature.getId())) {
-                        signatureFormat = ArchiveFormat.RAR;
+                        signatureFormat = ArchiveFormat.RAR.name();
                     } else if ("ZIP".equalsIgnoreCase(signature.getId())) {
-                        signatureFormat = ArchiveFormat.ZIP;
+                        signatureFormat = ArchiveFormat.ZIP.name();
                     } else if ("GZ".equalsIgnoreCase(signature.getId())) {
-                        signatureFormat = ArchiveFormat.GZIP;
+                        signatureFormat = ArchiveFormat.GZIP.name();
                     } else if ("BZ2".equalsIgnoreCase(signature.getId())) {
-                        signatureFormat = ArchiveFormat.BZIP2;
+                        signatureFormat = ArchiveFormat.BZIP2.name();
                     } else {
                         signatureFormat = null;
                     }
-                    if (signatureFormat != null && !format.equals(signatureFormat)) {
+                    if (signatureFormat != null && !format.name().startsWith(signatureFormat)) {
                         logger.warning("Format missmatch:" + format + "!=" + signatureFormat);
                     }
                 }
@@ -1265,7 +1265,15 @@ public class Multi extends IExtraction {
                 }
             }
             if (inStream != null && closable != null) {
-                inArchive = createSevenZipArchiveWrapper(format, inStream, callBack);
+                try {
+                    inArchive = createSevenZipArchiveWrapper(format, inStream, callBack);
+                } catch (InvocationTargetException e) {
+                    if (e.getTargetException() != null) {
+                        throw e.getTargetException();
+                    } else {
+                        throw e;
+                    }
+                }
             } else {
                 return false;
             }

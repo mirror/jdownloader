@@ -37,8 +37,8 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(part|p)(\\.?)(\\d{1,3})(\\..*?|)\\.rar$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
-            return ArchiveFormat.RAR;
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
+            return getRARArchiveFormat(archive);
         }
 
         @Override
@@ -110,8 +110,8 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d{3})\\.rar$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
-            return ArchiveFormat.RAR;
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
+            return getRARArchiveFormat(archive);
         }
 
         @Override
@@ -200,8 +200,8 @@ public enum ArchiveType {
         private final Pattern patternStart = Pattern.compile("(?i)(.*)\\.rar$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
-            return ArchiveFormat.RAR;
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
+            return getRARArchiveFormat(archive);
         }
 
         @Override
@@ -303,8 +303,8 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.rar$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
-            return ArchiveFormat.RAR;
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
+            return getRARArchiveFormat(archive);
         }
 
         @Override
@@ -430,7 +430,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.7z\\.(\\d{1,3})$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.SEVEN_ZIP;
         }
 
@@ -497,7 +497,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.zip\\.(\\d{1,3})$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.ZIP;
         }
 
@@ -564,7 +564,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.7z$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.SEVEN_ZIP;
         }
 
@@ -631,7 +631,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.zip$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.ZIP;
         }
 
@@ -697,7 +697,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(lha|lzh)$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.LZH;
         }
 
@@ -763,7 +763,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.tar$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.TAR;
         }
 
@@ -829,7 +829,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.arj$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.ARJ;
         }
 
@@ -894,7 +894,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.cpio$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.CPIO;
         }
 
@@ -959,7 +959,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.tgz$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.GZIP;
         }
 
@@ -1024,7 +1024,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.gz$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.GZIP;
         }
 
@@ -1089,7 +1089,7 @@ public enum ArchiveType {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.bz2$");
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.BZIP2;
         }
 
@@ -1225,8 +1225,8 @@ public enum ArchiveType {
         }
 
         @Override
-        public ArchiveFormat getArchiveFormat() {
-            return ArchiveFormat.RAR;
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
+            return getRARArchiveFormat(archive);
         }
 
         @Override
@@ -1244,7 +1244,29 @@ public enum ArchiveType {
         }
     }
 
-    public abstract ArchiveFormat getArchiveFormat();
+    /**
+     * http://www.rarlab.com/technote.htm
+     */
+    private static ArchiveFormat getRARArchiveFormat(final Archive archive) throws IOException {
+        if (isRAR5Supported() && archive != null && archive.getArchiveFiles() != null && archive.getArchiveFiles().size() > 0) {
+            final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+            final String signatureString = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()), 14);
+            if (signatureString.length() >= 16 && StringUtils.startsWithCaseInsensitive(signatureString, "526172211a070100")) {
+                return ArchiveFormat.valueOf("RAR5");
+            }
+        }
+        return ArchiveFormat.RAR;
+    }
+
+    public static boolean isRAR5Supported() {
+        try {
+            return ArchiveFormat.valueOf("RAR5") != null;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    public abstract ArchiveFormat getArchiveFormat(Archive archive) throws IOException;
 
     public abstract boolean matches(final String filePathOrName);
 
