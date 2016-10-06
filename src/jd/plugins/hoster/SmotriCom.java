@@ -78,7 +78,8 @@ public class SmotriCom extends PluginForHost {
         // dllink = br.getRegex("\"_vidURL_mp4\":\"(http[^<>\"]*?)\"").getMatch(0);
         dllink = PluginJSonUtils.getJsonValue(br, "_vidURL_mp4");
         if (dllink == null) {
-            dllink = br.getRegex("\"_vidURL\":\"(http[^<>\"]*?)\"").getMatch(0);
+            // dllink = br.getRegex("\"_vidURL\":\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = PluginJSonUtils.getJsonValue(br, "_vidURL");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
