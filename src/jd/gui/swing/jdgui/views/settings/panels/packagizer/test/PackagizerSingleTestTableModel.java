@@ -2,6 +2,10 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer.test;
 
 import javax.swing.Icon;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.PackagizerFilterRuleDialog.RuleMatcher;
+import jd.http.Browser;
+
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
@@ -9,14 +13,11 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.controlling.packagizer.PackagizerController.REPLACEVARIABLE;
 import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.PackagizerFilterRuleDialog.RuleMatcher;
-import jd.http.Browser;
 
 public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
@@ -344,7 +345,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                return PackagizerController.getInstance().replaceVariables(rule.getRule().getFilename(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getFilename() + ")";
+                return PackagizerController.getInstance().replaceVariables(REPLACEVARIABLE.FILENAME, rule.getRule().getFilename(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getFilename() + ")";
                 // return rule.getFilenameFilter().getRegex()
             }
         });
@@ -360,7 +361,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                return PackagizerController.getInstance().replaceVariables(rule.getRule().getComment(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getComment() + ")";
+                return PackagizerController.getInstance().replaceVariables(REPLACEVARIABLE.DIRECTORY, rule.getRule().getComment(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getComment() + ")";
                 // return rule.getFilenameFilter().getRegex()
             }
         });
