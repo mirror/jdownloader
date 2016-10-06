@@ -628,6 +628,7 @@ public class LinkCrawler {
 
     public String preprocessFind(String text, String url, final boolean allowDeep) {
         if (text != null) {
+            text = text.replaceAll("/\\s*Sharecode\\[\\?\\]:\\s*/", "/");
             text = text.replaceAll("\\s*Sharecode\\[\\?\\]:\\s*", "");
         }
         return text;
