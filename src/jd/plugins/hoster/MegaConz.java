@@ -610,13 +610,8 @@ public class MegaConz extends PluginForHost {
             keyString = getNodeFileKey(link);
         }
         // check finished encrypted file. if the decryption interrupted - for whatever reason
-        String path = link.getFileOutput();
-        final File src;
-        if (path.endsWith(encrypted)) {
-            src = new File(path);
-        } else {
-            src = new File(path);
-        }
+        final String path = link.getFileOutput();
+        final File src = new File(path);
         final AtomicLong encryptionDone = new AtomicLong(link.getVerifiedFileSize());
         final DiskSpaceReservation reservation = new DiskSpaceReservation() {
 
@@ -634,7 +629,7 @@ public class MegaConz extends PluginForHost {
             checkAndReserve(link, reservation);
             if (src.exists() && src.length() == link.getVerifiedFileSize()) {
                 // ready for decryption
-                decrypt(encryptionDone, link, keyString);
+                decrypt(path, encryptionDone, link, keyString);
                 link.getLinkStatus().setStatus(LinkStatus.FINISHED);
                 return;
             }
@@ -698,8 +693,7 @@ public class MegaConz extends PluginForHost {
                 link.setProperty("usedPlugin", getHost());
                 if (dl.startDownload()) {
                     if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
-
-                        decrypt(encryptionDone, link, keyString);
+                        decrypt(path, encryptionDone, link, keyString);
                     }
                 }
             } catch (IOException e) {
@@ -785,7 +779,7 @@ public class MegaConz extends PluginForHost {
 
     private static Object DECRYPTLOCK = new Object();
 
-    private void decrypt(AtomicLong encryptionDone, DownloadLink link, String keyString) throws Exception {
+    private void decrypt(final String path, AtomicLong encryptionDone, DownloadLink link, String keyString) throws Exception {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
         int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
@@ -797,7 +791,6 @@ public class MegaConz extends PluginForHost {
         File dst = null;
         File src = null;
         File tmp = null;
-        String path = link.getFileOutput();
         if (path.endsWith(encrypted)) {
             src = new File(path);
             String path2 = path.substring(0, path.length() - encrypted.length());
