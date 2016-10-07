@@ -501,10 +501,6 @@ public class PremiumizeMe extends UseNet {
         }
         br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + username.trim() + "&params[pass]=" + password);
         handleAPIErrors(br, account, null);
-        // if (br.containsHTML("type\":\"free\"")) { throw new
-        // PluginException(LinkStatus.ERROR_PREMIUM,
-        // "This is a free account. Free accounts are not supported!",
-        // PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -544,13 +540,13 @@ public class PremiumizeMe extends UseNet {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
                 break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
