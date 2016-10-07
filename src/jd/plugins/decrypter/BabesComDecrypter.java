@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -93,8 +94,21 @@ public class BabesComDecrypter extends PluginForDecrypt {
                 /* Fallback to id from inside url */
                 title = fid;
             }
-            /* TODO */
-            return null;
+            final String pictures[] = getPictureArray(this.br);
+            for (String finallink : pictures) {
+                final String number_formatted = new Regex(finallink, "/pics/img/(\\d+)\\.jpg").getMatch(0);
+                if (!finallink.startsWith("http://photos.bb.contentdef.com/")) {
+                    /* WTF */
+                    continue;
+                }
+                finallink = finallink.replace("http://photos.bb.contentdef.com/", "http://babesdecrypted.photos.bb.contentdef.com/");
+                final DownloadLink dl = this.createDownloadlink(finallink);
+                dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
+                dl.setAvailable(true);
+                dl.setProperty("fid", fid);
+                dl.setProperty("picnumber_formatted", number_formatted);
+                decryptedLinks.add(dl);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
@@ -127,6 +141,16 @@ public class BabesComDecrypter extends PluginForDecrypt {
         return true;
     }
 
+    public static String[] getPictureArray(final Browser br) {
+        String picsource = br.getRegex("data\\-galleryui\\-images=\\'\\[(.*?)\\]").getMatch(0);
+        if (picsource != null) {
+            picsource = picsource.replace("\\", "");
+            picsource = picsource.replace("\"", "");
+        }
+        final String[] picarray = picsource.split(",");
+        return picarray;
+    }
+
     public static String getVideoUrlFree(final String fid) {
         return "http://www.babes.com/tour/videos/view/id/" + fid + "/";
     }
@@ -136,7 +160,11 @@ public class BabesComDecrypter extends PluginForDecrypt {
     }
 
     public static String getPicUrl(final String fid) {
-        return "http://members.babes.com/scene/hqpics/" + fid + "/";
+        return "http://members.babes.com/pictures/hqpics/id/" + fid + "/";
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     /* NO OVERRIDE!! */

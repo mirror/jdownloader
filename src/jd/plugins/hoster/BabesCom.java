@@ -21,7 +21,6 @@ import java.io.File;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,7 +38,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "https?://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "https?://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/|https?://babesdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
 public class BabesCom extends PluginForHost {
 
     public BabesCom(PluginWrapper wrapper) {
@@ -60,9 +59,12 @@ public class BabesCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
+    private final String         type_premium_pic             = "https?://(?:babesdecrypted\\.)?photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+";
+
     public static final String   html_loggedin                = "data\\-membership";
 
     private String               dllink                       = null;
+    private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
@@ -71,30 +73,70 @@ public class BabesCom extends PluginForHost {
         return br;
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(type_premium_pic)) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://babesdecrypted\\.photos\\.", "http://photos."));
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
-            downloadLink.getLinkStatus().setStatusText("Cannot check links without valid premium account");
+            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
         this.login(this.br, aa, false);
-        dllink = downloadLink.getDownloadURL();
+        dllink = link.getDownloadURL();
+        final String fid = link.getStringProperty("fid", null);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openGetConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (link.getDownloadURL().matches(type_premium_pic)) {
+                    /* Refresh directurl */
+                    final String number_formatted = link.getStringProperty("picnumber_formatted", null);
+                    if (fid == null || number_formatted == null) {
+                        /* User added url without decrypter --> Impossible to refresh this directurl! */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    this.br.getPage(jd.plugins.decrypter.BabesComDecrypter.getPicUrl(fid));
+                    if (jd.plugins.decrypter.BabesComDecrypter.isOffline(this.br)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String pictures[] = jd.plugins.decrypter.BabesComDecrypter.getPictureArray(this.br);
+                    for (final String finallink : pictures) {
+                        if (finallink.contains(number_formatted + ".jpg")) {
+                            dllink = finallink;
+                            break;
+                        }
+                    }
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+
+                    /* ... new URL should work! */
+                    con = br.openHeadConnection(dllink);
+                    if (!con.getContentType().contains("html")) {
+                        /* Set new url */
+                        link.setUrlDownload(dllink);
+                        /* If user copies url he should always get a valid one too :) */
+                        link.setContentUrl(dllink);
+                        link.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        server_issues = true;
+                    }
+                } else {
+                    server_issues = true;
+                }
             }
         } finally {
             try {
@@ -207,9 +249,11 @@ public class BabesCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(this.br, account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

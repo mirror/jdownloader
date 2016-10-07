@@ -65,7 +65,7 @@ public class DataFileHostCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0");
         br.getHeaders().put("Cache-Control", "");
         br.getHeaders().put("Accept-Language", "de,de-DE;q=0.7,en;q=0.3");
         br.getHeaders().put("Connection", "keep-alive");
@@ -98,12 +98,18 @@ public class DataFileHostCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.cloneBrowser().openHeadConnection("//img.datafilehost.com/bg.jpg").disconnect();
-        br.cloneBrowser().openHeadConnection("//img.datafilehost.com/download.png").disconnect();
+        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/bg.jpg").disconnect();
+        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/menu.gif").disconnect();
+        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/download.png").disconnect();
+        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/check.png").disconnect();
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         final String dllink = br.getURL("/get.php?file=" + fid).toString();
+        br.getHeaders().put("Upgrade-Insecure-Requests", "1");
         br.setRequest(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (downloadLink.getDownloadSize() > 0 && dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Server sends empty file", 5 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getHttpConnection().getResponseCode() == 404) {
