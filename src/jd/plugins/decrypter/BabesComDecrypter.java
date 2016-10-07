@@ -30,6 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -54,7 +55,6 @@ public class BabesComDecrypter extends PluginForDecrypt {
             logger.info("No account present --> Cannot decrypt anything!");
             return decryptedLinks;
         }
-        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = this.createOfflinelink(parameter);
@@ -130,6 +130,11 @@ public class BabesComDecrypter extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.PornPortal;
     }
 
 }
