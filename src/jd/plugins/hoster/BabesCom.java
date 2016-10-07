@@ -17,19 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,7 +39,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "http://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "https?://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/" })
 public class BabesCom extends PluginForHost {
 
     public BabesCom(PluginWrapper wrapper) {
@@ -63,9 +60,18 @@ public class BabesCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
+    public static final String   html_loggedin                = "data\\-membership";
+
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private String               dllink                       = null;
+
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        /* Skips redirect to stupid advertising page after login. */
+        br.setCookie("members.babes.com", "skipPostLogin", "1");
+        return br;
+    }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -79,13 +85,10 @@ public class BabesCom extends PluginForHost {
         }
         this.login(this.br, aa, false);
         dllink = downloadLink.getDownloadURL();
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(dllink);
+                con = br.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -95,13 +98,13 @@ public class BabesCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -129,61 +132,46 @@ public class BabesCom extends PluginForHost {
     private static final String MAINPAGE = "http://members.babes.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        br.getPage("http://members.babes.com/");
-                        if (br.containsHTML("logout/\">Logout</a>")) {
-                            logger.info("Cookie login successful");
-                            return;
-                        }
-                        logger.info("Cookie login failed --> Performing full login");
-                        br.clearCookies(MAINPAGE);
+                prepBR(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("http://members." + account.getHoster() + "/");
+                    if (br.containsHTML(html_loggedin)) {
+                        logger.info("Cookie login successful");
+                        return;
                     }
+                    logger.info("Cookie login failed --> Performing full login");
+                    br = prepBR(new Browser());
                 }
-                br.setFollowRedirects(true);
-                br.getPage("http://members.babes.com/access/login/");
+                br.getPage("http://members." + account.getHoster() + "/access/login/");
                 final Recaptcha rc = new Recaptcha(br, this);
                 rc.findID();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", "babes.com", "http://members.babes.com/", true);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://members." + account.getHoster() + "/", true);
                 final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                br.postPage("http://members.babes.com/access/submit/", "rememberme=true&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "loginremember") == null) {
+                br.postPage("http://members." + account.getHoster() + "/access/submit/", "rememberme=true&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                final Form continueform = br.getFormbyKey("response");
+                if (continueform != null) {
+                    /* Redirect from probiller.com to main website --> Login complete */
+                    br.submitForm(continueform);
+                }
+                if (br.getCookie(MAINPAGE, "loginremember") == null || !this.br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -208,13 +196,9 @@ public class BabesCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.PREMIUM);
+        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setConcurrentUsePossible(true);
         ai.setStatus("Premium Account");
         account.setValid(true);
         return ai;

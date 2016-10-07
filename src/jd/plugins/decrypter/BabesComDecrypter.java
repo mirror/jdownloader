@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -34,17 +34,21 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "http://members\\.babes\\.com/video/view/id/\\d+/[a-z0-9\\-_]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "https?://members\\.babes\\.com/(?:video/view/id/\\d+(?:/[a-z0-9\\-_]+/?)?|pictures/hqpics/id/\\d+(?:/[a-z0-9\\-_]+/?)?)" })
 public class BabesComDecrypter extends PluginForDecrypt {
 
     public BabesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_VIDEO = "https?://members\\.babes\\.com/video/view/id/\\d+(?:/[a-z0-9\\-_]+/)?";
+    private static final String TYPE_PHOTO = "https?://members\\.babes\\.com/pictures/hqpics/id/\\d+(?:/[a-z0-9\\-_]+/?)?";
+
     /* Example of picture links (not (net) supported!) http://members.babes.com/pictures/hqpics/id/\\d+/[a-z0-9\\-]+/ */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String fid = new Regex(parameter, "/id/(\\d+)").getMatch(0);
         // Login if possible
         if (!getUserLogin(false)) {
             logger.info("No account present --> Cannot decrypt anything!");
@@ -53,31 +57,44 @@ public class BabesComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String title = br.getRegex("<title>([^<>\"]*?) \\- BABES</title>").getMatch(0);
-        final String[][] qualities = br.getRegex("\"(/download/[^<>\"]*?)\">[\t\n\r ]+<span>([^<>\"]*?)</span>[\t\n\r ]+<var>(\\d+(?:\\.\\d{1,2})? (?:MiB|GiB))</var>").getMatches();
-        if (qualities == null || qualities.length == 0 || title == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+        String title = null;
+        if (parameter.matches(TYPE_VIDEO)) {
+            title = br.getRegex("<title>([^<>\"]*?) \\- BABES</title>").getMatch(0);
+            if (title == null) {
+                /* Fallback to id from inside url */
+                title = fid;
+            }
+            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
+            final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\">(.*?)</ul>").getMatch(0);
+            final String[] dlinfo = htmldownload.split("</li>");
+            for (final String video : dlinfo) {
+                final String dlurl = new Regex(video, "(/download/[^<>\"]+/)\"").getMatch(0);
+                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
+                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
+                if (dlurl == null || quality == null || filesize == null) {
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                dl.setName(title + "_" + quality + ".mp4");
+                dl.setAvailable(true);
+                dl.setProperty("fid", fid);
+                dl.setProperty("quality", quality);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            /* Nothing good available in html code --> Get title from url if possible */
+            title = new Regex(parameter, "/id/\\d+/(.+)").getMatch(0);
+            if (title == null) {
+                /* Fallback to id from inside url */
+                title = fid;
+            }
+            /* TODO */
             return null;
-        }
-        title = Encoding.htmlDecode(title).trim();
-        title = encodeUnicode(title);
-        for (final String[] qualityinfo : qualities) {
-            String url = qualityinfo[0];
-            String format = qualityinfo[1];
-            final String filesize = qualityinfo[2];
-            format = encodeUnicode(format);
-            url = "http://members.babes.com" + url;
-            final DownloadLink dl = createDownloadlink(url);
-            dl.setName(title + "_" + format + ".mp4");
-            dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

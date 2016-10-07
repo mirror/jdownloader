@@ -42,6 +42,8 @@ public class HqcollectMe extends PluginForHost {
     // protocol: https
     // other:
 
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     /* More chunks possible but often causes problems / disconnects! */
@@ -50,6 +52,7 @@ public class HqcollectMe extends PluginForHost {
 
     private String               dllink            = null;
     private boolean              server_issues     = false;
+    private boolean              limit_reached     = false;
 
     @Override
     public String getAGBLink() {
@@ -61,13 +64,18 @@ public class HqcollectMe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
+        limit_reached = false;
         this.setBrowserExclusive();
+        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)/$").getMatch(0).replace("-", " ");
+        /* Set readable filename in teams of (unexpected) errors. */
+        link.setName(url_filename + default_Extension);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)/$").getMatch(0).replace("-", " ");
+        /* 2016-10-07: Limit happens after fully watching/downloading one file - linkchecking does NOT make the limit appear earlier! */
+        limit_reached = this.br.containsHTML("Your limit for browsing videos was reached");
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
@@ -76,37 +84,48 @@ public class HqcollectMe extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[^<>\"/]+\\.hqcollect\\.me/watch/[^<>\"/]+\\.mp4)\"").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
+        String ext = null;
         link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setProperty("directlink", dllink);
-            } else {
-                server_issues = true;
+        if (!limit_reached && this.dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+            if (ext == null) {
+                ext = default_Extension;
             }
-            return AvailableStatus.TRUE;
-        } finally {
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("directlink", dllink);
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
+        } else {
+            ext = default_Extension;
+            filename += ext;
+            link.setName(filename);
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -114,6 +133,9 @@ public class HqcollectMe extends PluginForHost {
         requestFileInformation(downloadLink);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (limit_reached) {
+            /* 2016-10-07: Exact waittime is not given */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
