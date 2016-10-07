@@ -145,10 +145,16 @@ public class MinhatecaComBr extends PluginForDecrypt {
             int lastpage = 1;
             /* First check if maybe user wants only a specific page */
             String maxpage = new Regex(parameter, ",(\\d+)$").getMatch(0);
+            final boolean specificPage;
             if (maxpage != null) {
+                specificPage = true;
                 startnumber = Integer.parseInt(maxpage);
             } else {
+                specificPage = false;
                 maxpage = br.getRegex("title=\"\\d+\">(\\d+)</a></li></ul><div").getMatch(0);
+                if (maxpage == null) {
+                    maxpage = br.getRegex("title=\"\\d+ \\.\\.\\.\">(\\d+) \\.\\.\\.</a></li></ul><div").getMatch(0);
+                }
             }
             if (maxpage != null) {
                 lastpage = Integer.parseInt(maxpage);
@@ -165,6 +171,13 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 logger.info("Decrypting page " + i + " of " + lastpage);
                 if (i > 1) {
                     br.postPage("http://minhateca.com.br/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                    maxpage = br.getRegex("title=\"\\d+\">(\\d+)</a></li></ul><div").getMatch(0);
+                    if (maxpage == null) {
+                        maxpage = br.getRegex("title=\"\\d+ \\.\\.\\.\">(\\d+) \\.\\.\\.</a></li></ul><div").getMatch(0);
+                    }
+                    if (maxpage != null) {
+                        lastpage = Math.max(lastpage, Integer.parseInt(maxpage));
+                    }
                 }
                 String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0) {
