@@ -98,13 +98,13 @@ public class ImdbCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             } else {
-                final String[][] links = br.getRegex("\"(/media/rm\\d+/(?:nm|tt|rg)\\d+)([^<>\"/]+)?\"( title=\"([^<>\"]*?)\")?").getMatches();
+                final String[][] links = br.getRegex("(/title/tt\\d+/mediaviewer/rm\\d+)([^<>\"/]+)?\"([\t\n\r ]*?title=\"([^<>\"]*?)\")?").getMatches();
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 for (final String linkinfo[] : links) {
-                    final String link = "http://imdb.com" + linkinfo[0];
+                    final String link = "http://www.imdb.com" + linkinfo[0];
                     final DownloadLink dl = createDownloadlink(link);
                     final String id = new Regex(link, "rm(\\d+)").getMatch(0);
                     fp.add(dl);
@@ -115,11 +115,7 @@ public class ImdbCom extends PluginForDecrypt {
                         dl.setName(fpName + "_" + id + "_" + ".jpg");
                     }
                     dl.setAvailable(true);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
-                    }
+                    distribute(dl);
                     decryptedLinks.add(dl);
                 }
             }

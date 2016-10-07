@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -63,8 +62,6 @@ public class BabesCom extends PluginForHost {
 
     public static final String   html_loggedin                = "data\\-membership";
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private String               dllink                       = null;
 
     public static Browser prepBR(final Browser br) {
@@ -136,11 +133,14 @@ public class BabesCom extends PluginForHost {
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    /*
+                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
+                     * when the user logs in via browser.
+                     */
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("http://members." + account.getHoster() + "/");
                     if (br.containsHTML(html_loggedin)) {
@@ -163,7 +163,7 @@ public class BabesCom extends PluginForHost {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (br.getCookie(MAINPAGE, "loginremember") == null || !this.br.containsHTML(html_loggedin)) {
+                if (br.getCookie(MAINPAGE, "loginremember") == null || !this.br.containsHTML(html_loggedin) || br.getURL().contains("/banned")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -196,9 +196,8 @@ public class BabesCom extends PluginForHost {
             }
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium Account");
         account.setValid(true);
@@ -223,8 +222,7 @@ public class BabesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

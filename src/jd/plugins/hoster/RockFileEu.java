@@ -363,7 +363,8 @@ public class RockFileEu extends antiDDoSForHost {
             if (dllink == null) {
                 Form dlForm = getFormByKey("op", "download2");
                 if (dlForm == null) {
-                    handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+                    /* 2016-10-07: Attempt to improve this: https://svn.jdownloader.org/issues/80898 */
+                    continue;
                 }
                 for (i2 = 0; i2 < repeat2; i2++) {
                     dlForm.remove(null);
@@ -496,7 +497,11 @@ public class RockFileEu extends antiDDoSForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
             }
             logger.warning("The final dllink seems not to be a file!");
@@ -1139,7 +1144,11 @@ public class RockFileEu extends antiDDoSForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 503) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 }
                 logger.warning("The final dllink seems not to be a file!");

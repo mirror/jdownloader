@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,13 +33,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/(video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|media/rm\\d+/(tt|nm|rg)\\d+)" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/(?:video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|title/tt\\d+/mediaviewer/rm\\d+)" })
 public class ImDbCom extends PluginForHost {
 
     private String              dllink     = null;
     private static final String IDREGEX    = "(vi\\d+)$";
-    private static final String TYPE_VIDEO = "http://(www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
-    private static final String TYPE_PHOTO = "http://(www\\.)?imdb\\.com/media/rm\\d+/[a-z]{2}\\d+";
+    private static final String TYPE_VIDEO = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
+    private static final String TYPE_PHOTO = "https?://(?:www\\.)?imdb\\.com/title/tt\\d+/mediaviewer/rm\\d+";
 
     public ImDbCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +66,7 @@ public class ImDbCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         final String downloadURL = downloadLink.getDownloadURL();
@@ -73,16 +77,29 @@ public class ImDbCom extends PluginForHost {
         String ending = null;
         String filename = null;
         if (downloadURL.matches(TYPE_PHOTO)) {
-            if (!br.containsHTML("\"spinner\\-container\"")) {
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = br.getRegex("id=\"primary\\-img\"[^\t\n\r]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            filename = br.getRegex("<div id=\"photo\\-caption\">([^<>\"]*?)</div>").getMatch(0);
+            final String json = this.br.getRegex("(\\{\"mediaViewerModel.+\\})").getMatch(0);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+            entries = (LinkedHashMap<String, Object>) entries.get("mediaViewerModel");
+            final String idright = new Regex(downloadLink.getDownloadURL(), "(rm\\d+)").getMatch(0);
+            String idtemp = null;
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("allImages");
+            for (final Object imageo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) imageo;
+                idtemp = (String) entries.get("id");
+                if (idtemp != null && idtemp.equalsIgnoreCase(idright)) {
+                    filename = (String) entries.get("altText");
+                    dllink = (String) entries.get("src");
+                    break;
+                }
+            }
             if (filename == null) {
                 /* Fallback to url-filename */
-                filename = new Regex(downloadURL, "/media/(.+)").getMatch(0).replace("/", "_");
+                filename = new Regex(downloadURL, "/title/(.+)").getMatch(0).replace("/", "_");
             }
-            if (filename == null || dllink == null) {
+            if (filename == null || dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (dllink.contains("@@")) {

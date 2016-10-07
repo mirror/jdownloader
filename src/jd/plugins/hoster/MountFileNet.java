@@ -35,6 +35,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -115,7 +116,7 @@ public class MountFileNet extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings({ "deprecation", "static-access", "unchecked" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -228,7 +229,7 @@ public class MountFileNet extends antiDDoSForHost {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     this.br.getPage("https://" + this.getHost() + "/");
                     if (this.br.containsHTML("account/logout/")) {
@@ -238,7 +239,7 @@ public class MountFileNet extends antiDDoSForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage("https://" + this.getHost() + "/account/login/");
-                String postData = "url=http%253A%252F%252Fmountfile.net%252Fpremium%252F&send=sign+in&captcha=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                String postData = "url=http%253A%252F%252Fmountfile.net%252F&send=sign+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 final String captchaurl = this.br.getRegex("(/captcha/\\?\\d+)").getMatch(0);
                 if (captchaurl != null) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
@@ -253,14 +254,6 @@ public class MountFileNet extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                if (!br.containsHTML("eternal premium|premium till \\d{2}/\\d{2}/\\d{2}")) {
-                    logger.info("Accounttype FREE is not supported!");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -284,45 +277,56 @@ public class MountFileNet extends antiDDoSForHost {
         }
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
-        String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", Locale.ENGLISH));
+        if (!br.containsHTML("eternal premium|premium till \\d{2}/\\d{2}/\\d{2}")) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Account");
+        } else {
+            String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+            if (expire != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", Locale.ENGLISH));
+            }
+            ai.setUnlimitedTraffic();
+            account.setValid(true);
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium User");
         }
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            errorhandlingPremium();
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-            errorhandlingPremium();
-            String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replace("\\", "");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (account.getType() == AccountType.FREE) {
+            login(account, false);
+            handleFree(link);
+        } else {
+            requestFileInformation(link);
+            login(account, false);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                errorhandlingPremium();
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                errorhandlingPremium();
+                String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = dllink.replace("\\", "");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                if (!dl.getConnection().isContentDisposition()) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private void errorhandlingPremium() throws PluginException {

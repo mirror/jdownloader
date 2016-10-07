@@ -83,7 +83,7 @@ public class ServustvCom extends PluginForHost {
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        title = Encoding.htmlDecode(title.trim());
+        title = title.trim();
         final String date_formatted = formatDate(date);
         String filename = "";
         if (date_formatted != null) {
@@ -96,6 +96,7 @@ public class ServustvCom extends PluginForHost {
         if (episodename != null) {
             filename += " - " + episodename;
         }
+        filename = Encoding.htmlDecode(filename);
         filename += ".mp4";
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;

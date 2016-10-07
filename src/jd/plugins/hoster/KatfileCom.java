@@ -818,6 +818,10 @@ public class KatfileCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            /* 2016-10-07: Added this */
+            dllink = new Regex(this.correctedBR, "(https?://[^/]+/d/[^<>\"]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
             /* RegExes sometimes used for streaming */
             final String jssource = new Regex(correctedBR, "sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
             if (inValidate(dllink) && jssource != null) {
