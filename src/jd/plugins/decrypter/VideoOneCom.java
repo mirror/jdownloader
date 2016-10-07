@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "http://(www\\.)?video\\-one\\.com/video/[a-z0-9]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "http://(www\\.)?video\\-one\\.com/video/[a-z0-9]+\\.html" })
 public class VideoOneCom extends PornEmbedParser {
 
     public VideoOneCom(PluginWrapper wrapper) {
@@ -125,6 +125,14 @@ public class VideoOneCom extends PornEmbedParser {
         // they are all shown within iframe, return it incase findEmbedUrls doens't provide assistance.
         final String iframe = br.getRegex("<iframe[^>]*\\s*('|\")(https?://.*?)\\1").getMatch(1);
         if (iframe == null) {
+            if (this.br.containsHTML("xmlns=")) {
+                /*
+                 * E.g. empty document: <html xmlns="http://www.w3.org/1999/xhtml"><head> <meta http-equiv="Content-Type"
+                 * content="text/html; charset=iso-8859-1" /></body></html>
+                 */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             return null;
         }
         decryptedLinks.add(createDownloadlink(iframe));
