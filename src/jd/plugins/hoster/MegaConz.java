@@ -36,7 +36,9 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
@@ -50,6 +52,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
@@ -62,6 +68,7 @@ import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9]{16,}" })
 public class MegaConz extends PluginForHost {
@@ -778,7 +785,7 @@ public class MegaConz extends PluginForHost {
 
     private static Object DECRYPTLOCK = new Object();
 
-    private void decrypt(AtomicLong encryptionDone, DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
+    private void decrypt(AtomicLong encryptionDone, DownloadLink link, String keyString) throws Exception {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
         int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
@@ -903,6 +910,7 @@ public class MegaConz extends PluginForHost {
                         src.delete();
                         tmp.renameTo(dst);
                     }
+                    new MegaHashCheck(link, outputFile).finalHashResult();
                 }
             } finally {
                 try {
@@ -924,6 +932,90 @@ public class MegaConz extends PluginForHost {
             }
         } finally {
             FileStateManager.getInstance().releaseFileState(outputFile, this);
+        }
+    }
+
+    private class MegaHashCheck extends DownloadInterface {
+
+        private final DownloadLinkDownloadable downloadable;
+        private final File                     finalFile;
+
+        private MegaHashCheck(DownloadLink link, final File finalFile) {
+            downloadable = new DownloadLinkDownloadable(link) {
+                @Override
+                public boolean isHashCheckEnabled() {
+                    return true;
+                }
+            };
+            this.finalFile = finalFile;
+        }
+
+        private void finalHashResult() throws Exception {
+            final HashResult hashResult = getHashResult(downloadable, finalFile);
+            if (hashResult != null) {
+                logger.info(hashResult.toString());
+            }
+            downloadable.setHashResult(hashResult);
+            if (hashResult == null || hashResult.match()) {
+                downloadable.setVerifiedFileSize(finalFile.length());
+            } else {
+                if (hashResult.getHashInfo().isTrustworthy()) {
+                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
+                }
+            }
+        }
+
+        @Override
+        public ManagedThrottledConnectionHandler getManagedConnetionHandler() {
+            return null;
+        }
+
+        @Override
+        public URLConnectionAdapter connect(Browser br) throws Exception {
+            return null;
+        }
+
+        @Override
+        public long getTotalLinkBytesLoadedLive() {
+            return 0;
+        }
+
+        @Override
+        public boolean startDownload() throws Exception {
+            return false;
+        }
+
+        @Override
+        public URLConnectionAdapter getConnection() {
+            return null;
+        }
+
+        @Override
+        public void stopDownload() {
+        }
+
+        @Override
+        public boolean externalDownloadStop() {
+            return false;
+        }
+
+        @Override
+        public long getStartTimeStamp() {
+            return 0;
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public Downloadable getDownloadable() {
+            return downloadable;
+        }
+
+        @Override
+        public boolean isResumedDownload() {
+            return false;
         }
 
     }
