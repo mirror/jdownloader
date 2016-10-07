@@ -7,6 +7,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEvent;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.EventSuppressor;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
@@ -30,6 +31,11 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
         super(CFG_LINKGRABBER.CFG.getPackageNameHistory(), CFG_LINKGRABBER.CFG.getPackageNameHistoryLength());
         CFG_LINKGRABBER.PACKAGE_NAME_HISTORY.getEventSender().addListener(this);
 
+    }
+
+    @Override
+    protected boolean isValid(String input) {
+        return !StringUtils.isEmpty(input) && !input.contains("<jd:");
     }
 
     @Override
