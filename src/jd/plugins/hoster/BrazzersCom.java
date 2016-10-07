@@ -294,7 +294,10 @@ public class BrazzersCom extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    /* Try to avoid login captcha at all cost! */
+                    /*
+                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
+                     * when the user logs in via browser.
+                     */
                     br.setCookies(account.getHoster(), cookies);
                     br.getPage("http://ma." + account.getHoster() + "/home/");
                     if (br.containsHTML(html_loggedin)) {
@@ -324,7 +327,7 @@ public class BrazzersCom extends antiDDoSForHost {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (br.getCookie(account.getHoster(), "login_usr") == null || !br.containsHTML(html_loggedin)) {
+                if (br.getCookie(account.getHoster(), "login_usr") == null || !br.containsHTML(html_loggedin) || br.getURL().contains("/banned")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

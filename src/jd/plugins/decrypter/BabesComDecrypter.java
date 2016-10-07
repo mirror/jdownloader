@@ -111,7 +111,7 @@ public class BabesComDecrypter extends PluginForDecrypt {
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("babes.com");
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
@@ -125,6 +125,18 @@ public class BabesComDecrypter extends PluginForDecrypt {
             return false;
         }
         return true;
+    }
+
+    public static String getVideoUrlFree(final String fid) {
+        return "http://www.babes.com/tour/videos/view/id/" + fid + "/";
+    }
+
+    public static String getVideoUrlPremium(final String fid) {
+        return "http://members.babes.com/video/view/id/" + fid + "/";
+    }
+
+    public static String getPicUrl(final String fid) {
+        return "http://members.babes.com/scene/hqpics/" + fid + "/";
     }
 
     /* NO OVERRIDE!! */

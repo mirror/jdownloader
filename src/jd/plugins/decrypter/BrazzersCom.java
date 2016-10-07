@@ -49,7 +49,7 @@ public class BrazzersCom extends PluginForDecrypt {
 
     public static final String  type_video_free    = "https?://(?:www\\.)?brazzers\\.com/scenes/view/id/\\d+/?(?:[a-z0-9\\-]+/?)?";
     private static final String type_video_premium = "https?://ma\\.brazzers\\.com/scene/view/\\d+/[a-z0-9\\-]+/?";
-    private static final String type_video_embed   = "https?://ma\\.brazzers\\.com/embed/\\d+";
+    private static final String type_video_embed   = "https?://(?:www\\.)?brazzers\\.com/embed/\\d+";
     private static final String type_pics          = "https?://ma\\.brazzers\\.com/scene/hqpics/\\d+/?";
 
     private static final String brazzers_decrypted = "http://brazzersdecrypted.com/scenes/view/id/%s/";
@@ -71,12 +71,17 @@ public class BrazzersCom extends PluginForDecrypt {
             this.br.getPage(parameter);
         } else {
             final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
+            if (aa == null && (moch_accounts == null || moch_accounts.size() == 0)) {
+                logger.info("Account needed to use this crawler for this linktype (videos)");
+                return decryptedLinks;
+            }
             if (aa == null && moch_accounts != null && moch_accounts.size() > 0) {
                 /* Only MOCH download possible --> Add link for hostplugin */
                 final DownloadLink dl = this.createDownloadlink(String.format(brazzers_decrypted, fid));
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             } else {
+                /* Normal host account is available */
                 this.br.getPage(getVideoUrlPremium(fid));
             }
         }
