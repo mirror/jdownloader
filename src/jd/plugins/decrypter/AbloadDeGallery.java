@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "http://(www\\.)?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "http://(www\\.)?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" })
 public class AbloadDeGallery extends PluginForDecrypt {
 
     public AbloadDeGallery(PluginWrapper wrapper) {
@@ -43,7 +43,9 @@ public class AbloadDeGallery extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">Dieses Bild wurde gelöscht")) {
-            logger.warning("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("Galerie nicht gefunden\\.") || br.containsHTML("Gallery not found\\.")) {
             return decryptedLinks;
         }
         if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
@@ -51,20 +53,28 @@ public class AbloadDeGallery extends PluginForDecrypt {
             // Needed for galleries with ajax-picture-reloac function
             String[] links = br.getRegex("imageurls\\[\\d+\\] = \"([^<>\"]*?)\"").getColumn(0);
             // For "normal" galleries
-            if (links == null || links.length == 0) links = br.getRegex("\"/browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&amp;img=([^<>\"/]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("\"/browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&amp;img=([^<>\"/]*?)\"").getColumn(0);
+            }
             if (links == null || links.length == 0 || galID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             String fpName = br.getRegex("<title>Galerie:([^<>\"]*?)\\- abload\\.de</title>").getMatch(0);
-            if (fpName == null) fpName = galID;
+            if (fpName == null) {
+                fpName = galID;
+            }
             fpName = Encoding.htmlDecode(fpName.trim());
             for (String singlePictureLink : links) {
                 singlePictureLink = "http://www.abload.de/browseGallery.php?gal=" + galID + "&img=" + Encoding.htmlDecode(singlePictureLink);
                 br.getPage(singlePictureLink);
                 String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
-                if (finallink == null) finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
-                if (finallink == null) return null;
+                if (finallink == null) {
+                    finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
+                }
+                if (finallink == null) {
+                    return null;
+                }
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             }
             final FilePackage fp = FilePackage.getInstance();
@@ -72,8 +82,12 @@ public class AbloadDeGallery extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         } else {
             String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
-            if (finallink == null) finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
-            if (finallink == null) return null;
+            if (finallink == null) {
+                finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
+            }
+            if (finallink == null) {
+                return null;
+            }
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         }
         return decryptedLinks;
