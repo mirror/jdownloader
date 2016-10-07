@@ -273,8 +273,10 @@ public class GoogleDrive extends PluginForHost {
                 if (con.isOK()) {
                     if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
                         downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
                     } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
                         downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
                     }
                 }
             } finally {
@@ -370,5 +372,8 @@ public class GoogleDrive extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.setProperty("ServerComaptibleForByteRangeRequest", true);
+        }
     }
 }
