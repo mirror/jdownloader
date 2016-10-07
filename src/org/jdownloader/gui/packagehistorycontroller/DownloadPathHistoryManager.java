@@ -37,8 +37,15 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
 
     @Override
     public void add(String packageName) {
-        CFG_LINKGRABBER.CFG.setLatestDownloadDestinationFolder(packageName);
-        super.add(packageName);
+        if (isValid(packageName)) {
+            CFG_LINKGRABBER.CFG.setLatestDownloadDestinationFolder(packageName);
+            super.add(packageName);
+        }
+    }
+
+    @Override
+    protected boolean isValid(String input) {
+        return !StringUtils.isEmpty(input) && !input.contains("<jd:");
     }
 
     public synchronized boolean setLastIfExists(String packageName) {

@@ -39,7 +39,7 @@ public abstract class HistoryManager<T extends HistoryEntry> {
         int packageHistoryIndex = 0;
         for (Iterator<T> it = packageHistory.iterator(); it.hasNext();) {
             final T next = it.next();
-            if (next == null || StringUtils.isEmpty(next.getName())) {
+            if (next == null || StringUtils.isEmpty(next.getName()) || !isValid(next.getName())) {
                 it.remove();
                 continue;
             }
@@ -82,8 +82,12 @@ public abstract class HistoryManager<T extends HistoryEntry> {
 
     private final AtomicLong saveRequest = new AtomicLong(-1);
 
+    protected boolean isValid(String input) {
+        return true;
+    }
+
     public synchronized void add(String packageName) {
-        if (!StringUtils.isEmpty(packageName)) {
+        if (!StringUtils.isEmpty(packageName) && isValid(packageName)) {
             boolean found = false;
             for (final T existing : packageHistory) {
                 if (existing.getName().equalsIgnoreCase(packageName)) {
