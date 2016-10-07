@@ -93,6 +93,7 @@ public class BrazzersCom extends PluginForDecrypt {
         }
         title = Encoding.htmlDecode(title).trim();
         if (parameter.matches(type_video_premium) || parameter.matches(type_video_free) || parameter.matches(type_video_embed)) {
+            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
             final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
             final String[] dlinfo = htmldownload.split("</li>");
             for (final String video : dlinfo) {
@@ -102,7 +103,7 @@ public class BrazzersCom extends PluginForDecrypt {
                 if (dlurl == null || quality == null || filesize == null) {
                     continue;
                 }
-                final DownloadLink dl = this.createDownloadlink("http://ma.brazzers.com" + dlurl);
+                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setName(title + "_" + quality + ".mp4");
                 dl.setAvailable(true);
@@ -124,7 +125,12 @@ public class BrazzersCom extends PluginForDecrypt {
             final DecimalFormat df = new DecimalFormat("0000");
             for (int i = 1; i <= count_pics; i++) {
                 final String number_formatted = df.format(i);
-                final String finallink = String.format(pic_format_string, number_formatted);
+                String finallink = String.format(pic_format_string, number_formatted);
+                if (!finallink.startsWith("http://photos.bb.contentdef.com/")) {
+                    /* WTF */
+                    continue;
+                }
+                finallink = finallink.replace("http://photos.bb.contentdef.com/", "http://brazzersdecrypted.photos.bb.contentdef.com/");
                 final DownloadLink dl = this.createDownloadlink(finallink);
                 dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
                 dl.setAvailable(true);

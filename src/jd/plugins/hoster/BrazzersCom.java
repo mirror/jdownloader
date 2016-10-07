@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+" })
 public class BrazzersCom extends antiDDoSForHost {
 
     public BrazzersCom(PluginWrapper wrapper) {
@@ -66,7 +66,7 @@ public class BrazzersCom extends antiDDoSForHost {
 
     private final String         type_normal_moch             = "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/";
     private final String         type_premium_video           = "https?://ma\\.brazzers\\.com/download/.+";
-    private final String         type_premium_pic             = "https?://photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+";
+    private final String         type_premium_pic             = "https?://(?:brazzersdecrypted\\.)?photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-f0-9]+";
 
     public static final String   html_loggedin                = "id=\"my\\-account\"";
 
@@ -85,6 +85,8 @@ public class BrazzersCom extends antiDDoSForHost {
             /* Make MOCH download possible --> We have to correct the downloadurl again! */
             final String fid = getFidMOCH(link);
             link.setUrlDownload(jd.plugins.decrypter.BrazzersCom.getVideoUrlFree(fid));
+        } else if (link.getDownloadURL().matches(type_premium_pic)) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://brazzersdecrypted\\.photos\\.bz", "http://photos.bz"));
         }
     }
 
@@ -398,30 +400,6 @@ public class BrazzersCom extends antiDDoSForHost {
             dl.startDownload();
         }
     }
-
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // con = br2.openHeadConnection(dllink);
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {

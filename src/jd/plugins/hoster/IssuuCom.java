@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" })
 public class IssuuCom extends PluginForHost {
 
     public IssuuCom(PluginWrapper wrapper) {
@@ -105,7 +105,13 @@ public class IssuuCom extends PluginForHost {
                 // Encoding.urlEncode(account.getPass()) +
                 // "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json&jsonCallback=_jqjsp&_" +
                 // System.currentTimeMillis() + "=");
-                br.postPage("https://issuu.com/query", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json");
+                this.br.getPage("https://" + this.getHost() + "/signin?onLogin=%2F");
+                String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json";
+                final String csrf = this.br.getCookie(this.getHost(), "issuu.model.lcsrf");
+                if (csrf != null) {
+                    postdata += "&loginCsrf=" + Encoding.urlEncode(csrf);
+                }
+                br.postPage("https://" + this.br.getHost() + "/query", postdata);
                 if (br.getCookie(MAINPAGE, "site.model.token") == null || br.containsHTML("\"message\":\"Login failed\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -160,7 +166,7 @@ public class IssuuCom extends PluginForHost {
 
         login(account, true);
         final String token = br.getCookie(MAINPAGE, "site.model.token");
-        br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
+        br.getPage("http://api." + this.getHost() + "/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
         final String code = PluginJSonUtils.getJsonValue(br, "code");
         final String message = PluginJSonUtils.getJsonValue(br, "message");
         if ("015".equals(code) || "Download limit reached".equals(message)) {

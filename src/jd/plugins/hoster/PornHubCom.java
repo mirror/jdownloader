@@ -3,10 +3,8 @@ package jd.plugins.hoster;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.crypto.Cipher;
@@ -17,18 +15,18 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,7 +42,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" })
 public class PornHubCom extends PluginForHost {
 
     /* Connection stuff */
@@ -60,24 +58,24 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate,
-             * videoResolution, audioCodec, audioBitrate
-             */
-            /*
-             * Video-bitrates and resultions here are not exact as
-             * they vary.
-             */
-            /**
-             * TODO: Check for other resolutions, check: 180p, 1080p
-             */
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                {
+                                                                                    /*
+                                                                                     * Format-name:videoCodec, videoBitrate,
+                                                                                     * videoResolution, audioCodec, audioBitrate
+                                                                                     */
+                                                                                    /*
+                                                                                     * Video-bitrates and resultions here are not exact as
+                                                                                     * they vary.
+                                                                                     */
+                                                                                    /**
+                                                                                     * TODO: Check for other resolutions, check: 180p, 1080p
+                                                                                     */
+                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
 
-        }
-    });
+                                                                                }
+                                                                            });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -361,27 +359,17 @@ public class PornHubCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    br.setCookies(account.getHoster(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://www.pornhub.com/");
-                final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-                final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (login_key == null || login_hash == null) {
+                br.getPage("http://www." + account.getHoster() + "/login");
+                final Form loginform = br.getFormbyKey("username");
+                // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+                // final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -390,10 +378,15 @@ public class PornHubCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                final String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&redirect=&login_key=" + login_key + "&login_hash=" + login_hash + "&remember_me=1";
-                br.postPage("/front/login_json", postData);
+                loginform.put("username", account.getUser());
+                loginform.put("password", account.getPass());
+                loginform.put("remember", "1");
+                loginform.setMethod(MethodType.POST);
+                loginform.setAction("/front/authenticate");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.submitForm(loginform);
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
-                if (redirect != null) {
+                if (redirect != null && redirect.startsWith("http")) {
                     /* Sometimes needed to get the (premium) cookies. */
                     br.getPage(redirect);
                 }
@@ -406,17 +399,12 @@ public class PornHubCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
+                account.saveCookies(br.getCookies(account.getHoster()), "");
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
