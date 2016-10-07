@@ -257,7 +257,8 @@ public class BrazzersCom extends antiDDoSForHost {
     }
 
     private boolean isMOCHUrlOnly(final DownloadLink dl) {
-        return dl.getDownloadURL().matches(type_normal_moch) || dl.getDownloadURL().matches(jd.plugins.decrypter.BrazzersCom.type_video_free);
+        final String url = dl.getPluginPatternMatcher();
+        return "".equals(url) || (url != null && (url.matches(type_normal_moch) || url.matches(jd.plugins.decrypter.BrazzersCom.type_video_free)));
     }
 
     @Override
