@@ -504,7 +504,7 @@ public class OldRAFDownload extends DownloadInterface {
                     setChunkNum(1);
                 }
                 final String transferEncoding = connection.getHeaderField("Transfer-Encoding");
-                if (StringUtils.containsIgnoreCase(transferEncoding, "chunked") && (verifiedFileSizeNotAvailable || skipVerifyFileSizeCheck)) {
+                if (false && StringUtils.containsIgnoreCase(transferEncoding, "chunked") && (verifiedFileSizeNotAvailable || skipVerifyFileSizeCheck)) {
                     setChunkNum(1);
                     if (responseRange != null && connection.isOK()) {
                         logger.info("Transfer-Encoding: 'chunked' detected! 'Set Chunks=1' because (" + verifiedFileSizeNotAvailable + "|" + skipVerifyFileSizeCheck + ") and ResponseCode:" + connection.getResponseCode() + "|Range:" + Arrays.toString(responseRange));
