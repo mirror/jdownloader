@@ -24,6 +24,7 @@ import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -60,10 +61,25 @@ public class MinhatecaComBr extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        Form loginToProtectedWindow = br.getFormbyActionRegex("LoginToProtectedWindow");
+        if (loginToProtectedWindow != null) {
+            final String protectPassword = Plugin.getUserInput("Account password?", param);
+            if (protectPassword == null) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            loginToProtectedWindow.put("Password", Encoding.urlEncode(protectPassword));
+            br.submitForm(loginToProtectedWindow);
+            loginToProtectedWindow = br.getFormbyActionRegex("LoginToProtectedWindow");
+            if (loginToProtectedWindow != null) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            br.getPage(parameter);
+        }
         final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
         final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (br.containsHTML("class=\"LoginToFolderForm\"")) {
+            // folder password
             final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
             if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -75,7 +91,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     passCode = this.getPluginConfig().getStringProperty("last_used_password", null);
                 }
                 if (passCode == null) {
-                    passCode = Plugin.getUserInput("Password?", param);
+                    passCode = Plugin.getUserInput("Folder password?", param);
                 }
                 br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 if (br.containsHTML("\"IsSuccess\":false")) {
