@@ -123,7 +123,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
     private static final String    YT_ALTERNATE_VARIANT = "YT_ALTERNATE_VARIANT";
     private static final String    DASH_AUDIO_FINISHED  = "DASH_AUDIO_FINISHED";
@@ -1103,7 +1103,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 return downloadLink.removePluginProgress(mapped);
             }
         };
-        GetRequest request = new GetRequest(streamData.getBaseUrl());
+        final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
+        final GetRequest request;
+        if (youtubeConfig.isRateBypassEnabled()) {
+            request = new GetRequest(streamData.getBaseUrl() + "&ratebypass=yes&cmbypass=yes");
+        } else {
+            request = new GetRequest(streamData.getBaseUrl());
+        }
         String[] segments = streamData.getSegments();
         if (segments != null) {
             dl = new SegmentDownloader(dashLink, dashDownloadable, br, request.getUrl(), segments);
@@ -1115,7 +1121,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         }
         List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
         request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
-        dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
+        dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
             if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
@@ -1135,8 +1141,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         handlePremium(downloadLink, null);
     }
 
-    private int getChunksPerStream() {
-        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+    private int getChunksPerStream(YoutubeConfig cfg) {
         if (!cfg.isCustomChunkValueEnabled()) {
             return 0;
         }
@@ -1393,7 +1398,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, sd.getBaseUrl(), resume, getChunksPerStream());
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, sd.getBaseUrl(), resume, getChunksPerStream(PluginJsonConfig.get(YoutubeConfig.class)));
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 if (dl.getConnection().getResponseCode() == 500) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);

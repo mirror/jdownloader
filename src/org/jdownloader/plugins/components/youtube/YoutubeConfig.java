@@ -101,7 +101,8 @@ public interface YoutubeConfig extends PluginConfigInterface {
             public String getLabel() {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
             }
-        },;
+        },
+        ;
     }
 
     public static class NotNullCustomGetter extends AbstractCustomValueGetter<String> {
@@ -232,6 +233,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     List<VariantIDStorable> getDisabledVariants();
+
     // @DefaultBooleanValue(false)
     // @AboutConfig
     // boolean isPreferHttpsEnabled();
@@ -515,4 +517,10 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isSegmentLoadingEnabled();
 
     void setSegmentLoadingEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isRateBypassEnabled();
+
+    void setRateBypassEnabled(boolean b);
 }
