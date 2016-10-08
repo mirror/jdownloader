@@ -48,15 +48,16 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.af" }, urls = { "https?://(www\\.)?upload\\.af/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.af" }, urls = { "https?://(www\\.)?upload\\.af/(embed\\-)?[a-z0-9]{12}" })
 public class UploadAf extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://upload.af";
+    private static final String            COOKIE_HOST                  = "https://upload.af";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -74,8 +75,8 @@ public class UploadAf extends PluginForHost {
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
 
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean           SUPPORTSHTTPS                = true;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = true;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
@@ -86,8 +87,8 @@ public class UploadAf extends PluginForHost {
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 3;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -212,7 +213,7 @@ public class UploadAf extends PluginForHost {
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
                 altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
-                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+                fileInfo[1] = altbr.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
         }
@@ -452,6 +453,10 @@ public class UploadAf extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /* wait time is usually skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
 
