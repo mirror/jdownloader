@@ -145,7 +145,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.0<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.1<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -155,17 +155,12 @@ public class XFileSharingProBasic extends PluginForHost {
      * other:<br />
      */
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
-        final String protocol;
         /* link cleanup, prefer https if possible */
-        if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
-            protocol = "https://";
-        } else {
-            protocol = "http://";
-        }
+        final String protocol = correctProtocol("https://");
         final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
@@ -377,7 +372,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
+        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -391,8 +386,8 @@ public class XFileSharingProBasic extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
-            filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
         return filesize;
@@ -484,7 +479,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
