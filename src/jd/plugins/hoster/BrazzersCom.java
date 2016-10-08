@@ -87,7 +87,7 @@ public class BrazzersCom extends antiDDoSForHost {
             final String fid = getFidMOCH(link);
             link.setUrlDownload(jd.plugins.decrypter.BrazzersCom.getVideoUrlFree(fid));
         } else if (link.getDownloadURL().matches(type_premium_pic)) {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://brazzersdecrypted\\.photos\\.bz", "http://photos.bz"));
+            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://brazzersdecrypted\\.photos\\.", "http://photos."));
         }
     }
 
