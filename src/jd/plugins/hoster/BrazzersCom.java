@@ -42,7 +42,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
 public class BrazzersCom extends antiDDoSForHost {
 
     public BrazzersCom(PluginWrapper wrapper) {
@@ -67,7 +67,7 @@ public class BrazzersCom extends antiDDoSForHost {
 
     private final String         type_normal_moch             = "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/";
     private final String         type_premium_video           = "https?://ma\\.brazzers\\.com/download/.+";
-    private final String         type_premium_pic             = "https?://(?:brazzersdecrypted\\.)?photos\\.bz\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+";
+    private final String         type_premium_pic             = "https?://(?:brazzersdecrypted\\.)?photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+";
 
     public static final String   html_loggedin                = "id=\"my\\-account\"";
 

@@ -304,7 +304,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         decryptRelinker(dllink, title, extension, fp, description);
     }
 
-    private void decryptRelinker(final String relinker_url, final String title, String extension, final FilePackage fp, final String description) throws Exception {
+    private void decryptRelinker(final String relinker_url, String title, String extension, final FilePackage fp, final String description) throws Exception {
         String dllink = relinker_url;
         if (extension != null && extension.equalsIgnoreCase("wmv")) {
             /* E.g. http://www.tg1.rai.it/dl/tg1/2010/rubriche/ContentItem-9b79c397-b248-4c03-a297-68b4b666e0a5.html */
@@ -319,8 +319,14 @@ public class RaiItDecrypter extends PluginForDecrypt {
             jd.plugins.hoster.RaiTv.accessCont(this.br, cont);
 
             if (this.br.containsHTML("video_no_available\\.mp4")) {
-                /* Offline */
+                /* Offline/Geo-Blocked */
                 /* XML response with e.g. this (and some more): <url>http://download.rai.it/video_no_available.mp4</url> */
+                final DownloadLink offline = this.createOfflinelink(relinker_url);
+                if (title == null) {
+                    title = cont;
+                }
+                offline.setName("GEOBLOCKED_" + title);
+                this.decryptedLinks.add(offline);
                 return;
             }
 

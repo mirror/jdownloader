@@ -413,7 +413,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private void setHeaderRefererPhoto(final Browser br) {
-        br.getHeaders().put("Referer", "https://" + this.getHost() + "/al_photos.php");
+        br.getHeaders().put("Referer", "https://" + DOMAIN + "/al_photos.php");
     }
 
     public static void accessVideo(final Browser br, final String oid, final String id, final String listID, final boolean useApi) throws IOException {
