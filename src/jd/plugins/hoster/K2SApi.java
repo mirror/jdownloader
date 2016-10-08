@@ -386,7 +386,6 @@ public abstract class K2SApi extends PluginForHost {
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
         String dllink = downloadLink.getStringProperty(directlinkproperty, null);
-        dllink = null;
         // required to get overrides to work
         br = prepAPI(newBrowser());
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.

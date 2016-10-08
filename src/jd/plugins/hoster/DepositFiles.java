@@ -612,9 +612,6 @@ public class DepositFiles extends antiDDoSForHost {
     private void setConstants() {
         // set session protocol based on user setting and jd version && java version
         protocol = fixLinkSSL("https://");
-        if (isJava7nJDStable()) {
-            protocol = "http://";
-        }
     }
 
     public boolean isFreeAccount(Account acc, boolean force) throws IOException {
@@ -650,9 +647,9 @@ public class DepositFiles extends antiDDoSForHost {
                 ret = false;
             }
             if (ret) {
-                acc.setType(AccountType.PREMIUM);
-            } else {
                 acc.setType(AccountType.FREE);
+            } else {
+                acc.setType(AccountType.PREMIUM);
             }
             return ret;
         }
@@ -1052,11 +1049,8 @@ public class DepositFiles extends antiDDoSForHost {
             if ("gold".equalsIgnoreCase(mode)) {
                 account.setType(AccountType.PREMIUM);
                 ai.setStatus("Premium Account");
-                try {
-                    account.setMaxSimultanDownloads(-1);
-                    account.setConcurrentUsePossible(true);
-                } catch (Throwable e) {
-                }
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
                 final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
                 if (expire == null) {
                     ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
@@ -1274,14 +1268,6 @@ public class DepositFiles extends antiDDoSForHost {
             link = link.replace("https://", "http://");
         }
         return link;
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private void setConfigElements() {
