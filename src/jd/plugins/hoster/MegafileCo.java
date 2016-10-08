@@ -18,15 +18,19 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,25 +42,26 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestorm.xyz" }, urls = { "https?://(?:www\\.)?filestorm\\.xyz/[A-Za-z0-9]+" }) 
-public class FilestormXyz extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megafile.co" }, urls = { "https?://(?:www\\.)?megafile\\.co/[A-Za-z0-9]+" })
+public class MegafileCo extends PluginForHost {
 
-    public FilestormXyz(PluginWrapper wrapper) {
+    public MegafileCo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(mainpage + "/upgrade." + type);
+        this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareBasic Version 0.7.5-psp<br />
+     * YetiShareBasic Version 0.7.8-psp<br />
      * mods:<br />
      * limit-info:<br />
      * protocol: no https<br />
      * captchatype: null<br />
-     * other:<br />
+     * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
 
     @Override
@@ -65,8 +70,8 @@ public class FilestormXyz extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://filestorm.xyz";
-    private final String                   domains                                      = "(filestorm\\.xyz)";
+    private final String                   mainpage                                     = "http://megafile.co";
+    private final String                   domains                                      = "(megafile\\.co)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
@@ -83,7 +88,7 @@ public class FilestormXyz extends PluginForHost {
     private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
     /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
     /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String            url_ERROR_PREMIUMONLY                        = "e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to";
+    private static final String            url_ERROR_PREMIUMONLY                        = "(.+e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to.+|.+/register\\..+)";
     /* Texts for the known errors */
     private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
     private static final String            errortext_ERROR_SERVER                       = "Server error";
@@ -101,7 +106,6 @@ public class FilestormXyz extends PluginForHost {
     private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
 
-    private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
@@ -486,183 +490,146 @@ public class FilestormXyz extends PluginForHost {
         return br;
     }
 
-    // private static final Object LOCK = new Object();
-    //
-    // @SuppressWarnings("unchecked")
-    // private void login(final Account account, boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // // Load cookies
-    // br.setCookiesExclusive(true);
-    // prepBrowser(this.br);
-    // br.setFollowRedirects(true);
-    // final Object ret = account.getProperty("cookies", null);
-    // boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name",
-    // Encoding.urlEncode(account.getUser())));
-    // if (acmatch) {
-    // acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-    // }
-    // if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-    // final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-    // if (account.isValid()) {
-    // for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-    // final String key = cookieEntry.getKey();
-    // final String value = cookieEntry.getValue();
-    // this.br.setCookie(mainpage, key, value);
-    // }
-    // return;
-    // }
-    // }
-    // br.getPage(this.getProtocol() + this.getHost() + "/");
-    // final String lang = System.getProperty("user.language");
-    // final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-    // if (useOldLoginMethod) {
-    // br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" +
-    // Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
-    // if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
-    // if ("de".equalsIgnoreCase(lang)) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // } else {
-    // br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
-    // final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
-    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-    // br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-    // br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
-    // Encoding.urlEncode(account.getPass()));
-    // if (!br.containsHTML("\"login_status\":\"success\"")) {
-    // if ("de".equalsIgnoreCase(lang)) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // }
-    // br.getPage(loginstart + this.getHost() + "/account_home." + type);
-    // // Save cookies
-    // final HashMap<String, String> cookies = new HashMap<String, String>();
-    // final Cookies add = this.br.getCookies(mainpage);
-    // for (final Cookie c : add.getCookies()) {
-    // cookies.put(c.getKey(), c.getValue());
-    // }
-    // account.setProperty("name", Encoding.urlEncode(account.getUser()));
-    // account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-    // account.setProperty("cookies", cookies);
-    // } catch (final PluginException e) {
-    // account.setProperty("cookies", Property.NULL);
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // /* reset maxPrem workaround on every fetchaccount info */
-    // MAXPREM.set(1);
-    // try {
-    // login(account, true);
-    // } catch (final PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
-    // account.setType(AccountType.FREE);
-    // account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-    // /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-    // account.setConcurrentUsePossible(false);
-    // MAXPREM.set(account_FREE_MAXDOWNLOADS);
-    // ai.setStatus("Registered (free) account");
-    // } else {
-    // br.getPage("http://" + this.getHost() + "/upgrade." + type);
-    // /* If the premium account is expired we'll simply accept it as a free account. */
-    // String expire =
-    // br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-    // if (expire == null) {
-    // /* More wide RegEx to be more language independant */
-    // expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
-    // }
-    // if (expire == null) {
-    // account.setValid(false);
-    // return ai;
-    // }
-    // long expire_milliseconds = 0;
-    // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
-    // if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-    // account.setType(AccountType.FREE);
-    // account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-    // /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-    // account.setConcurrentUsePossible(false);
-    // MAXPREM.set(account_FREE_MAXDOWNLOADS);
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // ai.setValidUntil(expire_milliseconds);
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-    // MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-    // ai.setStatus("Premium account");
-    // }
-    // }
-    // account.setValid(true);
-    // ai.setUnlimitedTraffic();
-    // return ai;
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // if (account.getType() == AccountType.FREE) {
-    // if (!available_CHECK_OVER_INFO_PAGE) {
-    // br.getPage(link.getDownloadURL());
-    // }
-    // doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
-    // } else {
-    // String dllink = link.getDownloadURL();
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
-    // checkResponseCodeErrors(dl.getConnection());
-    // if (!dl.getConnection().isContentDisposition()) {
-    // logger.warning("The final dllink seems not to be a file, checking for errors...");
-    // br.followConnection();
-    // handleErrors();
-    // logger.info("Found no errors, let's see if we can find the dllink now...");
-    // handlePassword(link);
-    // dllink = this.getDllink();
-    // if (dllink == null) {
-    // handleErrors();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
-    // checkResponseCodeErrors(dl.getConnection());
-    // }
-    // if (!dl.getConnection().isContentDisposition()) {
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // handleErrors();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // /* workaround for free/premium issue on stable 09581 */
-    // return MAXPREM.get();
-    // }
+    private static final Object LOCK = new Object();
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                prepBrowser(this.br);
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.getPage(this.getProtocol() + this.getHost() + "/");
+                final String lang = System.getProperty("user.language");
+                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
+                if (useOldLoginMethod) {
+                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                } else {
+                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (!br.containsHTML("\"login_status\":\"success\"")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                }
+                br.getPage(loginstart + this.getHost() + "/account_home." + type);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) account");
+        } else {
+            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            /* If the premium account is expired we'll simply accept it as a free account. */
+            String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                /* More wide RegEx to be more language independant */
+                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+            }
+            if (expire == null) {
+                account.setValid(false);
+                return ai;
+            }
+            long expire_milliseconds = 0;
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
+                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+                account.setConcurrentUsePossible(false);
+                ai.setStatus("Registered (free) user");
+            } else {
+                ai.setValidUntil(expire_milliseconds);
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
+                ai.setStatus("Premium account");
+            }
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        if (account.getType() == AccountType.FREE) {
+            if (!available_CHECK_OVER_INFO_PAGE) {
+                br.getPage(link.getDownloadURL());
+            }
+            doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
+        } else {
+            String dllink = link.getDownloadURL();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+            checkResponseCodeErrors(dl.getConnection());
+            if (!dl.getConnection().isContentDisposition()) {
+                logger.warning("The final dllink seems not to be a file, checking for errors...");
+                br.followConnection();
+                handleErrors();
+                logger.info("Found no errors, let's see if we can find the dllink now...");
+                handlePassword(link);
+                dllink = this.getDllink();
+                if (dllink == null) {
+                    handleErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
+                checkResponseCodeErrors(dl.getConnection());
+            }
+            if (!dl.getConnection().isContentDisposition()) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                handleErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return account_PREMIUM_MAXDOWNLOADS;
+    }
 
     @Override
     public void reset() {
