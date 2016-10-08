@@ -45,7 +45,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
 
     @Override
     protected boolean isValid(String input) {
-        return !StringUtils.isEmpty(input) && !input.contains("<jd:");
+        return !StringUtils.isEmpty(input);
     }
 
     public synchronized boolean setLastIfExists(String packageName) {
