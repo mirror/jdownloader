@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "http://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc)/Media\\-page\\-\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "http://(www\\.)?(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc)/Media\\-page\\-\\d+\\.html" })
 public class PrimeMusicRu extends antiDDoSForHost {
 
     @Override
@@ -62,7 +62,7 @@ public class PrimeMusicRu extends antiDDoSForHost {
         if (finalfilename == null) {
             finalfilename = br.getRegex("<div class=\"caption\">[\t\n\r ]+<h1>([^<>\"]*?) скачать песню</h1>").getMatch(0);
         }
-        String filesize = br.getRegex("<b>Размер:</b>([^<>\"]*?)</span>").getMatch(0);
+        String filesize = br.getRegex("<b>Размер:?</b>:?([^<>\"]*?)</span>").getMatch(0);
         if (finalfilename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
