@@ -566,7 +566,6 @@ public class MegaConz extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-        link.setProperty("ALLOW_HASHCHECK", false);
         return AvailableStatus.TRUE;
 
     }
@@ -706,6 +705,22 @@ public class MegaConz extends PluginForHost {
         } finally {
             free(link, reservation);
         }
+    }
+
+    @Override
+    public Downloadable newDownloadable(final DownloadLink downloadLink, final Browser br) {
+        return new DownloadLinkDownloadable(downloadLink) {
+            @Override
+            public Browser getContextBrowser() {
+                return br.cloneBrowser();
+            }
+
+            @Override
+            public boolean isHashCheckEnabled() {
+                return false;
+            }
+
+        };
     }
 
     @Override
