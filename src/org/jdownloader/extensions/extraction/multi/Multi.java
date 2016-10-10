@@ -510,7 +510,7 @@ public class Multi extends IExtraction {
                             ctrl.setCurrentActiveItem(null);
                         }
                         if (ctrl.gotKilled()) {
-                            throw new SevenZipException("Extraction has been aborted");
+                            throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                         }
                         if (callback.hasError()) {
                             throw new SevenZipException("callback encountered an error!");
@@ -527,7 +527,7 @@ public class Multi extends IExtraction {
                         continue;
                     }
                     if (ctrl.gotKilled()) {
-                        throw new SevenZipException("Extraction has been aborted");
+                        throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                     }
                     final AtomicBoolean skippedFlag = new AtomicBoolean(false);
                     final Long size = item.getSize();
@@ -543,12 +543,12 @@ public class Multi extends IExtraction {
                     }
                     ctrl.setCurrentActiveItem(new Item(item.getPath(), size, extractTo));
                     try {
-                        final MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig(), false) {
+                        final MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig()) {
 
                             @Override
                             public int write(final byte[] data) throws SevenZipException {
                                 if (ctrl.gotKilled()) {
-                                    throw new SevenZipException("Extraction has been aborted");
+                                    throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                                 }
                                 final int ret = super.write(data);
                                 ctrl.addAndGetProcessedBytes(ret);
@@ -607,18 +607,18 @@ public class Multi extends IExtraction {
                 }
             }
         } catch (MultiSevenZipException e) {
-            setException(e);
             logger.log(e);
+            setException(e);
             archive.setExitCode(e.getExitCode());
             return;
         } catch (SevenZipException e) {
-            setException(e);
             logger.log(e);
+            setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } catch (IOException e) {
-            setException(e);
             logger.log(e);
+            setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
         }
@@ -676,7 +676,7 @@ public class Multi extends IExtraction {
             IfFileExistsAction action = getExtractionController().getIfFileExistsAction();
             while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                 if (ctrl.gotKilled()) {
-                    throw new SevenZipException("Extraction has been aborted");
+                    throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                 }
                 final IfFileExistsDialog dialog = new IfFileExistsDialog(extractToFile, new Item(itemPath, size, extractToFile), archive);
                 final IfFileExistsDialogInterface dialogInterface = dialog.show();
@@ -1152,25 +1152,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

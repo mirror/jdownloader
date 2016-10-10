@@ -258,7 +258,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("Cling (http://4thline.org/projects/cling)"));
         stats.add(new JLabel("Extraction:"), "");
         stats.add(disable("7ZipJBindings (http://sevenzipjbind.sourceforge.net/)"));
-
+        stats.add(disable("Zip4J (http://www.lingala.net/zip4j/)"), "skip");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
         stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
         stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2("(#289416475)")), "skip");

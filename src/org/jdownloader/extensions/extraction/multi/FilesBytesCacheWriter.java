@@ -1,19 +1,3 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.File;
@@ -23,7 +7,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.plugins.download.raf.FileBytesCache;
 import jd.plugins.download.raf.FileBytesCacheFlusher;
-import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
 import org.appwork.utils.IO;
@@ -32,13 +15,7 @@ import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 
-/**
- * Gets the decrypted bytes and writes it into the file.
- *
- * @author botzi
- *
- */
-class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
+public class FilesBytesCacheWriter implements FileBytesCacheFlusher {
     protected final RandomAccessFile fos;
     protected final CPUPriority      priority;
     protected volatile long          fileWritePosition = 0;
@@ -48,7 +25,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     private final AtomicBoolean      fileOpen          = new AtomicBoolean(true);
     private volatile IOException     ioException       = null;
 
-    MultiCallback(File file, ExtractionController con, ExtractionConfig config) throws IOException {
+    public FilesBytesCacheWriter(File file, ExtractionController con, ExtractionConfig config) throws IOException {
         final CPUPriority priority = config.getCPUPriority();
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             this.priority = null;
@@ -72,12 +49,12 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
         }
     }
 
-    public int write(final byte[] data) throws SevenZipException {
+    public int write(final byte[] data, final int length) throws SevenZipException {
         if (fileOpen.get()) {
-            cache.write(this, fileWritePosition, data, data.length);
-            fileWritePosition += data.length;
+            cache.write(this, fileWritePosition, data, length);
+            fileWritePosition += length;
             waitCPUPriority();
-            return data.length;
+            return length;
         } else {
             final IOException lIoException = ioException;
             if (lIoException != null) {
@@ -108,7 +85,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
                 public void run() {
                     if (fileOpen.get()) {
                         try {
-                            cache.flushIfContains(MultiCallback.this);
+                            cache.flushIfContains(FilesBytesCacheWriter.this);
                         } finally {
                             fileOpen.set(false);
                         }
@@ -148,4 +125,5 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     @Override
     public void flushed() {
     }
+
 }
