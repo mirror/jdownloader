@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,9 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(?:#dir/path=%2F.+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "http://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(?:#dir/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -85,8 +85,8 @@ public class PanBaiduCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        uk = br.getRegex("yunData\\.MYUK = \"(\\d+)\"").getMatch(0);
-        shareid = br.getRegex("yunData.SHARE_ID = \"(\\d+)\";").getMatch(0);
+        uk = br.getRegex("\"uk\":(\\d+),").getMatch(0);
+        shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost("pan.baidu.com");
 
         if (br.getURL().contains("/share/init")) {
@@ -174,7 +174,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 }
                 ressourcelist = (ArrayList) entries.get("list");
             } else {
-                final String json = this.br.getRegex("var[\t\n\r ]*?_context[\t\n\r ]*?=[\t\n\r ]*?(\\{.+);").getMatch(0);
+                final String json = this.br.getRegex("setData\\((\\{.+?)\\)").getMatch(0);
                 if (json == null) {
                     logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
                     return null;
