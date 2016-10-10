@@ -26,6 +26,17 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -42,17 +53,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+|https?://(?:www\\.)?openload\\.co/stream/[A-Za-z0-9_\\-]+~.+" })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -97,9 +97,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     private static final boolean          ACCOUNT_PREMIUM_RESUME       = true;
     private static final int              ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int              ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private static final String           type_directurl               = "https?://(?:www\\.)?openload\\.co/stream/[A-Za-z0-9_\\-]+~.+";
-
     /* don't touch the following! */
     private static AtomicInteger          maxPrem                      = new AtomicInteger(1);
 
@@ -290,7 +288,11 @@ public class OpenLoadIo extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 String html = br.toString();
+                // not sure if this is actually used
                 String result = decode(html);
+                if (result == null) {
+                    result = decode20161010(html);
+                }
                 dllink = br.getURL("/stream/" + result + "?mime=true").toString();
                 boolean fol = br.isFollowingRedirects();
                 try {
@@ -326,6 +328,26 @@ public class OpenLoadIo extends antiDDoSForHost {
             downloadLink.setProperty(directlinkproperty, dllink);
         }
         dl.startDownload();
+    }
+
+    protected String decode20161010(String html) {
+        String result;
+        // 10.10.16
+        // x
+        String[] inputs = new Regex(html, "<span id=\"([^\"]+)\">([^<]+)</span>\\s*<span id=\"([^\"]+)\">([^<]+)</span>\\s*<span id=\"streamurl\">").getRow(0);
+        String y = Encoding.htmlDecode(inputs[1]);
+        String x = Encoding.htmlDecode(inputs[3]);
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < y.length(); i++) {
+            char j = y.charAt(i);
+            if ((j >= 33) && (j <= 126)) {
+                s.insert(i, Character.toString((char) (33 + ((j + 14) % 94))));
+            } else {
+                s.insert(i, Character.toString(j));
+            }
+        }
+        result = s.toString().substring(0, s.toString().length() - 1) + Character.toString((char) (s.toString().charAt(s.toString().length() - 1) + 2));
+        return result;
     }
 
     protected String decode(String html) throws Exception {
