@@ -490,7 +490,7 @@ public class AbstractFFmpegBinary {
                     logger.info("ExitCode:" + exitCode);
                     final boolean okay = exitCode == 0;
                     if (!okay) {
-                        if (errorStreamString.contains("Unrecognized option 'c:v'")) {
+                        if (StringUtils.containsIgnoreCase(errorStreamString, "Unrecognized option 'c:v'") || StringUtils.containsIgnoreCase(errorStreamString, "Unrecognized option '-c:v'")) {
                             throw new FFMpegException("FFmpeg version too old", lastStdStream, errorStreamString);
                         }
                         throw new FFMpegException("FFmpeg Failed", lastStdStream, errorStreamString);
