@@ -8,6 +8,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.Signature;
 
@@ -35,7 +36,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
 
     public int write(byte[] data) throws SevenZipException {
         if (ctrl.gotKilled()) {
-            throw new SevenZipException("Extraction has been aborted");
+            throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
         }
         if (ignoreWrite == false) {
             int toWrite = Math.min(buffer.free(), data.length);

@@ -80,7 +80,7 @@ public class Zip4J extends IExtraction {
             IfFileExistsAction action = getExtractionController().getIfFileExistsAction();
             while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                 if (ctrl.gotKilled()) {
-                    throw new ZipException("Extraction has been aborted");
+                    throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                 }
                 final IfFileExistsDialog dialog = new IfFileExistsDialog(extractToFile, new Item(itemPath, size, extractToFile), archive);
                 final IfFileExistsDialogInterface dialogInterface = dialog.show();
@@ -148,7 +148,7 @@ public class Zip4J extends IExtraction {
                             break;
                         }
                         if (ctrl.gotKilled()) {
-                            throw new ZipException("Extraction has been aborted");
+                            throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                         }
                     }
                     break;
@@ -189,6 +189,7 @@ public class Zip4J extends IExtraction {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
             final List<Object> items = zipFile.getFileHeaders();
+            byte[] readBuffer = new byte[32767];
             for (int index = 0; index < items.size(); index++) {
                 final FileHeader item = (FileHeader) items.get(index);
                 // Skip folders
@@ -196,7 +197,7 @@ public class Zip4J extends IExtraction {
                     continue;
                 }
                 if (ctrl.gotKilled()) {
-                    throw new ZipException("Extraction has been aborted");
+                    throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                 }
                 final AtomicBoolean skippedFlag = new AtomicBoolean(false);
                 final Long size = item.getUncompressedSize();
@@ -213,38 +214,33 @@ public class Zip4J extends IExtraction {
                 final String itemPath = item.getFileName();
                 ctrl.setCurrentActiveItem(new Item(itemPath, size, extractTo));
                 try {
-                    final MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig(), false) {
+                    final FilesBytesCacheWriter call = new FilesBytesCacheWriter(extractTo, getExtractionController(), getConfig()) {
 
                         @Override
                         public int write(byte[] data, int length) throws SevenZipException {
                             if (ctrl.gotKilled()) {
-                                throw new SevenZipException("Extraction has been aborted");
+                                throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
                             }
                             final int ret = super.write(data, length);
                             ctrl.addAndGetProcessedBytes(ret);
                             return ret;
                         }
 
-                        @Override
-                        public int write(final byte[] data) throws SevenZipException {
-                            if (ctrl.gotKilled()) {
-                                throw new SevenZipException("Extraction has been aborted");
-                            }
-                            final int ret = super.write(data);
-                            ctrl.addAndGetProcessedBytes(ret);
-                            return ret;
-                        }
                     };
                     archive.addExtractedFiles(extractTo);
                     ZipInputStream is = null;
                     try {
                         is = zipFile.getInputStream(item);
-                        int readLen = -1;
-                        byte[] buff = new byte[32767];
-                        // Loop until End of File and write the contents to the output stream
-                        while ((readLen = is.read(buff)) != -1) {
-                            call.write(buff, readLen);
+                        if (is == null) {
+                            throw new IOException("no InputStream for " + item.getFileName());
                         }
+                        int readLen = -1;
+                        // Loop until End of File and write the contents to the output stream
+                        while ((readLen = is.read(readBuffer)) != -1) {
+                            call.write(readBuffer, readLen);
+                        }
+                        is.close();
+                        is = null;
                     } finally {
                         call.close();
                         if (is != null) {
@@ -256,18 +252,18 @@ public class Zip4J extends IExtraction {
                 }
             }
         } catch (MultiSevenZipException e) {
-            setException(e);
             logger.log(e);
+            setException(e);
             archive.setExitCode(e.getExitCode());
             return;
         } catch (ZipException e) {
-            setException(e);
             logger.log(e);
+            setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } catch (IOException e) {
-            setException(e);
             logger.log(e);
+            setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
         }
