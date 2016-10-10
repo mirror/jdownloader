@@ -309,6 +309,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
         } catch (Exception e) {
+            logger.log(e);
             if (e instanceof InterruptedException) {
                 throw e;
             } else if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || this.dl.getConnection().getResponseCode() == 400 && this.br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+")) {
