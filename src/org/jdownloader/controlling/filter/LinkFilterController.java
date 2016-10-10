@@ -16,8 +16,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.ConfigEvent;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.event.EventSuppressor;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.event.queue.QueueAction;
@@ -51,7 +53,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private final KeyHandler<Object>                              filterListHandler;
 
     private final ChangeEventSender                               eventSender;
-    private final GenericConfigEventListener<Object>              eventHandler;
     private final boolean                                         testInstance;
 
     /**
@@ -65,20 +66,12 @@ public class LinkFilterController implements LinkCrawlerFilter {
             config = JsonConfig.create(LinkFilterSettings.class);
             filterListHandler = config._getStorageHandler().getKeyHandler("FilterList");
             filter = readConfig();
-            filterListHandler.getEventSender().addListener(eventHandler = new GenericConfigEventListener<Object>() {
+            filterListHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
 
                 @Override
                 public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
                     filter = readConfig();
-                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                        @Override
-                        protected Void run() throws RuntimeException {
-                            updateInternal();
-                            return null;
-                        }
-
-                    });
+                    update();
                 }
 
                 @Override
@@ -106,7 +99,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
         } else {
             this.config = null;
             filterListHandler = null;
-            eventHandler = null;
             filter = new ArrayList<LinkgrabberFilterRule>();
         }
     }
@@ -183,7 +175,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         // linkcheck
         final ArrayList<LinkgrabberFilterRuleWrapper> newDenyFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
         final ArrayList<LinkgrabberFilterRuleWrapper> newAcceptlFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
-        for (final LinkgrabberFilterRule lgr : filter) {
+        for (final LinkgrabberFilterRule lgr : list()) {
             if (lgr.isEnabled() && lgr.isValid()) {
                 try {
                     final LinkgrabberFilterRuleWrapper compiled = lgr.compile();
@@ -244,17 +236,26 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
     private synchronized final void save(ArrayList<LinkgrabberFilterRule> filter) {
         if (config != null) {
+            final EventSuppressor<ConfigEvent> eventSuppressor;
             if (filterListHandler != null) {
-                filterListHandler.getEventSender().removeListener(eventHandler);
-                try {
-                    config.setFilterList(filter);
-                } finally {
-                    if (!ShutdownController.getInstance().isShuttingDown()) {
-                        filterListHandler.getEventSender().addListener(eventHandler);
+                final Thread thread = Thread.currentThread();
+                eventSuppressor = new EventSuppressor<ConfigEvent>() {
+
+                    @Override
+                    public boolean suppressEvent(ConfigEvent eventType) {
+                        return Thread.currentThread() == thread;
                     }
-                }
+                };
+                filterListHandler.getEventSender().addEventSuppressor(eventSuppressor);
             } else {
+                eventSuppressor = null;
+            }
+            try {
                 config.setFilterList(filter);
+            } finally {
+                if (filterListHandler != null) {
+                    filterListHandler.getEventSender().removeEventSuppressor(eventSuppressor);
+                }
             }
         }
     }

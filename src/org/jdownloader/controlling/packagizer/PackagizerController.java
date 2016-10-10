@@ -34,11 +34,17 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.ConfigEvent;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.IO;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.EventSuppressor;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
@@ -57,25 +63,26 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
-    private final PackagizerSettings            config;
-    private ArrayList<PackagizerRule>           list                  = new ArrayList<PackagizerRule>();
-    private PackagizerControllerEventSender     eventSender;
-    private List<PackagizerRuleWrapper>         rules;
+    private final PackagizerSettings              config;
+    private volatile ArrayList<PackagizerRule>    list                  = new ArrayList<PackagizerRule>();
+    private final PackagizerControllerEventSender eventSender;
+    private volatile List<PackagizerRuleWrapper>  rules;
 
-    public static final String                  ORGFILENAME           = "orgfilename";
-    public static final String                  ORGFILENAMEWITHOUTEXT = "orgfilenamewithoutext";
-    public static final String                  ORGFILETYPE           = "orgfiletype";
-    public static final String                  HOSTER                = "hoster";
-    public static final String                  SOURCE                = "source";
+    public static final String                    ORGFILENAME           = "orgfilename";
+    public static final String                    ORGFILENAMEWITHOUTEXT = "orgfilenamewithoutext";
+    public static final String                    ORGFILETYPE           = "orgfiletype";
+    public static final String                    HOSTER                = "hoster";
+    public static final String                    SOURCE                = "source";
 
-    public static final String                  PACKAGENAME           = "packagename";
-    public static final String                  SIMPLEDATE            = "simpledate";
-    public static final String                  INDEXOF               = "indexof";
+    public static final String                    PACKAGENAME           = "packagename";
+    public static final String                    SIMPLEDATE            = "simpledate";
+    public static final String                    INDEXOF               = "indexof";
 
-    private static final PackagizerController   INSTANCE              = new PackagizerController(false);
-    public static final String                  ORGPACKAGENAME        = "orgpackagename";
-    private HashMap<String, PackagizerReplacer> replacers             = new HashMap<String, PackagizerReplacer>();
-    private final boolean                       testInstance;
+    private static final PackagizerController     INSTANCE              = new PackagizerController(false);
+    public static final String                    ORGPACKAGENAME        = "orgpackagename";
+    private HashMap<String, PackagizerReplacer>   replacers             = new HashMap<String, PackagizerReplacer>();
+    private final boolean                         testInstance;
+    private final KeyHandler<Object>              ruleListHandler;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -89,155 +96,188 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         return testInstance;
     }
 
+    private ArrayList<PackagizerRule> readConfig() {
+        ArrayList<PackagizerRule> list = new ArrayList<PackagizerRule>();
+        if (config == null) {
+            return list;
+        } else {
+            try {
+                list = config.getRuleList();
+            } catch (Throwable e) {
+                // restoring list may fail.
+                LogController.CL(false).log(e);
+            }
+            final int sizeLoaded = list != null ? list.size() : 0;
+            list = addDefaultRules(importJD1(list));
+            final int sizeNow = list != null ? list.size() : 0;
+            if (sizeLoaded != sizeNow) {
+                save(list);
+            }
+            return list;
+        }
+    }
+
+    private ArrayList<PackagizerRule> addDefaultRules(ArrayList<PackagizerRule> list) {
+        if (list == null) {
+            list = new ArrayList<PackagizerRule>();
+        }
+        ArrayList<PackagizerRule> ret = new ArrayList<PackagizerRule>();
+        HashSet<String> dupefinder = new HashSet<String>();
+        DisableRevFilesPackageRule disableRevFilesRule = null;
+        SubFolderByPackageRule subFolderByPackgeRule = null;
+        SubFolderByPluginRule subFolderByPluginRule = null;
+        DisableParFilesPackageRule disableParFilesRule = null;
+        for (PackagizerRule rule : list) {
+            final PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
+            });
+            clone.setCreated(-1);
+            if (!dupefinder.add(JSonStorage.serializeToJson(clone))) {
+                //
+                continue;
+            }
+            if (SubFolderByPackageRule.ID.equals(rule.getId())) {
+                if (dupefinder.add(rule.getId())) {
+                    final SubFolderByPackageRule r = new SubFolderByPackageRule();
+                    ret.add(r);
+                    r.init();
+                    r.setEnabled(rule.isEnabled());
+                    subFolderByPackgeRule = r;
+                }
+            } else if (SubFolderByPluginRule.ID.equals(rule.getId())) {
+                if (dupefinder.add(rule.getId())) {
+                    final SubFolderByPluginRule r = new SubFolderByPluginRule();
+                    ret.add(r);
+                    r.init();
+                    r.setEnabled(rule.isEnabled());
+                    subFolderByPluginRule = r;
+                }
+            } else if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
+                if (dupefinder.add(rule.getId())) {
+                    final DisableRevFilesPackageRule r = new DisableRevFilesPackageRule();
+                    ret.add(r);
+                    r.init();
+                    r.setEnabled(rule.isEnabled());
+                    disableRevFilesRule = r;
+                }
+            } else if (DisableParFilesPackageRule.ID.equals(rule.getId())) {
+                if (dupefinder.add(rule.getId())) {
+                    final DisableParFilesPackageRule r = new DisableParFilesPackageRule();
+                    ret.add(r);
+                    r.init();
+                    r.setEnabled(rule.isEnabled());
+                    disableParFilesRule = r;
+                }
+            } else {
+                ret.add(rule);
+            }
+        }
+        if (disableRevFilesRule == null) {
+            ret.add(disableRevFilesRule = new DisableRevFilesPackageRule());
+            disableRevFilesRule.init();
+        }
+        if (disableParFilesRule == null) {
+            ret.add(disableParFilesRule = new DisableParFilesPackageRule());
+            disableParFilesRule.init();
+        }
+        if (subFolderByPackgeRule == null) {
+            ret.add(subFolderByPackgeRule = new SubFolderByPackageRule());
+            subFolderByPackgeRule.init();
+        }
+        if (subFolderByPluginRule == null) {
+            ret.add(subFolderByPluginRule = new SubFolderByPluginRule());
+            subFolderByPluginRule.init();
+        }
+        return ret;
+    }
+
+    private ArrayList<PackagizerRule> importJD1(ArrayList<PackagizerRule> list) {
+        if (config != null && config.isTryJD1ImportEnabled()) {
+            final JD1Importer jd1Importer = new JD1Importer();
+            if (jd1Importer.isAvailable()) {
+                config.setTryJD1ImportEnabled(false);
+                try {
+                    final Map<String, Object> data = jd1Importer.getHashMap("JD Package Customizer");
+                    if (data != null) {
+                        final ArrayList<HashMap<String, Object>> settings = JSonStorage.convert(data.get("SETTINGS"), new TypeRef<ArrayList<HashMap<String, Object>>>() {
+                        });
+
+                        if (settings != null) {
+                            if (list == null) {
+                                list = new ArrayList<PackagizerRule>();
+                            }
+                            for (HashMap<String, Object> map : settings) {
+                                final PackagizerRule rule = new PackagizerRule();
+                                final String regex = (String) map.get("regex");
+                                final String password = (String) map.get("password");
+                                final String name = (String) map.get("name");
+                                final boolean extract = Boolean.TRUE.equals(map.get("extract"));
+                                final boolean enabled = Boolean.TRUE.equals(map.get("enabled"));
+                                final boolean useSubDirectory = Boolean.TRUE.equals(map.get("useSubDirectory"));
+                                final int priority = ((Number) map.get("priority")).intValue();
+                                String downloadDir = (String) map.get("downloadDir");
+                                if (downloadDir == null) {
+                                    downloadDir = "";
+                                }
+                                if (useSubDirectory) {
+                                    downloadDir += File.separator + "<jd:packagename>";
+                                }
+                                rule.setName(name);
+                                rule.setAutoExtractionEnabled(extract);
+                                rule.setEnabled(enabled);
+                                rule.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.ONLINE));
+                                if (StringUtils.isNotEmpty(downloadDir)) {
+                                    rule.setDownloadDestination(downloadDir);
+                                }
+                                if (StringUtils.isNotEmpty(password)) {
+                                    ExtractionExtension.getInstance().addPassword(password);
+                                }
+                                rule.setPriority(Priority.getPriority(priority));
+                                rule.setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, regex, true));
+                                list.add(rule);
+                            }
+                            save(list);
+                        }
+                    }
+                } catch (final Throwable e) {
+                    LogController.CL(false).log(e);
+                }
+            }
+        }
+        return list;
+    }
+
     public PackagizerController(boolean testInstance) {
         this.testInstance = testInstance;
         eventSender = new PackagizerControllerEventSender();
         if (!isTestInstance()) {
             config = JsonConfig.create(PackagizerSettings.class);
+            ruleListHandler = config._getStorageHandler().getKeyHandler("RuleList");
         } else {
+            ruleListHandler = null;
             config = null;
         }
         if (!isTestInstance()) {
-            try {
-                list = config.getRuleList();
-            } catch (Throwable e) {
-                // restoring list may fail.
-            }
-            if (list == null) {
-                list = new ArrayList<PackagizerRule>();
-            }
-            JD1Importer jd1Importer = new JD1Importer();
-
-            if (config.isTryJD1ImportEnabled() && jd1Importer.isAvailable()) {
-                config.setTryJD1ImportEnabled(false);
-                Map<String, Object> data = jd1Importer.getHashMap("JD Package Customizer");
-                if (data != null) {
-                    ArrayList<HashMap<String, Object>> settings = JSonStorage.convert(data.get("SETTINGS"), new TypeRef<ArrayList<HashMap<String, Object>>>() {
-                    });
-                    data = null;
-                    System.gc();
-                    if (settings != null) {
-                        for (HashMap<String, Object> map : settings) {
-                            PackagizerRule rule = new PackagizerRule();
-                            String regex = (String) map.get("regex");
-                            String password = (String) map.get("password");
-                            String name = (String) map.get("name");
-                            boolean extract = Boolean.TRUE.equals(map.get("extract"));
-                            boolean enabled = Boolean.TRUE.equals(map.get("enabled"));
-                            boolean useSubDirectory = Boolean.TRUE.equals(map.get("useSubDirectory"));
-                            int priority = ((Number) map.get("priority")).intValue();
-                            String downloadDir = (String) map.get("downloadDir");
-                            if (downloadDir == null) {
-                                downloadDir = "";
-                            }
-                            if (useSubDirectory) {
-
-                                downloadDir += File.separator + "<jd:packagename>";
-                            }
-
-                            rule.setName(name);
-                            rule.setAutoExtractionEnabled(extract);
-                            rule.setEnabled(enabled);
-                            rule.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.ONLINE));
-                            if (StringUtils.isNotEmpty(downloadDir)) {
-                                rule.setDownloadDestination(downloadDir);
-                            }
-                            if (StringUtils.isNotEmpty(password)) {
-                                ExtractionExtension.getInstance().addPassword(password);
-                            }
-                            rule.setPriority(Priority.getPriority(priority));
-                            rule.setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, regex, true));
-                            list.add(rule);
-                        }
-                        config.setRuleList(list);
-                    }
-
-                }
-            }
-        }
-
-        if (!isTestInstance()) {
-            ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
-            HashSet<String> dupefinder = new HashSet<String>();
-            DisableRevFilesPackageRule disableRevFilesRule = null;
-            SubFolderByPackageRule subFolderByPackgeRule = null;
-            SubFolderByPluginRule subFolderByPluginRule = null;
-            DisableParFilesPackageRule disableParFilesRule = null;
-            for (PackagizerRule rule : list) {
-                final PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
-                });
-                clone.setCreated(-1);
-                if (!dupefinder.add(JSonStorage.serializeToJson(clone))) {
-                    //
-                    continue;
-                }
-                if (SubFolderByPackageRule.ID.equals(rule.getId())) {
-                    if (dupefinder.add(rule.getId())) {
-                        final SubFolderByPackageRule r = new SubFolderByPackageRule();
-                        newList.add(r);
-                        r.init();
-                        r.setEnabled(rule.isEnabled());
-                        subFolderByPackgeRule = r;
-                    }
-                } else if (SubFolderByPluginRule.ID.equals(rule.getId())) {
-                    if (dupefinder.add(rule.getId())) {
-                        final SubFolderByPluginRule r = new SubFolderByPluginRule();
-                        newList.add(r);
-                        r.init();
-                        r.setEnabled(rule.isEnabled());
-                        subFolderByPluginRule = r;
-                    }
-                } else if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
-                    if (dupefinder.add(rule.getId())) {
-                        final DisableRevFilesPackageRule r = new DisableRevFilesPackageRule();
-                        newList.add(r);
-                        r.init();
-                        r.setEnabled(rule.isEnabled());
-                        disableRevFilesRule = r;
-                    }
-                } else if (DisableParFilesPackageRule.ID.equals(rule.getId())) {
-                    if (dupefinder.add(rule.getId())) {
-                        final DisableParFilesPackageRule r = new DisableParFilesPackageRule();
-                        newList.add(r);
-                        r.init();
-                        r.setEnabled(rule.isEnabled());
-                        disableParFilesRule = r;
-                    }
-                } else {
-                    newList.add(rule);
-                }
-            }
-            if (disableRevFilesRule == null) {
-                newList.add(disableRevFilesRule = new DisableRevFilesPackageRule());
-                disableRevFilesRule.init();
-            }
-            if (disableParFilesRule == null) {
-                newList.add(disableParFilesRule = new DisableParFilesPackageRule());
-                disableParFilesRule.init();
-            }
-            if (subFolderByPackgeRule == null) {
-                newList.add(subFolderByPackgeRule = new SubFolderByPackageRule());
-                subFolderByPackgeRule.init();
-            }
-            if (subFolderByPluginRule == null) {
-                newList.add(subFolderByPluginRule = new SubFolderByPluginRule());
-                subFolderByPluginRule.init();
-            }
-            list = newList;
+            list = readConfig();
         }
         update();
-
         if (!isTestInstance()) {
+            ruleListHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                    list = readConfig();
+                    update();
+                }
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+                }
+            });
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
-                    synchronized (PackagizerController.this) {
-                        if (config != null) {
-                            // System.out.println(JSonStorage.serializeToJson(list));
-                            config.setRuleList(list);
-                        }
-                    }
+                    save(list);
                 }
 
                 @Override
@@ -250,9 +290,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     return "save packagizer...";
                 }
             });
-
             FileCreationManager.getInstance().getEventSender().addListener(this);
-
         }
         addReplacer(new PackagizerReplacer() {
 
@@ -537,32 +575,28 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void add(PackagizerRule linkFilter) {
-        if (linkFilter == null) {
-            return;
-        }
-        synchronized (this) {
-            HashSet<String> dupecheck = createDupeSet();
-
-            if (!linkFilter.isStaticRule()) {
-                if (dupecheck.add(JSonStorage.serializeToJson(linkFilter))) {
-                    list.add(linkFilter);
+        if (linkFilter != null) {
+            synchronized (this) {
+                final HashSet<String> dupecheck = createDupeSet();
+                if (!linkFilter.isStaticRule()) {
+                    if (dupecheck.add(JSonStorage.serializeToJson(linkFilter))) {
+                        list.add(linkFilter);
+                    }
                 }
+                save(list);
             }
-
-            if (config != null) {
-                config.setRuleList(list);
-            }
+            update();
         }
-        update();
     }
 
-    public void setList(java.util.List<PackagizerRule> tableData) {
+    public void setList(List<PackagizerRule> tableData) {
+        if (tableData == null) {
+            tableData = new ArrayList<PackagizerRule>();
+        }
         synchronized (this) {
             list.clear();
             list.addAll(tableData);
-            if (config != null) {
-                config.setRuleList(list);
-            }
+            save(list);
         }
         update();
     }
@@ -576,7 +610,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 @Override
                 protected Void run() throws RuntimeException {
                     updateInternal();
-
                     return null;
                 }
             });
@@ -614,30 +647,26 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void addAll(java.util.List<PackagizerRule> all) {
-        if (all == null) {
-            return;
-        }
-        synchronized (this) {
-
-            HashSet<String> dupecheck = createDupeSet();
-            for (PackagizerRule rule : all) {
-                if (!rule.isStaticRule()) {
-                    if (dupecheck.add(JSonStorage.serializeToJson(rule))) {
-                        list.add(rule);
+        if (all != null && all.size() > 0) {
+            synchronized (this) {
+                final HashSet<String> dupecheck = createDupeSet();
+                for (PackagizerRule rule : all) {
+                    if (!rule.isStaticRule()) {
+                        if (dupecheck.add(JSonStorage.serializeToJson(rule))) {
+                            list.add(rule);
+                        }
                     }
                 }
+                save(list);
             }
-            if (config != null) {
-                config.setRuleList(list);
-            }
+            update();
         }
-        update();
     }
 
     private HashSet<String> createDupeSet() {
-        HashSet<String> ret = new HashSet<String>();
+        final HashSet<String> ret = new HashSet<String>();
         synchronized (this) {
-            for (PackagizerRule rule : list) {
+            for (final PackagizerRule rule : list) {
                 ret.add(JSonStorage.serializeToJson(rule));
             }
         }
@@ -645,16 +674,39 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void remove(PackagizerRule lf) {
-        if (lf == null) {
-            return;
+        if (lf != null) {
+            synchronized (this) {
+                list.remove(lf);
+                save(list);
+            }
+            update();
         }
-        synchronized (this) {
-            list.remove(lf);
-            if (config != null) {
-                config.setRuleList(list);
+    }
+
+    private synchronized final void save(ArrayList<PackagizerRule> rules) {
+        if (config != null) {
+            final EventSuppressor<ConfigEvent> eventSuppressor;
+            if (ruleListHandler != null) {
+                final Thread thread = Thread.currentThread();
+                eventSuppressor = new EventSuppressor<ConfigEvent>() {
+
+                    @Override
+                    public boolean suppressEvent(ConfigEvent eventType) {
+                        return Thread.currentThread() == thread;
+                    }
+                };
+                ruleListHandler.getEventSender().addEventSuppressor(eventSuppressor);
+            } else {
+                eventSuppressor = null;
+            }
+            try {
+                config.setRuleList(rules);
+            } finally {
+                if (ruleListHandler != null) {
+                    ruleListHandler.getEventSender().removeEventSuppressor(eventSuppressor);
+                }
             }
         }
-        update();
     }
 
     public void runByFile(final CrawledLink link) {
@@ -927,7 +979,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         txt = replacer.replace(replaceVariable, modifier, link, txt, lgr);
                     }
                 } catch (final Throwable e) {
-                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                    LogController.CL(false).log(e);
                 }
             }
         }
@@ -1047,24 +1099,25 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(dummyLink.getName())) {
             final File newFile = new File(moveToFolder, dummyLink.getName());
             if (newFile.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(newFile.getParentFile()) == false) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not create " + newFile.getParentFile());
+                LogController.CL(false).warning("Packagizer could not create " + newFile.getParentFile());
                 return;
             }
             boolean successful = false;
             if ((successful = file.renameTo(newFile)) == false) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer rename failed " + file + " to" + newFile);
+                final LogSource log = LogController.CL(false);
+                log.warning("Packagizer rename failed " + file + " to" + newFile);
                 try {
-                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer try copy " + file + " to" + newFile);
+                    log.warning("Packagizer try copy " + file + " to" + newFile);
                     IO.copyFile(file, newFile);
                     FileCreationManager.getInstance().delete(file, null);
                     successful = true;
                 } catch (final Throwable e) {
                     FileCreationManager.getInstance().delete(newFile, null);
-                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().warning("Packagizer could not move/rename " + file + " to" + newFile);
+                    log.warning("Packagizer could not move/rename " + file + " to" + newFile);
                 }
             }
             if (successful) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Packagizer moved/renamed " + file + " to " + newFile);
+                LogController.CL(false).info("Packagizer moved/renamed " + file + " to " + newFile);
                 FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(PackagizerController.this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }
