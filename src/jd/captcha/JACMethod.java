@@ -26,7 +26,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CaptchaBrotherHoodSettings;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
@@ -40,7 +39,7 @@ public class JACMethod implements Comparable<JACMethod> {
     public static JACMethod forServiceName(String service) {
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
-                if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captcha9kw") || JsonConfig.create(CaptchaBrotherHoodSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captchaBrotherhood")) {
+                if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captcha9kw")) {
                     if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captcha9kw")) {
                         jd.gui.UserIO.getInstance().requestMessageDialog("9kw old method captcha9kw ", "Please delete old method captcha9kw and use jd2 with 9kw.\n");
                     }

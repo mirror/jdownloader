@@ -24,7 +24,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
@@ -196,7 +195,6 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
         ret.put(JacSolverService.ID, 30000);
         ret.put(NineKwSolverService.ID, 60000);
         // ret.put(CaptchaMyJDSolver.ID, 60000);
-        ret.put(CBSolverService.ID, 60000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);

@@ -35,7 +35,6 @@ import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaModeChangeAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleBrowserSolverAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleCBAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleCheapCaptchaAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleDBCAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
@@ -108,7 +107,6 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         opt.add(ocr = new CaptchaQuickSettingsContainer());
         ocr.add(CaptchaModeChangeAction.class);
         ocr.add(CaptchaToogle9KWAction.class);
-        ocr.add(CaptchaToogleCBAction.class);
         ocr.add(CaptchaToogleDBCAction.class);
         ocr.add(CaptchaToogleCheapCaptchaAction.class);
         ocr.add(CaptchaToogleImageTyperzAction.class);
