@@ -8,13 +8,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -26,7 +25,7 @@ import org.jdownloader.captcha.v2.challenge.oauth.AccountOAuthSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.OAuthDialogSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsConfigInterface;
 import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
@@ -46,6 +45,9 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 
 public class ChallengeResponseController {
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
@@ -89,28 +91,22 @@ public class ChallengeResponseController {
         for (Entry<String, ArrayList<CaptchaQualityEnsuranceRule>> es : rules.entrySet()) {
             ArrayList<CaptchaQualityEnsuranceRule> rc = es.getValue();
             final TimeTracker tracker = trackerCache.getTracker(es.getKey());
-
             for (CaptchaQualityEnsuranceRule r : rc) {
                 logger.info("Add Captcha Limit Rule for " + es.getKey() + " " + r.getLimit() + " Reqs in " + TimeFormatter.formatMilliSeconds(r.getInterval(), 0));
                 tracker.addRule(new TrackerRule(r.getLimit(), r.getInterval()));
             }
-
         }
-
     }
 
     private boolean addDefaultRules(HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>> rules, String key, CaptchaQualityEnsuranceRule... defList) {
-
         ArrayList<CaptchaQualityEnsuranceRule> rc = rules.get(key);
         if (rc == null || rc.size() == 0) {
             rc = new ArrayList<CaptchaQualityEnsuranceRule>();
             for (CaptchaQualityEnsuranceRule r : defList) {
                 rc.add(r);
             }
-
             rules.put(key, rc);
             return true;
-
         }
         return false;
     }
@@ -120,29 +116,26 @@ public class ChallengeResponseController {
     public void init() {
         if (init.compareAndSet(false, true)) {
             addSolver(JACSolver.getInstance());
-
             if (CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
                 addSolver(CaptchaMyJDSolver.getInstance());
             }
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());
-
-            addSolver(CaptchaSolutionsSolver.getInstance());
-
+            if (StringUtils.isNotEmpty(JsonConfig.create(CaptchaSolutionsConfigInterface.class).getAPISecret())) {
+                addSolver(CaptchaSolutionsSolver.getInstance());
+            }
             addSolver(EndCaptchaSolver.getInstance());
-            addSolver(CBSolver.getInstance());
+            // addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());
             addSolver(Captcha9kwSolverClick.getInstance());
             addSolver(Captcha9kwSolverPuzzle.getInstance());
-
             if (!Application.isHeadless()) {
                 addSolver(DialogBasicCaptchaSolver.getInstance());
             }
             if (!Application.isHeadless()) {
                 addSolver(DialogClickCaptchaSolver.getInstance());
             }
-
             if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
                 addSolver(OAuthDialogSolver.getInstance());
@@ -154,7 +147,6 @@ public class ChallengeResponseController {
             addSolver(KeyCaptchaJACSolver.getInstance());
             if (!Application.isHeadless()) {
                 addSolver(KeyCaptchaDialogSolver.getInstance());
-
             }
             addSolver(CaptchaAPISolver.getInstance());
         }
@@ -208,7 +200,6 @@ public class ChallengeResponseController {
 
     private void fireJobDone(SolverJob<?> job) {
         eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.JOB_DONE, job));
-
     }
 
     private final List<ChallengeSolver<?>>               solverList = new CopyOnWriteArrayList<ChallengeSolver<?>>();
@@ -251,7 +242,6 @@ public class ChallengeResponseController {
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
         c.initController(job);
-
         final UniqueAlltimeID jobID = c.getId();
         synchronized (activeJobs) {
             activeJobs.add(job);
