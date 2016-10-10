@@ -35,7 +35,6 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.solver.browser.BrowserCaptchaSolverConfig;
 import org.jdownloader.captcha.v2.solver.browser.CFG_BROWSER_CAPTCHA_SOLVER;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
@@ -202,7 +201,6 @@ public class BrowserSolverService extends AbstractSolverService {
         ret.put(JacSolverService.ID, 30000);
         ret.put(NineKwSolverService.ID, 120000);
         ret.put(CaptchaMyJDSolverService.ID, 60000);
-        ret.put(CBSolverService.ID, 120000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);

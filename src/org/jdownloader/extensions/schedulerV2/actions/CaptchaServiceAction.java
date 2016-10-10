@@ -28,23 +28,15 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
         switch (getConfig()._getService()) {
         case NINEKWEU:
             org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA.CFG.setEnabled(true);
-            org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD.CFG.setEnabled(false);
-            org.jdownloader.settings.staticreferences.CFG_DBC.CFG.setEnabled(false);
-            break;
-        case CAPTCHABROTHERHOOD:
-            org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA.CFG.setEnabled(false);
-            org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD.CFG.setEnabled(true);
             org.jdownloader.settings.staticreferences.CFG_DBC.CFG.setEnabled(false);
             break;
         case DEATHBYCAPTCHA:
             org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA.CFG.setEnabled(false);
-            org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD.CFG.setEnabled(false);
             org.jdownloader.settings.staticreferences.CFG_DBC.CFG.setEnabled(true);
             break;
         case NONE:
         default:
             org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA.CFG.setEnabled(false);
-            org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD.CFG.setEnabled(false);
             org.jdownloader.settings.staticreferences.CFG_DBC.CFG.setEnabled(false);
             break;
         }
