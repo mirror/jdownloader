@@ -43,7 +43,7 @@ public class DummyArchive {
     }
 
     public boolean isComplete() {
-        return missingCount == 0 && incompleteCount == 0;
+        return missingCount == 0 && incompleteCount == 0 && list.size() > 0;
     }
 
     public int getSize() {

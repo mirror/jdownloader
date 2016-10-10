@@ -86,6 +86,7 @@ import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.multi.Multi;
+import org.jdownloader.extensions.extraction.multi.Zip4J;
 import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.HachaSplit;
 import org.jdownloader.extensions.extraction.split.UnixSplit;
@@ -151,6 +152,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         setExtractor(new XtreamSplit());
         setExtractor(new HachaSplit());
         setExtractor(new HJSplit());
+        setExtractor(new Zip4J());
         /* must be last one! */
         setExtractor(new Multi());
     }

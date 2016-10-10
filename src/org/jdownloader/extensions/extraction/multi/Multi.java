@@ -30,10 +30,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
 
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
 import net.sf.sevenzipjbinding.ArchiveFormat;
@@ -80,12 +78,21 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 public class Multi extends IExtraction {
 
-    private volatile int           crack  = 0;
-    private final List<Pattern>    filter = new ArrayList<Pattern>();
+    private volatile int               crack = 0;
 
-    private SevenZipArchiveWrapper inArchive;
-    private IInStream              inStream;
-    private Closeable              closable;
+    private SevenZipArchiveWrapper     inArchive;
+    private IInStream                  inStream;
+    private Closeable                  closable;
+    private final static ArchiveType[] SUPPORTED_ARCHIVE_TYPES;
+    static {
+        final ArrayList<ArchiveType> archiveTypes = new ArrayList<ArchiveType>();
+        for (final ArchiveType archiveType : ArchiveType.values()) {
+            if (!archiveType.name().startsWith("ZIP_MULTI2")) {
+                archiveTypes.add(archiveType);
+            }
+        }
+        SUPPORTED_ARCHIVE_TYPES = archiveTypes.toArray(new ArchiveType[0]);
+    }
 
     public Multi() {
         crack = 0;
@@ -94,7 +101,7 @@ public class Multi extends IExtraction {
 
     @Override
     public Archive buildArchive(ArchiveFactory link, boolean allowDeepInspection) throws ArchiveException {
-        return ArchiveType.createArchive(link, allowDeepInspection);
+        return ArchiveType.createArchive(link, allowDeepInspection, SUPPORTED_ARCHIVE_TYPES);
     }
 
     public static boolean checkRARSignature(File file) {
@@ -526,7 +533,7 @@ public class Multi extends IExtraction {
                     final Long size = item.getSize();
                     final File extractTo = getExtractFilePath(item, ctrl, skippedFlag);
                     if (skippedFlag.get()) {
-                        if (size != null) {
+                        if (size != null && size >= 0) {
                             ctrl.addAndGetProcessedBytes(size);
                         }
                         continue;
@@ -544,7 +551,7 @@ public class Multi extends IExtraction {
                                     throw new SevenZipException("Extraction has been aborted");
                                 }
                                 final int ret = super.write(data);
-                                ctrl.addAndGetProcessedBytes(data.length);
+                                ctrl.addAndGetProcessedBytes(ret);
                                 return ret;
                             }
                         };
@@ -618,20 +625,6 @@ public class Multi extends IExtraction {
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
 
-    private boolean filter(final String file) {
-        final String check = "/".concat(file);
-        for (final Pattern regex : filter) {
-            try {
-                if (regex.matcher(check).matches()) {
-                    return true;
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-        }
-        return false;
-    }
-
     public File getExtractFilePath(final ISimpleInArchiveItem item, final ExtractionController ctrl, final AtomicBoolean skipped) throws SevenZipException {
         final Archive archive = getExtractionController().getArchive();
         String itemPath = item.getPath();
@@ -657,7 +650,7 @@ public class Multi extends IExtraction {
                 itemPath = newItemPath;
             }
         }
-        if (filter(itemPath)) {
+        if (isFiltered(itemPath)) {
             logger.info("Filtering item:" + itemPath + " from " + firstArchiveFile);
             skipped.set(true);
             return null;
@@ -1196,19 +1189,6 @@ public class Multi extends IExtraction {
                     logger.log(e);
                 }
             }
-            final String[] patternStrings = getConfig().getBlacklistPatterns();
-            filter.clear();
-            if (patternStrings != null && patternStrings.length > 0) {
-                for (final String patternString : patternStrings) {
-                    try {
-                        if (StringUtils.isNotEmpty(patternString) && !patternString.startsWith("##")) {
-                            filter.add(Pattern.compile(patternString));
-                        }
-                    } catch (final Throwable e) {
-                        getLogger().log(e);
-                    }
-                }
-            }
             try {
                 final String sig = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()));
                 final Signature signature = new FileSignatures().getSignature(sig);
@@ -1286,6 +1266,7 @@ public class Multi extends IExtraction {
             if (inArchive.getNumberOfItems() == 0) {
                 throw new SevenZipException("No Items found in \"" + firstArchiveFile.getFilePath() + "\"! Maybe unsupported archive type?");
             }
+            initFilters();
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
             if (e.getMessage() != null && (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided"))) {
@@ -1312,7 +1293,7 @@ public class Multi extends IExtraction {
                 for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                     try {
                         final String itemPath = item.getPath();
-                        if (StringUtils.isEmpty(itemPath) || filter(itemPath)) {
+                        if (StringUtils.isEmpty(itemPath) || isFiltered(itemPath)) {
                             continue;
                         }
                         newView.add(new PackedFile(item.isFolder(), itemPath, item.getSize()));
@@ -1337,7 +1318,7 @@ public class Multi extends IExtraction {
                 return false;
             }
         } else {
-            for (ArchiveType archiveType : ArchiveType.values()) {
+            for (final ArchiveType archiveType : ArchiveType.values()) {
                 if (archiveType.matches(factory.getFilePath())) {
                     return null;
                 }
