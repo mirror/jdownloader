@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -38,7 +37,6 @@ import jd.plugins.FilePackage;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/(?:galleries/\\d+\\.html|reader/\\d+\\.html)" })
 public class HitomiLa extends antiDDoSForDecrypt {
-
     public HitomiLa(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -77,7 +75,6 @@ public class HitomiLa extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -90,10 +87,9 @@ public class HitomiLa extends antiDDoSForDecrypt {
      */
     private String getImageHost(final String guid) throws DecrypterException {
         // number of subdmains.
-        final int i = 6;
+        final int i = 7;
         // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
         final String subdomain = Character.toString((char) (97 + (Integer.parseInt(guid) % i)));
         return subdomain;
     }
-
 }
