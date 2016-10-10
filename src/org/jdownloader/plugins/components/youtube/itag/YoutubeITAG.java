@@ -45,6 +45,19 @@ public enum YoutubeITAG {
     DASH_VIDEO_240P_H264(133, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_360P_H264(134, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_480P_H264(135, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
+    /*
+     *
+     *
+     * Video ID : 1 Format : AVC Format/Info : Advanced Video Codec Format profile : Main@L3 Format settings, CABAC : Yes Format settings,
+     * ReFrames : 3 frames Codec ID : avc1 Codec ID/Info : Advanced Video Coding Duration : 6s 773ms Bit rate : 1 063 Kbps Width : 720
+     * pixels Height : 480 pixels Display aspect ratio : 3:2 Frame rate mode : Variable Frame rate : 29.970 fps Minimum frame rate : 29.970
+     * fps Maximum frame rate : 30.364 fps Standard : NTSC Color space : YUV Chroma subsampling : 4:2:0 Bit depth : 8 bits Scan type :
+     * Progressive Bits/(Pixel*Frame) : 0.103 Stream size : 879 KiB (100%) Encoded date : UTC 2013-02-23 01:52:16 Tagged date : UTC
+     * 2013-02-23 01:52:16
+     *
+     */
+    // in my testcase ?v=Qw9oX-kZ_9k 212 had a higher bitrate than 135. It seems that 212 is kind of old
+    DASH_VIDEO_480P_H264_2(212, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_720_H264_FPS60(298, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_720P_H264(136, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_ITAG304_MP4_1280P_60FPS(304, StreamContainer.DASH_VIDEO, VideoResolution.P_1280, VideoCodec.H264, VideoFrameRate.FPS_60),
