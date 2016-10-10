@@ -491,6 +491,81 @@ public enum ArchiveType {
     },
 
     /**
+     * Multipart Zip Archive (.zip, .z01...) 0-999 -> max 1000 parts
+     */
+    ZIP_MULTI2 {
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.z(ip|\\d{1,3})$");
+
+        @Override
+        public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
+            return ArchiveFormat.ZIP;
+        }
+
+        @Override
+        public boolean matches(String filePathOrName) {
+            return filePathOrName != null && pattern.matcher(filePathOrName).matches();
+        }
+
+        @Override
+        protected String buildIDPattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                return "\\.(?i)z(ip|\\d{" + matches[1].length() + "})";
+            }
+        }
+
+        @Override
+        public Pattern buildArchivePattern(String[] matches, Boolean isMultiPart) {
+            if (Boolean.FALSE.equals(isMultiPart)) {
+                return null;
+            } else {
+                final String pattern = "^" + escapeRegex(matches[0]) + buildIDPattern(matches, null) + "$";
+                return Pattern.compile(pattern);
+            }
+        }
+
+        @Override
+        public String[] getMatches(String filePathOrName) {
+            return filePathOrName != null ? new Regex(filePathOrName, pattern).getRow(0) : null;
+        }
+
+        @Override
+        protected String getPartNumberString(String filePathOrName) {
+            final String matches[] = getMatches(filePathOrName);
+            return matches != null ? matches[1] : null;
+        }
+
+        @Override
+        protected int getPartNumber(String partNumberString) {
+            if ("ip".equals(partNumberString.toLowerCase(Locale.ENGLISH))) {
+                return 0;
+            } else {
+                return Integer.parseInt(partNumberString);
+            }
+        }
+
+        @Override
+        protected int getFirstPartIndex() {
+            return 0;
+        }
+
+        @Override
+        protected int getMinimumNeededPartIndex() {
+            return 1;
+        }
+
+        @Override
+        protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
+            if (partIndex == 0) {
+                return matches[0] + ".zip";
+            } else {
+                return matches[0] + ".z" + String.format(Locale.US, "%0" + partStringLength + "d", partIndex);
+            }
+        }
+    },
+
+    /**
      * Multipart Zip Archive (.zip.001, .zip.002...) 0-999 -> max 1000 parts
      */
     ZIP_MULTI {
@@ -1350,9 +1425,9 @@ public enum ArchiveType {
         return null;
     }
 
-    public static Archive createArchive(final ArchiveFactory link, final boolean allowDeepInspection) throws ArchiveException {
+    public static Archive createArchive(final ArchiveFactory link, final boolean allowDeepInspection, final ArchiveType... archiveTypes) throws ArchiveException {
         final String linkPath = link.getFilePath();
-        archiveTypeLoop: for (final ArchiveType archiveType : values()) {
+        archiveTypeLoop: for (final ArchiveType archiveType : archiveTypes) {
             final String[] filePathParts = archiveType.getMatches(linkPath);
             if (filePathParts != null) {
                 final Boolean isMultiPart;
@@ -1426,5 +1501,9 @@ public enum ArchiveType {
             }
         }
         return null;
+    }
+
+    public static Archive createArchive(final ArchiveFactory link, final boolean allowDeepInspection) throws ArchiveException {
+        return createArchive(link, allowDeepInspection, ArchiveType.values());
     }
 }

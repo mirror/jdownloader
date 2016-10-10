@@ -16,9 +16,14 @@
 
 package org.jdownloader.extensions.extraction;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
@@ -37,6 +42,39 @@ public abstract class IExtraction {
     private Exception            exception;
     private ArchiveFile          lastAccessedArchiveFile;
     private ExtractLogFileWriter crashLog;
+
+    private List<Pattern>        filters = new ArrayList<Pattern>();
+
+    protected void initFilters() {
+        final String[] patternStrings = getConfig().getBlacklistPatterns();
+        final List<Pattern> filters = new ArrayList<Pattern>();
+        if (patternStrings != null && patternStrings.length > 0) {
+            for (final String patternString : patternStrings) {
+                try {
+                    if (StringUtils.isNotEmpty(patternString) && !patternString.startsWith("##")) {
+                        filters.add(Pattern.compile(patternString));
+                    }
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+        this.filters = filters;
+    }
+
+    protected boolean isFiltered(final String path) {
+        final String check = "/".concat(path);
+        for (final Pattern regex : filters) {
+            try {
+                if (regex.matcher(check).matches()) {
+                    return true;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
+        return false;
+    }
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
         this.lastAccessedArchiveFile = lastAccessedArchiveFile;
