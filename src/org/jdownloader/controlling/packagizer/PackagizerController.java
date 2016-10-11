@@ -66,7 +66,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private final PackagizerSettings              config;
     private volatile ArrayList<PackagizerRule>    list                  = new ArrayList<PackagizerRule>();
     private final PackagizerControllerEventSender eventSender;
-    private volatile List<PackagizerRuleWrapper>  rules;
+    private volatile List<PackagizerRuleWrapper>  rules                 = new ArrayList<PackagizerRuleWrapper>();
 
     public static final String                    ORGFILENAME           = "orgfilename";
     public static final String                    ORGFILENAMEWITHOUTEXT = "orgfilenamewithoutext";
@@ -618,9 +618,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     private void updateInternal() {
         // url filter only require the urls, and thus can be done before linkcheck
-        ArrayList<PackagizerRuleWrapper> newRules = new ArrayList<PackagizerRuleWrapper>();
+        final ArrayList<PackagizerRuleWrapper> newRules = new ArrayList<PackagizerRuleWrapper>();
         synchronized (this) {
-            for (PackagizerRule lgr : list) {
+            for (final PackagizerRule lgr : list) {
                 if (lgr.isEnabled() && lgr.isValid()) {
                     try {
                         final PackagizerRuleWrapper compiled = lgr.compile();
@@ -631,6 +631,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         lgr._setBroken(true);
                         LogController.CL().log(e);
                     }
+                }
+            }
+            if (!isTestInstance()) {
+                if (newRules.size() != rules.size()) {
+                    save(list);
                 }
             }
         }

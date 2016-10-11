@@ -463,7 +463,7 @@ public class MegaConz extends PluginForHost {
                 }
             }
         }
-        if (url.startsWith("chrome://") || url.startsWith("mega:///")) {
+        if (StringUtils.startsWithCaseInsensitive(url, "chrome:") || StringUtils.startsWithCaseInsensitive(url, "mega:")) {
             final String keyString = getPublicFileKey(link);
             if (fileID != null && keyString != null) {
                 link.setUrlDownload("https://mega.co.nz/#!" + fileID + "!" + keyString);

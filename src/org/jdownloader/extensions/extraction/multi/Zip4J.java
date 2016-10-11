@@ -189,7 +189,7 @@ public class Zip4J extends IExtraction {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
             final List<Object> items = zipFile.getFileHeaders();
-            byte[] readBuffer = new byte[32767];
+            final byte[] readBuffer = new byte[32767];
             for (int index = 0; index < items.size(); index++) {
                 final FileHeader item = (FileHeader) items.get(index);
                 // Skip folders
@@ -214,7 +214,7 @@ public class Zip4J extends IExtraction {
                 final String itemPath = item.getFileName();
                 ctrl.setCurrentActiveItem(new Item(itemPath, size, extractTo));
                 try {
-                    final FilesBytesCacheWriter call = new FilesBytesCacheWriter(extractTo, getExtractionController(), getConfig()) {
+                    final FilesBytesCacheWriter writer = new FilesBytesCacheWriter(extractTo, getExtractionController(), getConfig()) {
 
                         @Override
                         public int write(byte[] data, int length) throws SevenZipException {
@@ -237,12 +237,12 @@ public class Zip4J extends IExtraction {
                         int readLen = -1;
                         // Loop until End of File and write the contents to the output stream
                         while ((readLen = is.read(readBuffer)) != -1) {
-                            call.write(readBuffer, readLen);
+                            writer.write(readBuffer, readLen);
                         }
                         is.close();
                         is = null;
                     } finally {
-                        call.close();
+                        writer.close();
                         if (is != null) {
                             is.close(true);
                         }
