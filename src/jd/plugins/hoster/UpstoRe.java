@@ -29,11 +29,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,6 +48,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -337,6 +337,7 @@ public class UpstoRe extends antiDDoSForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                br.setCookie(getHost(), "lang", "en");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -356,6 +357,7 @@ public class UpstoRe extends antiDDoSForHost {
                             // cloudflare routine sets user-agent on first request.
                             userAgent.set(ua);
                         }
+                        br.setCookie(getHost(), "lang", "en");
                         return;
                     }
                 }
@@ -367,6 +369,7 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // goto first page
+                br.setCookie(getHost(), "lang", "en");
                 getPage("https://upstore.net/");
                 // getPage("/account/soclogin/?url=https%3A%2F%2Fupstore.net%2F");
                 postPage("/account/login/", "url=https%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
@@ -479,6 +482,7 @@ public class UpstoRe extends antiDDoSForHost {
         br.setFollowRedirects(true);
         areWeStillLoggedIn(account);
         // Make sure that the language is correct
+        getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/?lang=en");
         getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/stat/download/?lang=en");
         // Check for never-ending premium accounts
         if (!br.containsHTML(lifetimeAccount)) {
@@ -497,7 +501,10 @@ public class UpstoRe extends antiDDoSForHost {
         // traffic is not unlimited they have 20GiB/day fair use. see ticket HZI-220-58438
         // ai.setUnlimitedTraffic();
         // this is in MiB, more accurate than the top rounded figure
-        final String trafficUsed = br.getRegex(">Total:</td>\\s*<td>([\\d+\\.]+)<").getMatch(0);
+        String trafficUsed = br.getRegex(">Total:</td>\\s*<td>([\\d+\\.]+)<").getMatch(0);
+        if (trafficUsed == null) {
+            trafficUsed = "0";
+        }
         final String trafficTotal = br.getRegex("Downloaded in last \\d+ hours: [\\d+\\.]+ of (\\d+) GB").getMatch(0);
         final long trafficDaily = SizeFormatter.getSize(trafficTotal + "GiB");
         final long trafficLeft = trafficDaily - SizeFormatter.getSize(trafficUsed + "MiB");
