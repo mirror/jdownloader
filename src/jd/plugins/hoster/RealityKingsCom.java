@@ -28,6 +28,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "http://(www\\.)?(members\\.rkdecrypted\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+|imagesr\\.rkdecrypted\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "http://(www\\.)?(members\\.rkdecrypted\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+|imagesr\\.rkdecrypted\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+)" })
 public class RealityKingsCom extends PluginForHost {
 
     public RealityKingsCom(PluginWrapper wrapper) {
@@ -151,17 +152,25 @@ public class RealityKingsCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("http://members.rk.com/?a=user.login");
+                final Form form = br.getFormbyActionRegex("user.login");
                 final String lang = System.getProperty("user.language");
-                final String csrf = br.getRegex("type=\"hidden\" name=\"csrf\" value=\"([a-z0-9]+)\"").getMatch(0);
-                if (csrf == null) {
+                if (form == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("http://members.rk.com/?a=user.login", "remember_me=1&redir=&csrf=" + csrf + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "auth") == null) {
+                form.put("username", Encoding.urlEncode(account.getUser()));
+                form.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(form);
+                br.followRedirect(true);
+                final Form fallBack = br.getFormbyActionRegex("postFallback=1");
+                if (fallBack != null) {
+                    br.submitForm(fallBack);
+                    br.followRedirect(true);
+                }
+                if (br.getCookie(MAINPAGE, "rememberme") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
