@@ -884,7 +884,7 @@ public class MegaConz extends PluginForHost {
                     fis = new FileInputStream(src);
                     FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
                     fos = new FileOutputStream(outputFile);
-                    Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
+                    final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
                     cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
                     final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
                     int read = 0;

@@ -66,7 +66,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private final PackagizerSettings              config;
     private volatile ArrayList<PackagizerRule>    list                  = new ArrayList<PackagizerRule>();
     private final PackagizerControllerEventSender eventSender;
-    private volatile List<PackagizerRuleWrapper>  rules                 = new ArrayList<PackagizerRuleWrapper>();
+    private volatile List<PackagizerRuleWrapper>  rules                 = null;
 
     public static final String                    ORGFILENAME           = "orgfilename";
     public static final String                    ORGFILENAMEWITHOUTEXT = "orgfilenamewithoutext";
@@ -634,7 +634,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
             }
             if (!isTestInstance()) {
-                if (newRules.size() != rules.size()) {
+                if (rules != null && newRules.size() != rules.size()) {
                     save(list);
                 }
             }

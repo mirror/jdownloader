@@ -256,6 +256,11 @@ public class Zip4J extends IExtraction {
             setException(e);
             archive.setExitCode(e.getExitCode());
             return;
+        } catch (SevenZipException e) {
+            logger.log(e);
+            setException(e);
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+            return;
         } catch (ZipException e) {
             logger.log(e);
             setException(e);

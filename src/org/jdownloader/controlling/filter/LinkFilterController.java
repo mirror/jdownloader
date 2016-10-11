@@ -48,8 +48,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
         return acceptFilters;
     }
 
-    private volatile List<LinkgrabberFilterRuleWrapper> acceptFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
-    private volatile List<LinkgrabberFilterRuleWrapper> denyFilters   = new ArrayList<LinkgrabberFilterRuleWrapper>();
+    private volatile List<LinkgrabberFilterRuleWrapper> acceptFilters = null;
+    private volatile List<LinkgrabberFilterRuleWrapper> denyFilters   = null;
     private final KeyHandler<Object>                    filterListHandler;
 
     private final ChangeEventSender                     eventSender;
@@ -194,9 +194,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 }
             }
             if (!isTestInstance()) {
-                if (denyFilters.size() != newDenyFilters.size()) {
+                if (denyFilters != null && denyFilters.size() != newDenyFilters.size()) {
                     save(filter);
-                } else if (acceptFilters.size() != newAcceptlFilters.size()) {
+                } else if (acceptFilters != null && acceptFilters.size() != newAcceptlFilters.size()) {
                     save(filter);
                 }
             }
