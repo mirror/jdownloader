@@ -174,7 +174,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 }
                 ressourcelist = (ArrayList) entries.get("list");
             } else {
-                final String json = this.br.getRegex("setData\\((\\{.+?)\\)").getMatch(0);
+                final String json = this.br.getRegex("setData\\((\\{.+?);").getMatch(0);
                 if (json == null) {
                     logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
                     return null;
