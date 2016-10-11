@@ -68,7 +68,7 @@ public class MegaConz extends PluginForDecrypt {
         final String masterKey = getMasterKey(parameter);
         final String parentNodeID = getParentNodeID(parameter);
         final String containerURL;
-        if (parameter.getCryptedUrl().startsWith("chrome://")) {
+        if (StringUtils.startsWithCaseInsensitive(parameter.getCryptedUrl(), "chrome:") || StringUtils.startsWithCaseInsensitive(parameter.getCryptedUrl(), "mega:")) {
             if (folderID != null && masterKey != null) {
                 containerURL = "https://mega.co.nz/#F!" + folderID + "!" + masterKey;
             } else {

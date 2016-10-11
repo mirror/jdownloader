@@ -48,12 +48,12 @@ public class LinkFilterController implements LinkCrawlerFilter {
         return acceptFilters;
     }
 
-    private volatile java.util.List<LinkgrabberFilterRuleWrapper> acceptFilters;
-    private volatile java.util.List<LinkgrabberFilterRuleWrapper> denyFilters;
-    private final KeyHandler<Object>                              filterListHandler;
+    private volatile List<LinkgrabberFilterRuleWrapper> acceptFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
+    private volatile List<LinkgrabberFilterRuleWrapper> denyFilters   = new ArrayList<LinkgrabberFilterRuleWrapper>();
+    private final KeyHandler<Object>                    filterListHandler;
 
-    private final ChangeEventSender                               eventSender;
-    private final boolean                                         testInstance;
+    private final ChangeEventSender                     eventSender;
+    private final boolean                               testInstance;
 
     /**
      * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
@@ -175,26 +175,37 @@ public class LinkFilterController implements LinkCrawlerFilter {
         // linkcheck
         final ArrayList<LinkgrabberFilterRuleWrapper> newDenyFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
         final ArrayList<LinkgrabberFilterRuleWrapper> newAcceptlFilters = new ArrayList<LinkgrabberFilterRuleWrapper>();
-        for (final LinkgrabberFilterRule lgr : list()) {
-            if (lgr.isEnabled() && lgr.isValid()) {
-                try {
-                    final LinkgrabberFilterRuleWrapper compiled = lgr.compile();
-                    lgr._setBroken(false);
-                    if (lgr.isAccept()) {
-                        newAcceptlFilters.add(compiled);
-                    } else {
-                        newDenyFilters.add(compiled);
+        synchronized (this) {
+            for (final LinkgrabberFilterRule lgr : filter) {
+                if (lgr.isEnabled() && lgr.isValid()) {
+                    try {
+                        final LinkgrabberFilterRuleWrapper compiled = lgr.compile();
+                        lgr._setBroken(false);
+                        if (lgr.isAccept()) {
+                            newAcceptlFilters.add(compiled);
+                        } else {
+                            newDenyFilters.add(compiled);
+                        }
+                    } catch (final Throwable e) {
+                        lgr.setEnabled(false);
+                        lgr._setBroken(true);
+                        LogController.CL().log(e);
                     }
-                } catch (final Throwable e) {
-                    lgr.setEnabled(false);
-                    lgr._setBroken(true);
-                    LogController.CL().log(e);
+                }
+            }
+            if (!isTestInstance()) {
+                if (denyFilters.size() != newDenyFilters.size()) {
+                    save(filter);
+                } else if (acceptFilters.size() != newAcceptlFilters.size()) {
+                    save(filter);
                 }
             }
         }
         denyFilters = newDenyFilters;
         acceptFilters = newAcceptlFilters;
-        getEventSender().fireEvent(new ChangeEvent(LinkFilterController.this));
+        if (getEventSender().hasListener()) {
+            getEventSender().fireEvent(new ChangeEvent(LinkFilterController.this));
+        }
     }
 
     public void update() {
