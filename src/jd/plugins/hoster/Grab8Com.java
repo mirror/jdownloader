@@ -469,7 +469,7 @@ public class Grab8Com extends antiDDoSForHost {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
                         final DownloadLink odl = this.getDownloadLink();
                         this.setDownloadLink(dummyLink);
-                        final String code = this.getCaptchaCode(url_ordinary_captcha.concat("&characters=2"), dummyLink);
+                        final String code = this.getCaptchaCode(url_ordinary_captcha, dummyLink);
                         login.put("icaptcha", Encoding.urlEncode(code));
                         if (odl != null) {
                             this.setDownloadLink(odl);
