@@ -148,9 +148,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
         };
         cmbNetIf.setPopDown(true);
-
         cmbNetIf.addActionListener(this);
-
         //
         this.delayer = new DelayedRunnable(ToolTipController.EXECUTER, 2000) {
 
@@ -258,7 +256,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
     @Override
     public void actionPerformed(final ActionEvent e) {
-        if (e.getSource() == cmbNetIf && cmbType.getSelectedIndex() == 3) {
+        if (e.getSource() == cmbNetIf && cmbType.getSelectedIndex() == 4) {
             final Object selection = cmbNetIf.getSelectedItem();
             if (selection instanceof NetIfSelection) {
                 final NetIfSelection netIfSelection = (NetIfSelection) selection;
@@ -283,8 +281,9 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
         switch (cmbType.getSelectedIndex()) {
         case 0:
-        case 1:
             // http
+        case 1:
+            // https
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
             panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
@@ -308,7 +307,6 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             break;
         case 2:
             // socks5
-
             panel.setLayout(new MigLayout("ins 0, wrap 4", "[][grow,fill,n:300:n][][grow,fill,n:50:n]", "[]"));
             panel.add(new JLabel(_GUI.T.jd_gui_swing_dialog_ProxyDialog_type()));
             panel.add(cmbType, "spanx");
@@ -359,15 +357,11 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(lblHost);
             panel.add(txtHost);
 
-            // panel.add(lblUser);
-            // panel.add(txtUser, "spanx");
-
             panel.add(lblNetIf);
             panel.add(cmbNetIf);
 
             lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_local());
             break;
-
         case 5:
             // pac
             if (!JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).isProxyVoleAutodetectionEnabled()) {
@@ -386,7 +380,6 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             panel.add(txtPass, "spanx");
 
             lblHost.setText(_GUI.T.jd_gui_swing_dialog_ProxyDialog_pac_url());
-
             break;
         default:
             throw new WTFException("Not Possible");
