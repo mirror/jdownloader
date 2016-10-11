@@ -18,19 +18,17 @@ package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.raf.OldRAFDownload;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 /**
  * heavily modified download interface by raztoki
@@ -42,7 +40,7 @@ public class BrowserDownloadInterface {
 
     public static final int ERROR_REDIRECTED = -1;
 
-    public DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
+    protected DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
         final OldRAFDownload dl = new OldRAFDownload(downloadable, request);
         final int chunks = downloadable.getChunks();
         if (chunksCount == 0) {
@@ -52,14 +50,6 @@ public class BrowserDownloadInterface {
         }
         dl.setResume(resumeEnabled);
         return dl;
-    }
-
-    public DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createRequest(link), false, 1);
-    }
-
-    public DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws Exception {
-        return openDownload(br, downloadLink, url, postdata, false, 1);
     }
 
     /**
@@ -74,7 +64,7 @@ public class BrowserDownloadInterface {
      * @return
      * @throws Exception
      */
-    public DownloadInterface openDownload(Browser br, Downloadable downloadable, Request request, boolean resume, int chunks) throws Exception {
+    protected DownloadInterface openDownload(Browser br, Downloadable downloadable, Request request, boolean resume, int chunks) throws Exception {
         String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadable, request, resume, chunks);
         downloadable.setDownloadInterface(dl);
@@ -147,23 +137,6 @@ public class BrowserDownloadInterface {
      *
      * @param br
      * @param downloadLink
-     * @param url
-     * @param postdata
-     * @param resume
-     *            true|false, if chunks over 1 it must be true!
-     * @param chunks
-     *            0 = unlimited, chunks must start with negative sign otherwise it forces value to be used instead of up to value.
-     * @return
-     * @throws Exception
-     */
-    public DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata, boolean resume, int chunks) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createPostRequest(url, postdata), resume, chunks);
-    }
-
-    /**
-     *
-     * @param br
-     * @param downloadLink
      * @param link
      * @param resume
      *            true|false, if chunks over 1 it must be true!
@@ -173,27 +146,7 @@ public class BrowserDownloadInterface {
      * @throws Exception
      */
     public DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link, boolean resume, int chunks) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createRequest(link), resume, chunks);
-    }
-
-    /**
-     *
-     * @param br
-     * @param downloadLink
-     * @param form
-     * @param resume
-     *            true|false, if chunks over 1 it must be true!
-     * @param chunks
-     *            0 = unlimited, chunks must start with negative sign otherwise it forces value to be used instead of up to value.
-     * @return
-     * @throws Exception
-     */
-    public DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createRequest(form), resume, chunks);
-    }
-
-    public DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form) throws Exception {
-        return openDownload(br, downloadLink, form, false, 1);
+        return openDownload(br, BrowserAdapter.getDownloadable(downloadLink, br), br.createRequest(link), resume, chunks);
     }
 
     /**
@@ -205,7 +158,7 @@ public class BrowserDownloadInterface {
      * @param br
      * @throws PluginException
      */
-    public void handleBlockedConnection(final DownloadInterface dl, final Browser br) throws PluginException {
+    protected void handleBlockedConnection(final DownloadInterface dl, final Browser br) throws PluginException {
         if (dl != null && br != null) {
             if (dl.getConnection().getResponseCode() == 403) {
                 if ("Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
@@ -305,7 +258,7 @@ public class BrowserDownloadInterface {
      * @param br
      * @throws PluginException
      */
-    public void handleBlockedRedirect(final String redirect) throws PluginException {
+    protected void handleBlockedRedirect(final String redirect) throws PluginException {
         if (redirect == null) {
             return;
         }

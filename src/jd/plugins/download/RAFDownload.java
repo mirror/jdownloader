@@ -19,6 +19,7 @@ package jd.plugins.download;
 import java.io.IOException;
 
 import jd.http.Request;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -28,7 +29,7 @@ import jd.plugins.download.raf.OldRAFDownload;
 public class RAFDownload extends OldRAFDownload {
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
-        super(new DownloadLinkDownloadable(downloadLink), request);
+        super(BrowserAdapter.getDownloadable(downloadLink, null), request);
     }
 
     @Deprecated

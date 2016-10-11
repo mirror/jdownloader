@@ -77,5 +77,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-databind.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-annotations.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/zip4j.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
