@@ -16,18 +16,18 @@
 
 package jd.plugins;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.raf.OldRAFDownload;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 public class BrowserAdapter {
 
@@ -46,8 +46,19 @@ public class BrowserAdapter {
         return dl;
     }
 
+    public static Downloadable getDownloadable(DownloadLink downloadLink, Browser br) {
+        final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+        if (controller != null) {
+            final PluginForHost plugin = controller.getProcessingPlugin();
+            if (plugin != null) {
+                return plugin.newDownloadable(downloadLink, br);
+            }
+        }
+        return null;
+    }
+
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createRequest(link), false, 1);
+        return openDownload(br, getDownloadable(downloadLink, br), br.createRequest(link), false, 1);
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws Exception {
@@ -170,15 +181,15 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata, boolean resume, int chunks) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createPostRequest(url, postdata), resume, chunks);
+        return openDownload(br, getDownloadable(downloadLink, br), br.createPostRequest(url, postdata), resume, chunks);
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link, boolean resume, int chunks) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createRequest(link), resume, chunks);
+        return openDownload(br, getDownloadable(downloadLink, br), br.createRequest(link), resume, chunks);
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
-        return openDownload(br, new DownloadLinkDownloadable(downloadLink), br.createRequest(form), resume, chunks);
+        return openDownload(br, getDownloadable(downloadLink, br), br.createRequest(form), resume, chunks);
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form) throws Exception {
