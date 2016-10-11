@@ -18,14 +18,17 @@ package jd.plugins;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -37,12 +40,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 public class Account extends Property {
 
@@ -58,6 +55,7 @@ public class Account extends Property {
     public static final String  PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
     public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
     private static final String COOKIE_STORAGE                 = "COOKIE_STORAGE";
+    private static final String BROWSER_COOKIES_STORAGE        = "BROWSER_COOKIES_STORAGE";
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
@@ -112,43 +110,6 @@ public class Account extends Property {
         setProperty(COOKIE_STORAGE_TIMESTAMP_ID, System.currentTimeMillis());
     }
 
-    /**
-     * saves entire cookie session, not just one 'host/domain reference', useful if you're lazy or provider saves cookies to multiple
-     * domains!
-     *
-     * @author raztoki
-     * @since JD2
-     * @param cookies
-     * @param ID
-     */
-    public void saveCookies(final Browser br, final String ID) {
-        final HashMap<String, Cookies> cookies = br.getCookies();
-        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
-        final HashMap<String, ArrayList<CookieStorable>> cookieStorables = new HashMap<String, ArrayList<CookieStorable>>();
-        /*
-         * do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
-         */
-        final String antiddosCookies = org.jdownloader.plugins.components.antiDDoSForHost.antiDDoSCookiePattern;
-        final java.util.Iterator<Entry<String, Cookies>> it = cookies.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<String, Cookies> entry = it.next();
-            final ArrayList<CookieStorable> cs = new ArrayList<CookieStorable>();
-            final String domain = entry.getKey();
-            final Cookies ckies = entry.getValue();
-            for (final Cookie cookie : ckies.getCookies()) {
-                if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies) && !cookie.isExpired()) {
-                    cs.add(new CookieStorable(cookie));
-                }
-            }
-            cookieStorables.put(domain, cs);
-        }
-        setProperty(COOKIE_STORAGE, validation);
-        final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
-        setProperty(COOKIE_STORAGE_ID, JSonStorage.toString(cookieStorables));
-        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
-        setProperty(COOKIE_STORAGE_TIMESTAMP_ID, System.currentTimeMillis());
-    }
-
     public synchronized void clearCookies(final String ID) {
         removeProperty(COOKIE_STORAGE);
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
@@ -186,49 +147,6 @@ public class Account extends Property {
         }
         clearCookies(ID);
         return null;
-    }
-
-    /**
-     * To reload browser session saved by saveCookies(Browser, String)
-     *
-     * @author raztoki
-     * @since JD2
-     * @param br
-     * @param ID
-     * @return
-     */
-    public synchronized boolean loadCookies(final Browser br, final String ID) {
-        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
-        if (StringUtils.equals(getStringProperty(COOKIE_STORAGE), validation)) {
-            final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
-            final String cookieStorables = getStringProperty(COOKIE_STORAGE_ID);
-            if (StringUtils.isNotEmpty(cookieStorables)) {
-                try {
-                    final Object cookiesContainer = JSonStorage.restoreFrom(cookieStorables, new TypeRef<HashMap<String, Object>>() {
-                    }, null);
-                    final HashMap<String, ArrayList<CookieStorable>> cookies = (HashMap<String, ArrayList<CookieStorable>>) cookiesContainer;
-                    if (!cookies.isEmpty()) {
-                        for (final Map.Entry<String, ArrayList<CookieStorable>> cookieEntry : cookies.entrySet()) {
-                            final String host = cookieEntry.getKey();
-                            final ArrayList<CookieStorable> cs = cookieEntry.getValue();
-                            final Cookies ret = new Cookies();
-                            for (final CookieStorable storable : cs) {
-                                final Cookie cookie = storable._restore();
-                                if (!cookie.isExpired()) {
-                                    ret.add(cookie);
-                                }
-                            }
-                            br.setCookies(host, ret);
-                        }
-                        return true;
-                    }
-                } catch (Throwable e) {
-                    LogController.CL().log(e);
-                }
-            }
-        }
-        clearCookies(ID);
-        return false;
     }
 
     /**
