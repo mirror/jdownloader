@@ -37,7 +37,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" })
 public class WdrDeDecrypt extends PluginForDecrypt {
 
     private static final String Q_LOW           = "Q_LOW";
@@ -157,10 +157,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
             final SubConfiguration cfg = SubConfiguration.getConfig("wdr.de");
             final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
-            boolean grab_low = cfg.getBooleanProperty(Q_LOW, false);
-            boolean grab_medium = cfg.getBooleanProperty(Q_MEDIUM, false);
-            boolean grab_high = cfg.getBooleanProperty(Q_HIGH, false);
-            boolean grab_best = cfg.getBooleanProperty(Q_BEST, false);
+            boolean grab_low = cfg.getBooleanProperty(Q_LOW, true);
+            boolean grab_medium = cfg.getBooleanProperty(Q_MEDIUM, true);
+            boolean grab_high = cfg.getBooleanProperty(Q_HIGH, true);
+            boolean grab_best = cfg.getBooleanProperty(Q_BEST, true);
             final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.WdrDeMediathek.FAST_LINKCHECK, jd.plugins.hoster.WdrDeMediathek.defaultFAST_LINKCHECK);
             ArrayList<String> selected_qualities = new ArrayList<String>();
 
