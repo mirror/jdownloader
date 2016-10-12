@@ -69,7 +69,7 @@ public class InstallThread extends Thread {
 
     private DownloadClient   br;
 
-    private boolean          abort = false;
+    private volatile boolean abort = false;
 
     @Override
     public void interrupt() {
@@ -147,7 +147,7 @@ public class InstallThread extends Thread {
                     boolean tryToResume = file.exists();
                     downloading = true;
                     StatsManager.I().track("installing/downloadstart", CollectionName.PJS);
-                    while (tryToResume || tryIt && (!Thread.interrupted() && !abort)) {
+                    while ((tryToResume || tryIt) && !abort) {
                         try {
                             tryIt = false;
                             if (!file.exists() || file.length() == 0) {
@@ -155,6 +155,9 @@ public class InstallThread extends Thread {
                             }
                             br.download(url);
                             break;
+                        } catch (InterruptedException e) {
+                            LogController.CL(false).log(e);
+                            throw e;
                         } catch (Throwable e) {
                             LogController.CL(false).log(e);
                             br.getOutputStream().close();
