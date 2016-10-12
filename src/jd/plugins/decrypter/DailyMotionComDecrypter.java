@@ -673,8 +673,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\}\\})\\);").getMatch(0);
         }
         if (videosource == null) {
-            // buildPlayer({"context": ... "ui":{}}});
-            videosource = br.getRegex("buildPlayer\\((\\{\"context\":.*?\\}\\})\\)\\;").getMatch(0);
+            videosource = br.getRegex("(\\{\"context\":.*?\\}\\}\\}\\;)").getMatch(0);
         }
         return videosource;
     }
