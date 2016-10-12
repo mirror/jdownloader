@@ -445,12 +445,11 @@ public class Grab8Com extends antiDDoSForHost {
                 } else {
                     getPage(br, "https://" + getHost() + "/");
                     // find the form
-                    Form login = br.getFormByInputFieldKeyValue("username", null);
+                    final Form login = br.getFormByInputFieldKeyValue("username", null);
                     if (login == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     // https request, login action seems to be to http.
-                    login.setAction("http://www." + getHost() + "/ajax/action.php");
                     login.put("username", Encoding.urlEncode(currAcc.getUser()));
                     login.put("password", Encoding.urlEncode(currAcc.getPass()));
                     login.put("rememberme", "true");

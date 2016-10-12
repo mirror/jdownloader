@@ -487,7 +487,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return "save linkcollector...";
             }
         });
-        asyncSaving = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {
+        final LinkCollectorConfig cfg = JsonConfig.create(LinkCollectorConfig.class);
+        final long minimumDelay = Math.max(5000, cfg.getMinimumSaveDelay());
+        long maximumDelay = cfg.getMaximumSaveDelay();
+        if (maximumDelay <= 0) {
+            maximumDelay = -1;
+        } else {
+            maximumDelay = Math.max(maximumDelay, minimumDelay);
+        }
+        asyncSaving = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
 
             @Override
             public void run() {
@@ -1337,9 +1345,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
