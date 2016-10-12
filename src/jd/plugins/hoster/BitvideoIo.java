@@ -86,12 +86,12 @@ public class BitvideoIo extends PluginForHost {
                 filename = url_filename;
             }
         }
-        if (filename.length() > 246) {
-            int dash = filename.indexOf('-', 234);
+        if (filename.length() > 212) {
+            int dash = filename.indexOf('-', 200);
             if (dash >= 0) {
                 filename = filename.substring(0, dash);
             } else {
-                filename = filename.substring(0, 246);
+                filename = filename.substring(0, 212);
             }
         }
         if (this.br.containsHTML(html_video_encoding)) {
