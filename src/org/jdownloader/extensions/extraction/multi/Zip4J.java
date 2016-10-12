@@ -47,6 +47,32 @@ public class Zip4J extends IExtraction {
 
     @Override
     public boolean findPassword(ExtractionController controller, String password, boolean optimized) throws ExtractionException {
+        final Archive archive = getExtractionController().getArchive();
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        try {
+            zipFile = new ZipFile(firstArchiveFile.getFilePath());
+            if (zipFile.isEncrypted()) {
+                if (password == null) {
+                    zipFile.setPassword("");
+                } else {
+                    zipFile.setPassword(password);
+                }
+            }
+
+            final List<Object> fileHeaders = zipFile.getFileHeaders();
+            for (int index = 0; index < fileHeaders.size(); index++) {
+                final FileHeader fileHeader = (FileHeader) fileHeaders.get(index);
+                if (fileHeader != null && fileHeader.isEncrypted()) {
+                    archive.setProtected(true);
+                    break;
+                }
+            }
+            updateContentView(zipFile);
+            archive.setFinalPassword(password);
+            return true;
+        } catch (Throwable e) {
+            logger.log(e);
+        }
         return false;
     }
 
