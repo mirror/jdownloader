@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -122,7 +123,7 @@ public class ImDbCom extends PluginForHost {
              * get the fileName from main download link page because fileName on the /player subpage may be wrong
              */
             filename = br.getRegex("<title>(.*?) \\- IMDb</title>").getMatch(0);
-            br.getPage(downloadURL + "/player");
+            // br.getPage(downloadURL + "/player");
             if (br.containsHTML("(<title>IMDb Video Player: </title>|This video is not available\\.)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -132,8 +133,19 @@ public class ImDbCom extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/player?uff=3");
-            dllink = br.getRegex("addVariable\\(\"file\", \"((http|rtmp).*?)\"\\)").getMatch(0);
+            // br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) +
+            // "/player?uff=3");
+            br.getPage("http://www.imdb.com/video/user/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
+            String[] vs = br.getRegex("(\"videoUrl\".*?)\\}").getColumn(0);
+            for (String v : vs) {
+                dllink = PluginJSonUtils.getJsonValue(v, "videoUrl");
+                if (dllink != null && dllink.contains("mp4")) {
+                    break;
+                }
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("addVariable\\(\"file\", \"((http|rtmp).*?)\"\\)").getMatch(0);
+            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
