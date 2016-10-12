@@ -316,6 +316,25 @@ public class MegaConz extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else if (request.getHtmlCode().contains("-3") || request.getHtmlCode().contains("-4")) {
+            // API_EAGAIN (-3): A temporary congestion or server malfunction prevented your request from being processed. No data was
+            // altered. Retry. Retries must be spaced with exponential backoff.
+            // API_ERATELIMIT (-4):You have exceeded your command weight per time quota. Please wait a few seconds, then try again (this
+            // should never happen in sane real-life applications).
+            if (sid != null && account != null) {
+                synchronized (account) {
+                    if (sid.equals(account.restoreObject("", TypeRef.STRING))) {
+                        account.clearObject("");
+                    }
+                }
+                if ("us".equalsIgnoreCase(action)) {
+                    return null;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            }
         }
         return null;
     }
