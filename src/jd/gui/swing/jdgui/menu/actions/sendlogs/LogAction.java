@@ -24,6 +24,7 @@ import jd.controlling.ClipboardMonitoring;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.logging2.LogSink.FLUSH;
 import org.appwork.utils.logging2.LogSourceProvider;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
@@ -78,7 +79,7 @@ public class LogAction extends AbstractLogAction {
 
     @Override
     protected void flushLogs() {
-        LogSourceProvider.flushAllSinks(true, false);
+        LogSourceProvider.flushAllSinks(FLUSH.FORCE);
     }
 
     @Override

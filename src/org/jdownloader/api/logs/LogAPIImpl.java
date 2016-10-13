@@ -14,6 +14,7 @@ import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSink.FLUSH;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.zip.ZipIOException;
@@ -134,7 +135,7 @@ public class LogAPIImpl implements LogAPI {
             final String name = lf.getFolder().getName() + "-" + DATE_FORMAT.format(lf.getCreated()) + " to " + DATE_FORMAT.format(lf.getLastModified());
             final File folder = Application.getTempResource("logs/" + name);
             if (lf.isNeedsFlush()) {
-                LogController.getInstance().flushSinks(true, false);
+                LogController.getInstance().flushSinks(FLUSH.FORCE);
             }
             if (folder.exists()) {
                 Files.deleteRecursiv(folder);
