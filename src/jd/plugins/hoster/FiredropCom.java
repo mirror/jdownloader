@@ -171,11 +171,11 @@ public class FiredropCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
+        doFree(null, downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final Account account, final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String continue_link = null;
         boolean captcha = false;
         boolean success = false;
@@ -193,7 +193,16 @@ public class FiredropCom extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
-                    br.getPage(downloadLink.getDownloadURL());
+                    try {
+                        br.getPage(downloadLink.getDownloadURL());
+                    } catch (BrowserException e) {
+                        if (account != null && e.getRequest().getHttpConnection().isContentDisposition()) {
+                            account.setProperty("free", false);
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
                 handleErrors();
                 /* Passwords are usually before waittime. */
@@ -489,7 +498,7 @@ public class FiredropCom extends PluginForHost {
                     }
                 }
                 br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>") && !br.containsHTML("class=\"label label\\-success\">PROFESSIONAL<")) {
+                if (!br.containsHTML("class=\"(badge badge|label label)\\-success\">PAID USER</span>") && !br.containsHTML("class=\"(badge badge|label label)\\-success\">PROFESSIONAL<")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);
@@ -505,6 +514,7 @@ public class FiredropCom extends PluginForHost {
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("free", Property.NULL);
                 throw e;
             }
         }
@@ -581,7 +591,7 @@ public class FiredropCom extends PluginForHost {
             if (!available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());
             }
-            doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
+            doFree(account, link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
             String dllink = link.getDownloadURL();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
