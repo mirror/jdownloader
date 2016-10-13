@@ -1345,9 +1345,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2176,27 +2176,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         final String oldRootPath = lcs.getRootPath();
                         if (!StringUtils.isEmpty(oldRootPath)) {
                             final String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
-                            /*
-                             * convert paths relative to JDownloader root,only in jared version
-                             */
-                            for (final CrawledPackage pkg : ret2) {
-                                if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
-                                    /* no need to convert relative paths */
-                                    continue;
-                                }
-                                final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
-                                if (pkgPath.startsWith(oldRootPath + "/") || pkgPath.startsWith(oldRootPath + "\\")) {
-                                    /*
-                                     * folder is inside JDRoot, lets update it
-                                     */
-                                    String restPath = pkgPath.substring(oldRootPath.length());
-                                    // cut of leading path seperator
-                                    restPath = restPath.replaceFirst("^(/+|\\\\+)", "");
-                                    // fix path seperators
-                                    restPath = CrossSystem.fixPathSeparators(restPath);
-                                    final String newPath = new File(newRoot, restPath).toString();
-                                    if (!StringUtils.equals(pkgPath, newPath)) {
-                                        pkg.setDownloadFolder(newPath);
+                            if (!oldRootPath.equals(newRoot)) {
+                                /*
+                                 * convert paths relative to JDownloader root,only in jared version
+                                 */
+                                for (final CrawledPackage pkg : ret2) {
+                                    if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
+                                        /* no need to convert relative paths */
+                                        continue;
+                                    }
+                                    final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
+                                    if (pkgPath.startsWith(oldRootPath + "/") || pkgPath.startsWith(oldRootPath + "\\")) {
+                                        /*
+                                         * folder is inside JDRoot, lets update it
+                                         */
+                                        String restPath = pkgPath.substring(oldRootPath.length());
+                                        // cut of leading path seperator
+                                        restPath = restPath.replaceFirst("^(/+|\\\\+)", "");
+                                        // fix path seperators
+                                        restPath = CrossSystem.fixPathSeparators(restPath);
+                                        final String newPath = new File(newRoot, restPath).toString();
+                                        if (!StringUtils.equals(pkgPath, newPath)) {
+                                            pkg.setDownloadFolder(newPath);
+                                        }
                                     }
                                 }
                             }
