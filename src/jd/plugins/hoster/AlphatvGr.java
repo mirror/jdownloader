@@ -81,12 +81,22 @@ public class AlphatvGr extends PluginForHost {
         if (hls_master == null && url_rtmp == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (url_rtmp != null) {
+        if (hls_master != null) {
+            /* If no rtmp url is available, download HLS */
+            br.getPage(hls_master);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+        } else if (url_rtmp != null) {
             /* Prefer rtmp download */
-            final Regex rtmp_regex = new Regex(url_rtmp, "(^rtmp://[^/]+/)([^/]+)/(mp4:.+)");
+            final Regex rtmp_regex = new Regex(url_rtmp, "(^rtmp://[^/]+/)([^/]+)/(_definst_/)?(mp4:.+)");
             String rtmp_host = rtmp_regex.getMatch(0);
             final String rtmp_app = rtmp_regex.getMatch(1);
-            final String url_playpath = rtmp_regex.getMatch(2);
+            final String url_playpath = rtmp_regex.getMatch(3);
             if (url_playpath == null || rtmp_app == null || rtmp_host == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -101,17 +111,7 @@ public class AlphatvGr extends PluginForHost {
             // rtmp.setFlashVer("WIN 18,0,0,194");
             rtmp.setApp(rtmp_app);
             rtmp.setUrl(url_rtmp);
-            rtmp.setResume(true);
-        } else {
-            /* If no rtmp url is available, download HLS */
-            br.getPage(hls_master);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String url_hls = hlsbest.downloadurl;
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+            rtmp.setResume(false);
         }
         dl.startDownload();
     }
