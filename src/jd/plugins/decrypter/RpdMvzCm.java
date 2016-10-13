@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.rezavn|rmz\\.cr)/release/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?(?:rapidmoviez\\.com|rmz\\.rezavn|rmz\\.cr)/release/[a-z0-9\\-]+" })
 public class RpdMvzCm extends antiDDoSForDecrypt {
 
     public RpdMvzCm(PluginWrapper wrapper) {
@@ -60,7 +60,7 @@ public class RpdMvzCm extends antiDDoSForDecrypt {
         }
 
         final String fpName = br.getRegex("<h2>(.*?)<br />").getMatch(0);
-        String filter = br.getRegex("<div class=\"fullsize\">Download</div>(.*?)<h5><a").getMatch(0);
+        String filter = br.getRegex("<div class=\"fullsize\">Download</div>(.*?)<h5><").getMatch(0);
 
         final String links[] = HTMLParser.getHttpLinks(filter, "");
         if (links != null) {
