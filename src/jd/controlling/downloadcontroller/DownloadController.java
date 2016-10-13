@@ -740,27 +740,29 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         final String oldRootPath = dcs.getRootPath();
                         if (!StringUtils.isEmpty(oldRootPath)) {
                             final String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
-                            /*
-                             * convert paths relative to JDownloader root,only in jared version
-                             */
-                            for (final FilePackage pkg : ret2) {
-                                if (!CrossSystem.isAbsolutePath(pkg.getDownloadDirectory())) {
-                                    /* no need to convert relative paths */
-                                    continue;
-                                }
-                                final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
-                                if (pkgPath.startsWith(oldRootPath + "/") || pkgPath.startsWith(oldRootPath + "\\")) {
-                                    /*
-                                     * folder is inside JDRoot, lets update it
-                                     */
-                                    String restPath = pkgPath.substring(oldRootPath.length());
-                                    // cut of leading path seperator
-                                    restPath = restPath.replaceFirst("^(/+|\\\\+)", "");
-                                    // fix path seperators
-                                    restPath = CrossSystem.fixPathSeparators(restPath);
-                                    final String newPath = new File(newRoot, restPath).getAbsolutePath();
-                                    if (!StringUtils.equals(pkgPath, newPath)) {
-                                        pkg.setDownloadDirectory(newPath);
+                            if (!oldRootPath.equals(newRoot)) {
+                                /*
+                                 * convert paths relative to JDownloader root,only in jared version
+                                 */
+                                for (final FilePackage pkg : ret2) {
+                                    if (!CrossSystem.isAbsolutePath(pkg.getDownloadDirectory())) {
+                                        /* no need to convert relative paths */
+                                        continue;
+                                    }
+                                    final String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
+                                    if (pkgPath.startsWith(oldRootPath + "/") || pkgPath.startsWith(oldRootPath + "\\")) {
+                                        /*
+                                         * folder is inside JDRoot, lets update it
+                                         */
+                                        String restPath = pkgPath.substring(oldRootPath.length());
+                                        // cut of leading path seperator
+                                        restPath = restPath.replaceFirst("^(/+|\\\\+)", "");
+                                        // fix path seperators
+                                        restPath = CrossSystem.fixPathSeparators(restPath);
+                                        final String newPath = new File(newRoot, restPath).getAbsolutePath();
+                                        if (!StringUtils.equals(pkgPath, newPath)) {
+                                            pkg.setDownloadDirectory(newPath);
+                                        }
                                     }
                                 }
                             }
