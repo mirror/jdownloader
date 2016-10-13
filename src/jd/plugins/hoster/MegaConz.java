@@ -545,6 +545,8 @@ public class MegaConz extends PluginForHost {
             response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
         } catch (IOException e) {
             logger.log(e);
+            checkServerBusy();
+            throw e;
         }
         if (response == null) {
             final String error = getError(br);
