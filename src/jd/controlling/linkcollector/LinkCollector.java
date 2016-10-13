@@ -2189,7 +2189,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     /*
                                      * folder is inside JDRoot, lets update it
                                      */
-                                    final String restPath = pkgPath.substring(oldRootPath.length());
+                                    String restPath = pkgPath.substring(oldRootPath.length());
+                                    // cut of leading path seperator
+                                    restPath = restPath.replaceFirst("^(/+|\\\\+)", "");
+                                    // fix path seperators
+                                    restPath = CrossSystem.fixPathSeparators(restPath);
                                     final String newPath = new File(newRoot, restPath).toString();
                                     if (!StringUtils.equals(pkgPath, newPath)) {
                                         pkg.setDownloadFolder(newPath);

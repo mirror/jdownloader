@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.http.Request;
 import jd.network.rtmp.RtmpDump;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
@@ -36,6 +37,9 @@ public class RTMPDownload extends RAFDownload {
         this.dLink = downloadLink;
         url = new URL(null, rtmpURL, new RTMPStreamHandler());
         rtmpConnection = new RtmpUrlConnection(url);
+    }
+
+    public void setInitialRequest(Request initialRequest) {
     }
 
     public RtmpUrlConnection getRtmpConnection() {
