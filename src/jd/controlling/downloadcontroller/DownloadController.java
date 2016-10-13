@@ -753,7 +753,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     /*
                                      * folder is inside JDRoot, lets update it
                                      */
-                                    final String restPath = pkgPath.substring(oldRootPath.length());
+                                    String restPath = pkgPath.substring(oldRootPath.length());
+                                    // cut of leading path seperator
+                                    restPath = restPath.replaceFirst("^(/+|\\\\+)", "");
+                                    // fix path seperators
+                                    restPath = CrossSystem.fixPathSeparators(restPath);
                                     final String newPath = new File(newRoot, restPath).getAbsolutePath();
                                     if (!StringUtils.equals(pkgPath, newPath)) {
                                         pkg.setDownloadDirectory(newPath);
