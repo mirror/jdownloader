@@ -1079,9 +1079,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1089,7 +1089,7 @@ public class RapidGatorNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -8);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             handleErrors_api(session_id, link, account, dl.getConnection());
@@ -1164,7 +1164,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -5);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -8);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 handleErrors_api(null, link, account, dl.getConnection());
