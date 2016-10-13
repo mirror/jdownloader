@@ -352,14 +352,14 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getSiteTitle() {
-        final String title = br.getRegex("<title>([^<>\"]*?) \\- xHamster\\.com</title>").getMatch(0);
+        final String title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(\\.com)?</title>").getMatch(0);
         return title;
     }
 
     private String getFilename() throws PluginException, IOException {
         String filename = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?), Free Porn: xHamster</title>").getMatch(0);
+            filename = br.getRegex("<title.*?>([^<>\"]*?), Free Porn: xHamster</title>").getMatch(0);
             if (filename == null) {
                 filename = getSiteTitle();
             }
