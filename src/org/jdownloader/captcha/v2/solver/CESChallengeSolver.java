@@ -30,8 +30,12 @@ public abstract class CESChallengeSolver<T> extends ChallengeSolver<T> {
 
     }
 
+    protected boolean isAccountLoginSupported(Challenge<?> c) {
+        return c.isAccountLogin() == false;
+    }
+
     public boolean canHandle(Challenge<?> c) {
-        return c.isAccountLogin() == false && super.canHandle(c);
+        return isAccountLoginSupported(c) && super.canHandle(c);
     }
 
     final public void solve(final SolverJob<T> job) throws InterruptedException, SolverException {
