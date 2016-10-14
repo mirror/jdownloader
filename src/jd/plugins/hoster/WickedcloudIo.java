@@ -216,6 +216,10 @@ public class WickedcloudIo extends PluginForHost {
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
                 br.getPage(link.getDownloadURL());
+                if (!new Regex(this.br.getURL(), this.getSupportedLinks()).matches()) {
+                    /* 2016-10-14: Special */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown server issue");
+                }
             }
             handleErrors();
             /* Passwords are usually before waittime. */

@@ -28,8 +28,6 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -43,8 +41,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(programs?|topic)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
@@ -98,7 +98,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             if (parameter.matches(TYPE_TOPIC)) {
                 logger.warning("MAYBE Decrypter out of date for link: " + parameter);
             } else {
-                logger.warning("Decrypter out of date for link: " + parameter);
+                logger.warning("Decrypter for sure out of date for link: " + parameter);
             }
             return null;
         }
@@ -112,19 +112,17 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         final String decryptedhost = "http://" + nicehost + "decrypted";
 
         try {
-            final String json = br.getRegex("initializeAdworx\\((.*?)\\);\n").getMatch(0);
+            String json = this.br.getRegex("class=\"jsb_ jsb_VideoPlaylist\" data\\-jsb=\"([^<>\"]+)\"").getMatch(0);
             final String video_id = new Regex(data, "(\\d+)$").getMatch(0);
-            String xmlData = br.getRegex("ORF\\.flashXML\\s*=\\s*\'([^\']+)\';").getMatch(0);
 
-            if (xmlData != null || json != null) {
+            if (json != null) {
                 Map<String, HashMap<String, String>> mediaEntries = new TreeMap<String, HashMap<String, String>>();
                 HashMap<String, String> mediaEntry = null;
                 String quality = null, key = null, title = null;
                 /* jsonData --> HashMap */
-                ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
-                entries = (LinkedHashMap<String, Object>) entries.get("values");
-                ressourcelist = (ArrayList) entries.get("segments");
+                json = Encoding.htmlDecode(json);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "playlist/videos");
 
                 final String site_title = getTitle(br);
                 String fpName = site_title;
@@ -140,13 +138,12 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
 
                 for (final Object segmento : ressourcelist) {
                     final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) segmento;
-                    final LinkedHashMap<String, Object> playlist_data = (LinkedHashMap<String, Object>) entry.get("playlist_data");
-                    final ArrayList<Object> sources_video = (ArrayList) playlist_data.get("sources");
+                    final ArrayList<Object> sources_video = (ArrayList) entry.get("sources");
                     ArrayList<Object> subtitle_list = null;
-                    final Object sources_subtitle_o = playlist_data.get("subtitles");
+                    final Object sources_subtitle_o = entry.get("subtitles");
 
-                    final String encrypted_id = (String) entry.get("encrypted_id");
-                    final String decrypted_id = Encoding.Base64Decode(encrypted_id);
+                    // final String encrypted_id = (String) entry.get("encrypted_id");
+                    final String decrypted_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
                     final String description = (String) entry.get("description");
                     String titlethis = (String) entry.get("title");
                     if (titlethis == null) {
@@ -197,10 +194,12 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         if (sources_subtitle_o != null) {
                             /* [0] = .srt, [1] = WEBVTT .vtt */
                             subtitle_list = (ArrayList) sources_subtitle_o;
-                            if (subtitle_list.size() > 0) {
+                            if (subtitle_list.size() > 1) {
                                 subtitle = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
-                            } else {
+                            } else if (subtitle_list.size() == 1) {
                                 subtitle = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(0), "src");
+                            } else {
+                                subtitle = null;
                             }
                         }
                         long filesize = 0;
