@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tidido.com" }, urls = { "https?://(?:www\\.)?tidido\\.com/.+" })
 public class TididoCom extends PluginForDecrypt {
 
     public TididoCom(PluginWrapper wrapper) {
@@ -40,9 +40,9 @@ public class TididoCom extends PluginForDecrypt {
     }
 
     private final String                  TYPE_ALBUM         = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?(?:a[a-z0-9]+/)?al[a-z0-9]+";
-    private final String                  TYPE_PLAYLIST      = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/(?:u[a-z0-9]+/playlists/[a-z0-9]+|moods/([^/]+)/([a-z0-9]+))";
+    private final String                  TYPE_PLAYLIST      = "https?://(?:www\\.)?tidido\\.com/((?:[A-Za-z]{2}/)?u[a-z0-9]+/playlists/[a-z0-9]+)";
     private final String                  TYPE_PLAYLIST_MOOD = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/moods/([^/]+)/([a-z0-9]+)";
-    private final String                  TYPE_PLAYLIST_USER = "https?://(?:www\\.)?tidido\\.com/([A-Za-z]{2})/u([a-z0-9]+)/playlists/([a-z0-9]+)";
+    private final String                  TYPE_PLAYLIST_USER = "https?://(?:www\\.)?tidido\\.com/(?:[A-Za-z]{2}/)?u([a-z0-9]+)/playlists/([a-z0-9]+)";
     private final String                  TYPE_SONG          = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+/al[a-z0-9]+/t[a-z0-9]+";
     private final String                  TYPE_ARTIST        = "https?://(?:www\\.)?tidido\\.com/(?:[a-z]{2}/)?a[a-z0-9]+.*?";
 
@@ -85,10 +85,11 @@ public class TididoCom extends PluginForDecrypt {
             playlist_mood = new Regex(parameter, TYPE_PLAYLIST_MOOD).getMatch(1);
             playlist_id = new Regex(parameter, TYPE_PLAYLIST_MOOD).getMatch(2);
         } else if (parameter.matches(TYPE_PLAYLIST_USER)) {
-            user_id = new Regex(parameter, TYPE_PLAYLIST_USER).getMatch(1);
-            playlist_id = new Regex(parameter, TYPE_PLAYLIST_USER).getMatch(2);
+            user_id = new Regex(parameter, TYPE_PLAYLIST_USER).getMatch(0);
+            playlist_id = new Regex(parameter, TYPE_PLAYLIST_USER).getMatch(1);
         } else {
             /* Unsupported linktype */
+            logger.info("Unsupported linktype");
             return decryptedLinks;
         }
 
@@ -96,7 +97,7 @@ public class TididoCom extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries2 = null;
         ArrayList<Object> ressourcelist = null;
         ArrayList<Object> song_array = null;
-        if (parameter.matches(TYPE_PLAYLIST)) {
+        if (parameter.matches(TYPE_PLAYLIST) || parameter.matches(TYPE_PLAYLIST_MOOD)) {
             if (parameter.matches(TYPE_PLAYLIST_MOOD)) {
                 this.br.getPage("http://tidido.com/api/music/mood/" + playlist_mood + "?areaname=" + playlist_areaname + "&playlists=true");
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());

@@ -437,6 +437,7 @@ public class Grab8Com extends antiDDoSForHost {
             AccountInfo ai = new AccountInfo();
             try {
                 // new browser
+                Browser superbrbefore = this.br;
                 final Browser br = new Browser();
                 if (!fetchAccountInfo && cachedLogin && loadCookies(this.br)) {
                     return currAcc.getAccountInfo();
@@ -468,11 +469,16 @@ public class Grab8Com extends antiDDoSForHost {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
                         final DownloadLink odl = this.getDownloadLink();
                         this.setDownloadLink(dummyLink);
+                        this.br = br;
                         final String code = this.getCaptchaCode(url_ordinary_captcha, dummyLink);
+                        this.br = superbrbefore;
                         login.put("icaptcha", Encoding.urlEncode(code));
                         if (odl != null) {
                             this.setDownloadLink(odl);
                         }
+                    }
+                    if (login.getAction() == null) {
+                        login.setAction("/ajax/action.php");
                     }
                     submitFormAPISafe(br, login);
                     if (inValidateCookies(br, new String[] { "auth", "user" })) {
