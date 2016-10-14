@@ -36,7 +36,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
@@ -59,6 +59,7 @@ public class AtvAt extends PluginForDecrypt {
         final Regex linkinfo = new Regex(parameter, "atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
         String url_seriesname = linkinfo.getMatch(0);
         String url_episodename = linkinfo.getMatch(1);
+        boolean geo_blocked = false;
         final String fid = linkinfo.getMatch(2);
         final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
         final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
@@ -91,6 +92,7 @@ public class AtvAt extends PluginForDecrypt {
              * this does not necessarily mean that it is blocked in the users'country!
              */
             logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
+            geo_blocked = true;
         }
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
 
@@ -233,7 +235,14 @@ public class AtvAt extends PluginForDecrypt {
          */
         if (decryptedLinksWorkaround.size() > decryptedLinks.size()) {
             /* Use workaround e.g. for GEO-blocked urls */
+            logger.info("GEO-blocked workaround active");
             decryptedLinks = decryptedLinksWorkaround;
+        } else if (decryptedLinks.size() == 0 && geo_blocked) {
+            logger.info("GEO-blocked");
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName("GEO_blocked_" + fid);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
 
         final FilePackage fp = FilePackage.getInstance();
