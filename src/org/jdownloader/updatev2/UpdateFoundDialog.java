@@ -11,30 +11,28 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import net.miginfocom.swing.MigLayout;
-
-import org.appwork.resources.AWUTheme;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
+import org.jdownloader.images.JDIconRef;
+
+import net.miginfocom.swing.MigLayout;
 
 public class UpdateFoundDialog extends ConfirmDialog {
-
     private AbstractAction laterAction = null;
     private AbstractAction nowAction   = null;
 
     public UpdateFoundDialog(final Runnable later, final Runnable now) {
-        super(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _UPDATE.T.update_dialog_title_updates_available(), _UPDATE.T.update_dialog_msg_x_updates_available(), AWUTheme.I().getIcon("updatericon", 32), null, _UPDATE.T.update_dialog_cancel());
+        super(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _UPDATE.T.update_dialog_title_updates_available(), _UPDATE.T.update_dialog_msg_x_updates_available(), JDIconRef.updatericon.get(32), null, _UPDATE.T.update_dialog_cancel());
         this.setTimeout(60000);
         if (later != null) {
             this.laterAction = new AbstractAction(_UPDATE.T.update_dialog_later()) {
-
                 /**
-             * 
-             */
+                * 
+                */
                 private static final long serialVersionUID = 1L;
 
                 public void actionPerformed(final ActionEvent e) {
@@ -42,15 +40,13 @@ public class UpdateFoundDialog extends ConfirmDialog {
                     later.run();
                     UpdateFoundDialog.this.dispose();
                 }
-
             };
         }
         if (now != null) {
             this.nowAction = new AbstractAction(_UPDATE.T.update_dialog_yes()) {
-
                 /**
-             * 
-             */
+                * 
+                */
                 private static final long serialVersionUID = 1L;
 
                 public void actionPerformed(final ActionEvent e) {
@@ -58,7 +54,6 @@ public class UpdateFoundDialog extends ConfirmDialog {
                     now.run();
                     UpdateFoundDialog.this.dispose();
                 }
-
             };
         }
     }
@@ -66,16 +61,13 @@ public class UpdateFoundDialog extends ConfirmDialog {
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[]0");
-
         if (this.laterAction != null) {
             ret.add(new JButton(this.laterAction), "alignx right,tag ok,sizegroup confirms,growx,pushx");
         }
         if (this.nowAction != null) {
             ret.add(new JButton(this.nowAction), "alignx right,tag ok,sizegroup confirms,growx,pushx");
         }
-
         return ret;
-
     }
 
     @Override
@@ -83,15 +75,12 @@ public class UpdateFoundDialog extends ConfirmDialog {
         final JComponent txt = super.layoutDialogContent();
         final JPanel ret = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill][]"));
         ret.add(txt);
-
         final JButton btn = new JButton(_UPDATE.T.update_dialog_news_button());
         btn.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(final ActionEvent e) {
                 UpdateFoundDialog.this.cancel();
                 CrossSystem.openURLOrShowMessage(_UPDATE.T.update_dialog_news_button_url());
-
             }
         });
         btn.setContentAreaFilled(false);
