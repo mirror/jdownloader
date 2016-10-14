@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
 
-import org.appwork.resources.AWUTheme;
+import org.appwork.resources.AWIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -26,15 +26,14 @@ public class LockAllColumnsAction extends AppAction {
         } else {
             setName(_GUI.T.LockAllColumnsAction_LockAllColumnsAction_lockall_columns_());
         }
-
-        this.putValue(Action.SMALL_ICON, AWUTheme.getInstance().getIcon("exttable/lockColumn", table.getContextIconSize()));
+        this.putValue(Action.SMALL_ICON, AWIcon.TABLE_LOCK_COLUMN.get(table.getContextIconSize()));
         this.table = table;
         ;
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     @Override
@@ -50,13 +49,10 @@ public class LockAllColumnsAction extends AppAction {
             for (ExtColumn<?> c : table.getModel().getColumns()) {
                 c.setResizable(true);
             }
-
         } else {
             for (ExtColumn<?> c : table.getModel().getColumns()) {
                 c.setResizable(false);
             }
         }
-
     }
-
 }
