@@ -34,9 +34,9 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "directmirror.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "shrta.com" },
+        names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "exoshare.com", "go4up.com", "uploadonall.com", "directmirror.com", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "shrta.com" },
 
-urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}" }
+        urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "https?://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}" }
 
 )
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
@@ -86,15 +86,13 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         if (!param.getCryptedUrl().matches(".+exoshare\\.com/.+") && !param.getCryptedUrl().endsWith("/")) {
             param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
         }
-        String protocol = new Regex(parameter, "(https?://)").getMatch(0);
-        String host = new Regex(parameter, "://([^/]+)/").getMatch(0);
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
         if (id == null && parameter.matches("(?i).+multiupfile\\.com/.+")) {
             id = new Regex(parameter, "([A-Za-z0-9]+)/?$").getMatch(0);
         }
         // This should never happen but in case a dev changes the plugin without
         // much testing he'll see the error later!
-        if (host == null || id == null) {
+        if (id == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
         }
@@ -116,7 +114,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             // we apparently need a filename
             customFileName = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
-            getPage(br, "http://go4up.com/download/gethosts/" + id + "/" + customFileName);
+            getPage(br, "/download/gethosts/" + id + "/" + customFileName);
             br.getRequest().setHtmlCode(br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
             final String urls[] = this.br.getRegex("\"link\":\"(.*?)\",\"button\"").getColumn(0);
             final String urls_broken[] = this.br.getRegex("\"link\":\"(File currently in queue\\.|Error occured)\"").getColumn(0);
@@ -146,7 +144,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             postPage(br, br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + pssd);
         } else {
-            getPage(br, protocol + host + "/status.php?uid=" + id);
+            getPage(br, "/status.php?uid=" + id);
         }
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
@@ -169,7 +167,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        logger.info("Found " + redirectLinks.length + " " + host.replaceAll("www\\.", "") + " links to decrypt...");
+        logger.info("Found " + redirectLinks.length + " " + " links to decrypt...");
         String fileName = null;
         if (parameter.contains("mirrorcop")) {
             final Browser brc = br.cloneBrowser();
