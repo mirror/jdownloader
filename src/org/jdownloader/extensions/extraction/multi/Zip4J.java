@@ -6,13 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.io.ZipInputStream;
-import net.lingala.zip4j.model.FileHeader;
-import net.sf.sevenzipjbinding.SevenZipException;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -35,8 +28,14 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
 
-public class Zip4J extends IExtraction {
+import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.io.ZipInputStream;
+import net.lingala.zip4j.model.FileHeader;
+import net.sf.sevenzipjbinding.SevenZipException;
 
+public class Zip4J extends IExtraction {
     private ZipFile                    zipFile                 = null;
     private static final ArchiveType[] SUPPORTED_ARCHIVE_TYPES = new ArchiveType[] { ArchiveType.ZIP_MULTI2 };
 
@@ -47,7 +46,6 @@ public class Zip4J extends IExtraction {
 
     @Override
     public boolean findPassword(ExtractionController controller, String password, boolean optimized) throws ExtractionException {
-        // TODO: not yet implemented
         return false;
     }
 
@@ -190,7 +188,7 @@ public class Zip4J extends IExtraction {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
             final List<Object> items = zipFile.getFileHeaders();
-            final byte[] readBuffer = new byte[32767];
+            byte[] readBuffer = new byte[32767];
             for (int index = 0; index < items.size(); index++) {
                 final FileHeader item = (FileHeader) items.get(index);
                 // Skip folders
@@ -215,8 +213,7 @@ public class Zip4J extends IExtraction {
                 final String itemPath = item.getFileName();
                 ctrl.setCurrentActiveItem(new Item(itemPath, size, extractTo));
                 try {
-                    final FilesBytesCacheWriter writer = new FilesBytesCacheWriter(extractTo, getExtractionController(), getConfig()) {
-
+                    final FilesBytesCacheWriter call = new FilesBytesCacheWriter(extractTo, getExtractionController(), getConfig()) {
                         @Override
                         public int write(byte[] data, int length) throws SevenZipException {
                             if (ctrl.gotKilled()) {
@@ -226,7 +223,6 @@ public class Zip4J extends IExtraction {
                             ctrl.addAndGetProcessedBytes(ret);
                             return ret;
                         }
-
                     };
                     archive.addExtractedFiles(extractTo);
                     ZipInputStream is = null;
@@ -238,12 +234,12 @@ public class Zip4J extends IExtraction {
                         int readLen = -1;
                         // Loop until End of File and write the contents to the output stream
                         while ((readLen = is.read(readBuffer)) != -1) {
-                            writer.write(readBuffer, readLen);
+                            call.write(readBuffer, readLen);
                         }
                         is.close();
                         is = null;
                     } finally {
-                        writer.close();
+                        call.close();
                         if (is != null) {
                             is.close(true);
                         }
@@ -399,5 +395,4 @@ public class Zip4J extends IExtraction {
         }
         return null;
     }
-
 }
