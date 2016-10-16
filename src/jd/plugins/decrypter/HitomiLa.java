@@ -54,7 +54,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         }
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
         // get the image host.
-        final String imghost = getImageHost(guid);
+        final String imghost = "la";// + getImageHost(guid);
         final String[] links = br.getRegex("(/" + guid + "/[^<>\"]*?\\.[a-z]+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -87,7 +87,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
      */
     private String getImageHost(final String guid) throws DecrypterException {
         // number of subdmains.
-        final int i = 7;
+        final int i = 6;
         // guid is always present, so not sure why they have failover. That said you don't need subdomain either base domain works also!
         final String subdomain = Character.toString((char) (97 + (Integer.parseInt(guid) % i)));
         return subdomain;
