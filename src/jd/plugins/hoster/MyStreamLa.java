@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,11 +30,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/external/[A-Za-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(?:www\\.)?mystream\\.la/(?:external/|embed-)[A-Za-z0-9]{12}" })
 public class MyStreamLa extends PluginForHost {
 
     public MyStreamLa(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/external/"));
     }
 
     private String fuid   = null;
@@ -49,7 +52,8 @@ public class MyStreamLa extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        correctDownloadLink(downloadLink);
         fuid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]{12})$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
