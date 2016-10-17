@@ -2,15 +2,15 @@ package org.jdownloader.controlling.filter;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkInfo;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
 
@@ -206,8 +206,9 @@ public class RuleWrapper<T extends FilterRule> {
             } else {
                 return false;
             }
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkPackageName(final CrawledLink link) {
@@ -227,8 +228,9 @@ public class RuleWrapper<T extends FilterRule> {
             } else {
                 return packageNameRule.matches(packagename);
             }
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkFileName(final CrawledLink link) {
@@ -236,14 +238,20 @@ public class RuleWrapper<T extends FilterRule> {
         if (fileNameRule != null) {
             final DownloadLink downloadLink = link.getDownloadLink();
             if (downloadLink != null && (downloadLink.getFinalFileName() != null || downloadLink.getForcedFileName() != null)) {
+                // final or forced filename available
                 return fileNameRule.matches(link.getName());
             } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
+                // file is online
+                return fileNameRule.matches(link.getName());
+            } else if (checkOnlineStatus(link)) {
+                // onlinestatus matches so we trust the available filename
                 return fileNameRule.matches(link.getName());
             } else {
                 return false;
             }
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkHoster(final CrawledLink link) {
@@ -261,10 +269,13 @@ public class RuleWrapper<T extends FilterRule> {
                 case CONTAINS_NOT:
                 case EQUALS_NOT:
                     return (host == null || hosterRule.matches(host)) && hosterRule.matches(dlLink.getContentUrlOrPatternMatcher());
+                default:
+                    return false;
                 }
             }
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkSource(CrawledLink link) {
@@ -316,18 +327,21 @@ public class RuleWrapper<T extends FilterRule> {
             final AvailableLinkState linkState = link.getLinkState();
             if (AvailableLinkState.UNKNOWN == linkState) {
                 return false;
+            } else {
+                return onlineStatusFilter.matches(linkState);
             }
-            return onlineStatusFilter.matches(linkState);
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkConditions(final CrawledLink link) {
         final CompiledConditionFilter conditionFiler = getConditionFilter();
         if (conditionFiler != null) {
             return conditionFiler.matches(link);
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkOrigin(final CrawledLink link) {
@@ -339,8 +353,9 @@ public class RuleWrapper<T extends FilterRule> {
             } else {
                 return originFiler.matches(origin.getOrigin());
             }
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean checkPluginStatus(final CrawledLink link) {
@@ -351,8 +366,9 @@ public class RuleWrapper<T extends FilterRule> {
             } else {
                 return pluginStatusFilter.matches(link);
             }
+        } else {
+            return true;
         }
-        return true;
     }
 
     public String getName() {
