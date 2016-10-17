@@ -4,8 +4,8 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
 
-import org.appwork.resources.AWIcon;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTableIcon;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
@@ -26,7 +26,7 @@ public class LockAllColumnsAction extends AppAction {
         } else {
             setName(_GUI.T.LockAllColumnsAction_LockAllColumnsAction_lockall_columns_());
         }
-        this.putValue(Action.SMALL_ICON, AWIcon.TABLE_LOCK_COLUMN.get(table.getContextIconSize()));
+        this.putValue(Action.SMALL_ICON, ExtTableIcon.TABLE_LOCK_COLUMN.get(table.getContextIconSize()));
         this.table = table;
         ;
     }

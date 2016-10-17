@@ -4,15 +4,16 @@ import java.awt.Image;
 
 import javax.swing.Icon;
 
-import org.appwork.resources.AWIcon;
 import org.appwork.resources.IconRef;
+import org.appwork.swing.exttable.ExtTableIcon;
 
 public enum JDIconRef implements IconRef {
     updatericon("updatericon"),
     updaterIcon100("updaterIcon100"),
     updaterIcon0("updaterIcon0"),
     update("update"),
-    popDownLarge(AWIcon.TABLE_COLUMN_COMBO_popDownLarge.path());
+    popDownLarge(ExtTableIcon.TABLE_COLUMN_COMBO_popDownLarge.path()),
+    BUBBLE_CLOSE("close");
     private String path;
 
     /**
