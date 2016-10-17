@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +36,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" })
 public class AtvAt extends PluginForDecrypt {
@@ -96,16 +98,12 @@ public class AtvAt extends PluginForDecrypt {
         }
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
 
-        final String source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"(.*?)\">").getMatch(0);
-
-        final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;([a-z]+://[^<>\"]*?)\\&quot;}").getColumn(0);
-        if (allLinks == null || allLinks.length == 0) {
-            logger.info("Seems like the video source of the player is missing: " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(fid);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
+        String json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
+        json_source = Encoding.htmlDecode(json_source);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
+        final ArrayList<Object> parts = (ArrayList<Object>) entries.get("parts");
+        ArrayList<Object> sources = null;
         /* Get filename information */
         seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
         if (seriesname == null) {
@@ -147,85 +145,83 @@ public class AtvAt extends PluginForDecrypt {
         int part_counter = 1;
         int part_counter_workaround = 1;
         boolean is_workaround_active;
+        for (final Object parto : parts) {
+            entries = (LinkedHashMap<String, Object>) parto;
+            sources = (ArrayList<Object>) entries.get("sources");
+            for (final Object source : sources) {
+                entries = (LinkedHashMap<String, Object>) source;
+                final String protocol = (String) entries.get("protocol");
+                final String delivery = (String) entries.get("delivery");
+                // final String type = (String) entries.get("type");
+                String src = (String) entries.get("src");
+                if (!"http".equalsIgnoreCase(protocol) || src == null || !src.startsWith("http")) {
+                    /* Skip unknown/unsupported streaming protocols */
+                    continue;
+                }
+                /* Get around GEO-block */
+                src = src.replaceAll("http?://blocked.", "http://");
+                DownloadLink link = null;
+                String quality = null;
+                String finalname = null;
+                final String part_formatted = df.format(part_counter);
+                if ("streaming".equalsIgnoreCase(delivery) || src.contains(".m3u8")) {
+                    /* Find all hls qualities */
+                    this.br.getPage(src);
+                    if (br.containsHTML("#EXT-X-STREAM-INF")) {
+                        for (String line : Regex.getLines(br.toString())) {
+                            if (!line.startsWith("#")) {
+                                /* Reset quality value */
+                                quality = null;
+                                link = createDownloadlink(br.getBaseURL() + line);
+                                link.setContainerUrl(parameter);
 
-        int counter_max = allLinks.length - 1;
-        for (int counter = 0; counter <= counter_max; counter++) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
-            }
-            String singleLink = allLinks[counter];
-            singleLink = singleLink.replace("\\", "");
+                                try {
+                                    // try to get the video quality
+                                    final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
+                                        @Override
+                                        public LogInterface initLogger(DownloadLink link) {
+                                            return getLogger();
+                                        }
+                                    };
+                                    StreamInfo streamInfo = downloader.getProbe();
+                                    for (Stream s : streamInfo.getStreams()) {
+                                        if ("video".equals(s.getCodec_type())) {
+                                            quality = s.getHeight() + "p";
+                                            break;
+                                        }
+                                    }
 
-            String clipID_str = new Regex(singleLink, "rtsp://.+/((?:tvnext_clip|video_file)/video/\\d+)\\.mp4").getMatch(0);
-            if (clipID_str != null) {
-                /* Convert rtsp --> hls --> Sometimes their hls fails / can also be used to get around their GEO-block */
-                singleLink = "http://109.68.230.208/vod/fallback/" + clipID_str + ".mp4/index.m3u8";
-                is_workaround_active = true;
-            } else {
-                is_workaround_active = false;
-            }
-            if (!singleLink.startsWith("http") || !singleLink.contains(".m3u8")) {
-                continue;
-            }
-
-            br.getPage(singleLink);
-            String quality = "360p";
-            if (br.containsHTML("#EXT-X-STREAM-INF")) {
-                for (String line : Regex.getLines(br.toString())) {
-                    if (!line.startsWith("#")) {
-                        /* Reset quality value */
-                        quality = null;
-                        final DownloadLink link = createDownloadlink(br.getBaseURL() + line);
-                        link.setContainerUrl(parameter);
-
-                        try {
-                            // try to get the video quality
-                            final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
-                                @Override
-                                public LogInterface initLogger(DownloadLink link) {
-                                    return getLogger();
+                                } catch (Throwable e) {
+                                    getLogger().log(e);
                                 }
-                            };
-                            StreamInfo streamInfo = downloader.getProbe();
-                            for (Stream s : streamInfo.getStreams()) {
-                                if ("video".equals(s.getCodec_type())) {
-                                    quality = s.getHeight() + "p";
-                                    break;
+                                finalname = hybrid_name + "_";
+                                finalname += "_hls_part_";
+                                if (quality != null) {
+                                    finalname += quality + "_";
                                 }
+                                finalname += part_formatted + ".mp4";
+
+                                link.setFinalFileName(finalname);
+                                link.setAvailable(true);
+                                link.setContentUrl(parameter);
+                                decryptedLinks.add(link);
                             }
 
-                        } catch (Throwable e) {
-                            getLogger().log(e);
                         }
-                        final String part_formatted;
-                        if (is_workaround_active) {
-                            part_formatted = df.format(part_counter_workaround);
-                        } else {
-                            part_formatted = df.format(part_counter);
-                        }
-                        String finalname = hybrid_name + "_";
-                        if (quality != null) {
-                            finalname += quality + "_";
-                        }
-                        finalname += "part_" + part_formatted + ".mp4";
-
-                        link.setFinalFileName(finalname);
-                        link.setAvailable(true);
-                        link.setContentUrl(parameter);
-                        if (is_workaround_active) {
-                            decryptedLinksWorkaround.add(link);
-                            part_counter_workaround++;
-                        } else {
-                            decryptedLinks.add(link);
-                            part_counter++;
-                        }
-
                     }
-
+                } else {
+                    /* delivery:progressive --> http url */
+                    link = this.createDownloadlink("directhttp://" + src);
+                    finalname = hybrid_name + "_";
+                    finalname += "_http_part_" + part_formatted + ".mp4";
+                    link.setFinalFileName(finalname);
+                    // link.setAvailable(true);
+                    link.setContentUrl(parameter);
+                    decryptedLinks.add(link);
                 }
-            }
 
+            }
+            part_counter++;
         }
 
         /*
