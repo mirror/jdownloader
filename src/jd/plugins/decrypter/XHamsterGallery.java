@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "http://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/gallery/[0-9]+/.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/(gallery/[0-9]+/.*?\\.html|view/[0-9\\-]+.*?\\.html)" })
 public class XHamsterGallery extends PluginForDecrypt {
 
     public XHamsterGallery(PluginWrapper wrapper) {
@@ -45,8 +45,8 @@ public class XHamsterGallery extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
         /* Force english language */
-        final String replace_string = new Regex(parameter, "(http://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/)").getMatch(0);
-        parameter = parameter.replace(replace_string, "http://xhamster.com/");
+        final String replace_string = new Regex(parameter, "(https?://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/)").getMatch(0);
+        parameter = parameter.replace(replace_string, "https://xhamster.com/");
         br.addAllowedResponseCodes(410);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Login if possible
@@ -81,6 +81,9 @@ public class XHamsterGallery extends PluginForDecrypt {
 
         final String urlWithoutPageParameter = this.br.getURL();
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ (Pics|Bilder) \\- xHamster\\.com</title>").getMatch(0);
+        if (fpname == null) {
+            fpname = br.getRegex("<title>(.*?)\\s*>\\s*").getMatch(0);
+        }
         int pageMax = 1;
         final String[] pagesTemp = br.getRegex("\\?page=(\\d+)").getColumn(0);
         if (pagesTemp != null && pagesTemp.length != 0) {
@@ -100,22 +103,22 @@ public class XHamsterGallery extends PluginForDecrypt {
             if (pageCurrent > 1) {
                 br.getPage(urlWithoutPageParameter + "?page=" + pageCurrent);
             }
-            final String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
+            String allLinks = br.getRegex("class='iListing'>(.*?)id='galleryInfoBox'>").getMatch(0);
             if (allLinks == null) {
-                logger.warning("Decrypter failed on page " + pageCurrent);
-                return null;
+                allLinks = br.getRegex("id='imgSized'(.*?)gid='\\d+").getMatch(0);
             }
             // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
-            final String[][] thumbNails = new Regex(allLinks, "(\"|')(https?://(?:e|u)pt\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_160\\.(je?pg|gif|png))\\1").getMatches();
+            final String[][] thumbNails = new Regex(allLinks, "(\"|')(https?://(?:ept|upt|ep\\d+)\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_(?:160|1000)\\.(je?pg|gif|png))\\1").getMatches();
             if (thumbNails == null || thumbNails.length == 0) {
                 logger.warning("Decrypter failed on page " + pageCurrent);
                 return null;
             }
             for (final String[] thumbNail : thumbNails) {
-                DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)160\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
+                DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail[1], ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)(160|1000)\\." + thumbNail[2]).getMatch(0) + "1000." + thumbNail[2]);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
+
         }
         if (fpname != null) {
             FilePackage fp = FilePackage.getInstance();

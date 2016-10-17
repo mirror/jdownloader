@@ -551,8 +551,19 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean looksLikeAnArchive(BitSet bitset) {
+            for (int index = 0; index < bitset.length(); index++) {
+                if (bitset.get(index) && index > 0) {
+                    // at least one zxx part to make sure it is a multipart archive
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
         protected int getMinimumNeededPartIndex() {
-            return 1;
+            return 0;
         }
 
         @Override
