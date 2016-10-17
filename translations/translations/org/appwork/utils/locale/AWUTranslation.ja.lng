@@ -100,6 +100,7 @@ extpasswordeditorcolumn_tooltip=あなたのパスワード
 extttable_disable_all=全て無効
 extttable_enabled_all=全て有効
 inactive=無効
+lit_and=と
 lit_close=閉じる
 lit_continue=続行
 lit_save=保存
