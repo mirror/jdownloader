@@ -18,24 +18,25 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30086 $", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?twomovies\\.(?:us|net)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twomovies.us" }, urls = { "https?://(?:www\\.)?twomovies\\.(?:us|net)/(?:watch_movie/[a-zA-z0-9_]+|watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/))" })
 public class ToMvzUs extends antiDDoSForDecrypt {
 
     @Override
@@ -88,13 +89,16 @@ public class ToMvzUs extends antiDDoSForDecrypt {
 
     private void decryptIframe(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         // they are always held in iframe src. page seems to only have one.
-        final String toshash = this.br.getRegex("document\\.getElementById\\(\"toshash\"\\)\\.value = \"([^<>\"]+)\"").getMatch(0);
+        final String toshash = this.br.getRegex("document\\.getElementById\\(\"toshash2\"\\)\\.value = \"([^<>\"]+)\"").getMatch(0);
         final Form tosform = this.br.getFormbyKey("confirm_continue");
         if (tosform != null) {
             if (toshash != null) {
                 tosform.put("hash", toshash);
             }
             this.br.submitForm(tosform);
+            if (br.containsHTML(">Before you start watching")) {
+                throw new DecrypterException("submitForm(tosform) failed ");
+            }
         }
         final String[] iframes = br.getRegex("<iframe .*?</iframe>").getColumn(-1);
         if (iframes != null) {
@@ -109,12 +113,12 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         }
     }
 
-    private void decryptWatch(ArrayList<DownloadLink> decryptedLinks) {
-        // scan for each ep
-        final String[] eps = br.getRegex(fm).getColumn(-1);
-        if (eps != null) {
-            for (final String ep : eps) {
-                decryptedLinks.add(createDownloadlink(ep));
+    private void decryptWatch(ArrayList<DownloadLink> decryptedLinks) throws Exception {
+        // scan for each fm
+        final String[] fms = br.getRegex(fm).getColumn(-1);
+        if (fms != null) {
+            for (final String fm : fms) {
+                decryptedLinks.add(createDownloadlink(fm)); // ToDo: - Must serialize and reduce rate
             }
         } else {
             System.out.println("Possible error: break point me");
