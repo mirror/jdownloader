@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
@@ -72,7 +73,6 @@ public class FlickrCom extends PluginForDecrypt {
     private String                  username                 = null;
     private boolean                 loggedin                 = false;
     private int                     statuscode               = 0;
-    private String                  default_photo_ext        = null;
 
     /**
      * Using API: https://www.flickr.com/services/api/ - without our own apikey. Site is still used for /* TODO API: Get correct csrf values
@@ -88,7 +88,6 @@ public class FlickrCom extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 2);
         parameter = correctParameter(param.toString());
         username = new Regex(parameter, "(?:photos|groups)/([^<>\"/]+)").getMatch(0);
-        default_photo_ext = jd.plugins.hoster.FlickrCom.defaultPhotoExt;
 
         try {
             /* Check if link is for hosterplugin */
@@ -186,7 +185,7 @@ public class FlickrCom extends PluginForDecrypt {
             if (fpName == null || fpName.equals("")) {
                 fpName = "flickr.com set " + setid + " of user " + this.username;
             }
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
         } else if (parameter.matches(TYPE_SETS_OF_USER_ALL) && !parameter.matches(TYPE_SET_SINGLE)) {
             apiGetSetsOfUser();
@@ -196,7 +195,7 @@ public class FlickrCom extends PluginForDecrypt {
             if (nsid == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.favorites.getList&hermes=1&hermesClient=1&nojsoncallback=1";
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.favorites.getList&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com favourites of user " + this.username;
         } else if (parameter.matches(TYPE_GROUPS)) {
@@ -210,12 +209,12 @@ public class FlickrCom extends PluginForDecrypt {
             if (group_id == null || path_alias == null || groupname == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_group_info=1&group_id=" + Encoding.urlEncode(group_id) + "&method=flickr.groups.pools.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&get_group_info=1&group_id=" + Encoding.urlEncode(group_id) + "&method=flickr.groups.pools.getPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com images of group " + group_id;
         } else {
             final String nsid = get_NSID(null);
-            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPublicPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
+            apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPublicPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
             /* Use this public request if the other one fails though this might return all but the last picture...?!: */
             // apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey +
             // "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) +
@@ -269,9 +268,19 @@ public class FlickrCom extends PluginForDecrypt {
                 if (title.equals("")) {
                     title = null;
                 }
-                final String decryptedfilename = username + "_" + photo_id + (title != null ? "_" + title : jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags()) + default_photo_ext;
+                final String media = PluginJSonUtils.getJsonValue(jsonentry, "media");
+                final String extension;
+                if ("video".equalsIgnoreCase(media)) {
+                    fina.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                    extension = ".mp4";
+                } else {
+                    fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
+                    extension = ".jpg";
+                }
+                final String decryptedfilename = username + "_" + photo_id + (title != null ? "_" + title : jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags()) + extension;
                 fina.setProperty("decryptedfilename", decryptedfilename);
                 fina.setProperty("photo_id", photo_id);
+                fina.setProperty("media", media);
                 fina.setProperty("owner", owner);
                 fina.setProperty("username", username);
                 if (dateadded != null) {
@@ -280,7 +289,7 @@ public class FlickrCom extends PluginForDecrypt {
                 if (title != null) {
                     fina.setProperty("title", title);
                 }
-                fina.setProperty("ext", default_photo_ext);
+                fina.setProperty("ext", extension);
                 fina.setProperty("LINKDUPEID", "flickrcom_" + username + "_" + photo_id);
                 fina.setProperty("custom_filenames_allowed", true);
 
@@ -517,6 +526,7 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 resourcelistCount++;
                 String title = (String) entry.get("title");
+                String media = (String) entry.get("media");
                 final String pic_id = (String) entry.get("id");
                 // not all images have a title.
                 if (title == null) {
@@ -547,11 +557,21 @@ public class FlickrCom extends PluginForDecrypt {
                  * TODO: Improve upper part to be able to find the posted-date as well (if possible) so users who user custom filenames get
                  * better filenames right after the decryption process.
                  */
+
                 final String url = "https://www.flickr.com/photos/" + pathAlias + "/" + pic_id;
                 final DownloadLink fina = createDownloadlink(url.replace("flickr.com/", "flickrdecrypted.com/"));
-                final String decryptedfilename = title == null ? null : (Encoding.htmlDecode(title) + default_photo_ext);
+                final String extension;
+                if ("video".equalsIgnoreCase(media)) {
+                    fina.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                    extension = ".mp4";
+                } else {
+                    fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
+                    extension = ".jpg";
+                }
+                final String decryptedfilename = title == null ? null : (Encoding.htmlDecode(title) + extension);
                 fina.setProperty("decryptedfilename", decryptedfilename);
-                fina.setProperty("ext", default_photo_ext);
+                fina.setProperty("media", media);
+                fina.setProperty("ext", extension);
                 fina.setProperty("username", pathAlias);
                 fina.setProperty("photo_id", pic_id);
                 fina.setProperty("title", title);

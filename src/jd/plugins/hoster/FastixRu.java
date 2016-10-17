@@ -37,7 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -187,49 +186,41 @@ public class FastixRu extends antiDDoSForHost {
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        downloadLink.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, maxChunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            updatestatuscode();
+            handleAPIErrors();
+            handleErrorRetries("unknowndlerror", 5);
+        }
+        downloadLink.setProperty(NICE_HOSTproperty + "directlink", dl.getConnection().getURL().toString());
         try {
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                updatestatuscode();
-                handleAPIErrors();
-                handleErrorRetries("unknowndlerror", 5);
-            }
-            try {
-                if (!dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
+            if (!dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
                     }
-                    /* unknown error, we disable multiple chunks */
-                    if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
-                        downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+                } catch (final Throwable e) {
                 }
-            } catch (final PluginException e) {
-                // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
+                if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
                     downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw e;
             }
-        } catch (final Exception e) {
-            downloadLink.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
+                downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw e;
-        } catch (final Throwable e) {
-            downloadLink.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-            throw new WTFException(e);
         }
     }
 
     private String checkDirectLink(final String property) {
-        String dllink = downloadLink.getStringProperty(property, null);
+        final String dllink = downloadLink.getStringProperty(property, null);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             br.setFollowRedirects(true);
@@ -239,13 +230,14 @@ public class FastixRu extends antiDDoSForHost {
                 } else {
                     con = br.openGetConnection(dllink);
                 }
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || !con.isOK()) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    return null;
                 }
             } catch (Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();

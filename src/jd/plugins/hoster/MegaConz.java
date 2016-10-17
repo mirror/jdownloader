@@ -947,7 +947,7 @@ public class MegaConz extends PluginForHost {
                         src.delete();
                         tmp.renameTo(dst);
                     }
-                    new MegaHashCheck(link, outputFile).finalHashResult();
+                    new MegaHashCheck(link, dst).finalHashResult();
                 }
             } finally {
                 try {

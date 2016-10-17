@@ -92,20 +92,22 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     @Override
     public Object get(String interfaceName, String storage, String key) {
-        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
-        return kh.getValue();
+        final KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
+        if (kh == null) {
+            return null;
+        } else {
+            return kh.getValue();
+        }
     }
 
     @Override
     public boolean set(String interfaceName, String storage, String key, Object value) throws InvalidValueException {
         if (EXTENSION.equals(interfaceName)) {
-            String json = JSonStorage.serializeToJson(value);
-
+            final String json = JSonStorage.serializeToJson(value);
             for (final LazyExtension ext : ExtensionController.getInstance().getExtensions()) {
-
                 if (createExtensionToggleDummyKey("Enable", ext).equals(key)) {
                     try {
-                        Object v = JSonStorage.stringToObject(json, TypeRef.BOOLEAN, null);
+                        final Object v = JSonStorage.stringToObject(json, TypeRef.BOOLEAN, null);
                         ext._setEnabled((Boolean) v);
                         return true;
                     } catch (Exception e) {
@@ -115,28 +117,27 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
                 }
             }
-            if (key.startsWith("InstallExtension")) {
-                String toInstall = key.substring("InstallExtension".length()).toLowerCase(Locale.ENGLISH);
+            if (key != null && key.startsWith("InstallExtension")) {
+                final String toInstall = key.substring("InstallExtension".length()).toLowerCase(Locale.ENGLISH);
                 installExtension(toInstall);
                 return true;
             }
             return false;
         }
-        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
-        Type rc = kh.getRawType();
-        String json = JSonStorage.serializeToJson(value);
-        TypeRef<Object> type = new TypeRef<Object>(rc) {
-        };
-
-        try {
-            Object v = JSonStorage.stringToObject(json, type, null);
-            kh.setValue(v);
-        } catch (Exception e) {
-            return false;
-            // throw new InvalidValueException(e);
+        final KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
+        if (kh != null) {
+            final Type rc = kh.getRawType();
+            final String json = JSonStorage.serializeToJson(value);
+            final TypeRef<Object> type = new TypeRef<Object>(rc) {
+            };
+            try {
+                final Object v = JSonStorage.stringToObject(json, type, null);
+                kh.setValue(v);
+                return true;
+            } catch (Exception e) {
+            }
         }
-        return true;
-
+        return false;
     }
 
     @Override
@@ -379,7 +380,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                         }
                         // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
                         final boolean pending = UpdateController.getInstance().hasPendingUpdates();
-                        // 
+                        //
 
                         if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
                             RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
