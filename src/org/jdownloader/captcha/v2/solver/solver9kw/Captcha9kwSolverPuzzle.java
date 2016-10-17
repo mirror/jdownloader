@@ -54,19 +54,22 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
         try {
 
             UrlQuery qi = createQueryForUpload(solverJob, options, null);
+            qi.appendEncoded("puzzle", "1");
 
             KeyCaptchaImages images = captchaChallenge.getHelper().getPuzzleData().getImages();
             LinkedList<BufferedImage> piecesAll = new LinkedList<BufferedImage>(images.pieces);
+            qi.appendEncoded("file-upload-01", Base64.encodeToString(IconIO.toJpgBytes(images.backgroundImage), false));
+            qi.appendEncoded("file-upload-02", Base64.encodeToString(IconIO.toJpgBytes(images.sampleImage), false));
 
             String allfiledata = "";
             for (int c = 0; c < piecesAll.size(); c++) {
                 BufferedImage image = piecesAll.get(c);
-                int x = c + 1;
+                int x = c + 3;
                 qi.appendEncoded("file-upload-0" + x, Base64.encodeToString(IconIO.toJpgBytes(image), false));
 
             }
 
-            UrlQuery queryPoll = createQueryForPolling();
+            UrlQuery queryPoll = createQueryForPolling().appendEncoded("puzzle", "1");
 
             Browser br = new Browser();
             br.setAllowedResponseCodes(new int[] { 500 });
@@ -96,19 +99,19 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
         // Example: 622.289.683.351.705.331.734.351.713.264.734.281.488.275.784.281 (4 coordinates like x1,y1 to x2,y2)
         mouseArray.clear();
 
-        boolean changemousexy9kw = true;
+        // boolean changemousexy9kw = true;
         ArrayList<Integer> marray = new ArrayList<Integer>();
-        marray.addAll(mouseArray);
-        for (String s : ret.substring("OK-answered-".length()).split("\\|")) {
-            if (changemousexy9kw == true) {
-                mouseArray.add(Integer.parseInt(s));// x+465?
-                changemousexy9kw = false;
-            } else {
-                mouseArray.add(Integer.parseInt(s));// y+264?
-                changemousexy9kw = true;
-            }
-        }
-        mouseArray.clear();
+        // marray.addAll(mouseArray);
+        // for (String s : ret.substring("OK-answered-".length()).split("\\|")) {
+        // if (changemousexy9kw == true) {
+        // mouseArray.add(Integer.parseInt(s));// x+465?
+        // changemousexy9kw = false;
+        // } else {
+        // mouseArray.add(Integer.parseInt(s));// y+264?
+        // changemousexy9kw = true;
+        // }
+        // }
+        // mouseArray.clear();
 
         String token;
         token = ((KeyCaptchaPuzzleChallenge) challenge).getHelper().sendPuzzleResult(marray, ret.substring("OK-answered-".length()));
