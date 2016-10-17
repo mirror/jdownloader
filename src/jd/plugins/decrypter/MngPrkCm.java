@@ -55,7 +55,7 @@ public class MngPrkCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://(?:www\\.)manga\\.(?:com|me)", "://mangamark.me");
+        String parameter = param.toString().replace("://(?:www\\.)manga\\.(?:com|me)", "://http://mangapark.me");
         HOST = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         prepBrowser();
         br.setFollowRedirects(true);
