@@ -39,11 +39,15 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" }) public class OBoomCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" })
+public class OBoomCom extends antiDDoSForHost {
 
-    private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
-    private final String                             APPID        = "43340D9C23";
-    private final String                             REF_TOKEN    = "REF_TOKEN";
+    private static Map<Account, Map<String, String>> ACCOUNTINFOS          = new HashMap<Account, Map<String, String>>();
+    private final String                             APPID                 = "43340D9C23";
+    private final String                             REF_TOKEN             = "REF_TOKEN";
+    /* Reconnect-workaround-related */
+    private static final long                        FREE_RECONNECTWAIT    = 3 * 60 * 60 * 1000L;
+    private static final String                      PROPERTY_LASTDOWNLOAD = "oboom_lastdownload_timestamp";
 
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -578,16 +582,51 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
         if (session == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            br.setAllowedResponseCodes(421, 509);
-        } catch (Throwable e) {
-            // not in stable!
-        }
+        br.setAllowedResponseCodes(421, 509);
         if (link.getBooleanProperty("obm_directdownload", false)) {
             resumable = true;
             maxchunks = 0;
             dllink = link.getDownloadURL();
         } else {
+            this.br.postPage("https://www." + this.getHost() + "/1.0/download/config", "token=" + session);
+            int pre_download_wait = 0;
+            final String wait_pre_download_str = PluginJSonUtils.getJsonValue(this.br, "waiting");
+            if (wait_pre_download_str == null || !wait_pre_download_str.matches("\\d+")) {
+                pre_download_wait = 30;
+            } else {
+                pre_download_wait = Integer.parseInt(wait_pre_download_str);
+            }
+            if (this.br.containsHTML("\"blocked_wait\"")) {
+                /*
+                 * 2016-10-17: Information about limits: Via browser: Reconnect limits are only on IP (free account also). After a
+                 * reconnect, a new download is possible via free account even if it has been previously used for downloading. Via API:
+                 * Reconnect limits are bound to free accounts and also IP. After a reconnect the waittime will remain on free accounts!
+                 */
+                /* E.g. [400,"blocked_wait"] */
+                long waittime;
+                final long timestamp_lastdownload = this.getPluginConfig().getLongProperty(PROPERTY_LASTDOWNLOAD, 0);
+                if (timestamp_lastdownload > 0) {
+                    final long time_next_download_possible = timestamp_lastdownload + FREE_RECONNECTWAIT;
+                    if (time_next_download_possible > System.currentTimeMillis()) {
+                        /*
+                         * We have a timestamp of the last downloadstart which means we can calculate how long we have to wait. This will
+                         * usually be the case!
+                         */
+                        waittime = time_next_download_possible - System.currentTimeMillis();
+                    } else {
+                        /* Fallback - we know that we have to wait but for some reason we have no idea how long --> Use default waittime. */
+                        waittime = FREE_RECONNECTWAIT - (System.currentTimeMillis() - timestamp_lastdownload);
+                    }
+                } else {
+                    /*
+                     * We do not have a timestamp of the last downloadstart which means we will simply wait the default waittime between
+                     * downloads.
+                     */
+                    waittime = FREE_RECONNECTWAIT;
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+            }
+            boolean captchaFailed = true;
             for (int i = 1; i <= 5; i++) {
                 final Recaptcha rc = new Recaptcha(br, this);
                 rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
@@ -601,18 +640,19 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
                 if (br.containsHTML("400,\"Forbidden")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
                 }
+                captchaFailed = false;
                 break;
             }
-            if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
+            if (captchaFailed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (br.containsHTML("400,\"slot_error\"")) {
-                // country slot block. try again in 5 minutes
+                /* country slot block. try again in 5 minutes */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
             }
             String waitTime = br.getRegex("403,(\\-?\\d+)").getMatch(0);
             if (waitTime != null) {
-                // there is already a download running.
+                /* there is already a download running.? */
                 if (Integer.parseInt(waitTime) < 0) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 }
@@ -629,7 +669,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
                 }
 
             }
-            sleep(30 * 1000l, link);
+            sleep(pre_download_wait * 1001l, link);
             getPage("https://api.oboom.com/1/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
             downloadErrorHandling(account);
             urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
@@ -650,6 +690,8 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
             refreshTokenHandling(usedInfos, account, freshInfos.get());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Save property to be able to calculate correct waittime for next free download. */
+        this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
         dl.startDownload();
     }
 
