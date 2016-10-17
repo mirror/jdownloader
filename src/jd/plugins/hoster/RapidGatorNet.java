@@ -1079,9 +1079,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1089,7 +1089,7 @@ public class RapidGatorNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -8);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, maxPremChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             handleErrors_api(session_id, link, account, dl.getConnection());
@@ -1099,6 +1099,8 @@ public class RapidGatorNet extends PluginForHost {
         }
         dl.startDownload();
     }
+
+    private final int maxPremChunks = -5; // 17.10.16, max seems highest that can be handled without server issues
 
     @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
@@ -1164,7 +1166,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -8);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, maxPremChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 handleErrors_api(null, link, account, dl.getConnection());
