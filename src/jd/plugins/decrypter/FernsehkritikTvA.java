@@ -63,8 +63,8 @@ public class FernsehkritikTvA extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Load host plugin */
-        CFG = SubConfiguration.getConfig("fernsehkritik.tv");
-        HOSTPLUGIN = JDUtilities.getPluginForHost("fernsehkritik.tv");
+        CFG = SubConfiguration.getConfig(this.getHost());
+        HOSTPLUGIN = JDUtilities.getPluginForHost(this.getHost());
         FilePackage fp;
         final String parameter = param.toString();
         EPISODENUMBER = new Regex(parameter, "folge\\-(\\d+)").getMatch(0);
@@ -151,7 +151,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getFktvParts(final String parameter, final String episode) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String playurl = parameter + "/play/";
