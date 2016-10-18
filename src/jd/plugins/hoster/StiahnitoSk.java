@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "http://(www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "http://(www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" })
 public class StiahnitoSk extends PluginForHost {
 
     public StiahnitoSk(PluginWrapper wrapper) {
@@ -271,7 +271,10 @@ public class StiahnitoSk extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String trafficleft = br.getRegex("href=\"/ucet/credit\">[\t\n\r ]+(\\d+[\t\n\r ]+MB)[\t\n\r ]+</a>").getMatch(0);
+        String trafficleft = br.getRegex("href=\"/ucet/credit\">[\t\n\r ]+(\\d+[\t\n\r ]+MB)[\t\n\r ]+</a>").getMatch(0);
+        if (trafficleft == null) {
+            trafficleft = br.getRegex("userbox-logged-data\">\\s*([0-9 ]+MB)\\s*<").getMatch(0);
+        }
         if (trafficleft == null) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
