@@ -33,9 +33,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" })
@@ -56,7 +58,6 @@ public class AtvAt extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> decryptedLinksWorkaround = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final Regex linkinfo = new Regex(parameter, "atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
         String url_seriesname = linkinfo.getMatch(0);
@@ -142,9 +143,8 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name = Encoding.htmlDecode(hybrid_name);
         hybrid_name = decodeUnicode(hybrid_name);
 
+        final FFmpeg ffmpeg = new FFmpeg();
         int part_counter = 1;
-        int part_counter_workaround = 1;
-        boolean is_workaround_active;
         for (final Object parto : parts) {
             entries = (LinkedHashMap<String, Object>) parto;
             sources = (ArrayList<Object>) entries.get("sources");
@@ -165,11 +165,25 @@ public class AtvAt extends PluginForDecrypt {
                 String finalname = null;
                 final String part_formatted = df.format(part_counter);
                 if ("streaming".equalsIgnoreCase(delivery) || src.contains(".m3u8")) {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user");
+                        return decryptedLinks;
+                    }
+                    if (!ffmpeg.isAvailable()) {
+                        logger.info("Ffmpeg is not installed --> Skipping hls urls");
+                        continue;
+                    }
                     /* Find all hls qualities */
+                    /* 2016-10-18: It is possible to change hls urls to http urls! */
                     this.br.getPage(src);
                     if (br.containsHTML("#EXT-X-STREAM-INF")) {
                         for (String line : Regex.getLines(br.toString())) {
                             if (!line.startsWith("#")) {
+                                if (this.isAbort()) {
+                                    logger.info("Decryption aborted by user");
+                                    return decryptedLinks;
+                                }
+                                long estimatedSize = 0;
                                 /* Reset quality value */
                                 quality = null;
                                 link = createDownloadlink(br.getBaseURL() + line);
@@ -183,6 +197,8 @@ public class AtvAt extends PluginForDecrypt {
                                             return getLogger();
                                         }
                                     };
+                                    final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
+                                    estimatedSize = m3u8PlayList.getEstimatedSize();
                                     StreamInfo streamInfo = downloader.getProbe();
                                     for (Stream s : streamInfo.getStreams()) {
                                         if ("video".equals(s.getCodec_type())) {
@@ -193,6 +209,7 @@ public class AtvAt extends PluginForDecrypt {
 
                                 } catch (Throwable e) {
                                     getLogger().log(e);
+                                    estimatedSize = 0;
                                 }
                                 finalname = hybrid_name + "_";
                                 finalname += "_hls_part_";
@@ -202,38 +219,38 @@ public class AtvAt extends PluginForDecrypt {
                                 finalname += part_formatted + ".mp4";
 
                                 link.setFinalFileName(finalname);
-                                link.setAvailable(true);
+                                if (estimatedSize > 0) {
+                                    link.setAvailable(true);
+                                    link.setDownloadSize(estimatedSize);
+                                }
                                 link.setContentUrl(parameter);
                                 decryptedLinks.add(link);
+                                distribute(link);
                             }
 
                         }
                     }
                 } else {
                     /* delivery:progressive --> http url */
+                    /* 2016-10-18: Seems like their http urls always have the same quality */
+                    quality = "576p";
                     link = this.createDownloadlink("directhttp://" + src);
                     finalname = hybrid_name + "_";
-                    finalname += "_http_part_" + part_formatted + ".mp4";
+                    finalname += "_http_part_";
+                    finalname += quality + "_";
+                    finalname += part_formatted + ".mp4";
                     link.setFinalFileName(finalname);
                     // link.setAvailable(true);
                     link.setContentUrl(parameter);
                     decryptedLinks.add(link);
+                    distribute(link);
                 }
 
             }
             part_counter++;
         }
 
-        /*
-         * Do not check for Array size 0 here as it might happens that e.g. 1 or 2 out of 6 geo-blocked parts are not blocked (maybe they
-         * forget that restriction sometimes). If any of the normal hls urls does not work we should always fall back to their fallback hls
-         * urls!
-         */
-        if (decryptedLinksWorkaround.size() > decryptedLinks.size()) {
-            /* Use workaround e.g. for GEO-blocked urls */
-            logger.info("GEO-blocked workaround active");
-            decryptedLinks = decryptedLinksWorkaround;
-        } else if (decryptedLinks.size() == 0 && geo_blocked) {
+        if (decryptedLinks.size() == 0 && geo_blocked) {
             logger.info("GEO-blocked");
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName("GEO_blocked_" + fid);

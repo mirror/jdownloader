@@ -573,7 +573,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             try {
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videosource);
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "metadata/qualities");
-                /* TODO: Maybe all HLS support in case it gives us more/other formats/qualities */
+                /* TODO: Maybe add HLS support in case it gives us more/other formats/qualities */
                 final String[][] qualities_2 = { { "2160", "7" }, { "1440", "6" }, { "1080", "5" }, { "720", "4" }, { "480", "3" }, { "380", "2" }, { "240", "1" } };
                 for (final String quality[] : qualities_2) {
                     final String qualityName = quality[0];
@@ -678,7 +678,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return videosource;
     }
 
-    @SuppressWarnings("deprecation")
     private DownloadLink setVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) throws ParseException {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
@@ -688,7 +687,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             if (qualityName == null) {
                 // for example H264-320x240
                 qualityName = new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0);
-                if (qualityName == null) {
+                /* 2016-10-18: Added "manifest" handling for hls urls. */
+                if (qualityName == null || qualityName.equalsIgnoreCase("manifest")) {
                     // statically set it... better than nothing.
                     if ("1".equalsIgnoreCase(qualityValue)) {
                         qualityName = "H264-1920x1080";
