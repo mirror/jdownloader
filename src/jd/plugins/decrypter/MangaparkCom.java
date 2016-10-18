@@ -30,9 +30,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" })
-public class MngPrkCm extends PluginForDecrypt {
+public class MangaparkCom extends PluginForDecrypt {
     /**
-     * @author raztoki
+     * @author raztoki & pspzockerscene
      */
 
     // DEV NOTES
@@ -43,7 +43,7 @@ public class MngPrkCm extends PluginForDecrypt {
 
     private String HOST = "";
 
-    public MngPrkCm(PluginWrapper wrapper) {
+    public MangaparkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -67,6 +67,9 @@ public class MngPrkCm extends PluginForDecrypt {
         final Regex srv_info = br.getRegex("target=\"_blank\" href=\"(https?://(?:[a-z0-9]+\\.){1,}mpcdn\\.net/[^<>\"]*?)(\\d+)(\\.(?:jpg|png))(?:\\?\\d+)?\"");
         final String srv_link = srv_info.getMatch(0);
         String extension = srv_info.getMatch(2);
+        if (extension == null) {
+            extension = br.getRegex("target=\"_blank\" href=\"https?://[^<>\"]+(\\.(?:jpg|png))[^<>\"]*?\"").getMatch(0);
+        }
         String[] fpname = br.getRegex(">([^<>\"]+)\\s*</a>\\s*/\\s*([^<>]+)<em class=\"refresh\"").getRow(0);
         if (fpname == null) {
             return null;
@@ -78,15 +81,21 @@ public class MngPrkCm extends PluginForDecrypt {
         if (totalPages == null) {
             totalPages = br.getRegex("selected>\\d+ / (\\d+)</option>").getMatch(0);
             if (totalPages == null) {
+                totalPages = this.br.getRegex(">1 / (\\d+)</a>").getMatch(0);
+            }
+            if (totalPages == null) {
+                totalPages = this.br.getRegex("var\\s*?_page_total\\s*?=\\s*?(\\d+)\\s*?;").getMatch(0);
+            }
+            if (totalPages == null) {
                 // cound be on a chapter page //return null;
                 String[] pages = srv_info.getColumn(-1);
                 if (pages != null) {
                     totalPages = String.valueOf(pages.length);
-                } else {
-                    logger.warning("'TotalPages' not found! : " + parameter);
-                    return null;
                 }
             }
+        }
+        if (totalPages == null) {
+            return null;
         }
         int numberOfPages = Integer.parseInt(totalPages);
         FilePackage fp = FilePackage.getInstance();
@@ -105,19 +114,34 @@ public class MngPrkCm extends PluginForDecrypt {
             }
         } else {
             int i = 1;
+            DownloadLink link = null;
+            String url = null;
             while (true) {
-                final String url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"(https?://[^<>]+/" + String.valueOf(i) + "\\.(jpg|png))\"").getMatch(0);
-                if (url != null) {
-                    final DownloadLink link = createDownloadlink("directhttp://" + url);
-                    extension = getFileNameExtensionFromURL(url);
-                    link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
-                    i++;
-                    link.setAvailable(true);
-                    fp.add(link);
-                    decryptedLinks.add(link);
-                } else {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                } else if (i > numberOfPages) {
+                    /* We're done! */
                     break;
                 }
+                url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"(https?://[^<>]+/" + String.valueOf(i) + "\\.(jpg|png))\"").getMatch(0);
+                if (url == null) {
+                    /* Manual decryption - the slow/"hard" way. */
+                    if (i > 1) {
+                        this.br.getPage(parameter + "/" + i);
+                    }
+                    url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"(https?://[^<>]+\\.(jpg|png)[^<>]*?)\"").getMatch(0);
+                    if (url == null) {
+                        return null;
+                    }
+                }
+
+                link = createDownloadlink("directhttp://" + url);
+                extension = getFileNameExtensionFromURL(url);
+                link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
+                link.setAvailable(true);
+                fp.add(link);
+                decryptedLinks.add(link);
+                i++;
             }
         }
         logger.warning("Task Complete! : " + parameter);

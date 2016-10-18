@@ -43,6 +43,9 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
     private static String getQuality(final String quality, final String videosource) {
@@ -118,15 +121,25 @@ public class DailyMotionCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (isHDS(downloadLink)) {
-
             // br.getPage(downloadLink.getStringProperty("directlink", null));
             downloadLink.getLinkStatus().setStatusText("HDS stream download is not supported (yet)!");
             downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
             return AvailableStatus.FALSE;
+        } else if (isHLS(downloadLink)) {
+            /* Make sure to follow redirects! */
+            this.br.setFollowRedirects(true);
+            dllink = getDirectlink(downloadLink);
+            this.br.getPage(this.dllink);
+            /* 2016-10-18: We cannot really check these urls. */
+            if (!this.br.getHttpConnection().isOK()) {
+                /* TODO: Check if refresh handling is possible/needed for hls urls. */
+                return AvailableStatus.FALSE;
+            }
+            return AvailableStatus.TRUE;
         } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
         } else if (isSubtitle(downloadLink)) {
-            dllink = downloadLink.getStringProperty("directlink", null);
+            dllink = getDirectlink(downloadLink);
 
             if (!checkDirectLink(downloadLink) || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -135,7 +148,7 @@ public class DailyMotionCom extends PluginForHost {
         } else {
             String mainlink = downloadLink.getStringProperty("mainlink", null);
             logger.info("mainlink: " + mainlink);
-            dllink = downloadLink.getStringProperty("directlink", null);
+            dllink = getDirectlink(downloadLink);
             logger.info("dllink: " + dllink);
             if (dllink == null) {
 
@@ -165,6 +178,15 @@ public class DailyMotionCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink) throws Exception {
         if (isHDS(downloadLink)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
+        } else if (isHLS(downloadLink)) {
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            if (hlsbest == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.dllink = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, this.dllink);
+            dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
             downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
             String[] stream = dllink.split("@");
@@ -174,6 +196,10 @@ public class DailyMotionCom extends PluginForHost {
         } else {
             downloadDirect(downloadLink);
         }
+    }
+
+    private String getDirectlink(final DownloadLink dl) {
+        return dl.getStringProperty("directlink", null);
     }
 
     protected void downloadDirect(DownloadLink downloadLink) throws Exception {
@@ -249,11 +275,7 @@ public class DailyMotionCom extends PluginForHost {
             try {
                 URLConnectionAdapter con = null;
                 try {
-                    if (isJDStable()) {
-                        con = br.openGetConnection(dllink);
-                    } else {
-                        con = br.openHeadConnection(dllink);
-                    }
+                    con = br.openHeadConnection(dllink);
                     if (con.getResponseCode() == 302) {
                         br.followConnection();
                         dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
@@ -368,6 +390,10 @@ public class DailyMotionCom extends PluginForHost {
 
     private boolean isHDS(final DownloadLink dl) {
         return "hds".equals(dl.getStringProperty("qualityname", null));
+    }
+
+    private boolean isHLS(final DownloadLink dl) {
+        return this.getDirectlink(dl).contains(".m3u8");
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
