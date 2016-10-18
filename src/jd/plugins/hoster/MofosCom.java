@@ -91,7 +91,7 @@ public class MofosCom extends PluginForHost {
         final String fid = link.getStringProperty("fid", null);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dllink + "XX");
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
