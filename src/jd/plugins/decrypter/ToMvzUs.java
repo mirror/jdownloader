@@ -114,6 +114,20 @@ public class ToMvzUs extends antiDDoSForDecrypt {
     }
 
     private void decryptWatch(ArrayList<DownloadLink> decryptedLinks) throws Exception {
+        // int counter = 0;
+        // String captchaurl = null;
+        // do {
+        // captchaurl = this.br.getRegex("TODO(blabla)").getMatch(0);
+        // if (captchaurl == null) {
+        // break;
+        // }
+        // final String c = this.getCaptchaCode(captchaurl, param);
+        // this.br.postPage(this.br.getURL(), "TODO");
+        // counter++;
+        // } while (counter <= 3);
+        // if (captchaurl != null && counter >= 3) {
+        // throw new DecrypterException(DecrypterException.CAPTCHA);
+        // }
         // scan for each fm
         final String[] fms = br.getRegex(fm).getColumn(-1);
         if (fms != null) {
@@ -126,7 +140,7 @@ public class ToMvzUs extends antiDDoSForDecrypt {
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 
     public boolean hasAutoCaptcha() {
