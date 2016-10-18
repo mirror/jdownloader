@@ -38,17 +38,17 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "https?://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/|https?://babesdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
-public class BabesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyhub.com" }, urls = { "https?://ma\\.sexyhub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://sexyhubdecrypted.+" })
+public class SexyhubCom extends PluginForHost {
 
-    public BabesCom(PluginWrapper wrapper) {
+    public SexyhubCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://enter.babes.com/signup/signup.php");
+        this.enablePremium("http://join.sexyhub.com/signup/signup.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.babes.com/policy/ipp.php?site=bb";
+        return "http://www.supportmg.com/terms-of-service";
     }
 
     /* Connection stuff */
@@ -59,21 +59,19 @@ public class BabesCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private final String         type_premium_pic             = "https?://(?:babesdecrypted\\.)?photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+";
+    private final String         type_premium_pic             = ".+\\.jpg.*?";
 
-    public static final String   html_loggedin                = "data\\-membership";
+    public static final String   html_loggedin                = "class=\"hud\\-username\"";
 
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "members.babes.com");
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "ma.sexyhub.com");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_premium_pic)) {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://babesdecrypted\\.photos\\.", "http://photos."));
-        }
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://sexyhubdecrypted", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -105,11 +103,11 @@ public class BabesCom extends PluginForHost {
                         /* User added url without decrypter --> Impossible to refresh this directurl! */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    this.br.getPage(jd.plugins.decrypter.BabesComDecrypter.getPicUrl(fid));
-                    if (jd.plugins.decrypter.BabesComDecrypter.isOffline(this.br)) {
+                    this.br.getPage(jd.plugins.decrypter.SexyhubCom.getPicUrl(fid));
+                    if (jd.plugins.decrypter.SexyhubCom.isOffline(this.br)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final String pictures[] = jd.plugins.decrypter.BabesComDecrypter.getPictureArray(this.br);
+                    final String pictures[] = jd.plugins.decrypter.SexyhubCom.getPictureArray(this.br);
                     for (final String finallink : pictures) {
                         if (finallink.contains(number_formatted + ".jpg")) {
                             dllink = finallink;
@@ -166,8 +164,7 @@ public class BabesCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://members.babes.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -181,7 +178,7 @@ public class BabesCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://members." + account.getHoster() + "/");
+                    br.getPage("http://ma." + account.getHoster() + "/");
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
                         return;
@@ -189,9 +186,9 @@ public class BabesCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://members." + account.getHoster() + "/access/login/");
-                String postdata = "rememberme=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (this.br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
+                br.getPage("http://ma." + account.getHoster() + "/access/login/");
+                String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();
@@ -200,13 +197,13 @@ public class BabesCom extends PluginForHost {
                     final String code = getCaptchaCode("recaptcha", cf, dummyLink);
                     postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
                 }
-                br.postPage("http://members." + account.getHoster() + "/access/submit/", postdata);
+                br.postPage("http://ma." + account.getHoster() + "/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (br.getCookie(MAINPAGE, "loginremember") == null || !this.br.containsHTML(html_loggedin) || br.getURL().contains("/banned")) {
+                if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -229,14 +226,6 @@ public class BabesCom extends PluginForHost {
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
-        }
-        br.getPage("/account/");
-        if (!br.containsHTML("<span>Status: </span>Paying Membership</li>")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);

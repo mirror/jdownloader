@@ -164,8 +164,7 @@ public class RealityKingsCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://new.members.realitykings.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -189,7 +188,7 @@ public class RealityKingsCom extends PluginForHost {
                 }
                 br.getPage("http://new.members." + account.getHoster() + "/access/login/");
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (this.br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
+                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();

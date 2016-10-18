@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,7 +37,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 /*Similar websites: bca-onlive.de, asscompact.de*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(www\\.)?alphatv\\.gr/shows/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatvdecrypted\\.gr/shows/.+" })
 public class AlphatvGr extends PluginForHost {
 
     public AlphatvGr(PluginWrapper wrapper) {
@@ -48,13 +49,22 @@ public class AlphatvGr extends PluginForHost {
         return "http://www.alphatv.gr/terms";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("alphatvdecrypted.gr/", "alphatv.gr/"));
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        prepBR(this.br);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("jwplayer\\.flash\\.swf\"")) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String date = br.getRegex("property=\"article:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -132,6 +142,10 @@ public class AlphatvGr extends PluginForHost {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("jwplayer\\.flash\\.swf\"");
     }
 
     @Override

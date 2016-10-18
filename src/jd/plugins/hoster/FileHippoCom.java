@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
 public class FileHippoCom extends PluginForHost {
 
     private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found|Sorry an error occurred processing your request)";
@@ -68,14 +68,13 @@ public class FileHippoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         br = new Browser();
+        br.setFollowRedirects(true);
         this.setBrowserExclusive();
         br.setCookie("http://filehippo.com/", "FH_PreferredCulture", "en-US");
+        final String url_name = new Regex(link.getDownloadURL(), "filehippo\\.com/(.+)").getMatch(0);
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals("http://www.filehippo.com/")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            br.getPage(br.getRedirectLocation());
+        if (this.br.getURL().equals("http://www.filehippo.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,11 +97,11 @@ public class FileHippoCom extends PluginForHost {
                 filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
-                    if (filename == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                 }
             }
+        }
+        if (filename == null) {
+            filename = url_name;
         }
         link.setName(filename.trim());
         String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
@@ -153,7 +152,7 @@ public class FileHippoCom extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (!br.getURL().contains("filehippo.com")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Download links to external site");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible - download-url points to external site");
                 }
                 continue;
             }
