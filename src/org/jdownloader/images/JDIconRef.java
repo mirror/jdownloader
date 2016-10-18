@@ -5,15 +5,9 @@ import java.awt.Image;
 import javax.swing.Icon;
 
 import org.appwork.resources.IconRef;
-import org.appwork.swing.exttable.ExtTableIcon;
 
 public enum JDIconRef implements IconRef {
-    updatericon("updatericon"),
-    updaterIcon100("updaterIcon100"),
-    updaterIcon0("updaterIcon0"),
-    update("update"),
-    popDownLarge(ExtTableIcon.TABLE_COLUMN_COMBO_popDownLarge.path()),
-    BUBBLE_CLOSE("close");
+    updatericon("updatericon");
     private String path;
 
     /**
