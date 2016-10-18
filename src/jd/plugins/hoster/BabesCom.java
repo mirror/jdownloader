@@ -67,10 +67,7 @@ public class BabesCom extends PluginForHost {
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
-        br.setFollowRedirects(true);
-        /* Skips redirect to stupid advertising page after login. */
-        br.setCookie("members.babes.com", "skipPostLogin", "1");
-        return br;
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "members.babes.com");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -205,14 +202,14 @@ public class BabesCom extends PluginForHost {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (br.getCookie(MAINPAGE, "loginremember") == null || !this.br.containsHTML(html_loggedin) || br.getURL().contains("/banned")) {
+                if (jd.plugins.hoster.BrazzersCom.pornportalIsInvalidLogin(br, MAINPAGE, html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;

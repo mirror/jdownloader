@@ -74,11 +74,20 @@ public class BrazzersCom extends antiDDoSForHost {
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
-    public static Browser prepBR(final Browser br) {
+    public static Browser pornportalPrepBR(final Browser br, final String host) {
         br.setFollowRedirects(true);
-        /* Skips redirect to stupid advertising page after login. */
-        br.setCookie("ma.brazzers.com", "skipPostLogin", "1");
+        pornportalPrepCookies(br, host);
         return br;
+    }
+
+    public static Browser pornportalPrepCookies(final Browser br, final String host) {
+        /* Skips redirect to stupid advertising page after login. */
+        br.setCookie(host, "skipPostLogin", "1");
+        return br;
+    }
+
+    public static boolean pornportalIsInvalidLogin(final Browser br, final String host, final String html_loggedin) {
+        return br.getCookie(host, "loginremember") == null || (html_loggedin != null && !br.containsHTML(html_loggedin)) || br.getURL().contains("/banned");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -290,7 +299,7 @@ public class BrazzersCom extends antiDDoSForHost {
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                prepBR(br);
+                pornportalPrepBR(br, "ma.brazzers.com");
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -304,7 +313,7 @@ public class BrazzersCom extends antiDDoSForHost {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
-                    br = prepBR(new Browser());
+                    br = pornportalPrepBR(new Browser(), "ma.brazzers.com");
                 }
                 br.getPage("http://ma.brazzers.com/access/login/");
                 final DownloadLink dlinkbefore = this.getDownloadLink();
