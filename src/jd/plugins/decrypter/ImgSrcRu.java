@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,14 +38,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
 public class ImgSrcRu extends PluginForDecrypt {
-
     // dev notes
     // &pwd= is a md5 hash id once you've provided password for that album.
-
     public ImgSrcRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -84,9 +81,7 @@ public class ImgSrcRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         long startTime = System.currentTimeMillis();
         parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
-
         prepBrowser(br, false);
-
         try {
             // best to get the original parameter, as the page could contain blocks due to forward or password
             if (!getPage(parameter, param)) {
@@ -97,18 +92,15 @@ public class ImgSrcRu extends PluginForDecrypt {
                     return null;
                 }
             }
-
             if (br.getURL().contains("http://imgsrc.ru/main/search.php")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-
             username = br.getRegex(">more photos from (.*?)</a>").getMatch(0);
             if (username == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-
             String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<title>(.*?) @ iMGSRC.RU</title>").getMatch(0);
@@ -117,12 +109,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                     return null;
                 }
             }
-
             uaid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
             if (uaid == null) {
                 uaid = new Regex(parameter, "/a(\\d+)\\.html").getMatch(0);
                 // ask the user if they want to decrypt the single page or entire album????
-
                 // if they copy non album links we need to find the album id within html
                 uaid = br.getRegex("\\?ad=(\\d+)").getMatch(0);
                 if (uaid == null) {
@@ -130,12 +120,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                     return null;
                 }
             }
-
             // We need to make sure we are on page 1 otherwise we could miss pages.
             // but this also makes things look tidy, making all parameters the same format
             parameter = "http://imgsrc.ru/" + username + "/a" + uaid + ".html";
             param.setCryptedUrl(parameter);
-
             if (!br.getURL().matches(parameter + ".*?")) {
                 if (!getPage(parameter, param)) {
                     if (offline || exaustedPassword) {
@@ -145,13 +133,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                     }
                 }
             }
-
             String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName.trim());
-
             FilePackage fp = FilePackage.getInstance();
             fp.setProperty("ALLOW_MERGE", true);
             fp.setName(Encoding.htmlDecode(name.replaceAll("\\.", " ").trim()));
-
             parsePage(param);
             parseNextPage(param);
             for (DownloadLink link : decryptedLinks) {
@@ -163,12 +148,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
             }
             fp.addLinks(decryptedLinks);
-
             if (decryptedLinks.size() == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-
         } catch (Exception e) {
             if (!offline) {
                 throw e;
@@ -179,7 +162,6 @@ public class ImgSrcRu extends PluginForDecrypt {
             logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + decryptedLinks.size() + " DownloadLinks for " + parameter);
         }
         return decryptedLinks;
-
     }
 
     private void parsePage(CryptedLink param) {
@@ -211,7 +193,6 @@ public class ImgSrcRu extends PluginForDecrypt {
         if (links != null && links.length != 0) {
             imgs.addAll(Arrays.asList(links));
         }
-
         if (imgs.size() != 0) {
             final String currentLink = br.getURL();
             for (String dl : imgs) {
@@ -277,7 +258,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     }
                 }
                 // needs to be before password
-                if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
+                if (br.containsHTML("Continue to album >>")) {
                     String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
                     if (newLink == null) {
                         /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
@@ -369,5 +350,4 @@ public class ImgSrcRu extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
