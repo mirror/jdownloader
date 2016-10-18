@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -50,8 +49,9 @@ public class VidiVodoCom extends PluginForHost {
         return -1;
     }
 
-    private static final String TYPE_EMBEDDED = "https?://(?:www\\.)?(en\\.)?vidivodo\\.com/VideoPlayerShare\\.swf\\?u=[A-Za-z0-9=]+";
-    private static final String TYPE_OLD      = "https?://(?:www\\.)?(?:en\\.)?vidivodo\\.com/video/[a-z0-9\\-]+/\\d+";
+    private static final String default_extension = ".mp4";
+    private static final String TYPE_EMBEDDED     = "https?://(?:www\\.)?(en\\.)?vidivodo\\.com/VideoPlayerShare\\.swf\\?u=[A-Za-z0-9=]+";
+    private static final String TYPE_OLD          = "https?://(?:www\\.)?(?:en\\.)?vidivodo\\.com/video/[a-z0-9\\-]+/\\d+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -88,12 +88,15 @@ public class VidiVodoCom extends PluginForHost {
             }
         }
         dllink = PluginJSonUtils.getJsonValue(this.br, "contentUrl");
+        if (dllink == null) {
+            dllink = this.br.getRegex("itemprop=\"contentURL\" content=\"(http[^<>\"]+)\"").getMatch(0);
+        }
         String mediaID = br.getRegex("mediaid=(\\d+)").getMatch(0);
         if (mediaID == null) {
             /* For old urls we simply find the mediaID inside the url */
             mediaID = new Regex(downloadLink.getDownloadURL(), "vidivodo\\.com/video/[a-z0-9\\-]+/(\\d+)").getMatch(0);
         }
-        if (mediaID == null && dllink == null && filename_url == null) {
+        if ((mediaID == null && dllink == null) || filename_url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename == null) {
@@ -111,14 +114,17 @@ public class VidiVodoCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, default_extension);
+        } else {
+            ext = default_extension;
+        }
         filename = Encoding.htmlDecode(filename).trim();
-        downloadLink.setFinalFileName(filename + ".flv");
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        downloadLink.setFinalFileName(filename + ext);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(dllink);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

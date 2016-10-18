@@ -86,10 +86,6 @@ public class BrazzersCom extends antiDDoSForHost {
         return br;
     }
 
-    public static boolean pornportalIsInvalidLogin(final Browser br, final String host, final String html_loggedin) {
-        return br.getCookie(host, "loginremember") == null || (html_loggedin != null && !br.containsHTML(html_loggedin)) || br.getURL().contains("/banned");
-    }
-
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().matches(type_normal_moch)) {
             /* Make MOCH download possible --> We have to correct the downloadurl again! */
@@ -315,9 +311,9 @@ public class BrazzersCom extends antiDDoSForHost {
                     }
                     br = pornportalPrepBR(new Browser(), "ma.brazzers.com");
                 }
-                br.getPage("http://ma.brazzers.com/access/login/");
+                br.getPage("http://ma." + account.getHoster() + "/access/login/");
                 final DownloadLink dlinkbefore = this.getDownloadLink();
-                String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("google\\.com/recaptcha")) {
                     if (dlinkbefore == null) {
                         this.setDownloadLink(new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true));
@@ -327,10 +323,10 @@ public class BrazzersCom extends antiDDoSForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, this.getDownloadLink());
-                    postData += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge());
-                    postData += "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge());
+                    postdata += "&recaptcha_response_field=" + Encoding.urlEncode(c);
                 }
-                br.postPage("/access/submit/", postData);
+                br.postPage("/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
