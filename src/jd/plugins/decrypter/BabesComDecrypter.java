@@ -46,7 +46,6 @@ public class BabesComDecrypter extends PluginForDecrypt {
     private static final String TYPE_VIDEO = "https?://members\\.babes\\.com/video/view/id/\\d+(?:/[a-z0-9\\-_]+/)?";
     private static final String TYPE_PHOTO = "https?://members\\.babes\\.com/pictures/hqpics/id/\\d+(?:/[a-z0-9\\-_]+/?)?";
 
-    /* Example of picture links (not (net) supported!) http://members.babes.com/pictures/hqpics/id/\\d+/[a-z0-9\\-]+/ */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();

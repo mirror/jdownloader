@@ -143,6 +143,8 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name = Encoding.htmlDecode(hybrid_name);
         hybrid_name = decodeUnicode(hybrid_name);
 
+        final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
+        final int possibleQualitiesNumber = possibleQualities.length;
         final FFmpeg ffmpeg = new FFmpeg();
         int part_counter = 1;
         for (final Object parto : parts) {
@@ -160,9 +162,12 @@ public class AtvAt extends PluginForDecrypt {
                 }
                 /* Get around GEO-block */
                 src = src.replaceAll("http?://blocked.", "http://");
+                /* Some variables we need in that loop below. */
                 DownloadLink link = null;
                 String quality = null;
                 String finalname = null;
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(hybrid_name);
                 final String part_formatted = df.format(part_counter);
                 if ("streaming".equalsIgnoreCase(delivery) || src.contains(".m3u8")) {
                     if (this.isAbort()) {
@@ -176,7 +181,10 @@ public class AtvAt extends PluginForDecrypt {
                     /* Find all hls qualities */
                     /* 2016-10-18: It is possible to change hls urls to http urls! */
                     this.br.getPage(src);
-                    if (br.containsHTML("#EXT-X-STREAM-INF")) {
+                    final String[] qualities = this.br.getRegex("BANDWIDTH=").getColumn(-1);
+                    final int qualitiesNum = qualities.length;
+                    if (this.br.containsHTML("#EXT-X-STREAM-INF")) {
+                        int qualityIndex = 0;
                         for (String line : Regex.getLines(br.toString())) {
                             if (!line.startsWith("#")) {
                                 if (this.isAbort()) {
@@ -190,7 +198,7 @@ public class AtvAt extends PluginForDecrypt {
                                 link.setContainerUrl(parameter);
 
                                 try {
-                                    // try to get the video quality
+                                    /* try to get the video quality */
                                     final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
                                         @Override
                                         public LogInterface initLogger(DownloadLink link) {
@@ -199,7 +207,7 @@ public class AtvAt extends PluginForDecrypt {
                                     };
                                     final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
                                     estimatedSize = m3u8PlayList.getEstimatedSize();
-                                    StreamInfo streamInfo = downloader.getProbe();
+                                    final StreamInfo streamInfo = downloader.getProbe();
                                     for (Stream s : streamInfo.getStreams()) {
                                         if ("video".equals(s.getCodec_type())) {
                                             quality = s.getHeight() + "p";
@@ -212,7 +220,14 @@ public class AtvAt extends PluginForDecrypt {
                                     estimatedSize = 0;
                                 }
                                 finalname = hybrid_name + "_";
-                                finalname += "_hls_part_";
+                                finalname += "hls_part_";
+                                if (quality == null && qualitiesNum <= possibleQualitiesNumber) {
+                                    /*
+                                     * Workaround for possible Ffmpeg issue. We know that the bitrates go from highest to lowest so we can
+                                     * assume which quality we have here in case the Ffmpeg method fails!
+                                     */
+                                    quality = possibleQualities[possibleQualitiesNumber - qualitiesNum + qualityIndex] + "p";
+                                }
                                 if (quality != null) {
                                     finalname += quality + "_";
                                 }
@@ -224,8 +239,10 @@ public class AtvAt extends PluginForDecrypt {
                                     link.setDownloadSize(estimatedSize);
                                 }
                                 link.setContentUrl(parameter);
+                                link._setFilePackage(fp);
                                 decryptedLinks.add(link);
                                 distribute(link);
+                                qualityIndex++;
                             }
 
                         }
@@ -236,12 +253,13 @@ public class AtvAt extends PluginForDecrypt {
                     quality = "576p";
                     link = this.createDownloadlink("directhttp://" + src);
                     finalname = hybrid_name + "_";
-                    finalname += "_http_part_";
+                    finalname += "http_part_";
                     finalname += quality + "_";
                     finalname += part_formatted + ".mp4";
                     link.setFinalFileName(finalname);
                     // link.setAvailable(true);
                     link.setContentUrl(parameter);
+                    link._setFilePackage(fp);
                     decryptedLinks.add(link);
                     distribute(link);
                 }
@@ -258,9 +276,6 @@ public class AtvAt extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(hybrid_name);
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

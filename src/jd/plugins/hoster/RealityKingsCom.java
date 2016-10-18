@@ -16,20 +16,17 @@
 
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,13 +34,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "http://(www\\.)?(members\\.rkdecrypted\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+|imagesr\\.rkdecrypted\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+)" })
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|http://realitykingsdecrypted.+" })
 public class RealityKingsCom extends PluginForHost {
 
     public RealityKingsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("http://www.realitykings.com/tour/join/");
     }
 
     @Override
@@ -51,70 +51,104 @@ public class RealityKingsCom extends PluginForHost {
         return "http://service.adultprovide.com/docs/terms.htm";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        String decodedurl = Encoding.htmlDecode(link.getDownloadURL());
-        decodedurl = decodedurl.replace(".rkdecrypted.com/", ".rk.com/");
-        link.setUrlDownload(decodedurl);
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    private final String         type_premium_pic             = ".+\\.jpg.*?";
+
+    public static final String   html_loggedin                = "/member/profile/";
+
+    private String               dllink                       = null;
+    private boolean              server_issues                = false;
+
+    public static Browser prepBR(final Browser br) {
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "new.members.realitykings.com");
     }
 
-    public static final String  VIDEOLINK    = "http://(www\\.)?members\\.rk\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+";
-    public static final String  PICLINK      = "http://(www\\.)?imagesr\\.rk\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+";
-    private boolean             LIMITREACHED = false;
-    private static final String NOCHUNKS     = "NOCHUNKS";
-
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
-    public boolean isProxyRotationEnabledForLinkChecker() {
-        return false;
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://realitykingsdecrypted", "http://"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            login(this.br, aa, false);
-            // In case the link redirects to the finallink
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(link.getDownloadURL());
-                if (con.getResponseCode() == 401) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getResponseCode() == 509) {
-                    link.getLinkStatus().setStatusText("Cannot get filesize/name while limit is exeeded");
-                    LIMITREACHED = true;
-                    return AvailableStatus.TRUE;
-                }
-                if (con.getContentType().contains("html")) {
-                    con = br.openGetConnection(link.getDownloadURL());
-                }
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                } else {
-                    link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9%=\\+]+)$").getMatch(0));
-                    br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        } else {
-            link.getLinkStatus().setStatusText("Only downloadable via premium account");
+        if (aa == null) {
+            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
+        this.login(this.br, aa, false);
+        dllink = link.getDownloadURL();
+        final String fid = link.getStringProperty("fid", null);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+            } else {
+                if (link.getDownloadURL().matches(type_premium_pic)) {
+                    /* Refresh directurl */
+                    final String number_formatted = link.getStringProperty("picnumber_formatted", null);
+                    if (fid == null || number_formatted == null) {
+                        /* User added url without decrypter --> Impossible to refresh this directurl! */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    this.br.getPage(jd.plugins.decrypter.RealityKingsCom.getPicUrl(fid));
+                    if (jd.plugins.decrypter.RealityKingsCom.isOffline(this.br)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String pictures[] = jd.plugins.decrypter.RealityKingsCom.getPictureArray(this.br);
+                    for (final String finallink : pictures) {
+                        if (finallink.contains(number_formatted + ".jpg")) {
+                            dllink = finallink;
+                            break;
+                        }
+                    }
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+
+                    /* ... new URL should work! */
+                    con = br.openHeadConnection(dllink);
+                    if (!con.getContentType().contains("html")) {
+                        /* Set new url */
+                        link.setUrlDownload(dllink);
+                        /* If user copies url he should always get a valid one too :) */
+                        link.setContentUrl(dllink);
+                        link.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        server_issues = true;
+                    }
+                } else {
+                    server_issues = true;
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    }
+
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
@@ -122,72 +156,64 @@ public class RealityKingsCom extends PluginForHost {
                 throw (PluginException) e;
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium account");
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
-    private static final String MAINPAGE = "http://members.rk.com";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return FREE_MAXDOWNLOADS;
+    }
+
+    private static final String MAINPAGE = "http://new.members.realitykings.com";
     private static Object       LOCK     = new Object();
 
-    @SuppressWarnings("unchecked")
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                prepBR(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /*
+                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
+                     * when the user logs in via browser.
+                     */
+                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("http://new.members." + account.getHoster() + "/");
+                    if (br.containsHTML(html_loggedin)) {
+                        logger.info("Cookie login successful");
                         return;
                     }
+                    logger.info("Cookie login failed --> Performing full login");
+                    br = prepBR(new Browser());
                 }
-                br.setFollowRedirects(false);
-                br.getPage("http://members.rk.com/?a=user.login");
-                final Form form = br.getFormbyActionRegex("user.login");
-                final String lang = System.getProperty("user.language");
-                if (form == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("http://new.members." + account.getHoster() + "/access/login/");
+                String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                if (this.br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
+                    final Recaptcha rc = new Recaptcha(br, this);
+                    rc.findID();
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://members." + account.getHoster() + "/", true);
+                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
+                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                }
+                br.postPage("http://new.members." + account.getHoster() + "/access/submit/", postdata);
+                final Form continueform = br.getFormbyKey("response");
+                if (continueform != null) {
+                    /* Redirect from probiller.com to main website --> Login complete */
+                    br.submitForm(continueform);
+                }
+                if (!br.containsHTML(html_loggedin)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                form.put("username", Encoding.urlEncode(account.getUser()));
-                form.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(form);
-                br.followRedirect(true);
-                final Form fallBack = br.getFormbyActionRegex("postFallback=1");
-                if (fallBack != null) {
-                    br.submitForm(fallBack);
-                    br.followRedirect(true);
-                }
-                if (br.getCookie(MAINPAGE, "rememberme") == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -195,7 +221,7 @@ public class RealityKingsCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
         } catch (PluginException e) {
@@ -203,57 +229,44 @@ public class RealityKingsCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
+        account.setType(AccountType.PREMIUM);
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Premium Account");
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (LIMITREACHED) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Limit exeeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        login(this.br, account, false);
-
-        int chunks = 0;
-        if (link.getBooleanProperty(RealityKingsCom.NOCHUNKS, false)) {
-            chunks = 1;
-        }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
-            } catch (final Throwable e) {
-            }
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(RealityKingsCom.NOCHUNKS, false) == false) {
-                link.setProperty(RealityKingsCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        }
+        link.setProperty("premium_directlink", dllink);
+        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.PornPortal;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
