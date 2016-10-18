@@ -69,7 +69,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" })
 public class RealDebridCom extends PluginForHost {
 
     private static final String CLIENT_SECRET_KEY = "client_secret";
@@ -315,14 +315,11 @@ public class RealDebridCom extends PluginForHost {
                 /* content disposition, lets download it */
                 RUNNING_DOWNLOADS.incrementAndGet();
                 increment = true;
-                boolean ret = dl.startDownload();
-                if (ret && link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    // download is 100%
-                    return;
-                }
-
+                dl.startDownload();
+            } else {
+                br2.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
         } finally {
             try {
                 dl.getConnection().disconnect();
@@ -332,7 +329,6 @@ public class RealDebridCom extends PluginForHost {
                 MAX_DOWNLOADS.set(Integer.MAX_VALUE);
             }
         }
-
     }
 
     @Override
@@ -343,7 +339,7 @@ public class RealDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         }
         showMessage(link, "Task 2: Download begins!");
-        handleDL(account, link, link.getPluginPatternMatcher(), null);
+        handleDL(null, link, link.getPluginPatternMatcher(), null);
     }
 
     @Override
@@ -387,7 +383,6 @@ public class RealDebridCom extends PluginForHost {
             showMessage(link, "Task 2: Download begins!");
             try {
                 handleDL(account, link, genLnk, linkresp);
-                return;
             } catch (PluginException e1) {
                 try {
                     dl.getConnection().disconnect();
@@ -400,7 +395,6 @@ public class RealDebridCom extends PluginForHost {
                 if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-
                 throw e1;
             }
         } catch (APIException e) {
@@ -426,7 +420,13 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        handleFree(link);
+        showMessage(link, "Task 1: Check URL validity!");
+        final AvailableStatus status = requestFileInformation(link);
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+        }
+        showMessage(link, "Task 2: Download begins!");
+        handleDL(account, link, link.getPluginPatternMatcher(), null);
     }
 
     @Override
@@ -614,6 +614,8 @@ public class RealDebridCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+        } catch (final PluginException e) {
+            throw e;
         } catch (final Throwable e) {
             return AvailableStatus.UNCHECKABLE;
         } finally {
