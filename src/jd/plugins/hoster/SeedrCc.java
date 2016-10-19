@@ -167,6 +167,9 @@ public class SeedrCc extends PluginForHost {
                     this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LfhAyMTAAAAAJD3uGiFfUcoXSiVsRKJedWSrSmv").getToken();
+                if (dlinkbefore != null) {
+                    this.setDownloadLink(dlinkbefore);
+                }
                 String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=on";
                 postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 prepAjaxBr(br);
@@ -181,9 +184,6 @@ public class SeedrCc extends PluginForHost {
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
-                if (dlinkbefore != null) {
-                    this.setDownloadLink(dlinkbefore);
-                }
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;

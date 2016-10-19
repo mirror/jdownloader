@@ -20,11 +20,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -65,6 +67,11 @@ public class GoogleDrive extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        final PluginForHost plg = JDUtilities.getPluginForHost("docs.google.com");
+        final Account aa = AccountController.getInstance().getValidAccount(plg);
+        if (aa != null) {
+            jd.plugins.hoster.GoogleDrive.login(this.br, aa);
+        }
         if (parameter.contains("open?id")) {
             br.getPage(parameter);
             if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "google.com/file/")) {
@@ -141,7 +148,7 @@ public class GoogleDrive extends PluginForDecrypt {
         if (results != null && results.length != 0) {
             /* Handle the json way. */
             /* TODO: Find out how the "pageToken" can be generated. */
-            final String key = this.br.getRegex("\"([A-Za-z0-9]+)\",,1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
+            final String key = this.br.getRegex("\"([A-Za-z0-9\\-_]+)\",,1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
             // final String eof = this.br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
             String nextPageToken = null;
             boolean firstRequest = true;
@@ -165,6 +172,9 @@ public class GoogleDrive extends PluginForDecrypt {
                     }
                     LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
+                    if (items == null) {
+                        break;
+                    }
                     nextPageToken = (String) entries.get("nextPageToken");
                     for (final Object item : items) {
                         addedlinks++;

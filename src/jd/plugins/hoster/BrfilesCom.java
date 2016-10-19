@@ -255,9 +255,7 @@ public class BrfilesCom extends PluginForHost {
                     captcha = true;
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     success = true;
-                    if (!skipWaittime) {
-                        waitTime(link, timeBeforeCaptchaInput);
-                    }
+                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                 } else if (rcID != null) {
                     captcha = true;
@@ -267,9 +265,7 @@ public class BrfilesCom extends PluginForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, link);
-                    if (!skipWaittime) {
-                        waitTime(link, timeBeforeCaptchaInput);
-                    }
+                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     captcha = true;
@@ -290,15 +286,11 @@ public class BrfilesCom extends PluginForHost {
                     }
                     final String code = getCaptchaCode("solvemedia", cf, link);
                     final String chid = sm.getChallenge(code);
-                    if (!skipWaittime) {
-                        waitTime(link, timeBeforeCaptchaInput);
-                    }
+                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, "submit=continue&submitted=1&d=1&adcopy_challenge=" + Encoding.urlEncode(chid) + "&adcopy_response=" + Encoding.urlEncode(code), resume, maxchunks);
                 } else {
                     success = true;
-                    if (!skipWaittime) {
-                        waitTime(link, timeBeforeCaptchaInput);
-                    }
+                    waitTime(link, timeBeforeCaptchaInput, skipWaittime);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
                 }
                 checkResponseCodeErrors(dl.getConnection());
@@ -378,17 +370,31 @@ public class BrfilesCom extends PluginForHost {
     }
 
     /** Handles pre download (pre-captcha) waittime. */
-    private void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
-        int wait = 0;
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /* Ticket Time */
-        final String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-        if (ttt != null) {
-            wait = Integer.parseInt(ttt) + additional_WAIT_SECONDS;
-        }
-        wait -= passedTime;
-        if (wait > 0) {
-            sleep(wait * 1000l, downloadLink);
+    private void waitTime(final DownloadLink downloadLink, final long timeBefore, final boolean skipWaittime) throws PluginException {
+        if (skipWaittime) {
+            logger.info("Skipping waittime");
+        } else {
+            int wait = 0;
+            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            /* Ticket Time */
+            String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+            if (ttt == null) {
+                /* Special */
+                ttt = this.br.getRegex("var\\s*?seconds\\s*?= (\\d+);").getMatch(0);
+            }
+            if (ttt != null) {
+                logger.info("Found waittime, parsing waittime: " + ttt);
+                wait = Integer.parseInt(ttt) + additional_WAIT_SECONDS;
+                wait -= passedTime;
+                if (wait > 0) {
+                    logger.info("Waittime minus captcha input time: " + wait);
+                    sleep(wait * 1000l, downloadLink);
+                } else {
+                    logger.info("Waittime is zero or lower, not waiting");
+                }
+            } else {
+                logger.info("Failed to find waittime, either there is none or plugin is out of date");
+            }
         }
     }
 

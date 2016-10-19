@@ -25,6 +25,7 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -39,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "transload.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
@@ -53,6 +55,8 @@ public class TransloadMe extends PluginForHost {
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    private final boolean                                  USE_API                      = true;
 
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
@@ -72,6 +76,7 @@ public class TransloadMe extends PluginForHost {
 
     private Browser newBrowser(final Browser br) {
         br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
     }
@@ -168,7 +173,7 @@ public class TransloadMe extends PluginForHost {
             if (contenttype.contains("html")) {
                 br.followConnection();
                 updatestatuscode();
-                handleAPIErrors(this.br);
+                handleErrors(this.br);
                 handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
             }
             this.dl.startDownload();
@@ -202,13 +207,23 @@ public class TransloadMe extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        newBrowser(this.br);
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai;
+        if (this.USE_API) {
+            ai = fetchAccountInfoAPI(account);
+        } else {
+            ai = null;
+        }
+        return ai;
+    }
+
+    @SuppressWarnings("deprecation")
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        setConstants(account, null);
+        final AccountInfo ai = new AccountInfo();
         /* Balance left in USD */
         final String balance = PluginJSonUtils.getJsonValue(this.br, "balance");
         final String reg_date = PluginJSonUtils.getJsonValue(this.br, "reg_date");
@@ -238,24 +253,100 @@ public class TransloadMe extends PluginForHost {
         final String[] domains = this.br.getRegex("\"([^<>\"]+)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(domains));
         ai.setMultiHostSupport(this, supportedHosts);
+        return ai;
+    }
 
+    @SuppressWarnings("deprecation")
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        setConstants(account, null);
+        final AccountInfo ai = new AccountInfo();
+        /* Balance left in USD */
+        final String balance = this.br.getRegex("<div[^>]*?class=\"number\">([^<>\"]+)<sup><i[^>]*?class=\"icon\\-dollar\">").getMatch(0);
+        /*
+         * Free users = They have no package (==no balance left) --> Accept them but set zero traffic left.
+         */
+        if (balance == null || Double.parseDouble(balance) <= 0) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+            /* Free accounts have no traffic - set this so they will not be used (accidently) but still accept them. */
+            ai.setTrafficLeft(0);
+        } else {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            ai.setStatus("Premium account balance " + balance + " USD");
+            /*
+             * Set unlimited traffic as each filehost costs a different amount of money per GB see:
+             * http://en.transload.me/index.php?p=statistic
+             */
+            ai.setUnlimitedTraffic();
+        }
+        account.setValid(true);
+        this.getAPISafe("/?p=download");
+        final String[] domains = this.br.getRegex("<td[^>]*?><img src=\"/index/host/small/[A-Za-z0-9]+\\.png\"[^>]*?title=\"([^<>\"]+)\">").getColumn(0);
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(domains));
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            if (this.USE_API) {
+                loginAPI(account, force);
+            } else {
+                loginWebsite(account, false);
+            }
+        }
+    }
+
+    private void loginAPI(final Account account, final boolean force) throws Exception {
+        newBrowser(this.br);
+        br.setFollowRedirects(true);
+        this.getPage("action=getaccountdetails");
+        /* Special case: Free accfounts cannot be used via API. */
+        if (this.statuscode == 6) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (Free-Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (free-account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        handleErrors(this.br);
+    }
+
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
+        try {
             newBrowser(this.br);
-            br.setFollowRedirects(true);
-            this.getPage("action=getaccountdetails");
-            /* Special case: Free accfounts cannot be used via API. */
-            if (this.statuscode == 6) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (Free-Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null && !force) {
+                this.br.setCookies(this.getHost(), cookies);
+                this.br.getPage("http://" + this.getHost());
+                if (this.br.containsHTML("action=logout")) {
+                    return;
+                }
+                newBrowser(new Browser());
+            }
+            this.getPage("http://" + this.getHost() + "/ru/?p=login");
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            if (dlinkbefore == null) {
+                this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            if (dlinkbefore != null) {
+                this.setDownloadLink(dlinkbefore);
+            }
+            this.br.postPage(this.br.getURL(), "action=login&redir=&rid=&action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            if (!"true".equalsIgnoreCase(this.br.getCookie(this.getHost(), "auth"))) {
+                if (System.getProperty("user.language").equals("de")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (free-account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            handleAPIErrors(this.br);
+            account.saveCookies(br.getCookies(account.getHoster()), "");
+            handleErrors(this.br);
+        } catch (final PluginException e) {
+            account.clearCookies("");
+            throw e;
         }
     }
 
@@ -276,29 +367,46 @@ public class TransloadMe extends PluginForHost {
 
     private void getAPISafe(final String parameters) throws IOException, PluginException {
         getPage(parameters);
-        updatestatuscode();
-        handleAPIErrors(this.br);
+        handleErrors(this.br);
     }
 
-    private void getPage(final String parameters) throws IOException {
-        String accesslink = API_BASE + "?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass());
-        accesslink += "&" + parameters;
+    private void getPage(final String input) throws IOException {
+        String accesslink;
+        if (this.USE_API) {
+            accesslink = API_BASE + "?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass());
+            accesslink += "&" + input;
+        } else {
+            accesslink = input;
+        }
         br.getPage(accesslink);
         updatestatuscode();
     }
 
     /* Please do not remove this function - future usage!! */
     private void updatestatuscode() {
-        final String errorcode = PluginJSonUtils.getJsonValue(this.br, "error");
-        if (errorcode != null && errorcode.matches("\\d+")) {
-            statuscode = Integer.parseInt(errorcode);
-        } else if (errorcode != null) {
-            statuscode = 666;
+        if (this.USE_API) {
+            final String errorcode = PluginJSonUtils.getJsonValue(this.br, "error");
+            if (errorcode != null && errorcode.matches("\\d+")) {
+                statuscode = Integer.parseInt(errorcode);
+            } else if (errorcode != null) {
+                statuscode = 666;
+            }
+        } else {
+            /* TODO */
         }
     }
 
     /* Please do not remove this function - future usage!! */
-    private void handleAPIErrors(final Browser br) throws PluginException {
+    private void handleErrors(final Browser br) throws PluginException {
+        if (this.USE_API) {
+            handleErrorsAPI(br);
+        } else {
+            handleErrorsWebsite(br);
+        }
+    }
+
+    /* Please do not remove this function - future usage!! */
+    private void handleErrorsAPI(final Browser br) throws PluginException {
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -338,6 +446,10 @@ public class TransloadMe extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
+    }
+
+    private void handleErrorsWebsite(final Browser br) throws PluginException {
+        /* TODO */
     }
 
     /**

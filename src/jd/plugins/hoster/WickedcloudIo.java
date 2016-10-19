@@ -141,7 +141,7 @@ public class WickedcloudIo extends PluginForHost {
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.2<br />
      * mods:<br />
-     * limit-info: premium untested, set FREE account limits<br />
+     * limit-info: 2016-10-19: premium limits are very tight<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
@@ -1372,6 +1372,11 @@ public class WickedcloudIo extends PluginForHost {
                 this.br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
+                if (dllink != null && dllink.matches("http://[^/]+/download")) {
+                    getPage(dllink);
+                    dllink = null;
+                    dllink = getDllink();
+                }
                 if (dllink == null) {
                     final Form dlform = this.br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
@@ -1391,7 +1396,7 @@ public class WickedcloudIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
