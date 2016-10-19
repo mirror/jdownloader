@@ -25,6 +25,11 @@ public class SiteType {
          * example: <a href="http://dosya.tc/">dosya.tc</a>
          */
         Danbooru,
+        /**
+         * Porn website/script: <a href="http://www.evilangel.com/">evilangel.com</a><br />
+         * example: <a href="http://analacrobats.com/">analacrobats.com</a>
+         */
+        EvilAngelNetwork,
 
         /**
          * <a href="http://gempixel.com/project/premium-url-shortener/">Premium URL Shortener</a><br />

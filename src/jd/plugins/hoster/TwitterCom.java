@@ -23,7 +23,6 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -38,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+" })
 public class TwitterCom extends PluginForHost {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -122,11 +121,7 @@ public class TwitterCom extends PluginForHost {
             }
         }
         try {
-            try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con = br.openHeadConnection(dllink);
             final long filesize = con.getLongContentLength();
             if (filesize == 0) {
                 /* E.g. abused video */
