@@ -68,8 +68,8 @@ public class CrhyRllCom extends PluginForDecrypt {
     static private final Pattern RTMP_QUAL      = Pattern.compile("<video_encode_quality>(.*?)</video_encode_quality>", Pattern.CASE_INSENSITIVE);
     static private final Pattern RTMP_SWF       = Pattern.compile("<default:chromelessPlayerUrl>([^<>\"]+\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     /* 2016-04-29: http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf */
-    // http://static.ak.crunchyroll.com/versioned_assets/StandardVideoPlayer.cc7e8515.swf
-    static private final Pattern SWF_URL        = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:\\.[A-Za-z0-9]+)?\\.swf)", Pattern.CASE_INSENSITIVE);
+    /* 2016-10-19: http://static.ak.crunchyroll.com/vendor/StandardVideoPlayer-10dff2a.swf */
+    static private final Pattern SWF_URL        = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/[a-z0-9\\-_]+/(?:[a-f0-9\\.]+/)?)StandardVideoPlayer(?:.+)?\\.swf)", Pattern.CASE_INSENSITIVE);
     static private final String  SWF_DIR        = "http://static.ak.crunchyroll.com/flash/20120424185935.0acb0eac20ff1d5f75c78ac39a889d03/";
     private final int            EPISODE_PAD    = 3;
     private final char           SEPARATOR      = '-';
@@ -156,17 +156,15 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
-            /* 2016-04-29: This message is always in the XML - find better errorhandling for that! */
-            // final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
-            // if (configErrorHandling != null &&
-            // configErrorHandling.equals("Only+Premium+and+Premium%2B+Members+can+pop+out+this+video.+Get+your+membership+today%21")) {
-            // logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " +
-            // Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
-            // decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
-            // return decryptedLinks;
-            // }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
             if (!configUrl.matches()) {
+                if (configUrlDecode.contains("video_format=0") && !configUrlDecode.contains("video_quality")) {
+                    /* 2016-10-19: Added some errorhandling for premiumonly content. */
+                    final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
+                    logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
+                    decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
+                    return decryptedLinks;
+                }
                 throw new DecrypterException("Invalid config url");
             }
 
