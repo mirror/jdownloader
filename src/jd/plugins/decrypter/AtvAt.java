@@ -150,6 +150,7 @@ public class AtvAt extends PluginForDecrypt {
         for (final Object parto : parts) {
             entries = (LinkedHashMap<String, Object>) parto;
             sources = (ArrayList<Object>) entries.get("sources");
+            final boolean is_geo_ip_blocked = ((Boolean) entries.get("is_geo_ip_blocked")).booleanValue();
             for (final Object source : sources) {
                 entries = (LinkedHashMap<String, Object>) source;
                 final String protocol = (String) entries.get("protocol");
@@ -157,11 +158,26 @@ public class AtvAt extends PluginForDecrypt {
                 // final String type = (String) entries.get("type");
                 String src = (String) entries.get("src");
                 if (!"http".equalsIgnoreCase(protocol) || src == null || !src.startsWith("http")) {
-                    /* Skip unknown/unsupported streaming protocols */
+                    /*
+                     * Skip unknown/unsupported streaming protocols e.g. some of their videos still got old rtsp urls e.g.
+                     * http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/
+                     */
                     continue;
                 }
-                /* Get around GEO-block */
-                src = src.replaceAll("http?://blocked.", "http://");
+                final String linkpart_old_geo_block_workaround = new Regex(src, "((?:tvnext_clip|video_file)/video/\\d+\\.mp4)").getMatch(0);
+                if (is_geo_ip_blocked && linkpart_old_geo_block_workaround != null) {
+                    /* Get around GEO-block - for older videos */
+                    /*
+                     * E.g.
+                     * http://videos-blocked-fallback.atv.cdn.tvnext.tv/tvnext_clip/video/123456.mp4/chunklist.m3u8?ttl=123456&token=123456
+                     */
+                    /* E.g. Old url for part 1 only: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
+                    /* E.g. old url for all parts: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
+                    src = "http://109.68.230.208/vod/fallback/" + linkpart_old_geo_block_workaround + "/index.m3u8";
+                } else {
+                    /* Get around GEO-block - for new content */
+                    src = src.replaceAll("http?://blocked.", "http://");
+                }
                 /* Some variables we need in that loop below. */
                 DownloadLink link = null;
                 String quality = null;
@@ -183,69 +199,74 @@ public class AtvAt extends PluginForDecrypt {
                     this.br.getPage(src);
                     final String[] qualities = this.br.getRegex("BANDWIDTH=").getColumn(-1);
                     final int qualitiesNum = qualities.length;
-                    if (this.br.containsHTML("#EXT-X-STREAM-INF")) {
-                        int qualityIndex = 0;
-                        for (String line : Regex.getLines(br.toString())) {
-                            if (!line.startsWith("#")) {
-                                if (this.isAbort()) {
-                                    logger.info("Decryption aborted by user");
-                                    return decryptedLinks;
-                                }
-                                long estimatedSize = 0;
-                                /* Reset quality value */
-                                quality = null;
-                                link = createDownloadlink(br.getBaseURL() + line);
-                                link.setContainerUrl(parameter);
-
-                                try {
-                                    /* try to get the video quality */
-                                    final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
-                                        @Override
-                                        public LogInterface initLogger(DownloadLink link) {
-                                            return getLogger();
-                                        }
-                                    };
-                                    final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
-                                    estimatedSize = m3u8PlayList.getEstimatedSize();
-                                    final StreamInfo streamInfo = downloader.getProbe();
-                                    for (Stream s : streamInfo.getStreams()) {
-                                        if ("video".equals(s.getCodec_type())) {
-                                            quality = s.getHeight() + "p";
-                                            break;
-                                        }
-                                    }
-
-                                } catch (Throwable e) {
-                                    getLogger().log(e);
-                                    estimatedSize = 0;
-                                }
-                                finalname = hybrid_name + "_";
-                                finalname += "hls_part_";
-                                if (quality == null && qualitiesNum <= possibleQualitiesNumber) {
-                                    /*
-                                     * Workaround for possible Ffmpeg issue. We know that the bitrates go from highest to lowest so we can
-                                     * assume which quality we have here in case the Ffmpeg method fails!
-                                     */
-                                    quality = possibleQualities[possibleQualitiesNumber - qualitiesNum + qualityIndex] + "p";
-                                }
-                                if (quality != null) {
-                                    finalname += quality + "_";
-                                }
-                                finalname += part_formatted + ".mp4";
-
-                                link.setFinalFileName(finalname);
-                                if (estimatedSize > 0) {
-                                    link.setAvailable(true);
-                                    link.setDownloadSize(estimatedSize);
-                                }
-                                link.setContentUrl(parameter);
-                                link._setFilePackage(fp);
-                                decryptedLinks.add(link);
-                                distribute(link);
-                                qualityIndex++;
-                            }
-
+                    if (!this.br.containsHTML("#EXT-X-STREAM-INF")) {
+                        if (is_geo_ip_blocked) {
+                            logger.info("Possible GEO-unlock fail: " + src);
                         }
+                        continue;
+                    }
+                    int qualityIndex = 0;
+                    for (String line : Regex.getLines(this.br.toString())) {
+                        if (!line.startsWith("#")) {
+                            if (this.isAbort()) {
+                                logger.info("Decryption aborted by user");
+                                return decryptedLinks;
+                            }
+                            long estimatedSize = 0;
+                            /* Reset quality value */
+                            quality = null;
+                            link = createDownloadlink(br.getBaseURL() + line);
+                            link.setContainerUrl(parameter);
+
+                            try {
+                                /* try to get the video quality */
+                                final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
+                                    @Override
+                                    public LogInterface initLogger(DownloadLink link) {
+                                        return getLogger();
+                                    }
+                                };
+                                final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
+                                estimatedSize = m3u8PlayList.getEstimatedSize();
+                                final StreamInfo streamInfo = downloader.getProbe();
+                                for (Stream s : streamInfo.getStreams()) {
+                                    if ("video".equals(s.getCodec_type())) {
+                                        quality = s.getHeight() + "p";
+                                        break;
+                                    }
+                                }
+
+                            } catch (Throwable e) {
+                                getLogger().log(e);
+                                estimatedSize = 0;
+                            }
+                            finalname = hybrid_name + "_";
+                            finalname += "hls_part_";
+                            finalname += part_formatted + "_";
+                            if (quality == null && qualitiesNum <= possibleQualitiesNumber) {
+                                /*
+                                 * Workaround for possible Ffmpeg issue. We know that the bitrates go from highest to lowest so we can
+                                 * assume which quality we have here in case the Ffmpeg method fails!
+                                 */
+                                quality = possibleQualities[possibleQualitiesNumber - qualitiesNum + qualityIndex] + "p";
+                            }
+                            if (quality != null) {
+                                finalname += quality;
+                            }
+                            finalname += ".mp4";
+
+                            link.setFinalFileName(finalname);
+                            if (estimatedSize > 0) {
+                                link.setAvailable(true);
+                                link.setDownloadSize(estimatedSize);
+                            }
+                            link.setContentUrl(parameter);
+                            link._setFilePackage(fp);
+                            decryptedLinks.add(link);
+                            distribute(link);
+                            qualityIndex++;
+                        }
+
                     }
                 } else {
                     /* delivery:progressive --> http url */
@@ -254,8 +275,9 @@ public class AtvAt extends PluginForDecrypt {
                     link = this.createDownloadlink("directhttp://" + src);
                     finalname = hybrid_name + "_";
                     finalname += "http_part_";
-                    finalname += quality + "_";
-                    finalname += part_formatted + ".mp4";
+                    finalname += part_formatted + "_";
+                    finalname += quality;
+                    finalname += ".mp4";
                     link.setFinalFileName(finalname);
                     // link.setAvailable(true);
                     link.setContentUrl(parameter);

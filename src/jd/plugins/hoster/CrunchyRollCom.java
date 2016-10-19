@@ -335,8 +335,12 @@ public class CrunchyRollCom extends antiDDoSForHost {
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!downloadLink.getFinalFileName().endsWith(".mp4")) {
+            downloadLink.setFinalFileName(downloadLink.getFinalFileName() + ".mp4");
+        }
         rtmp_path_or_hls_url = hlsbest.downloadurl;
         checkFFmpeg(downloadLink, "Download a HLS Stream");
+        /* 2016-10-19: Seems like they use crypted HLS (in most cases?!) */
         dl = new HLSDownloader(downloadLink, br, rtmp_path_or_hls_url);
         dl.startDownload();
     }
