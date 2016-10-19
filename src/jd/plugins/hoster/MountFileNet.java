@@ -281,13 +281,20 @@ public class MountFileNet extends antiDDoSForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("eternal premium|premium till \\d{2}/\\d{2}/\\d{2}")) {
+        String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("premium till ([A-Za-z]+ \\d{1,2}, \\d{4})").getMatch(0);
+        }
+        final boolean is_premium_without_expiredate = br.containsHTML("eternal premium");
+        if (!is_premium_without_expiredate && expire == null) {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
-            String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-            if (expire != null) {
+            if (expire != null && expire.matches("\\d{2}/\\d{2}/\\d{2}")) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", Locale.ENGLISH));
+            } else if (expire != null) {
+                /* New 2016-10-19 */
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
             }
             ai.setUnlimitedTraffic();
             account.setValid(true);

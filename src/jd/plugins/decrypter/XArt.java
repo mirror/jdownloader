@@ -23,8 +23,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,12 +37,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "x-art.com" }, urls = { "^https?://(www\\.)?x-art\\.com/(members/)?.+" }) 
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "x-art.com" }, urls = { "^https?://(www\\.)?x-art\\.com/(members/)?.+" })
 public class XArt extends PluginForDecrypt {
 
     public XArt(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private SubConfiguration cfg = null;
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
@@ -53,8 +59,9 @@ public class XArt extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        cfg = SubConfiguration.getConfig(this.getHost());
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
-            public boolean add(DownloadLink e) {
+            public boolean add(final DownloadLink e) {
                 try {
                     distribute(e);
                 } catch (Throwable ee) {
@@ -65,7 +72,7 @@ public class XArt extends PluginForDecrypt {
 
             @Override
             public boolean addAll(Collection<? extends DownloadLink> c) {
-                for (DownloadLink d : c) {
+                for (final DownloadLink d : c) {
                     add(d);
                 }
                 return true;
@@ -120,38 +127,79 @@ public class XArt extends PluginForDecrypt {
         return ret;
     }
 
-    public void parseUrl(ArrayList<DownloadLink> ret, String url) throws IOException {
+    public void parseUrl(final ArrayList<DownloadLink> ret, final String url) throws IOException {
         br.setFollowRedirects(true);
 
         br.getPage(url);
-        ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
-        String links[] = br.getRegex("href=\"([a-zA-Z0-9\\_\\-]*\\.(mp4|wmv|mov|zip))\"").getColumn(0);
-        String lnks[] = br.getRegex("href=(\"|')(https?://([^\r\n\t\"']+\\.)?x-art\\.com/[^\r\n\t\"']+\\.(mp4|wmv|mov|zip)[^\r\n\t\"']*)").getColumn(1);
-        if (links != null) {
-            for (String link : links) {
-                String fulllink = br.getURL() + link;
-                DownloadLink dl = createDownloadlink(fulllink);
-                dlinks.add(dl);
-            }
-        }
-        if (lnks != null) {
-            for (String link : lnks) {
-                DownloadLink dl = createDownloadlink((link));
-                dlinks.add(dl);
-            }
-        }
-        ret.addAll(dlinks);
         String title = br.getRegex("<div class=\"small-12 medium-12 large-12 columns\">\\s*<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
+        if (url.matches("^https?://(www\\.)?x-art\\.com/(members/)?galleries/[a-zA0-9\\-\\_]+/?$")) {
+            ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
+            String links[] = br.getRegex("href=\"([a-zA-Z0-9\\_\\-]*\\.(mp4|wmv|mov|zip))\"").getColumn(0);
+            String lnks[] = br.getRegex("href=(\"|')(https?://([^\r\n\t\"']+\\.)?x-art\\.com/[^\r\n\t\"']+\\.(mp4|wmv|mov|zip)[^\r\n\t\"']*)").getColumn(1);
+            if (links != null) {
+                for (String link : links) {
+                    String fulllink = br.getURL() + link;
+                    DownloadLink dl = createDownloadlink(fulllink);
+                    dlinks.add(dl);
+                }
+            }
+            if (lnks != null) {
+                for (final String link : lnks) {
+                    final String quality_url = new Regex(link, "([A-Za-z]+)\\.zip").getMatch(0);
+                    if (quality_url != null && !cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
+                        /* Skip unwanted content */
+                        continue;
+                    }
+                    final DownloadLink dl = createDownloadlink((link));
+                    dlinks.add(dl);
+                }
+            }
+            ret.addAll(dlinks);
+        } else {
+            /* Decrypt video */
+            final String fid = new Regex(url, "/videos/([^/]+)").getMatch(0);
+            if (fid == null) {
+                return;
+            }
+            if (title == null) {
+                /* Fallback */
+                title = fid;
+            }
+            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
+            final String htmldownload = this.br.getRegex("<ul[^>]*?id=\"drop\\-download\"[^>]*?>(.*?)</ul>").getMatch(0);
+            final String[] dlinfo = htmldownload.split("</li>");
+            for (final String video : dlinfo) {
+                final String dlurl = new Regex(video, "(/download/[^<>\"]+)\"").getMatch(0);
+                final String filesize = new Regex(video, "\\((\\d+(?:\\.\\d+)? [A-Za-z]{2,5})\\)").getMatch(0);
+                final String quality_url = dlurl != null ? new Regex(dlurl, "([A-Za-z0-9]+)\\.mp4").getMatch(0) : null;
+                if (dlurl == null || quality_url == null) {
+                    continue;
+                }
+                if (!cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
+                    /* Skip unwanted content */
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    dl.setAvailable(true);
+                }
+                dl.setName(title + "_" + quality_url + ".mp4");
+                dl.setProperty("fid", fid);
+                dl.setProperty("quality", quality_url);
+                ret.add(dl);
+            }
+        }
         if (title != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            fp.addLinks(dlinks);
+            fp.addLinks(ret);
         }
     }
 
     private boolean login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        final PluginForHost plugin = JDUtilities.getPluginForHost("x-art.com");
+        final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
         try {
             if (plugin != null) {
                 ((jd.plugins.hoster.XArtCom) plugin).login(account, br, false);
@@ -159,7 +207,6 @@ public class XArt extends PluginForDecrypt {
                 return false;
             }
         } catch (final PluginException e) {
-
             account.setValid(false);
             return false;
         }

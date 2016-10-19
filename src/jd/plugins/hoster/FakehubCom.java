@@ -40,18 +40,18 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|http://realitykingsdecrypted.+" })
-public class RealityKingsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://ma\\.fakehub\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://fakehubdecrypted.+" })
+public class FakehubCom extends PluginForHost {
 
-    public RealityKingsCom(PluginWrapper wrapper) {
+    public FakehubCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.realitykings.com/tour/join/");
+        this.enablePremium("http://join.fakehub.com/signup/signup.php");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://service.adultprovide.com/docs/terms.htm";
+        return "http://www.supportmg.com/terms-of-service";
     }
 
     /* Connection stuff */
@@ -70,11 +70,11 @@ public class RealityKingsCom extends PluginForHost {
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.RealityKingsCom.DOMAIN_BASE);
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.FakehubCom.DOMAIN_BASE);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://realitykingsdecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://fakehubdecrypted", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -106,11 +106,11 @@ public class RealityKingsCom extends PluginForHost {
                         /* User added url without decrypter --> Impossible to refresh this directurl! */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    this.br.getPage(jd.plugins.decrypter.RealityKingsCom.getPicUrl(fid));
-                    if (jd.plugins.decrypter.RealityKingsCom.isOffline(this.br)) {
+                    this.br.getPage(jd.plugins.decrypter.FakehubCom.getPicUrl(fid));
+                    if (jd.plugins.decrypter.FakehubCom.isOffline(this.br)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final String pictures[] = jd.plugins.decrypter.RealityKingsCom.getPictureArray(this.br);
+                    final String pictures[] = jd.plugins.decrypter.FakehubCom.getPictureArray(this.br);
                     for (final String finallink : pictures) {
                         if (finallink.contains(number_formatted + ".jpg")) {
                             dllink = finallink;
@@ -181,7 +181,7 @@ public class RealityKingsCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
+                    br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
                         return;
@@ -189,24 +189,24 @@ public class RealityKingsCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
+                br.getPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
                     final String code = getCaptchaCode("recaptcha", cf, dummyLink);
                     postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
                 }
-                br.postPage(jd.plugins.decrypter.RealityKingsCom.getProtocol() + jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
+                br.postPage(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (!br.containsHTML(html_loggedin)) {
+                if (br.getCookie(jd.plugins.decrypter.FakehubCom.getProtocol() + jd.plugins.decrypter.FakehubCom.DOMAIN_PREFIX_PREMIUM + account.getHoster(), "loginremember") == null || !br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -259,17 +259,14 @@ public class RealityKingsCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "Download videos- and pictures with the realitykings.com plugin.";
+        return "Download videos- and pictures with the fakehub.com plugin.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080", "Grab HD MP4 1080p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_3000", "Grab HD MP4 720p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1500", "Grab SD MP4 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_800", "Grab MPEG4 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4v_480", "Grab MOBILE HIGH (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4v_320", "Grab MOBILE MEDIUM (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_3gp", "Grab MOBILE LOW (3gp)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_pc_1080p_6000", "Grab 1080p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_pc_720p_2600", "Grab 720p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_pc_480p_1500", "Grab 480p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_pc_368p_850", "Grab 360p (mp4)?").setDefaultValue(true));
     }
 
     @Override
