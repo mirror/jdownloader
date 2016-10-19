@@ -37,19 +37,19 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:full/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/videos/\\?models=\\d+" })
-public class RealityKingsCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakehub.com" }, urls = { "https?://ma\\.fakehub\\.com/(?:watch/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?|model/\\d+(?:/[a-z0-9\\-_]+/?)?)" })
+public class FakehubCom extends PluginForDecrypt {
 
-    public RealityKingsCom(PluginWrapper wrapper) {
+    public FakehubCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_VIDEO            = "https?://(?:new\\.)?members\\.realitykings\\.com/video/full/\\d+(?:/[a-z0-9\\-_]+/?)?";
-    private static final String TYPE_PHOTO            = "https?://(?:new\\.)?members\\.realitykings\\.com/video/pics/\\d+(?:/[a-z0-9\\-_]+/?)?";
-    private static final String TYPE_MEMBER           = "https?://(?:new\\.)?members\\.realitykings\\.com/videos/\\?models=\\d+";
+    private static final String TYPE_VIDEO            = "https?://(?:new\\.)?ma\\.fakehub\\.com/watch/\\d+(?:/[a-z0-9\\-_]+/?)?";
+    private static final String TYPE_PHOTO            = "https?://(?:new\\.)?ma\\.fakehub\\.com/pics/\\d+(?:/[a-z0-9\\-_]+/?)?";
+    private static final String TYPE_MEMBER           = "https?://(?:new\\.)?ma\\.fakehub\\.com/model/\\d+(?:/[a-z0-9\\-_]+/?)?";
 
-    public static String        DOMAIN_BASE           = "realitykings.com";
-    public static String        DOMAIN_PREFIX_PREMIUM = "new.members.";
+    public static String        DOMAIN_BASE           = "fakehub.com";
+    public static String        DOMAIN_PREFIX_PREMIUM = "ma.";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -67,15 +67,18 @@ public class RealityKingsCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String title = br.getRegex("<title>([^<>\"]*?) / Reality Kings</title>").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?) \\- Fakehub\\.com :: </title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<h1[^>]*?>([^<>\"]+)</h1>").getMatch(0);
+        }
         if (title == null) {
             /* Fallback to id from inside url */
             title = fid;
         }
         if (parameter.matches(TYPE_VIDEO)) {
             final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
-            final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
-            final String[] dlinfo = htmldownload.split("</a>");
+            final String htmldownload = this.br.getRegex("<ul id=\"video\\-download\\-format\">(.*?)</ul>").getMatch(0);
+            final String[] dlinfo = htmldownload.split("</li>");
             for (final String video : dlinfo) {
                 final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
                 final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
@@ -88,13 +91,7 @@ public class RealityKingsCom extends PluginForDecrypt {
                     /* Skip unwanted content */
                     continue;
                 }
-                final String ext;
-                if (quality_url.equalsIgnoreCase("3gp")) {
-                    /* Special case */
-                    ext = ".3gp";
-                } else {
-                    ext = ".mp4";
-                }
+                final String ext = ".mp4";
                 final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
                 if (filesize != null) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -115,7 +112,7 @@ public class RealityKingsCom extends PluginForDecrypt {
             final String pictures[] = getPictureArray(this.br);
             for (String finallink : pictures) {
                 final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
-                finallink = finallink.replaceAll("https?://", "http://realitykingsdecrypted");
+                finallink = finallink.replaceAll("https?://", "http://fakehubdecrypted");
                 final DownloadLink dl = this.createDownloadlink(finallink);
                 dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
                 dl.setAvailable(true);
@@ -150,7 +147,7 @@ public class RealityKingsCom extends PluginForDecrypt {
             return false;
         }
         try {
-            ((jd.plugins.hoster.RealityKingsCom) hostPlugin).login(this.br, aa, force);
+            ((jd.plugins.hoster.FakehubCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
 
             aa.setValid(false);
@@ -165,15 +162,15 @@ public class RealityKingsCom extends PluginForDecrypt {
     }
 
     public static String getVideoUrlFree(final String fid) {
-        return getProtocol() + "www." + DOMAIN_BASE + "/tour/video/watch/" + fid + "/";
+        return getProtocol() + "www." + DOMAIN_BASE + "/tour/video/" + fid + "/";
     }
 
     public static String getVideoUrlPremium(final String fid) {
-        return getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/video/full/" + fid + "/";
+        return getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/watch/" + fid + "/";
     }
 
     public static String getPicUrl(final String fid) {
-        return getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/video/pics/" + fid + "/";
+        return getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/pics/" + fid + "/";
     }
 
     public static String getProtocol() {

@@ -17,17 +17,16 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -43,7 +42,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(www\\.)?(x-art(decrypted)?\\.com/(members/)?(videos|galleries)/.+|([a-z0-9]+\\.)?x-art(decrypted)?\\.com/.+\\.(mov|mp4|wmv|zip).*)" }) public class XArtCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(?:www\\.)?(x\\-art(decrypted)?\\.com/(members/)?(videos|galleries)/.+|([a-z0-9]+\\.)?x-art(decrypted)?\\.com/.+\\.(mov|mp4|wmv|zip).*)" })
+public class XArtCom extends PluginForHost {
 
     // DEVNOTES
     // links are now session based, we will need to add some sort of handling to get new token if/when token expires.
@@ -59,6 +59,7 @@ import jd.utils.JDUtilities;
     public XArtCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.x-art.com/join/");
+        setConfigElements();
     }
 
     @Override
@@ -129,14 +130,7 @@ import jd.utils.JDUtilities;
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "X-Art members only!");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
@@ -173,34 +167,21 @@ import jd.utils.JDUtilities;
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     public void login(final Account account, Browser lbr, final boolean force) throws Exception {
         synchronized (LOCK) {
             final boolean redirect = lbr.isFollowingRedirects();
             try {
-                /** Load cookies */
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            lbr.setCookie(this.getHost(), key, value);
-                        }
-                        userAgent.set(account.getStringProperty("userAgent"));
-                        prepBrowser(lbr);
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    lbr.setCookies(this.getHost(), cookies);
+                    userAgent.set(account.getStringProperty("userAgent"));
+                    prepBrowser(lbr);
+                    return;
                 }
                 prepBrowser(lbr);
                 lbr.setFollowRedirects(true);
                 lbr.getPage("http://www.x-art.com/members/");
-                Form loginform = br.getForm(0);
+                Form loginform = lbr.getForm(0);
                 if (loginform == null) {
                     String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
@@ -232,15 +213,7 @@ import jd.utils.JDUtilities;
                     }
                 }
 
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = lbr.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(lbr.getCookies(this.getHost()), "");
 
                 // logic to randomise the next login attempt, to prevent issues with static login detection
                 long ran2 = 0;
@@ -259,7 +232,7 @@ import jd.utils.JDUtilities;
                 account.setProperty("userAgent", userAgent.get());
                 // end of logic
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 account.setProperty("nextFullLogin", Property.NULL);
                 account.setProperty("lastFullLogin", Property.NULL);
                 account.setProperty("userAgent", Property.NULL);
@@ -319,6 +292,22 @@ import jd.utils.JDUtilities;
             prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
         return prepBr;
+    }
+
+    @Override
+    public String getDescription() {
+        return "Download videos- and pictures with the x-art.com plugin.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080", "Grab MP4 - HD (1080p, mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720", "Grab MP4 - HD (720p, mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_540", "Grab SD MP4 (540p, mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_360", "Grab MP4 - SD (360p, mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_4k", "Grab MP4 - 4K (4k, mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_sml", "Grab images 1200 pixels (small)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_med", "Grab images 2000 pixels (medium)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_lrg", "Grab images 4000 pixels (large)?").setDefaultValue(true));
     }
 
 }
