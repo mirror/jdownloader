@@ -36,13 +36,13 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/(?:video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|title/tt\\d+/mediaviewer/rm\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/(?:video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|[A-Za-z]+/[a-z]{2}\\d+/mediaviewer/rm\\d+)" })
 public class ImDbCom extends PluginForHost {
 
     private String              dllink     = null;
     private static final String IDREGEX    = "(vi\\d+)$";
     private static final String TYPE_VIDEO = "https?://(?:www\\.)?imdb\\.com/video/[\\w\\-]+/(vi|screenplay/)\\d+";
-    private static final String TYPE_PHOTO = "https?://(?:www\\.)?imdb\\.com/title/tt\\d+/mediaviewer/rm\\d+";
+    private static final String TYPE_PHOTO = "https?://(?:www\\.)?imdb\\.com/.+/mediaviewer/.+";
 
     public ImDbCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -71,6 +71,7 @@ public class ImDbCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         final String downloadURL = downloadLink.getDownloadURL();
+        this.br.setLoadLimit(this.br.getLoadLimit() * 3);
         br.getPage(downloadURL);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,7 +99,7 @@ public class ImDbCom extends PluginForHost {
             }
             if (filename == null) {
                 /* Fallback to url-filename */
-                filename = new Regex(downloadURL, "/title/(.+)").getMatch(0).replace("/", "_");
+                filename = new Regex(downloadURL, "imdb\\.com/[^/]+/(.+)").getMatch(0).replace("/", "_");
             }
             if (filename == null || dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

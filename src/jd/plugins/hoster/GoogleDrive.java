@@ -134,7 +134,7 @@ public class GoogleDrive extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
-                this.login(aa);
+                login(this.br, aa);
             } catch (final Throwable e) {
             }
         }
@@ -316,8 +316,8 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private boolean login(final Account account) throws Exception {
-        final GoogleHelper helper = new GoogleHelper(this.br);
+    public static boolean login(final Browser br, final Account account) throws Exception {
+        final GoogleHelper helper = new GoogleHelper(br);
         return helper.login(account);
     }
 
@@ -326,7 +326,7 @@ public class GoogleDrive extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            if (!login(account)) {
+            if (!login(this.br, account)) {
                 throw new Exception("Login Failed");
             }
         } catch (final Exception e) {

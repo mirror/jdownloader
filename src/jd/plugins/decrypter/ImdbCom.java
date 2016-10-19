@@ -76,13 +76,9 @@ public class ImdbCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         for (int i = 1; i <= maxpage; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return decryptedLinks;
             }
             if (i > 1) {
                 br.getPage(parameter + "?page=" + i);
@@ -98,7 +94,7 @@ public class ImdbCom extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             } else {
-                final String[][] links = br.getRegex("(/title/tt\\d+/mediaviewer/rm\\d+)([^<>\"/]+)?\"([\t\n\r ]*?title=\"([^<>\"]*?)\")?").getMatches();
+                final String[][] links = br.getRegex("(/[^<>\"]+mediaviewer/rm\\d+)([^<>\"/]+)?\"([\t\n\r ]*?title=\"([^<>\"]*?)\")?").getMatches();
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -106,7 +102,7 @@ public class ImdbCom extends PluginForDecrypt {
                 for (final String linkinfo[] : links) {
                     final String link = "http://www.imdb.com" + linkinfo[0];
                     final DownloadLink dl = createDownloadlink(link);
-                    final String id = new Regex(link, "rm(\\d+)").getMatch(0);
+                    final String id = new Regex(link, "mediaviewer/[a-z]{2}(\\d+)").getMatch(0);
                     fp.add(dl);
                     final String subtitle = linkinfo[3];
                     if (subtitle != null) {

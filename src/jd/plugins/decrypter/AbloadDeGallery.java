@@ -43,9 +43,10 @@ public class AbloadDeGallery extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">Dieses Bild wurde gelöscht")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        }
-        if (br.containsHTML("Galerie nicht gefunden\\.") || br.containsHTML("Gallery not found\\.")) {
+        } else if (br.containsHTML("Galerie nicht gefunden\\.") || br.containsHTML("Gallery not found\\.")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
