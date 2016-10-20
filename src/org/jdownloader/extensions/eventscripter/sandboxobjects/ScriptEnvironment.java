@@ -462,6 +462,12 @@ public class ScriptEnvironment {
         return new EnvironmentSandbox();
     }
 
+    @ScriptAPI(description = "Get ab Environment Object")
+    public static BrowserSandBox getBrowser() throws EnvironmentException {
+        askForPermission("load resources from the internet");
+        return new BrowserSandBox();
+    }
+
     @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
         askForPermission("load resources from the internet");
