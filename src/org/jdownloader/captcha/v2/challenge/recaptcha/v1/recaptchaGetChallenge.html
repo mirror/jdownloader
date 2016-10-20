@@ -34,6 +34,12 @@ iframe {
         function closeWindowOrTab() {
 
             console.log("CloSe browser");
+            
+            
+        	if (/Edge\/\d+./i.test(navigator.userAgent)) {
+        		open(location, '_self').close();
+        		return;
+        	}
             var ie = getInternetExplorerVersion();
 
             if (ie > 7) {
@@ -70,6 +76,12 @@ iframe {
             } catch (e) {
 
             }
+            
+        	try {
+        		open(location, '_self').close();
+        	} catch (e) {
+
+        	}
 
         }
 
