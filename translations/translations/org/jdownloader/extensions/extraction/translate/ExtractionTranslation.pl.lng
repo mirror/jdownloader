@@ -28,6 +28,7 @@ context_password_msg=Ustaw Hasło aby rozpakować %s1
 context_password_msg2=Ustaw Hasło aby rozpakować %s1.\r\nSugerowane hasło(-a):\r\n%s2
 context_password_msg2_multi=Ustaw Hasło.\r\nSugerowane hasło(-a):\r\n%s1
 context_password_msg_multi=Ustaw Hasło
+contextmenu_abort=Przerwij rozpakowywanie
 contextmenu_autodeletefiles=Włączono: 'Usuwanie Plików Archiwów'.
 contextmenu_autodeletelinks=Włączono: 'Usuwanie Linków z Listy Pobierania'.
 contextmenu_autoextract=Automatyczne wypakowywanie włączone

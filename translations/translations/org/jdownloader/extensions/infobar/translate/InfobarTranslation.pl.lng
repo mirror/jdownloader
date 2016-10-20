@@ -1,3 +1,8 @@
+EnableInfoBarGuiAction=Pokaż InfoBar
+InfoBarGuiToggleAction_deselected=Otwórz InfoBar
+InfoBarGuiToggleAction_deselected_tt=Otwórz InfoBar
+InfoBarGuiToggleAction_selected=Zamknij InfoBar
+InfoBarGuiToggleAction_selected_tt=Zamknij InfoBar
 jd_plugins_optional_infobar_InfoDialog_help=Strefa Zrzutu
 jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Wrzuć tu linki, adresy www lub pliki DLC!
 jd_plugins_optional_infobar_InfoDialog_hideWindow=Ukryj Pasek Informacyjny
