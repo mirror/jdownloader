@@ -1,3 +1,5 @@
+ExampleMenuEntry=@%s1: %s2
+INTERVAL=Interwał
 NONE=Brak
 ON_ARCHIVE_EXTRACTED=Zakończone rozpakowywanie archiwum
 ON_DOWNLOADS_PAUSE=Pobieranie zatrzymane

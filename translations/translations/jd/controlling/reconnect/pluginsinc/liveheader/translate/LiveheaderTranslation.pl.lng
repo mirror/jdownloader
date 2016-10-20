@@ -46,6 +46,7 @@ RouterSendAction_RouterSendAction_=Podziel się ustawieniami
 RouterSendAction_RouterSendAction_tt=Podziel się ustawieniami z innymi. Pomocnik pozwoli ci przesłać twoje ustawienia Ponownego Połączenia na nasz serwer. Pozwoli to na automatyczną detekcję ustawień u innych użytkowników.
 RouterSendAction_actionPerformed_msg2=Potrzebujemy twojej pomocy aby udoskonalić naszą bazę danych o skryptach Ponownych Połączeń.\nProszę wspomóż nasz projekt i udostępnij swój skrypt do nawiązania Ponownego Połączenia.\nKreator poprowadzi cię przez wszystkie wymagane kroki.
 RouterSendAction_actionPerformed_title=Podziel się ustawieniami Ponownego Połączenia
+details=Szczegóły
 gui_btn_abort=Przerwij
 gui_btn_cancel=Anuluj
 gui_btn_help=Pomoc
