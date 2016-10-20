@@ -10,17 +10,23 @@ import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.PrePluginCheckDummyChallenge;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.captcha.v2.Challenge;
 
-public class CaptchaBlackList implements DownloadWatchdogListener {
+public class CaptchaBlackList implements DownloadWatchdogListener, LinkCollectorListener {
     private static final CaptchaBlackList   INSTANCE = new CaptchaBlackList();
-    private final ArrayList<BlacklistEntry> entries;
+    private final ArrayList<BlacklistEntry> entries  = new ArrayList<BlacklistEntry>();
 
     private CaptchaBlackList() {
-        entries = new ArrayList<BlacklistEntry>();
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
+        LinkCollector.getInstance().getEventsender().addListener(this);
     }
 
     public static CaptchaBlackList getInstance() {
@@ -28,12 +34,14 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     }
 
     public void add(BlacklistEntry entry) {
-        synchronized (entries) {
-            entries.add(entry);
+        if (entry != null) {
+            synchronized (entries) {
+                entries.add(entry);
+            }
         }
         synchronized (whitelist) {
             final ArrayList<DownloadLink> rem = new ArrayList<DownloadLink>();
-            for (DownloadLink link : whitelist.keySet()) {
+            for (final DownloadLink link : whitelist.keySet()) {
                 if (entry.matches(new PrePluginCheckDummyChallenge(link))) {
                     rem.add(link);
                 }
@@ -43,7 +51,7 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     }
 
     public BlacklistEntry matches(Challenge<?> c) {
-        if (c.isAccountLogin() || c.isCreatedInsideAccountChecker()) {
+        if (c == null || c.isAccountLogin() || c.isCreatedInsideAccountChecker()) {
             return null;
         } else {
             return matches(c, false);
@@ -51,28 +59,30 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     }
 
     private BlacklistEntry matches(Challenge<?> c, boolean bypasswhitelist) {
-        if (!bypasswhitelist) {
-            DownloadLink link = c.getDownloadLink();
-            if (link != null) {
-                synchronized (whitelist) {
-                    if (whitelist.containsKey(link)) {
-                        return null;
+        if (c != null) {
+            if (!bypasswhitelist) {
+                final DownloadLink link = c.getDownloadLink();
+                if (link != null) {
+                    synchronized (whitelist) {
+                        if (whitelist.containsKey(link)) {
+                            return null;
+                        }
                     }
                 }
             }
-        }
-        synchronized (entries) {
-            ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
-            try {
-                for (BlacklistEntry e : entries) {
-                    if (e.canCleanUp()) {
-                        cleanups.add(e);
-                    } else if (e.matches(c)) {
-                        return e;
+            synchronized (entries) {
+                final ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
+                try {
+                    for (final BlacklistEntry e : entries) {
+                        if (e.canCleanUp()) {
+                            cleanups.add(e);
+                        } else if (e.matches(c)) {
+                            return e;
+                        }
                     }
+                } finally {
+                    entries.removeAll(cleanups);
                 }
-            } finally {
-                entries.removeAll(cleanups);
             }
         }
         return null;
@@ -97,17 +107,12 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     @Override
     public void onDownloadWatchdogStateIsStopped() {
         synchronized (entries) {
-            final ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
-            try {
-                for (BlacklistEntry e : entries) {
-                    if (e.canCleanUp() || e instanceof SessionBlackListEntry) {
-                        cleanups.add(e);
-                    }
+            for (int index = entries.size() - 1; index >= 0; index--) {
+                final BlacklistEntry entry = entries.get(index);
+                if (entry.canCleanUp() || entry instanceof SessionBlackListEntry) {
+                    entries.remove(index);
                 }
-            } finally {
-                entries.removeAll(cleanups);
             }
-
         }
         synchronized (whitelist) {
             whitelist.clear();
@@ -124,7 +129,7 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
-
+        cleanup();
     }
 
     private final WeakHashMap<DownloadLink, Object> whitelist = new WeakHashMap<DownloadLink, Object>();
@@ -134,21 +139,16 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
             synchronized (whitelist) {
                 whitelist.put(link, this);
             }
-            collectGarbage();
+            cleanup();
         }
     }
 
-    protected void collectGarbage() {
+    protected void cleanup() {
         synchronized (entries) {
-            final ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
-            try {
-                for (BlacklistEntry e : entries) {
-                    if (e.canCleanUp()) {
-                        cleanups.add(e);
-                    }
+            for (int index = entries.size() - 1; index >= 0; index--) {
+                if (entries.get(index).canCleanUp()) {
+                    entries.remove(index);
                 }
-            } finally {
-                entries.removeAll(cleanups);
             }
         }
     }
@@ -161,5 +161,62 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
 
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink link) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink link) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler crawler) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler crawler) {
+        cleanup();
+    }
+
+    @Override
+    public void onLinkCrawlerFinished() {
+    }
+
+    @Override
+    public void onLinkCrawlerNewJob(LinkCollectingJob job) {
     }
 }
