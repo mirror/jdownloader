@@ -56,18 +56,18 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 // note: 4downfiles.com is parked!
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.net" }, urls = { "https?://(www\\.)?4downfiles\\.(?:net|com)/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.org" }, urls = { "https?://(www\\.)?4downfiles\\.(?:com|net|org)/(vidembed\\-)?[a-z0-9]{12}" })
 public class FourDownFilesCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://4downfiles.net";
+    private static final String  COOKIE_HOST                  = "http://4downfiles.org";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(4downfiles\\.net)";
+    private static final String  DOMAINS                      = "(4downfiles\\.org)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -114,7 +114,7 @@ public class FourDownFilesCom extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
         if ("4downfiles.com".equals(getHost())) {
-            if (host == null || "4downfiles.com".equals(host) || "4downfiles.net".equals(host)) {
+            if (host == null || "4downfiles.com".equals(host) || "4downfiles.net".equals(host) || "4downfiles.org".equals(host)) {
                 return "4downfiles.com";
             }
         }
