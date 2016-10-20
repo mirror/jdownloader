@@ -232,10 +232,6 @@ public class LinkCrawler {
         return null;
     }
 
-    /*
-     * customized comparator we use to prefer faster decrypter plugins over slower ones
-     */
-
     static {
         final int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
         final int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
