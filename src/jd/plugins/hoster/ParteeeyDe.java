@@ -55,6 +55,8 @@ public class ParteeeyDe extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
+    public static final String   default_extension = ".jpg";
+
     public static final long     trust_cookie_age  = 300000l;
 
     private String               DLLINK            = null;
@@ -117,8 +119,11 @@ public class ParteeeyDe extends PluginForHost {
             filename = url_filename;
         } else if (filename_decrypter != null) {
             filename = filename_decrypter;
+            if (!filename.endsWith(default_extension)) {
+                filename += default_extension;
+            }
         } else {
-            filename = linkid + ".jpg";
+            filename = linkid + default_extension;
         }
         link.setFinalFileName(filename);
         URLConnectionAdapter con = null;
