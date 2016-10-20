@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(www\\.)?asscompact\\.de/[\\w\\./\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "asscompact.de" }, urls = { "https?://(www\\.)?asscompact\\.de/[\\w%\\./\\-]+" })
 public class AsscompactDeDecrypter extends PluginForDecrypt {
 
     public AsscompactDeDecrypter(PluginWrapper wrapper) {
