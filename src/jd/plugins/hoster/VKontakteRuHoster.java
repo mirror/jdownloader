@@ -262,7 +262,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
@@ -410,7 +410,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private void setHeadersPhoto(final Browser br) {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        setHeadersPhoto(br);
     }
 
     private void setHeaderRefererPhoto(final Browser br) {
