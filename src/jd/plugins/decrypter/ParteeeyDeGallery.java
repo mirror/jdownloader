@@ -119,11 +119,14 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 }
                 // final String finallink = "directhttp://https://www.parteeey.de/files/mul/galleries/" + gal_ID + "/" + url_fname;
                 final String url_fname = jd.plugins.hoster.ParteeeyDe.getFilenameFromDirecturl(url_thumb);
-                final String finalname;
+                String finalname;
                 if (url_fname != null) {
                     finalname = df.format(counter) + "_" + url_fname;
                 } else {
                     finalname = df.format(counter) + "_" + linkid;
+                }
+                if (!finalname.endsWith(jd.plugins.hoster.ParteeeyDe.default_extension)) {
+                    finalname += jd.plugins.hoster.ParteeeyDe.default_extension;
                 }
                 final String contenturl = "https://www.parteeey.de/#mulFile-" + linkid;
                 final DownloadLink dl = createDownloadlink(contenturl);

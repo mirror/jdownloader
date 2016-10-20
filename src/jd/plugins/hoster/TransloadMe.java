@@ -116,7 +116,6 @@ public class TransloadMe extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         newBrowser(this.br);
@@ -141,8 +140,7 @@ public class TransloadMe extends PluginForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null || !dllink.startsWith("http")) {
-            this.getAPISafe("action=getdirectlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJsonValue(this.br, "link");
+            dllink = generateDownloadlink(link);
             if (dllink == null) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 30, 2 * 60 * 1000l);
@@ -215,9 +213,61 @@ public class TransloadMe extends PluginForHost {
         if (this.USE_API) {
             ai = fetchAccountInfoAPI(account);
         } else {
-            ai = null;
+            ai = fetchAccountInfoWebsite(account);
         }
         return ai;
+    }
+
+    private String generateDownloadlink(final DownloadLink link) throws IOException, PluginException {
+        final String dllink;
+        if (this.USE_API) {
+            dllink = generateDownloadlinkAPI(link);
+        } else {
+            dllink = generateDownloadlinkWebsite(link);
+        }
+        return dllink;
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            if (this.USE_API) {
+                loginAPI(account, force);
+            } else {
+                loginWebsite(account, false);
+            }
+        }
+    }
+
+    /* Please do not remove this function - future usage!! */
+    private void updatestatuscode() {
+        if (this.USE_API) {
+            updatestatuscodeAPI();
+        } else {
+            updatestatuscodeWebsite();
+        }
+    }
+
+    /* Please do not remove this function - future usage!! */
+    private void handleErrors(final Browser br) throws PluginException {
+        if (this.USE_API) {
+            handleErrorsAPI(br);
+        } else {
+            handleErrorsWebsite(br);
+        }
+    }
+
+    private String generateDownloadlinkAPI(final DownloadLink link) throws IOException, PluginException {
+        String dllink = null;
+        this.getPageSafe("http://" + this.getHost() + "/download2.php?my_url=" + Encoding.urlEncode(link.getDownloadURL()));
+        dllink = this.br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0);
+        return dllink;
+    }
+
+    private String generateDownloadlinkWebsite(final DownloadLink link) throws IOException, PluginException {
+        String dllink = null;
+        this.getPageSafe("action=getdirectlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        dllink = PluginJSonUtils.getJsonValue(this.br, "link");
+        return dllink;
     }
 
     @SuppressWarnings("deprecation")
@@ -249,7 +299,7 @@ public class TransloadMe extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         account.setValid(true);
-        this.getAPISafe("action=getsupporthost");
+        this.getPageSafe("action=getsupporthost");
         final String[] domains = this.br.getRegex("\"([^<>\"]+)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(domains));
         ai.setMultiHostSupport(this, supportedHosts);
@@ -281,21 +331,11 @@ public class TransloadMe extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         account.setValid(true);
-        this.getAPISafe("/?p=download");
+        this.getPageSafe("/?p=download");
         final String[] domains = this.br.getRegex("<td[^>]*?><img src=\"/index/host/small/[A-Za-z0-9]+\\.png\"[^>]*?title=\"([^<>\"]+)\">").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(domains));
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
-    }
-
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            if (this.USE_API) {
-                loginAPI(account, force);
-            } else {
-                loginWebsite(account, false);
-            }
-        }
     }
 
     private void loginAPI(final Account account, final boolean force) throws Exception {
@@ -325,7 +365,8 @@ public class TransloadMe extends PluginForHost {
                 }
                 newBrowser(new Browser());
             }
-            this.getPage("http://" + this.getHost() + "/ru/?p=login");
+            this.br.setCookie(this.getHost(), "auth", "true");
+            this.getPage("http://" + this.getHost() + "/?p=login");
             final DownloadLink dlinkbefore = this.getDownloadLink();
             if (dlinkbefore == null) {
                 this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
@@ -334,7 +375,7 @@ public class TransloadMe extends PluginForHost {
             if (dlinkbefore != null) {
                 this.setDownloadLink(dlinkbefore);
             }
-            this.br.postPage(this.br.getURL(), "action=login&redir=&rid=&action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            this.br.postPage("//" + account.getHoster() + "/user.php", "action=login&redir=&rid=&action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             if (!"true".equalsIgnoreCase(this.br.getCookie(this.getHost(), "auth"))) {
                 if (System.getProperty("user.language").equals("de")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -342,6 +383,7 @@ public class TransloadMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
+            this.br.getPage("http://transload.me/?p=download");
             account.saveCookies(br.getCookies(account.getHoster()), "");
             handleErrors(this.br);
         } catch (final PluginException e) {
@@ -365,7 +407,7 @@ public class TransloadMe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(final String parameters) throws IOException, PluginException {
+    private void getPageSafe(final String parameters) throws IOException, PluginException {
         getPage(parameters);
         handleErrors(this.br);
     }
@@ -382,27 +424,17 @@ public class TransloadMe extends PluginForHost {
         updatestatuscode();
     }
 
-    /* Please do not remove this function - future usage!! */
-    private void updatestatuscode() {
-        if (this.USE_API) {
-            final String errorcode = PluginJSonUtils.getJsonValue(this.br, "error");
-            if (errorcode != null && errorcode.matches("\\d+")) {
-                statuscode = Integer.parseInt(errorcode);
-            } else if (errorcode != null) {
-                statuscode = 666;
-            }
-        } else {
-            /* TODO */
+    private void updatestatuscodeAPI() {
+        final String errorcode = PluginJSonUtils.getJsonValue(this.br, "error");
+        if (errorcode != null && errorcode.matches("\\d+")) {
+            statuscode = Integer.parseInt(errorcode);
+        } else if (errorcode != null) {
+            statuscode = 666;
         }
     }
 
-    /* Please do not remove this function - future usage!! */
-    private void handleErrors(final Browser br) throws PluginException {
-        if (this.USE_API) {
-            handleErrorsAPI(br);
-        } else {
-            handleErrorsWebsite(br);
-        }
+    private void updatestatuscodeWebsite() {
+        /* TODO */
     }
 
     /* Please do not remove this function - future usage!! */
