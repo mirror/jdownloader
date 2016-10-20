@@ -1111,7 +1111,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1771,6 +1771,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HASHINFO, hashInfo));
                 if (hashInfo != null) {
                     switch (hashInfo.getType()) {
+                    case CRC32:
+                        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CRC32, hashInfo.getHash()));
+                        break;
                     case MD5:
                         notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, hashInfo.getHash()));
                         break;
@@ -1779,6 +1782,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                         break;
                     case SHA256:
                         notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA256, hashInfo.getHash()));
+                        break;
+                    case SHA512:
+                        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA512, hashInfo.getHash()));
                         break;
                     default:
                         break;
