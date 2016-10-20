@@ -127,7 +127,10 @@ function unload() {
 function closeWindowOrTab() {
 
 	console.log("Close browser");
-
+	if (/Edge\/\d+./i.test(navigator.userAgent)) {
+		open(location, '_self').close();
+		return;
+	}
 	var ie = getInternetExplorerVersion();
 
 	if (ie > 7) {
@@ -161,6 +164,11 @@ function closeWindowOrTab() {
 	try {
 		window.open('', '_self', '');
 		window.close();
+	} catch (e) {
+
+	}
+	try {
+		open(location, '_self').close();
 	} catch (e) {
 
 	}

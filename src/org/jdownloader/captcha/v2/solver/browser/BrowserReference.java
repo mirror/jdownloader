@@ -8,8 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.controlling.TaskQueue;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -33,12 +31,13 @@ import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
-public abstract class BrowserReference implements HttpRequestHandler {
+import jd.controlling.TaskQueue;
+import jd.parser.Regex;
 
+public abstract class BrowserReference implements HttpRequestHandler {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     private final AbstractBrowserChallenge         challenge;
     private final UniqueAlltimeID                  id          = new UniqueAlltimeID();
-
     private final AtomicReference<Process>         process     = new AtomicReference<Process>(null);
     private BrowserWindow                          browserWindow;
     private BrowserViewport                        viewport;
@@ -69,7 +68,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
         resourceIds.put("favicon.ico", BrowserReference.class.getResource("html/favicon.ico"));
         resourceIds.put("browserCaptcha.js", BrowserReference.class.getResource("html/browserCaptcha.js"));
         resourceIds.put("jquery-1.9.1-min.js", BrowserReference.class.getResource("html/jquery-1.9.1-min.js"));
-
         types = new HashMap<String, String>();
         types.put("html", "text/html; charset=utf-8");
         types.put("css", "text/css; charset=utf-8");
@@ -85,7 +83,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     public void open() throws IOException {
         TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
-
             @Override
             protected Void run() throws IOException {
                 HttpHandlerInfo lHandlerInfo = null;
@@ -134,9 +131,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             // }
             // }
         }
-
         opened = System.currentTimeMillis();
-
         if (browserCmd == null || browserCmd.length == 0) {
             CrossSystem.openURL(url);
         } else {
@@ -145,9 +140,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             String[] cmds = new String[browserCmd.length];
             for (int i = 0; i < browserCmd.length; i++) {
                 cmds[i] = browserCmd[i].replace("%s", url);
-
             }
-
             ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
             pb.redirectErrorStream(true);
             try {
@@ -158,7 +151,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 e.printStackTrace();
             }
         }
-
     }
 
     @Override
@@ -172,7 +164,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     public void dispose() {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
@@ -196,13 +187,13 @@ public abstract class BrowserReference implements HttpRequestHandler {
         try {
             latestRequest = System.currentTimeMillis();
             if ("/resource".equals(request.getRequestedPath())) {
-                String resourceID = request.getRequestedURLParameters().get(0).value;
+                String resourceID = new Regex(request.getRequestedURLParameters().get(0).value, "([^\\?]+)").getMatch(0);
                 URL resource = resourceIds.get(resourceID);
                 if (resource != null) {
                     response.setResponseCode(ResponseCode.SUCCESS_OK);
                     response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, types.get(Files.getExtension(resourceID))));
+                    System.out.println(resource);
                     response.getOutputStream(true).write(IO.readURL(resource));
-
                     return true;
                 }
             }
@@ -228,7 +219,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     Rectangle elementBounds = null;
                     try {
                         elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
-
                         this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
                         if (viewport != null) {
                             viewport.onLoaded();
@@ -249,10 +239,8 @@ public abstract class BrowserReference implements HttpRequestHandler {
             } else if ("unload".equals(pDo)) {
                 SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(challenge.getId().getID());
                 BrowserSolver.getInstance().kill((SolverJob<String>) job);
-
                 response.getOutputStream(true).write("true".getBytes("UTF-8"));
                 return true;
-
             } else if (pDo == null) {
                 response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
             } else {
@@ -264,7 +252,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
             error(response, e);
             return true;
         }
-
     }
 
     private void error(HttpResponse response, Throwable e) {
@@ -282,28 +269,23 @@ public abstract class BrowserReference implements HttpRequestHandler {
         if (request.getRequestedPath() != null && !request.getRequestedPath().matches("^/" + Pattern.quote(challenge.getHttpPath()) + "/.*$")) {
             return false;
         }
-
         try {
             // custom
             boolean custom = challenge.onRawPostRequest(this, request, response);
             if (custom) {
                 return true;
             }
-
             String pDo = request.getParameterbyKey("do");
             String id = request.getParameterbyKey("id");
             if (!StringUtils.equals(id, this.id.getID() + "")) {
                 return false;
             }
             return challenge.onPostRequest(this, request, response);
-
         } catch (Throwable e) {
             error(response, e);
             return true;
         }
-
     }
 
     public abstract void onResponse(String request);
-
 }
