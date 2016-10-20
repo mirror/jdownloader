@@ -835,7 +835,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             final int start = input.getSelectionStart();
             final int end = input.getSelectionEnd();
             final StringBuilder sb = new StringBuilder();
-            sb.append(old.substring(0, start));
+            if (old.length() > start) {
+                sb.append(old.substring(0, start));
+            }
             if (ClipboardMonitoring.isHtmlFlavorAllowed()) {
                 final String html = ClipboardMonitoring.getHTMLTransferData(support.getTransferable());
                 if (StringUtils.isNotEmpty(html)) {
@@ -849,7 +851,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 }
                 sb.append(text);
             }
-            sb.append(old.substring(end));
+            if (old.length() > end) {
+                sb.append(old.substring(end));
+            }
             final String toAnalyse = sb.toString();
             asyncAnalyse(toAnalyse, base);
         } catch (Throwable e) {
