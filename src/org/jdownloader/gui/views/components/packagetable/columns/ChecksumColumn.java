@@ -7,6 +7,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
@@ -22,17 +23,13 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     public ChecksumColumn() {
         super(_GUI.T.checksumcolumnmd5());
-
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     public void configureEditorComponent(final AbstractNode value, final boolean isSelected, final int row, final int column) {
-
         this.editorField.removeActionListener(this);
         String str = this.getEditorStringValue(value);
         if (str == null) {
@@ -42,9 +39,7 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
         }
         this.editorField.setText(str);
         this.editorField.addActionListener(this);
-
         this.editorIconLabel.setIcon(this.getIcon(value));
-
     }
 
     private String getEditorStringValue(AbstractNode value) {
@@ -57,17 +52,9 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             return null;
         }
         if (dl != null) {
-            String hash = dl.getSha256Hash();
-            if (!StringUtils.isEmpty(hash)) {
-                return hash;
-            }
-            hash = dl.getSha1Hash();
-            if (!StringUtils.isEmpty(hash)) {
-                return hash;
-            }
-            hash = dl.getMD5Hash();
-            if (!StringUtils.isEmpty(hash)) {
-                return hash;
+            final HashInfo hashInfo = dl.getHashInfo();
+            if (hashInfo != null) {
+                return hashInfo.getHash();
             }
         }
         return null;
@@ -77,10 +64,6 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
     public boolean isDefaultVisible() {
         return false;
     }
-
-    // @Override
-    // public boolean isEditable(final E obj) {
-    // return false;
 
     @Override
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
@@ -111,25 +94,23 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected void setStringValue(String value, AbstractNode object) {
-        DownloadLink dl = null;
+        final DownloadLink dl;
         if (object instanceof CrawledLink) {
             dl = ((CrawledLink) object).getDownloadLink();
         } else if (object instanceof DownloadLink) {
             dl = ((DownloadLink) object);
+        } else {
+            return;
         }
         if (dl != null) {
             value = value.trim();
-            if (value != null && value.length() == 32) {
-                dl.setMD5Hash(value);
-            } else if (value != null && value.length() == 40) {
-                dl.setSha1Hash(value);
-            } else if (value != null && value.length() == 64) {
-                dl.setSha256Hash(value);
-            } else if (value == null || value.length() == 0) {
-                dl.setSha1Hash(null);
-                dl.setSha256Hash(null);
-                dl.setMD5Hash(null);
+            final HashInfo hashInfo;
+            if (StringUtils.isEmpty(value)) {
+                hashInfo = new HashInfo("", HashInfo.TYPE.NONE, true, true);
+            } else {
+                hashInfo = HashInfo.parse(value, true, true);
             }
+            dl.setHashInfo(hashInfo);
         }
     }
 
@@ -144,17 +125,9 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             return null;
         }
         if (dl != null) {
-            String hash = dl.getSha256Hash();
-            if (!StringUtils.isEmpty(hash)) {
-                return "[SHA256] ".concat(hash);
-            }
-            hash = dl.getSha1Hash();
-            if (!StringUtils.isEmpty(hash)) {
-                return "[SHA1] ".concat(hash);
-            }
-            hash = dl.getMD5Hash();
-            if (!StringUtils.isEmpty(hash)) {
-                return "[MD5] ".concat(hash);
+            final HashInfo hashInfo = dl.getHashInfo();
+            if (hashInfo != null) {
+                return "[" + hashInfo.getType().name() + "] " + hashInfo.getHash();
             }
         }
         return null;

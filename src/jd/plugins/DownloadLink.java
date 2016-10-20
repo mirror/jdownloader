@@ -1753,8 +1753,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setHashInfo(HashInfo hashInfo) {
+        final boolean isForced = hashInfo != null && hashInfo.isForced();
+        if (!isForced) {
+            final HashInfo existingHash = getHashInfo();
+            if (existingHash != null && existingHash.isForced()) {
+                return;
+            }
+        }
         final boolean changed;
-        if (hashInfo == null) {
+        if (hashInfo == null || hashInfo.isNone()) {
             changed = this.removeProperty(PROPERTY_HASHINFO);
         } else {
             changed = this.setProperty(PROPERTY_HASHINFO, hashInfo.exportAsString());

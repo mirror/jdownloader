@@ -6,6 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.io.ZipInputStream;
+import net.lingala.zip4j.model.FileHeader;
+import net.sf.sevenzipjbinding.SevenZipException;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -27,13 +34,6 @@ import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
-
-import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.io.ZipInputStream;
-import net.lingala.zip4j.model.FileHeader;
-import net.sf.sevenzipjbinding.SevenZipException;
 
 public class Zip4J extends IExtraction {
     private ZipFile                    zipFile                 = null;
@@ -379,10 +379,12 @@ public class Zip4J extends IExtraction {
                 if (ret.isComplete()) {
                     final ZipFile zipFile = new ZipFile(archive.getArchiveFiles().get(0).getFilePath());
                     final ArrayList<String> splitZipFiles = zipFile.getSplitZipFiles();
-                    for (final String splitZipFile : splitZipFiles) {
-                        if (archive.getArchiveFileByPath(splitZipFile) == null) {
-                            final File missingFile = new File(splitZipFile);
-                            ret.add(new DummyArchiveFile(new MissingArchiveFile(missingFile.getName(), splitZipFile)));
+                    if (splitZipFiles != null) {
+                        for (final String splitZipFile : splitZipFiles) {
+                            if (archive.getArchiveFileByPath(splitZipFile) == null) {
+                                final File missingFile = new File(splitZipFile);
+                                ret.add(new DummyArchiveFile(new MissingArchiveFile(missingFile.getName(), splitZipFile)));
+                            }
                         }
                     }
                 }
