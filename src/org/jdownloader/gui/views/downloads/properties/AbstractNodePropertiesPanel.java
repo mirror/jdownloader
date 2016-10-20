@@ -789,19 +789,21 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             if (checksum.getParent() != null) {
                 String cs = checksum.getText();
                 cs = cs.replaceAll("\\[.*?\\]", "").trim();
+                final HashInfo hashInfo;
                 if (cs.length() == 8) {
-                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.CRC32));
+                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.CRC32);
                 } else if (cs.length() == 32) {
-                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.MD5));
+                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.MD5);
                 } else if (cs.length() == 40) {
-                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA1));
+                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA1);
                 } else if (cs.length() == 64) {
-                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA256));
+                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA256);
                 } else if (cs.length() == 128) {
-                    abstractNodes.saveHashInfo(HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA512));
+                    hashInfo = HashInfo.newInstanceSafe(cs, HashInfo.TYPE.SHA512);
                 } else {
-                    abstractNodes.saveHashInfo(null);
+                    hashInfo = new HashInfo("", HashInfo.TYPE.NONE, true, true);
                 }
+                abstractNodes.saveHashInfo(hashInfo);
             }
             if (packagename.getParent() != null) {
                 final String newName = packagename.getText();

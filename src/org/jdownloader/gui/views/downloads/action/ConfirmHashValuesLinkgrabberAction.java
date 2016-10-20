@@ -9,12 +9,12 @@ import java.util.Map.Entry;
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.plugins.download.HashInfo;
 
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
@@ -31,7 +31,6 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
     public ConfirmHashValuesLinkgrabberAction() {
         super(true, true);
         setIconKey(IconKey.ICON_HASHSUM);
-
         setName(_GUI.T.ConfirmHashValuesAction());
         addContextSetup(includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this));
     }
@@ -83,7 +82,7 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
 
             @Override
             protected Void run() throws RuntimeException {
-                HashMap<String, List<CrawledLink>> map = new HashMap<String, List<CrawledLink>>();
+                final HashMap<String, List<CrawledLink>> map = new HashMap<String, List<CrawledLink>>();
                 for (CrawledLink cl : links) {
                     List<CrawledLink> list = map.get(cl.getName());
                     if (list == null) {
@@ -92,46 +91,32 @@ public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContext
                     }
                     list.add(cl);
                 }
-                main: for (Entry<String, List<CrawledLink>> se : map.entrySet()) {
-                    List<CrawledLink> list = se.getValue();
-                    String md5 = null;
-                    String sha1 = null;
-                    String sha256 = null;
-                    for (CrawledLink cl : list) {
-                        if (cl.getDownloadLink().getMD5Hash() != null) {
-                            if (md5 != null && !StringUtils.equalsIgnoreCase(md5, cl.getDownloadLink().getMD5Hash())) {
-                                // hashes do not match
-                                continue main;
-                            } else {
-                                md5 = cl.getDownloadLink().getMD5Hash();
-                            }
-                        }
-                        if (cl.getDownloadLink().getSha1Hash() != null) {
-                            if (sha1 != null && !StringUtils.equalsIgnoreCase(sha1, cl.getDownloadLink().getSha1Hash())) {
-                                // hashes do not match
-                                continue main;
-                            } else {
-                                sha1 = cl.getDownloadLink().getSha1Hash();
-                            }
-                        }
-                        if (cl.getDownloadLink().getSha256Hash() != null) {
-                            if (sha256 != null && !StringUtils.equalsIgnoreCase(sha256, cl.getDownloadLink().getSha256Hash())) {
-                                // hashes do not match
-                                continue main;
-                            } else {
-                                sha256 = cl.getDownloadLink().getSha256Hash();
+                main: for (final Entry<String, List<CrawledLink>> se : map.entrySet()) {
+                    final List<CrawledLink> list = se.getValue();
+                    final HashMap<HashInfo.TYPE, HashInfo> knownHashInfos = new HashMap<HashInfo.TYPE, HashInfo>();
+                    for (final CrawledLink cl : list) {
+                        if (cl.getDownloadLink() != null) {
+                            final HashInfo hashInfo = cl.getDownloadLink().getHashInfo();
+                            if (hashInfo != null) {
+                                final HashInfo existing = knownHashInfos.get(hashInfo.getType());
+                                if (existing == null) {
+                                    knownHashInfos.put(hashInfo.getType(), hashInfo);
+                                } else if (!existing.equals(hashInfo)) {
+                                    continue main;
+                                }
                             }
                         }
                     }
-                    for (CrawledLink cl : list) {
-                        if (md5 != null) {
-                            cl.getDownloadLink().setMD5Hash(md5);
-                        }
-                        if (sha1 != null) {
-                            cl.getDownloadLink().setSha1Hash(sha1);
-                        }
-                        if (sha256 != null) {
-                            cl.getDownloadLink().setSha256Hash(sha256);
+                    for (HashInfo.TYPE type : HashInfo.TYPE.values()) {
+                        final HashInfo existing = knownHashInfos.get(type);
+                        if (existing != null) {
+                            final HashInfo newHashInfo = HashInfo.newInstanceSafe(existing.getHash(), existing.getType(), existing.isTrustworthy(), true);
+                            for (final CrawledLink cl : list) {
+                                if (cl.getDownloadLink() != null) {
+                                    cl.getDownloadLink().setHashInfo(newHashInfo);
+                                }
+                            }
+                            break;
                         }
                     }
                 }
