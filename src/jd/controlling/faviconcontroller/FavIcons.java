@@ -12,6 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,14 +57,15 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class FavIcons {
 
     private static final ThreadPoolExecutor                                      THREAD_POOL;
-    private static final AtomicInteger                                           THREADCOUNTER = new AtomicInteger(0);
-    private static final Object                                                  LOCK          = new Object();
-    private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE         = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
-    private static HashMap<String, ImageIcon>                                    FAILED_ICONS  = new HashMap<String, ImageIcon>();
-    private static HashMap<String, ImageIcon>                                    DEFAULT_ICONS = new HashMap<String, ImageIcon>();
-    private static LogSource                                                     LOGGER;
+    private static final AtomicInteger                                           THREADCOUNTER   = new AtomicInteger(0);
+    private static final Object                                                  LOCK            = new Object();
+    private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE           = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
+    private static final HashMap<String, ImageIcon>                              FAILED_ICONS    = new HashMap<String, ImageIcon>();
+    private static final HashSet<String>                                         REFRESHED_ICONS = new HashSet<String>();
+    private static final HashMap<String, ImageIcon>                              DEFAULT_ICONS   = new HashMap<String, ImageIcon>();
+    private static final LogSource                                               LOGGER;
 
-    private static final FavIconsConfig                                          CONFIG        = JsonConfig.create(FavIconsConfig.class);
+    private static final FavIconsConfig                                          CONFIG          = JsonConfig.create(FavIconsConfig.class);
 
     static {
         LOGGER = LogController.getInstance().getLogger("FavIcons.class");
@@ -135,6 +137,8 @@ public class FavIcons {
 
     }
 
+    public static final long                                                     FAVICON_TIMEOUT = 1000l * 60 * 60 * 24 * 7;
+
     public static Icon getFavIcon(String host, FavIconRequestor requestor) {
         if (host == null) {
             return null;
@@ -142,13 +146,31 @@ public class FavIcons {
         Icon image = null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
-            if (NewTheme.I().hasIcon("fav/" + host)) {
+            URL url = NewTheme.I().getIconURL("fav/" + host);
+            if (url != null) {
                 image = new AbstractIcon("fav/" + host, -1);
             }
-            if (image == null && NewTheme.I().hasIcon("fav/big." + host)) {
-                image = new AbstractIcon("fav/big." + host, -1);
+            if (image == null) {
+                url = NewTheme.I().getIconURL("fav/big." + host);
+                if (url != null) {
+                    image = new AbstractIcon("fav/big." + host, -1);
+                }
             }
             if (image != null) {
+                try {
+                    if (REFRESHED_ICONS.add(host)) {
+                        if ("file".equalsIgnoreCase(url.getProtocol())) {
+                            final File file = new File(url.toURI());
+                            final long lastModified = file.lastModified();
+                            if ((lastModified > 0 && System.currentTimeMillis() - lastModified > FAVICON_TIMEOUT) && file.exists()) {
+                                file.setLastModified(System.currentTimeMillis());// avoid retry before expired
+                                add(host, requestor);
+                            }
+                        }
+                    }
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
                 /* load favIcon from disk */
                 return image;
             }
@@ -191,7 +213,7 @@ public class FavIcons {
                 icon = getDefaultIcon(host, false);
             }
             /* enqueue this host for favicon loading */
-            java.util.List<FavIconRequestor> ret = QUEUE.get(host);
+            List<FavIconRequestor> ret = QUEUE.get(host);
             boolean enqueueFavIcon = false;
             if (ret == null) {
                 ret = new ArrayList<FavIconRequestor>();
@@ -264,11 +286,13 @@ public class FavIcons {
                                     fos = new FileOutputStream(imageFile);
                                     ImageIO.write(favicon, "png", fos);
                                     /* load and scale it again */
-                                    Icon image = new AbstractIcon("fav/" + host, -1);
-                                    if (image != null && requestors != null) {
-                                        /* refresh icons for all queued plugins */
-                                        for (FavIconRequestor requestor : requestors) {
-                                            requestor.setFavIcon(image);
+                                    if (requestors != null && requestors.size() > 0) {
+                                        final Icon image = new AbstractIcon("fav/" + host, -1);
+                                        if (image != null) {
+                                            /* refresh icons for all queued plugins */
+                                            for (FavIconRequestor requestor : requestors) {
+                                                requestor.setFavIcon(image);
+                                            }
                                         }
                                     }
                                 } catch (Throwable e) {
@@ -367,7 +391,7 @@ public class FavIcons {
     }
 
     private static BufferedImage download_FavIconIco(String host, LogSource logger) throws IOException {
-        String url = "http://" + host + "/favicon.ico";
+        final String url = "http://" + host + "/favicon.ico";
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
         favBr.setConnectTimeout(10000);
@@ -379,14 +403,14 @@ public class FavIcons {
             favBr.setFollowRedirects(true);
             favBr.getHeaders().put("Accept-Encoding", null);
             con = favBr.openGetConnection(url);
-            if (con.isOK()) {
+            if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                 /* we use bufferedinputstream to reuse it later if needed */
                 inputStream = new BufferedInputStream(con.getInputStream());
                 inputStream.mark(Integer.MAX_VALUE);
                 try {
                     /* try first with iconloader */
-                    List<BufferedImage> ret = ICODecoder.read(inputStream);
-                    BufferedImage img = returnBestImage(ret);
+                    final List<BufferedImage> ret = ICODecoder.read(inputStream);
+                    final BufferedImage img = returnBestImage(ret);
                     if (img != null) {
                         return img;
                     }
@@ -395,7 +419,7 @@ public class FavIcons {
                     /* retry with normal image download */
                     inputStream.reset();
                     /* maybe redirect to different icon format? */
-                    BufferedImage img = downloadImage(inputStream);
+                    final BufferedImage img = downloadImage(inputStream);
                     if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
                         return img;
                     }
@@ -492,11 +516,11 @@ public class FavIcons {
                 /* we use bufferedinputstream to reuse it later if needed */
                 inputStream = new BufferedInputStream(con.getInputStream());
                 inputStream.mark(Integer.MAX_VALUE);
-                if (con.isOK()) {
+                if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
                     try {
                         /* try first with iconloader */
-                        List<BufferedImage> ret = ICODecoder.read(inputStream);
-                        BufferedImage img = returnBestImage(ret);
+                        final List<BufferedImage> ret = ICODecoder.read(inputStream);
+                        final BufferedImage img = returnBestImage(ret);
                         if (img != null) {
                             return img;
                         }
@@ -505,7 +529,7 @@ public class FavIcons {
                         /* retry with normal image download */
                         inputStream.reset();
                         /* maybe redirect to different icon format? */
-                        BufferedImage img = downloadImage(inputStream);
+                        final BufferedImage img = downloadImage(inputStream);
                         if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
                             return img;
                         }
@@ -561,7 +585,7 @@ public class FavIcons {
             BufferedImage ret = ImageIO.read(is);
             if (ret == null) {
                 /* workaround for gif images */
-                GifDecoder d = new GifDecoder();
+                final GifDecoder d = new GifDecoder();
                 /* reset bufferedinputstream to begin from start */
                 is.reset();
                 if (d.read(is) == 0) {
