@@ -372,9 +372,9 @@ public class DownloaderGuru extends PluginForHost {
             if (loginform == null) {
                 /* Should never happen */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
                 }
             }
             for (InputField inputField : loginform.getInputFields()) {
