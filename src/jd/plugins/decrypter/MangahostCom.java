@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?br\\.mangahost\\.com/manga/[^/]+/[^\\s]*\\d+(\\.\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?(br\\.)?mangahost\\.(com|net)/manga/[^/]+/[^\\s]*\\d+(\\.\\d+)?" })
 public class MangahostCom extends PluginForDecrypt {
 
     public MangahostCom(PluginWrapper wrapper) {
@@ -38,6 +38,7 @@ public class MangahostCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403) {
             logger.info("GEO-blocked!!");
@@ -51,17 +52,17 @@ public class MangahostCom extends PluginForDecrypt {
         String[] links = null;
         if (br.containsHTML("var images")) {
             if (br.containsHTML("(jpg|png)\\.webp")) {
-                links = br.getRegex("(https?://img\\.mangahost.com/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
+                links = br.getRegex("(https?://img\\.mangahost.net/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
             } else {
-                links = br.getRegex("(https?://img\\.mangahost.com/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
+                links = br.getRegex("(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
             }
         } else {
             String pages = br.getRegex("(var pages[^<>]+\\}\\]\\;)").getMatch(0);
             pages = pages.replace("\\/", "/");
             if (br.containsHTML("(jpg|png)\\.webp")) {
-                links = new Regex(pages, "(https?://img\\.mangahost.com/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
+                links = new Regex(pages, "(https?://img\\.mangahost.net/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
             } else {
-                links = new Regex(pages, "(https?://img\\.mangahost.com/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
+                links = new Regex(pages, "(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
             }
         }
         if (links == null || links.length == 0) {
