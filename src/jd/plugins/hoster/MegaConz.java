@@ -712,6 +712,9 @@ public class MegaConz extends PluginForHost {
                     } else {
                         timeLeft = 60 * 60 * 1000l;
                     }
+                    if (account != null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bandwidth Limit Exceeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Bandwidth Limit Exceeded", timeLeft);
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
