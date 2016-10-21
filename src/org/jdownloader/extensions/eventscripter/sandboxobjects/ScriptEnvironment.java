@@ -892,7 +892,7 @@ public class ScriptEnvironment {
 
     private static void showMessageDialog(String string) {
         final ScriptThread env = getScriptThread();
-        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, T.T.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
+        UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_LARGE, T.T.showMessageDialog_title(env.getScript().getName(), env.getScript().getEventTrigger().getLabel()), string, new AbstractIcon(IconKey.ICON_INFO, 32), null, null) {
             @Override
             protected int getPreferredWidth() {
                 return 600;
