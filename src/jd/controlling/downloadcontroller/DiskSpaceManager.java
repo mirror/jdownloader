@@ -153,6 +153,10 @@ public class DiskSpaceManager {
                 break;
             }
         }
+        if (freeDiskSpace < 0) {
+            // unlimited, for example a virtual (distributed) filesystem
+            return DISKSPACERESERVATIONRESULT.OK;
+        }
         if (freeDiskSpace < requestedDiskSpace) {
             return DISKSPACERESERVATIONRESULT.FAILED;
         }
