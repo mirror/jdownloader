@@ -208,6 +208,13 @@ public class TransloadMe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
+        if (!account.getUser().matches(".+@.+\\..+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         login(account, true);
         final AccountInfo ai;
         if (this.USE_API) {
@@ -258,15 +265,15 @@ public class TransloadMe extends PluginForHost {
 
     private String generateDownloadlinkAPI(final DownloadLink link) throws IOException, PluginException {
         String dllink = null;
-        this.getPageSafe("http://" + this.getHost() + "/download2.php?my_url=" + Encoding.urlEncode(link.getDownloadURL()));
-        dllink = this.br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0);
+        this.getPageSafe("action=getdirectlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        dllink = PluginJSonUtils.getJsonValue(this.br, "link");
         return dllink;
     }
 
     private String generateDownloadlinkWebsite(final DownloadLink link) throws IOException, PluginException {
         String dllink = null;
-        this.getPageSafe("action=getdirectlink&link=" + Encoding.urlEncode(link.getDownloadURL()));
-        dllink = PluginJSonUtils.getJsonValue(this.br, "link");
+        this.getPageSafe("http://" + this.getHost() + "/download2.php?my_url=" + Encoding.urlEncode(link.getDownloadURL()));
+        dllink = this.br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0);
         return dllink;
     }
 
@@ -342,17 +349,13 @@ public class TransloadMe extends PluginForHost {
         newBrowser(this.br);
         br.setFollowRedirects(true);
         this.getPage("action=getaccountdetails");
-        /* Special case: Free accfounts cannot be used via API. */
-        if (this.statuscode == 6) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (Free-Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (free-account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         handleErrors(this.br);
     }
 
+    /*
+     * 2016-10-21: Added this as an API workaround but the admin(s) fixed the API so this function is not needed and actually it does not
+     * work (yet)!
+     */
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         try {
             newBrowser(this.br);
@@ -365,17 +368,19 @@ public class TransloadMe extends PluginForHost {
                 }
                 newBrowser(new Browser());
             }
-            this.br.setCookie(this.getHost(), "auth", "true");
-            this.getPage("http://" + this.getHost() + "/?p=login");
             final DownloadLink dlinkbefore = this.getDownloadLink();
             if (dlinkbefore == null) {
                 this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
             }
+
+            this.br.setCookie(this.getHost(), "auth", "true");
+            this.br.getPage("http://" + this.getHost() + "/ru/?p=login");
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             if (dlinkbefore != null) {
                 this.setDownloadLink(dlinkbefore);
             }
-            this.br.postPage("//" + account.getHoster() + "/user.php", "action=login&redir=&rid=&action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            this.br.postPage("/user.php", "action=login&redir=&rid=&action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+
             if (!"true".equalsIgnoreCase(this.br.getCookie(this.getHost(), "auth"))) {
                 if (System.getProperty("user.language").equals("de")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

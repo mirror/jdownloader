@@ -16,15 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -116,8 +112,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             final String video_id = new Regex(data, "(\\d+)$").getMatch(0);
 
             if (json != null) {
-                Map<String, HashMap<String, String>> mediaEntries = new TreeMap<String, HashMap<String, String>>();
-                HashMap<String, String> mediaEntry = null;
                 String quality = null, key = null, title = null;
                 /* jsonData --> HashMap */
                 json = Encoding.htmlDecode(json);
@@ -142,8 +136,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     ArrayList<Object> subtitle_list = null;
                     final Object sources_subtitle_o = entry.get("subtitles");
 
-                    // final String encrypted_id = (String) entry.get("encrypted_id");
-                    final String decrypted_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
                     final String description = (String) entry.get("description");
                     String titlethis = (String) entry.get("title");
                     if (titlethis == null) {
@@ -169,26 +161,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         subtitle = null;
                         is_best = false;
                         final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
-                        final Iterator<Entry<String, Object>> it = entry_source.entrySet().iterator();
-                        while (it.hasNext()) {
-                            final Entry<String, Object> entry_entry = it.next();
-                            final String ky = entry_entry.getKey();
-                            if (entry_entry.getValue() instanceof String) {
-                                try {
-                                    final String value = (String) entry_entry.getValue();
-                                    mediaEntry.put(ky, value);
-                                } catch (final Throwable e) {
-                                }
-                            }
-                        }
 
                         /* Backward compatibility with xml method */
-                        final String url = (String) entry_source.get("src");
+                        final String url_directlink_video = (String) entry_source.get("src");
                         String fmt = (String) entry_source.get("quality");
                         final String protocol = (String) entry_source.get("protocol");
                         final String delivery = (String) entry_source.get("delivery");
                         // final String subtitleUrl = (String) entry_source.get("SubTitleUrl");
-                        if (isEmpty(url) && isEmpty(fmt) && isEmpty(protocol) && isEmpty(delivery)) {
+                        if (isEmpty(url_directlink_video) && isEmpty(fmt) && isEmpty(protocol) && isEmpty(delivery)) {
                             continue;
                         }
                         if (sources_subtitle_o != null) {
@@ -213,24 +193,20 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         // continue;
                         // }
 
-                        if (url == null || isEmpty(fmt)) {
+                        if (url_directlink_video == null || isEmpty(fmt)) {
                             continue;
                         }
-
                         final String selector = protocol + delivery;
 
                         String fileName = titlethis + "@" + selector;
                         if (video_id != null) {
                             fileName += "_" + video_id;
                         }
-                        if (decrypted_id != null) {
-                            fileName += "_" + decrypted_id;
-                        }
                         fileName += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
                         fileName = fileName.replaceAll("\"", "");
                         fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
 
-                        final String ext_from_directurl = getFileNameExtensionFromString(url);
+                        final String ext_from_directurl = getFileNameExtensionFromString(url_directlink_video);
                         if (ext_from_directurl.length() == 4) {
                             extension = ext_from_directurl;
                         }
@@ -248,7 +224,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                              */
                             boolean veryhigh_is_available = true;
                             try {
-                                final URLConnectionAdapter con = br.openHeadConnection(url);
+                                final URLConnectionAdapter con = br.openHeadConnection(url_directlink_video);
                                 if (!con.isOK()) {
                                     veryhigh_is_available = false;
                                 } else {
@@ -304,10 +280,16 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final String final_filename_without_extension = fileName + (protocol != null ? "_" + protocol : "");
                         final String final_filename_video = final_filename_without_extension + extension;
                         final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                        final String server_filename = getFileNameFromURL(new URL(url_directlink_video));
+                        String linkid_video = video_id + fmt + protocol + delivery;
+                        if (server_filename != null) {
+                            /* Server filename should always be available! */
+                            linkid_video += server_filename;
+                        }
 
                         link.setFinalFileName(final_filename_video);
                         link.setContentUrl(data);
-                        link.setProperty("directURL", url);
+                        link.setProperty("directURL", url_directlink_video);
                         link.setProperty("directName", final_filename_video);
                         link.setProperty("directQuality", fmt);
                         link.setProperty("mainlink", data);
@@ -327,7 +309,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         if (fp != null) {
                             link._setFilePackage(fp);
                         }
-                        link.setLinkID(decrypted_id + "_" + fmt);
+                        link.setLinkID(linkid_video);
 
                         if (bestQuality == null || link.getDownloadSize() > bestQuality.getDownloadSize()) {
                             bestQuality = link;
@@ -346,7 +328,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                     subtitle_downloadlink.setAvailable(true);
                                     subtitle_downloadlink.setFinalFileName(final_filename_subtitle);
                                     subtitle_downloadlink.setContentUrl(data);
-                                    subtitle_downloadlink.setLinkID(decrypted_id + "_" + fmt + "_subtitle");
+                                    subtitle_downloadlink.setLinkID(linkid_video + "_subtitle");
                                     if (fp != null) {
                                         subtitle_downloadlink._setFilePackage(fp);
                                     }

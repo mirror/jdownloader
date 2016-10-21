@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:full/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/videos/\\?models=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/(?:full/\\d+(?:/[a-z0-9\\-_]+/?)?|pics/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)" })
 public class RealityKingsCom extends PluginForDecrypt {
 
     public RealityKingsCom(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class RealityKingsCom extends PluginForDecrypt {
 
     private static final String TYPE_VIDEO            = "https?://(?:new\\.)?members\\.realitykings\\.com/video/full/\\d+(?:/[a-z0-9\\-_]+/?)?";
     private static final String TYPE_PHOTO            = "https?://(?:new\\.)?members\\.realitykings\\.com/video/pics/\\d+(?:/[a-z0-9\\-_]+/?)?";
-    private static final String TYPE_MEMBER           = "https?://(?:new\\.)?members\\.realitykings\\.com/videos/\\?models=\\d+";
+    private static final String TYPE_MEMBER           = "https?://(?:new\\.)?members\\.realitykings\\.com/(?:videos/\\?models=\\d+|model/view/\\d+/[a-z0-9\\-_]+/?)";
 
     public static String        DOMAIN_BASE           = "realitykings.com";
     public static String        DOMAIN_PREFIX_PREMIUM = "new.members.";
@@ -54,83 +54,93 @@ public class RealityKingsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String fid = new Regex(parameter, "/(\\d+)/").getMatch(0);
+        String fid = null;
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         // Login if possible
         if (!getUserLogin(false)) {
             logger.info("No account present --> Cannot decrypt anything!");
             return decryptedLinks;
         }
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        String title = br.getRegex("<title>([^<>\"]*?) / Reality Kings</title>").getMatch(0);
-        if (title == null) {
-            /* Fallback to id from inside url */
-            title = fid;
-        }
-        if (parameter.matches(TYPE_VIDEO)) {
-            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
-            final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
-            final String[] dlinfo = htmldownload.split("</a>");
-            for (final String video : dlinfo) {
-                final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
-                final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
-                final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
-                final String quality_url = dlurl != null ? new Regex(dlurl, "/\\d+/([^/]+)/?$").getMatch(0) : null;
-                if (dlurl == null || quality == null || quality_url == null) {
-                    continue;
-                }
-                if (!cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
-                    /* Skip unwanted content */
-                    continue;
-                }
-                final String ext;
-                if (quality_url.equalsIgnoreCase("3gp")) {
-                    /* Special case */
-                    ext = ".3gp";
-                } else {
-                    ext = ".mp4";
-                }
-                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
-                if (filesize != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    dl.setAvailable(true);
-                }
-                dl.setName(title + "_" + quality + ext);
-                dl.setProperty("fid", fid);
-                dl.setProperty("quality", quality);
-                decryptedLinks.add(dl);
+        if (parameter.matches(TYPE_MEMBER)) {
+            fid = new Regex(parameter, ".+realitykings\\.com/(?:videos/\\?models=|model/view/)(\\d+)").getMatch(0);
+            br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + "/videos/?models=" + fid);
+            if (isOffline(this.br)) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
-        } else if (parameter.matches(TYPE_MEMBER)) {
             /* Grab all videos of a model/member */
             final String[] videourls = this.br.getRegex("/video/full[^<>\"]+").getColumn(-1);
             for (final String videourl : videourls) {
                 decryptedLinks.add(this.createDownloadlink(getProtocol() + DOMAIN_PREFIX_PREMIUM + DOMAIN_BASE + videourl));
             }
-        } else if (parameter.matches(TYPE_PHOTO)) {
-            final String pictures[] = getPictureArray(this.br);
-            for (String finallink : pictures) {
-                final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
-                finallink = finallink.replaceAll("https?://", "http://realitykingsdecrypted");
-                final DownloadLink dl = this.createDownloadlink(finallink);
-                dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
-                dl.setAvailable(true);
-                dl.setProperty("fid", fid);
-                dl.setProperty("picnumber_formatted", number_formatted);
-                decryptedLinks.add(dl);
-            }
         } else {
-            /* WTF - this should never happen! */
-            logger.warning("Unsupported linktype");
-            return decryptedLinks;
+            fid = new Regex(parameter, "/(\\d+)/").getMatch(0);
+            br.getPage(parameter);
+            if (isOffline(this.br)) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            String title = br.getRegex("<title>([^<>\"]*?) / Reality Kings</title>").getMatch(0);
+            if (title == null) {
+                /* Fallback to id from inside url */
+                title = fid;
+            }
+            if (parameter.matches(TYPE_VIDEO)) {
+                final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
+                final String htmldownload = this.br.getRegex("class=\"fa fa\\-download\"></i>[^<>]*?</div>(.*?)</div>").getMatch(0);
+                final String[] dlinfo = htmldownload.split("</a>");
+                for (final String video : dlinfo) {
+                    final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
+                    final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
+                    final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
+                    final String quality_url = dlurl != null ? new Regex(dlurl, "/\\d+/([^/]+)/?$").getMatch(0) : null;
+                    if (dlurl == null || quality == null || quality_url == null) {
+                        continue;
+                    }
+                    if (!cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
+                        /* Skip unwanted content */
+                        continue;
+                    }
+                    final String ext;
+                    if (quality_url.equalsIgnoreCase("3gp")) {
+                        /* Special case */
+                        ext = ".3gp";
+                    } else {
+                        ext = ".mp4";
+                    }
+                    final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
+                    if (filesize != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                        dl.setAvailable(true);
+                    }
+                    dl.setName(title + "_" + quality + ext);
+                    dl.setProperty("fid", fid);
+                    dl.setProperty("quality", quality);
+                    decryptedLinks.add(dl);
+                }
+            } else if (parameter.matches(TYPE_PHOTO)) {
+                final String pictures[] = getPictureArray(this.br);
+                for (String finallink : pictures) {
+                    final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
+                    finallink = finallink.replaceAll("https?://", "http://realitykingsdecrypted");
+                    final DownloadLink dl = this.createDownloadlink(finallink);
+                    dl.setFinalFileName(title + "_" + number_formatted + ".jpg");
+                    dl.setAvailable(true);
+                    dl.setProperty("fid", fid);
+                    dl.setProperty("picnumber_formatted", number_formatted);
+                    decryptedLinks.add(dl);
+                }
+            } else {
+                /* WTF - this should never happen! */
+                logger.warning("Unsupported linktype");
+                return decryptedLinks;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(decryptedLinks);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
-        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
