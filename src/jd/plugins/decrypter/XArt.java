@@ -92,6 +92,9 @@ public class XArt extends PluginForDecrypt {
         if (!url.contains("/members/") && !url.contains("/download/")) {
             url = url.replaceAll("x-art\\.com\\/", "x-art.com/members/");
         }
+        if (url.matches(".*/members(/?|/messages/?|/community/?|/contact/?|/streaming/?|/index/?|/updates/?|/videos/?|/models/?|/favorite/?)$")) {
+            return ret;
+        }
         if (url.matches("(https?://([^\r\n\t\"']+\\.)?x-art\\.com/[^\r\n\t\"']+\\.(mp4|wmv|mov|zip)[^\r\n\t\"']*)")) {
             ret.add(createDownloadlink(this, url, url));
             return ret;
