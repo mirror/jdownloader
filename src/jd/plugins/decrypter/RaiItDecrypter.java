@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -36,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+\\?day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html" })
 public class RaiItDecrypter extends PluginForDecrypt {
 
     public RaiItDecrypter(PluginWrapper wrapper) {
@@ -295,6 +296,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             title = content_id_from_url;
         }
         date_formatted = jd.plugins.hoster.RaiTv.formatDate(date);
+        title = Encoding.htmlDecode(title);
         title = date_formatted + "_raitv_" + title;
         title = encodeUnicode(title);
 

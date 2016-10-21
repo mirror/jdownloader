@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+[^\\s]*)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+[^\\s]*)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -139,6 +139,7 @@ public class TwitterCom extends PornEmbedParser {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             int reloadNumber = 0;
             String maxid = br.getRegex("data-min-position=\"(\\d+)\"").getMatch(0);
+            DownloadLink dl = null;
             do {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted at reload " + reloadNumber);
@@ -154,15 +155,15 @@ public class TwitterCom extends PornEmbedParser {
                 int addedlinks_all = 0;
                 final String[] tweetsources = this.br.getRegex("li class=\"js-stream-item stream-item stream-item([^の]+?)ProfileTweet\\-actionCount").getColumn(0);
                 if (tweetsources == null || tweetsources.length == 0) {
-                    logger.info("tweetsources == null || tweetsources.length == 0, regex is broken, abend");
-                    return null;
+                    logger.info("tweetsources == null || tweetsources.length == 0, regex is broken eventually");
+                    break;
                 }
                 for (final String tweetsource : tweetsources) {
                     // logger.info("tweetsource: " + tweetsource);
                     Boolean found = false;
                     tweet_id = new Regex(tweetsource, "id=\"stream\\-item\\-tweet\\-(\\d+)\"").getMatch(0);
                     if (tweet_id == null) {
-                        logger.info("tweet_id == null, abend ");
+                        logger.info("tweet_id == null");
                         return null;
                     }
                     final String[] embedurl_regexes = new String[] { "\"(https?://(?:www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://(?:www\\.)?vine\\.co/v/[A-Za-z0-9]+)\"" };
@@ -171,7 +172,7 @@ public class TwitterCom extends PornEmbedParser {
                         if (embed_links != null && embed_links.length > 0) {
                             found = true;
                             for (final String single_embed_ink : embed_links) {
-                                final DownloadLink dl = createDownloadlink(single_embed_ink, tweet_id);
+                                dl = createDownloadlink(single_embed_ink, tweet_id);
                                 if (fp != null) {
                                     fp.add(dl);
                                 }
@@ -192,7 +193,7 @@ public class TwitterCom extends PornEmbedParser {
                                     singleLink = singleLink.replace(remove, "");
                                 }
                                 singleLink = Encoding.htmlDecode(singleLink.trim());
-                                final DownloadLink dl = createDownloadlink(singleLink, tweet_id);
+                                dl = createDownloadlink(singleLink, tweet_id);
                                 if (fp != null) {
                                     fp.add(dl);
                                 }
@@ -209,7 +210,7 @@ public class TwitterCom extends PornEmbedParser {
                         found = true;
                         /* Our post is a stream */
                         /* Usually stream_id == tweet_id */
-                        final DownloadLink dl = createDownloadlink(createVideourl(stream_id), tweet_id);
+                        dl = createDownloadlink(createVideourl(stream_id), tweet_id);
                         if (fp != null) {
                             fp.add(dl);
                         }
@@ -224,7 +225,7 @@ public class TwitterCom extends PornEmbedParser {
                     final String vsrc = vinfo.getMatch(1);
                     if (vid != null && vsrc != null) {
                         found = true;
-                        final DownloadLink dl = createDownloadlink(vsrc, tweet_id);
+                        dl = createDownloadlink(vsrc, tweet_id);
                         if (fp != null) {
                             fp.add(dl);
                         }
@@ -235,9 +236,16 @@ public class TwitterCom extends PornEmbedParser {
                         distribute(dl);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
+                    } else if (tweetsource.contains("is-generic-video")) {
+                        /* Video #3 2016-10-21 */
+                        found = true;
+                        dl = this.createDownloadlink(createVideourl(tweet_id));
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                        addedlinks_all++;
                     }
                     if (!found) {
-                        final DownloadLink dl = createDownloadlink(createVideourl(tweet_id), tweet_id);
+                        dl = createDownloadlink(createVideourl(tweet_id), tweet_id);
                         if (fp != null) {
                             fp.add(dl);
                         }
