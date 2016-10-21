@@ -16,22 +16,22 @@
 
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -40,16 +40,80 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(?:www\\.)?(x\\-art(decrypted)?\\.com/(members/)?(videos|galleries)/.+|([a-z0-9]+\\.)?x-art(decrypted)?\\.com/.+\\.(mov|mp4|wmv|zip).*)" })
 public class XArtCom extends PluginForHost {
 
-    // DEVNOTES
-    // links are now session based, we will need to add some sort of handling to get new token if/when token expires.
+    public static interface XArtConfigInterface extends PluginConfigInterface {
 
-    private static Object LOCK   = new Object();
-    private boolean       useRUA = true;
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isGrabBestVideoVersionEnabled();
+
+        void setGrabBestVideoVersionEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(20)
+        boolean isGrab4KVideoEnabled();
+
+        void setGrab4KVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrab1080pVideoEnabled();
+
+        void setGrab1080pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isGrab720pVideoEnabled();
+
+        void setGrab720pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(50)
+        boolean isGrab540pVideoEnabled();
+
+        void setGrab540pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(60)
+        boolean isGrab360pVideoEnabled();
+
+        void setGrab360pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(70)
+        boolean isGrabBestImagesVersionEnabled();
+
+        void setGrabBestImagesVersionEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(80)
+        boolean isGrab1200pImagesVersionEnabled();
+
+        void setGrab1200pImagesVersionEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(90)
+        boolean isGrab2000pImagesVersionEnabled();
+
+        void setGrab2000pImagesVersionEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(100)
+        boolean isGrab4000pImagesVersionEnabled();
+
+        void setGrab4000pImagesVersionEnabled(boolean b);
+
+    }
+
+    private static Object LOCK = new Object();
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
@@ -59,7 +123,11 @@ public class XArtCom extends PluginForHost {
     public XArtCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.x-art.com/join/");
-        setConfigElements();
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return XArtConfigInterface.class;
     }
 
     @Override
@@ -69,60 +137,83 @@ public class XArtCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        correctDownloadLink(parameter);
-        String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
-        if (name == null) {
-            name = new Regex(parameter.getDownloadURL(), "x-art.com/(.+)").getMatch(0);
+        if (parameter.getFinalFileName() == null) {
+            String name = getFileNameFromURL(new URL(parameter.getPluginPatternMatcher()));
+            if (name == null) {
+                name = new Regex(parameter.getPluginPatternMatcher(), "x-art.com/(.+)").getMatch(0);
+            }
+            parameter.setName(name);
         }
-
-        parameter.setName(name);
-
-        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("x-art.com");
+        final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
         Account account = null;
         if (accounts != null && accounts.size() != 0) {
-            Iterator<Account> it = accounts.iterator();
+            final Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
-                Account n = it.next();
+                final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
                     account = n;
                     break;
                 }
             }
         }
-
         this.setBrowserExclusive();
         if (account != null) {
             login(account, br, false);
         }
         br.setFollowRedirects(true);
-
         URLConnectionAdapter urlcon = null;
         try {
-            urlcon = br.openGetConnection(parameter.getDownloadURL());
-            if (urlcon.getContentType().contains("text/html")) {
-                br.followConnection();
+            urlcon = br.openHeadConnection(parameter.getPluginPatternMatcher());
+            final int responseCode = urlcon.getResponseCode();
+            if (urlcon.isOK() && !StringUtils.containsIgnoreCase(urlcon.getContentType(), "text")) {
+                if (urlcon.getLongContentLength() > 0) {
+                    parameter.setVerifiedFileSize(urlcon.getLongContentLength());
+                }
+                return AvailableStatus.TRUE;
             }
-
-            int res_code = urlcon.getResponseCode();
-            long dlsize = urlcon.getCompleteContentLength();
-
-            if (res_code == 200) {
-                if (!urlcon.getContentType().contains("text/html")) {
-                    parameter.setDownloadSize(dlsize);
+            if (account != null) {
+                final String pageURL = parameter.getStringProperty("pageURL", null);
+                String newURL = null;
+                if (pageURL != null) {
+                    final String videoID = parameter.getStringProperty("videoID", null);
+                    final String imageID = parameter.getStringProperty("imageID", null);
+                    final String quality = parameter.getStringProperty("quality", null);
+                    final String ext = parameter.getStringProperty("ext", null);
+                    final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
+                    jd.plugins.decrypter.XArt.parseUrl(br, this, results, pageURL, true);
+                    if (imageID != null) {
+                        for (final DownloadLink result : results) {
+                            if (StringUtils.equals(imageID, result.getStringProperty("imageID", null)) && StringUtils.equals(quality, result.getStringProperty("quality", null))) {
+                                correctDownloadLink(result);
+                                newURL = result.getPluginPatternMatcher();
+                                break;
+                            }
+                        }
+                    } else if (videoID != null) {
+                        for (final DownloadLink result : results) {
+                            if (StringUtils.equals(videoID, result.getStringProperty("videoID", null)) && StringUtils.equals(quality, result.getStringProperty("quality", null)) && StringUtils.equals(ext, result.getStringProperty("ext", null))) {
+                                correctDownloadLink(result);
+                                newURL = result.getPluginPatternMatcher();
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (newURL == null) {
+                    parameter.setPluginPatternMatcher(newURL);
                     return AvailableStatus.TRUE;
                 }
-                // unknown issue..
-                return AvailableStatus.FALSE;
-            } else if (res_code == 404) {
-                return AvailableStatus.FALSE;
-            } else if (res_code == 401) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM);
+            }
+            if (responseCode == 401 && account != null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                return AvailableStatus.UNCHECKABLE;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } finally {
             try {
-                urlcon.disconnect();
+                if (urlcon != null) {
+                    urlcon.disconnect();
+                }
             } catch (final Throwable e) {
             }
         }
@@ -142,25 +233,17 @@ public class XArtCom extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) {
-            return false;
-        }
-        return true;
+        return account != null;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            // check if it's time for the next full login.
-            if (account.getStringProperty("nextFullLogin") != null && (System.currentTimeMillis() <= Long.parseLong(account.getStringProperty("nextFullLogin")))) {
-                login(account, br, false);
-            } else {
-                login(account, br, true);
-            }
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
+        // check if it's time for the next full login.
+        if (account.getStringProperty("nextFullLogin") != null && (System.currentTimeMillis() <= Long.parseLong(account.getStringProperty("nextFullLogin")))) {
+            login(account, br, false);
+        } else {
+            login(account, br, true);
         }
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -174,14 +257,17 @@ public class XArtCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     lbr.setCookies(this.getHost(), cookies);
-                    userAgent.set(account.getStringProperty("userAgent"));
                     prepBrowser(lbr);
-                    return;
+                    lbr.setFollowRedirects(true);
+                    lbr.getPage("http://www.x-art.com/members/");
+                    if (lbr.containsHTML(">Logout</a>")) {
+                        return;
+                    }
                 }
                 prepBrowser(lbr);
                 lbr.setFollowRedirects(true);
                 lbr.getPage("http://www.x-art.com/members/");
-                Form loginform = lbr.getForm(0);
+                final Form loginform = lbr.getForm(0);
                 if (loginform == null) {
                     String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
@@ -191,18 +277,20 @@ public class XArtCom extends PluginForHost {
                     }
                 }
                 doThis(lbr);
-
-                Browser br2 = lbr.cloneBrowser();
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br2.getHeaders().put("Accept-Charset", null);
-                br2.getHeaders().put("Cache-Control", null);
-                br2.getHeaders().put("Pragma", null);
-                br2.postPage("/includes/ajax_process.php", "action=remember_login");
-
+                final Form rememberLogin = new Form();
+                rememberLogin.setMethod(MethodType.POST);
+                rememberLogin.setAction("/includes/ajax_process.php");
+                rememberLogin.put("action", "remember_login");
+                final PostRequest loginRequest = new PostRequest("/includes/ajax_process.php");
+                loginRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                loginRequest.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                loginRequest.getHeaders().put("Accept-Charset", null);
+                loginRequest.getHeaders().put("Cache-Control", null);
+                loginRequest.getHeaders().put("Pragma", null);
+                final Browser br2 = lbr.cloneBrowser();
+                br2.submitForm(rememberLogin);
                 loginform.put("uid", Encoding.urlEncode(account.getUser()));
                 loginform.put("pwd", Encoding.urlEncode(account.getPass()));
-
                 lbr.submitForm(loginform);
                 if (!lbr.containsHTML(">Logout</a>")) {
                     String lang = System.getProperty("user.language");
@@ -212,9 +300,7 @@ public class XArtCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-
                 account.saveCookies(lbr.getCookies(this.getHost()), "");
-
                 // logic to randomise the next login attempt, to prevent issues with static login detection
                 long ran2 = 0;
                 // between 2 hours && 6 hours
@@ -229,13 +315,11 @@ public class XArtCom extends PluginForHost {
                 }
                 account.setProperty("nextFullLogin", System.currentTimeMillis() + ran2);
                 account.setProperty("lastFullLogin", System.currentTimeMillis());
-                account.setProperty("userAgent", userAgent.get());
                 // end of logic
             } catch (final PluginException e) {
                 account.clearCookies("");
                 account.setProperty("nextFullLogin", Property.NULL);
                 account.setProperty("lastFullLogin", Property.NULL);
-                account.setProperty("userAgent", Property.NULL);
                 throw e;
             } finally {
                 lbr.setFollowRedirects(redirect);
@@ -247,8 +331,9 @@ public class XArtCom extends PluginForHost {
         this.setBrowserExclusive();
         login(account, br, false);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -5);
         if (dl.getConnection().getResponseCode() == 401) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (dl.getConnection().getContentType().contains("html")) {
@@ -259,12 +344,12 @@ public class XArtCom extends PluginForHost {
     }
 
     private void doThis(Browser dbr) {
-        ArrayList<String> grabThis = new ArrayList<String>();
+        final ArrayList<String> grabThis = new ArrayList<String>();
         grabThis.add("/css/zurb/common?v=2.1 ");
         grabThis.add("/js/zurb/common-login?v=2.1");
         grabThis.add("/cptcha.jpg");
-        for (String url : grabThis) {
-            Browser br2 = dbr.cloneBrowser();
+        for (final String url : grabThis) {
+            final Browser br2 = dbr.cloneBrowser();
             URLConnectionAdapter con = null;
             try {
                 con = br2.openGetConnection(url);
@@ -278,36 +363,19 @@ public class XArtCom extends PluginForHost {
         }
     }
 
-    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        return false;
+    }
 
     private Browser prepBrowser(Browser prepBr) {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        // prepBr.setCookie(this.getHost(), "lang", "english");
-        if (useRUA) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
-        }
         return prepBr;
     }
 
     @Override
     public String getDescription() {
         return "Download videos- and pictures with the x-art.com plugin.";
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080", "Grab MP4 - HD (1080p, mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720", "Grab MP4 - HD (720p, mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_540", "Grab SD MP4 (540p, mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_360", "Grab MP4 - SD (360p, mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_4k", "Grab MP4 - 4K (4k, mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_sml", "Grab images 1200 pixels (small)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_med", "Grab images 2000 pixels (medium)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_lrg", "Grab images 4000 pixels (large)?").setDefaultValue(true));
     }
 
 }
