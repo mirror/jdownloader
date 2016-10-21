@@ -835,9 +835,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             final int start = input.getSelectionStart();
             final int end = input.getSelectionEnd();
             final StringBuilder sb = new StringBuilder();
-            if (old.length() > start) {
-                sb.append(old.substring(0, start));
-            }
+            sb.append(old.substring(0, Math.min(old.length(), start)));
             if (ClipboardMonitoring.isHtmlFlavorAllowed()) {
                 final String html = ClipboardMonitoring.getHTMLTransferData(support.getTransferable());
                 if (StringUtils.isNotEmpty(html)) {
