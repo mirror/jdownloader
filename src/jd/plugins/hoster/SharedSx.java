@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shared.sx" }, urls = { "http://(www\\.)?shared\\.sx/[a-z0-9]{10}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shared.sx" }, urls = { "http://(www\\.)?shared\\.sx/[a-z0-9]{10}" })
 public class SharedSx extends PluginForHost {
 
     public SharedSx(PluginWrapper wrapper) {
@@ -98,6 +98,7 @@ public class SharedSx extends PluginForHost {
             brc.postPage("http://" + domain + "/request", "action=view&abs=false&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         } catch (final Throwable e) {
         }
+        /* 2016-10-21: Final downloadlinks often time out! */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
