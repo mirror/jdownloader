@@ -138,8 +138,7 @@ public class XArt extends PluginForDecrypt {
             String lnks[] = br.getRegex("href=(\"|')(https?://([^\r\n\t\"']+\\.)?x-art\\.com/[^\r\n\t\"']+\\.(mp4|wmv|mov|zip)[^\r\n\t\"']*)").getColumn(1);
             if (links != null) {
                 for (String link : links) {
-                    String fulllink = br.getURL() + link;
-                    DownloadLink dl = createDownloadlink(fulllink);
+                    DownloadLink dl = createDownloadlink(br.getURL(link).toString());
                     dlinks.add(dl);
                 }
             }
@@ -165,7 +164,6 @@ public class XArt extends PluginForDecrypt {
                 /* Fallback */
                 title = fid;
             }
-            final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
             final String htmldownload = this.br.getRegex("<ul[^>]*?id=\"drop\\-download\"[^>]*?>(.*?)</ul>").getMatch(0);
             final String[] dlinfo = htmldownload.split("</li>");
             for (final String video : dlinfo) {
@@ -179,7 +177,7 @@ public class XArt extends PluginForDecrypt {
                     /* Skip unwanted content */
                     continue;
                 }
-                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
+                final DownloadLink dl = this.createDownloadlink(br.getURL(dlurl).toString());
                 if (filesize != null) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
