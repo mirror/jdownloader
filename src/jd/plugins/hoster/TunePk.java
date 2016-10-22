@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tune.pk" }, urls = { "https?://(?:www\\.)?tune\\.pk/player/embed_player\\.php\\?vid=\\d+|https?://embed\\.tune\\.pk/play/\\d+|https?(?:www\\.)?://tune\\.pk/video/\\d+" })
 public class TunePk extends PluginForHost {
@@ -75,7 +76,11 @@ public class TunePk extends PluginForHost {
         }
 
         /* Find highest quality */
-        final String json_sources = this.br.getRegex("_details\\.player\\.sources[\t\n\r ]*?=[\t\n\r ]*?(\\[\\{.*?\\}\\])").getMatch(0);
+        // final String json_sources = this.br.getRegex("_details\\.player\\.sources[\t\n\r ]*?=[\t\n\r ]*?(\\[\\{.*?\\}\\])").getMatch(0);
+        final String json_sources = this.br.getRegex("sources\":(\\[\\{.*?\\}\\])").getMatch(0);
+        if (json_sources == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         LinkedHashMap<String, Object> entries = null;
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json_sources);
         String dllinktemp = null;
@@ -111,8 +116,8 @@ public class TunePk extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = null;
-        if (dllink != null) {
+        String ext = PluginJSonUtils.getJsonValue(json_sources, "type");
+        if (dllink != null && ext == null) {
             ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
         /* Make sure that we get a correct extension */
