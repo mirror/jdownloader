@@ -22,28 +22,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -69,7 +47,29 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+(\\.download)?\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" })
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" })
 public class RealDebridCom extends PluginForHost {
 
     private static final String CLIENT_SECRET_KEY = "client_secret";
@@ -329,6 +329,7 @@ public class RealDebridCom extends PluginForHost {
                 MAX_DOWNLOADS.set(Integer.MAX_VALUE);
             }
         }
+
     }
 
     @Override
@@ -395,6 +396,7 @@ public class RealDebridCom extends PluginForHost {
                 if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+
                 throw e1;
             }
         } catch (APIException e) {
