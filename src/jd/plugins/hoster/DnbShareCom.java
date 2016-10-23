@@ -33,7 +33,7 @@ import org.appwork.utils.formatter.SizeFormatter;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "^http://[\\w\\.]*?dnbshare\\.com/download/[^<>\"/]*?(?:\\.mp3|\\.html)$" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "^https?://[\\w\\.]*?dnbshare\\.com/download/[^<>\"/]*?(?:\\.mp3|\\.html)$" })
 public class DnbShareCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -53,9 +53,10 @@ public class DnbShareCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(parameter.getDownloadURL());
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML("not found\\.|was deleted due to low activity|was deleted due to reported infringement") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -64,14 +65,14 @@ public class DnbShareCom extends PluginForHost {
             filename = br.getRegex("<em>Filename</em>:([^<>\"]*?)<").getMatch(0);
         }
         if (filename == null) {
-            filename = new Regex(parameter.getDownloadURL(), "/([^/]+)\\.html").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "/([^/]+)\\.html").getMatch(0);
         }
         final String filesize = br.getRegex("<em>Filesize</em>: (.*?)</li>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
