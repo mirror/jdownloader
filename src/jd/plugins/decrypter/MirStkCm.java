@@ -18,20 +18,23 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "filemack.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|mirrorhive\\.com|multimirrorupload\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})", "https?://(?:www\\.)?filemack\\.com/(?:en/)?([a-zA-Z0-9]{12}|[a-z0-9]{2}_[a-zA-Z0-9]{16})" })
 public class MirStkCm extends antiDDoSForDecrypt {
@@ -46,7 +49,7 @@ public class MirStkCm extends antiDDoSForDecrypt {
      * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
      * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
      * Other example links I've used seem to work fine. - Please keep code generic as possible.
-     *
+     * 
      * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
      * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
      * It's best to use linkgrabbers default auto packagename sorting.
@@ -133,13 +136,48 @@ public class MirStkCm extends antiDDoSForDecrypt {
                     finallink = brc.getRedirectLocation();
                     if (finallink == null) {
                         if (this.getHost().equals("filemack.com")) {
-                            // form
-                            final Form f = brc.getFormbyKey("_token");
+                            /* 2016-10-24: For the next change of this plugin: Please move the code into a separate class! */
+                            Form f = null;
+                            for (final Form aform : brc.getForms()) {
+                                if (aform.hasInputFieldByName("_token") && !aform.containsHTML("/login")) {
+                                    f = aform;
+                                    break;
+                                }
+                            }
                             if (f == null) {
                                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                             }
+                            if (f.getAction() == null) {
+                                f.setAction(brc.getURL());
+                            }
+                            String js_source = brc.getRegex("var\\s*?hp=\\s*?\\[(.*?)\\]").getMatch(0);
+                            if (js_source != null) {
+                                /* Fix form-bullshit */
+                                js_source = js_source.replace("'", "");
+                                final String[] delete_values = js_source.split(",");
+                                final List<InputField> inputfields = f.getInputFields();
+                                Form newform = new Form();
+                                for (final InputField inputfield : inputfields) {
+                                    final String key = inputfield.getKey();
+                                    String value = inputfield.getValue();
+                                    for (String deletekey : delete_values) {
+                                        deletekey = Encoding.Base64Decode(deletekey);
+                                        if (key.equals(deletekey)) {
+                                            value = "";
+                                            break;
+                                        }
+                                    }
+                                    inputfield.setValue(value);
+                                    newform.addInputField(inputfield);
+                                }
+                                newform.setAction(f.getAction());
+                                f = newform;
+                            }
                             submitForm(brc, f);
                             finallink = brc.getRedirectLocation();
+                            if (finallink != null) {
+                                this.sleep(1200, param);
+                            }
 
                         } else {
                             String referer = null;
