@@ -262,7 +262,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
@@ -328,34 +328,43 @@ public class VKontakteRuHoster extends PluginForHost {
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
-                        getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
-                        if (br.containsHTML("Unknown error|Unbekannter Fehler|Access denied")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        if (picturesGetJsonFromHtml() == null) {
-                            if (albumID == null) {
-                                albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                        boolean jsonSourceAvailableFromHtml = false;
+                        if (albumID == null) {
+                            /* No albumID available? Search it in the html! */
+                            getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
+                            if (br.containsHTML("Unknown error|Unbekannter Fehler|Access denied") || this.br.getHttpConnection().getResponseCode() == 404) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                            if (albumID == null) { /* new.vk.com */
+                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
                             }
                             if (albumID == null) {
-                                // new.vk.com/
-                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
-                                if (albumID == null) {
-                                    /* New 2016-08-23 */
-                                    final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                    if (json != null) {
-                                        albumID = PluginJSonUtils.getJsonValue(json, "list");
-                                        if (albumID != null) {
-                                            /* Fix id */
-                                            albumID = albumID.replace("album", "");
-                                        }
+                                /* New 2016-08-23 */
+                                final String json = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                                if (json != null) {
+                                    albumID = PluginJSonUtils.getJsonValue(json, "list");
+                                    if (albumID != null) {
+                                        /* Fix id */
+                                        albumID = albumID.replace("album", "");
                                     }
                                 }
-                                if (albumID == null) {
-                                    logger.info("vk.com: albumID is null");
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
                             }
-                            link.setProperty("albumid", albumID);
+
+                            if (albumID != null) {
+                                /* Save this! Important! */
+                                link.setProperty("albumid", albumID);
+                            }
+                            if (picturesGetJsonFromHtml() != null) {
+                                jsonSourceAvailableFromHtml = true;
+                            }
+                        }
+                        if (!jsonSourceAvailableFromHtml) {
+                            /* Only go the json-way if we have to! */
+                            if (albumID == null) {
+                                logger.info("vk.com: albumID is null and failed to find picture json");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                             setHeadersPhoto(this.br);
                             postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
                             if (br.containsHTML(">Unfortunately, this photo has been deleted") || br.containsHTML(">Access denied<")) {

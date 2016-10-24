@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Random;
 import java.util.SortedMap;
@@ -53,100 +54,107 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filescdn.com" }, urls = { "https?://(www\\.)?filescdn\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class FilescdnCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileflares.com" }, urls = { "https?://(?:www\\.)?fileflares\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+public class FileflaresCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
+    private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://filescdn.com";
-    private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                        = "http://fileflares.com";
+    private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(filescdn\\.com)";
+    private static final String            DOMAINS                            = "(fileflares\\.com)";
 
     /* Errormessages inside URLs */
-    private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
+    private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
 
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private static final boolean           AUDIOHOSTER                     = false;
+    private final boolean                  AUDIOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private static final boolean           VIDEOHOSTER                     = false;
+    private final boolean                  VIDEOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private static final boolean           VIDEOHOSTER_2                   = false;
-    /* Enable this for imagehosts */
-    private static final boolean           IMAGEHOSTER                     = false;
+    private final boolean                  VIDEOHOSTER_2                      = false;
+    private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
+    /*
+     * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
+     * will check for videohoster "next" Download/Ad- Form.
+     */
+    private final boolean                  IMAGEHOSTER                        = false;
 
-    private static final boolean           SUPPORTS_HTTPS                  = true;
-    private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
-    private static final boolean           ENABLE_RANDOM_UA                = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private final boolean                  SUPPORTS_HTTPS                     = false;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
+    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
+    /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
+    private final boolean                  ENABLE_RANDOM_UA                   = false;
+    /*
+     * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
+     * contains misleading information such as fake texts.
+     */
+    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
 
-    /* Waittime stuff */
-    private static final boolean           WAITFORCED                      = false;
-    private static final int               WAITSECONDSMIN                  = 3;
-    private static final int               WAITSECONDSMAX                  = 100;
-    private static final int               WAITSECONDSFORCED               = 5;
+    /* Pre-Download waittime stuff */
+    private final boolean                  WAITFORCED                         = false;
+    private final int                      WAITSECONDSMIN                     = 3;
+    private final int                      WAITSECONDSMAX                     = 100;
+    private final int                      WAITSECONDSFORCED                  = 5;
 
     /* Supported linktypes */
-    private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
-    /* Texts displaed to the user in some errorcases */
-    private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
-    private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
-    private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
+    /* Texts displayed to the user in some errorcases */
+    private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
+    private final String                   USERTEXT_MAINTENANCE               = "This server is under maintenance";
+    private final String                   USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
 
     /* Properties */
-    private static final String            PROPERTY_DLLINK_FREE            = "freelink";
-    private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
-    private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
-    private static final String            PROPERTY_PASS                   = "pass";
+    private final String                   PROPERTY_DLLINK_FREE               = "freelink";
+    private final String                   PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
+    private final String                   PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
+    private final String                   PROPERTY_PASS                      = "pass";
 
     /* Used variables */
-    private String                         correctedBR                     = "";
-    private String                         fuid                            = null;
-    private String                         passCode                        = null;
+    private String                         correctedBR                        = "";
+    private String                         fuid                               = null;
+    private String                         passCode                           = null;
 
-    private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(20);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                         = new AtomicInteger(1);
-    private static Object                  LOCK                            = new Object();
+    private static AtomicInteger           maxFree                            = new AtomicInteger(1);
+    private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.1.9<br />
-     * mods: requestFileInformation[Offline RegEx]<br />
-     * limit-info: premium untested, set FREE account limits<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.2<br />
+     * mods: doFree[Minor field- change for Form F1]<br />
+     * limit-info: Premium untested!<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null<br />
+     * captchatype: reCaptchaV2<br />
      * other:<br />
      */
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
-        final String protocol;
         /* link cleanup, prefer https if possible */
-        if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
-            protocol = "https://";
-        } else {
-            protocol = "http://";
-        }
+        final String protocol = correctProtocol("https://");
         final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
@@ -162,7 +170,7 @@ public class FilescdnCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public FilescdnCom(PluginWrapper wrapper) {
+    public FileflaresCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -172,18 +180,18 @@ public class FilescdnCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
-        this.br.setFollowRedirects(true);
         correctDownloadLink(link);
         prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|The file you are trying to download is no longer|The file has been removed because of)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         altbr = this.br.cloneBrowser();
 
-        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches() || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+            /* In maintenance mode this sometimes is a way to find filenames! */
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
                 if (!inValidate(fileInfo[0])) {
@@ -194,6 +202,10 @@ public class FilescdnCom extends PluginForHost {
             link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
         } else if (this.br.getURL().contains(URL_ERROR_PREMIUMONLY)) {
+            /*
+             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
+             * There are 2 alternative ways to get this information anyways!
+             */
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -210,7 +222,7 @@ public class FilescdnCom extends PluginForHost {
                 /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!inValidate(fileInfo[0]) || !inValidate(fileInfo[1])) {
-                /* We know the link is online, set all information we got */
+                /* We know the link must be online, lets set all information we got */
                 link.setAvailable(true);
                 if (!inValidate(fileInfo[0])) {
                     link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
@@ -228,19 +240,29 @@ public class FilescdnCom extends PluginForHost {
 
         scanInfo(fileInfo);
 
-        /* Filename abbreviated over x chars long */
-        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+        /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
+            /* We failed to find the filename via html --> Try getFnameViaAbuseLink */
             logger.info("Failed to find filename, trying getFnameViaAbuseLink");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         }
+
         if (inValidate(fileInfo[0]) && IMAGEHOSTER) {
-            /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
-            fileInfo[0] = this.fuid;
+            /*
+             * Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. Add
+             * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
+             */
+            fileInfo[0] = this.fuid + ".jpg";
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
-        if (inValidate(fileInfo[0]) || fileInfo[0].equals("")) {
+        if (inValidate(fileInfo[0])) {
+            /*
+             * We failed to find the filename --> Do a last check, maybe we've reached a downloadlimit. This is a rare case - usually plugin
+             * code needs to be updated in this case!
+             */
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
@@ -251,14 +273,20 @@ public class FilescdnCom extends PluginForHost {
         if (!inValidate(fileInfo[2])) {
             link.setMD5Hash(fileInfo[2].trim());
         }
-        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim());
+        /* Remove some html tags - usually not necessary! */
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
+        if (VIDEOHOSTER || VIDEOHOSTER_2 || VIDEOHOSTER_ENFORCE_VIDEO_FILENAME) {
+            /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
+            fileInfo[0] = this.removeDoubleExtensions(fileInfo[0], "mp4");
+        }
+        /* Finally set the name but do not yet set the finalFilename! */
+        link.setName(fileInfo[0]);
         if (inValidate(fileInfo[1]) && SUPPORTS_AVAILABLECHECK_ALT) {
             /*
-             * Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already know that the
-             * file must be online!
+             * We failed to find Do alt availablecheck here but don't check availibility based on alt availablecheck html because we already
+             * know that the file must be online!
              */
-            logger.info("Filesize not available, trying getFilesizeViaAvailablecheckAlt");
+            logger.info("Failed to find filesize --> Trying getFilesizeViaAvailablecheckAlt");
             fileInfo[1] = getFilesizeViaAvailablecheckAlt(altbr, link);
         }
         if (!inValidate(fileInfo[1])) {
@@ -268,8 +296,8 @@ public class FilescdnCom extends PluginForHost {
     }
 
     private String[] scanInfo(final String[] fileInfo) {
-        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>";
-        final String sharebox1 = "copy\\(this\\);.*?\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
+        final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
 
         /* standard traits from base page */
         if (inValidate(fileInfo[0])) {
@@ -277,7 +305,7 @@ public class FilescdnCom extends PluginForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = new Regex(correctedBR, "<h6[^>]*><i [^>]*></i>\\s*(.*?)\\s*</h6>").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
@@ -322,7 +350,7 @@ public class FilescdnCom extends PluginForHost {
                 }
             }
         }
-        /* MD5 is only available in very rare cases! */
+        /* MD5 is only available in very very rare cases! */
         if (inValidate(fileInfo[2])) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
@@ -332,31 +360,62 @@ public class FilescdnCom extends PluginForHost {
     /**
      * Get filename via abuse-URL.<br />
      * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
-     * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
-     * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ABUSE</b> is <b>true</b>!<br />
+     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ABUSE</u></b> is <b>true</b>!<br />
      *
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
+        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     /**
      * Get filename via mass-linkchecker/alternative availablecheck.<br />
      * E.g. needed if officially only logged in users can see filesize or filesize is missing for whatever reason.<br />
-     * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
-     * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ALT</b> is <b>true</b>!<br />
+     * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
+     * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ALT</u></b> is <b>true</b>!<br />
      */
     @SuppressWarnings("deprecation")
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
-            filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
         return filesize;
+    }
+
+    /**
+     * Removes double extensions (of video hosts) to correct ugly filenames such as 'some_videoname.mkv.flv.mp4'.<br />
+     *
+     * @param filename
+     *            input filename whose extensions will be replaced by parameter defaultExtension.
+     * @param defaultExtension
+     *            Extension which is supposed to replace the (multiple) wrong extension(s).
+     */
+    private String removeDoubleExtensions(String filename, final String defaultExtension) {
+        if (filename == null || defaultExtension == null) {
+            return filename;
+        }
+        String ext_temp = null;
+        int index = 0;
+        while (filename.contains(".")) {
+            /* First let's remove all common video extensions */
+            index = filename.lastIndexOf(".");
+            ext_temp = filename.substring(index);
+            if (ext_temp != null && new Regex(ext_temp, Pattern.compile("\\.(avi|divx|flv|mkv|mov|mp4)", Pattern.CASE_INSENSITIVE)).matches()) {
+                filename = filename.substring(0, index);
+                continue;
+            }
+            break;
+        }
+        /* Add desired video extension */
+        if (!filename.endsWith("." + defaultExtension)) {
+            filename += "." + defaultExtension;
+        }
+        return filename;
     }
 
     @Override
@@ -414,7 +473,7 @@ public class FilescdnCom extends PluginForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
@@ -467,6 +526,14 @@ public class FilescdnCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                /* Fix/Add "method_free" value if necessary. */
+                if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
+                    String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
+                    if (method_free_value == null || method_free_value.equals("")) {
+                        method_free_value = "Free Download";
+                    }
+                    download1.put("method_free", method_free_value);
+                }
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(downloadLink, false);
@@ -474,10 +541,7 @@ public class FilescdnCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormByInputFieldKeyValue("op", "download2");
-            if (dlForm == null) {
-                dlForm = br.getFormbyProperty("name", "F1");
-            }
+            Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(downloadLink, false);
@@ -543,7 +607,7 @@ public class FilescdnCom extends PluginForHost {
                     dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    logger.info("Detected captcha method \"reCaptchaV1\" for this host");
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();
@@ -554,6 +618,10 @@ public class FilescdnCom extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /* wait time is usually skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
 
@@ -586,6 +654,10 @@ public class FilescdnCom extends PluginForHost {
                 /* Captcha END */
                 if (password) {
                     passCode = handlePassword(dlForm, downloadLink);
+                }
+                if (dlForm.hasInputFieldByName("adblock_detected")) {
+                    dlForm.remove("adblock_detected");
+                    dlForm.put("adblock_detected", "0");
                 }
                 if (!skipWaittime) {
                     waitTime(downloadLink, timeBefore);
@@ -685,6 +757,7 @@ public class FilescdnCom extends PluginForHost {
         /* define custom browser headers and language settings */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setFollowRedirects(true);
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
                 agent.set(UserAgents.stringUserAgent());
@@ -735,7 +808,7 @@ public class FilescdnCom extends PluginForHost {
     }
 
     /** Function to find the final downloadlink. */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -753,27 +826,55 @@ public class FilescdnCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            /* Sometimes used for streaming */
-            dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+            /* RegExes sometimes used for streaming */
+            final String jssource = new Regex(correctedBR, "sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+            if (inValidate(dllink) && jssource != null) {
+                try {
+                    HashMap<String, Object> entries = null;
+                    long quality_temp = 0;
+                    long quality_best = 0;
+                    String dllink_temp = null;
+                    final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                    for (final Object videoo : ressourcelist) {
+                        entries = (HashMap<String, Object>) videoo;
+                        dllink_temp = (String) entries.get("file");
+                        quality_temp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
+                        if (inValidate(dllink_temp) || quality_temp == 0) {
+                            continue;
+                        } else if (dllink_temp.contains(".m3u8")) {
+                            /* Skip hls */
+                            continue;
+                        }
+                        if (quality_temp > quality_best) {
+                            quality_best = quality_temp;
+                            dllink = dllink_temp;
+                        }
+                    }
+                    if (!inValidate(dllink)) {
+                        logger.info("BEST handling for multiple video source succeeded");
+                    }
+                } catch (final Throwable e) {
+                    logger.info("BEST handling for multiple video source failed");
+                }
+            }
+            if (inValidate(dllink)) {
+                dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+            }
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\']+)").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/\\d+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
-            }
-            if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                /* Do NOT download thumbnails! */
-                dllink = null;
+            final String[] regexes = { "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\'\\[\\]]+)", "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/i/\\d+/[^<>\"\\'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))" };
+            for (final String regex : regexes) {
+                final String[] possibleDllinks = new Regex(this.correctedBR, regex).getColumn(0);
+                for (final String possibleDllink : possibleDllinks) {
+                    /* Do NOT download thumbnails! */
+                    if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                        dllink = possibleDllink;
+                    }
+                }
+                if (dllink != null) {
+                    break;
+                }
             }
         }
         return dllink;
@@ -809,26 +910,51 @@ public class FilescdnCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    private void getPage(String page) throws Exception {
+        page = correctProtocol(page);
         getPage(br, page, true);
     }
 
-    private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
+    private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.getPage(page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
-    private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
+    private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.postPage(page, postdata);
         if (correctBr) {
             correctBR();
         }
+    }
+
+    // /* Handles redirects to prevent getDllink method from picking invalid final download_url in case of a redirect. */
+    // private void handleRedirects(final Browser br, final boolean correctBr) throws Exception {
+    // String redirect = br.getRedirectLocation();
+    // final int redirect_limit = 5;
+    // int counter = 0;
+    // while (redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}.*?") && counter <= redirect_limit) {
+    // br.getPage(redirect);
+    // redirect = br.getRedirectLocation();
+    // counter++;
+    // }
+    // }
+
+    private String correctProtocol(String url) {
+        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
+            url = url.replaceFirst("http://", "https://");
+        } else if (!SUPPORTS_HTTPS) {
+            url = url.replaceFirst("https://", "http://");
+        }
+        return url;
     }
 
     private void submitForm(final Form form) throws Exception {
@@ -858,7 +984,11 @@ public class FilescdnCom extends PluginForHost {
             ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            /* More open RegEx */
+            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
@@ -1062,7 +1192,7 @@ public class FilescdnCom extends PluginForHost {
         } else if (correctedBR.contains(">Expired download session")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
         }
-        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches() || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
         checkResponseCodeErrors(this.br.getHttpConnection());
@@ -1163,11 +1293,13 @@ public class FilescdnCom extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
+            /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(1);
@@ -1181,29 +1313,28 @@ public class FilescdnCom extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
+                this.br.setCookiesExclusive(true);
+                prepBrowser(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login");
-                final Form loginform = br.getFormbyProperty("name", "FL");
+                getPage(COOKIE_HOST + "/login.html");
+                final Form loginform = this.br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
                     }
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1212,7 +1343,7 @@ public class FilescdnCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
+                if (!this.br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
@@ -1232,19 +1363,21 @@ public class FilescdnCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
+        /* Perform linkcheck without logging in */
         requestFileInformation(downloadLink);
         login(account, false);
         if (account.getType() == AccountType.FREE) {
+            /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
-                br.setFollowRedirects(false);
+                this.br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
+                    final Form dlform = this.br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
@@ -1262,11 +1395,11 @@ public class FilescdnCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, -2);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                this.br.followConnection();
                 correctBR();
                 checkServerErrors();
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
