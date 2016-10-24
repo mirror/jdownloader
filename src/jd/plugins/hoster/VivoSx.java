@@ -81,6 +81,15 @@ public class VivoSx extends PluginForHost {
         if (dllink == null) {
             dllink = this.br.getRegex("(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
             if (dllink == null) {
+                /* 2016-10-24 */
+                dllink = this.br.getRegex("Core\\.InitializeStream\\s*?\\(\\'([^<>\"]+)\\'").getMatch(0);
+                if (dllink != null) {
+                    dllink = Encoding.Base64Decode(dllink);
+                    dllink = Encoding.unescape(dllink);
+                    dllink = new Regex(dllink, "(https?://[^<>\"]+/get/[^<>\"]+)").getMatch(0);
+                }
+            }
+            if (dllink == null) {
                 final String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"([^<>\"]*?)\"").getMatch(0);
                 final String expires = br.getRegex("type=\"hidden\" name=\"expires\" value=\"([^<>\"]*?)\"").getMatch(0);
                 final String timestamp = br.getRegex("type=\"hidden\" name=\"timestamp\" value=\"([^<>\"]*?)\"").getMatch(0);

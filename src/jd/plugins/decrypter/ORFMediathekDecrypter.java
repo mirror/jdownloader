@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
@@ -106,38 +106,46 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String nicehost = new Regex(data, "http://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
+        String id_episode = null;
 
         try {
             String json = this.br.getRegex("class=\"jsb_ jsb_VideoPlaylist\" data\\-jsb=\"([^<>\"]+)\"").getMatch(0);
-            final String video_id = new Regex(data, "(\\d+)$").getMatch(0);
 
             if (json != null) {
                 String quality = null, key = null, title = null;
                 /* jsonData --> HashMap */
                 json = Encoding.htmlDecode(json);
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "playlist/videos");
-
-                final String site_title = getTitle(br);
-                String fpName = site_title;
-                if (video_id != null) {
-                    fpName += "_" + video_id;
+                entries = (LinkedHashMap<String, Object>) entries.get("playlist");
+                String fpName = (String) entries.get("title");
+                id_episode = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+                if (id_episode.equals("0")) {
+                    return null;
                 }
+                ArrayList<Object> video = (ArrayList) entries.get("videos");
+                ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
+
+                if (fpName == null) {
+                    fpName = getTitle(br);
+                }
+                fpName += "_" + id_episode;
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
                 }
 
-                ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
-
-                for (final Object segmento : ressourcelist) {
-                    final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) segmento;
-                    final ArrayList<Object> sources_video = (ArrayList) entry.get("sources");
+                for (final Object videoo : video) {
+                    final LinkedHashMap<String, Object> entries_video = (LinkedHashMap<String, Object>) videoo;
+                    final ArrayList<Object> sources_video = (ArrayList) entries_video.get("sources");
                     ArrayList<Object> subtitle_list = null;
-                    final Object sources_subtitle_o = entry.get("subtitles");
+                    final Object sources_subtitle_o = entries_video.get("subtitles");
+                    final String id_individual_video = Long.toString(JavaScriptEngineFactory.toLong(entries_video.get("id"), 0));
+                    if (id_individual_video.equals("0")) {
+                        return null;
+                    }
 
-                    final String description = (String) entry.get("description");
-                    String titlethis = (String) entry.get("title");
+                    final String description = (String) entries_video.get("description");
+                    String titlethis = (String) entries_video.get("title");
                     if (titlethis == null) {
                         titlethis = description;
                     }
@@ -199,9 +207,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final String selector = protocol + delivery;
 
                         String fileName = titlethis + "@" + selector;
-                        if (video_id != null) {
-                            fileName += "_" + video_id;
-                        }
+                        fileName += "_" + id_episode + "_" + id_individual_video;
                         fileName += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
                         fileName = fileName.replaceAll("\"", "");
                         fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
@@ -281,7 +287,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final String final_filename_video = final_filename_without_extension + extension;
                         final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         final String server_filename = getFileNameFromURL(new URL(url_directlink_video));
-                        String linkid_video = video_id + fmt + protocol + delivery;
+                        String linkid_video = id_episode + fmt + protocol + delivery;
                         if (server_filename != null) {
                             /* Server filename should always be available! */
                             linkid_video += server_filename;

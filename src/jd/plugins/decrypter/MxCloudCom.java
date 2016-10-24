@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,7 +31,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" }) 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
 public class MxCloudCom extends antiDDoSForDecrypt {
 
     public MxCloudCom(final PluginWrapper wrapper) {
@@ -44,6 +44,8 @@ public class MxCloudCom extends antiDDoSForDecrypt {
     protected boolean useRUA() {
         return true;
     }
+
+    private final boolean attemptToDownloadOriginal = false;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -85,7 +87,8 @@ public class MxCloudCom extends antiDDoSForDecrypt {
             return null;
         }
         final String url_mp3_preview = br.getRegex("\"(https?://[A-Za-z0-9]+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
-        if (url_mp3_preview != null) {
+        if (url_mp3_preview != null && attemptToDownloadOriginal) {
+            /* 2016-10-24: Original-file download not possible anymore(?!) */
             final Regex originalinfo = new Regex(url_mp3_preview, "(https?://[A-Za-z0-9]+\\.mixcloud\\.com)/previews/([^<>\"]+\\.mp3)");
             final String previewLinkpart = originalinfo.getMatch(1);
             if (previewLinkpart != null) {
@@ -107,7 +110,7 @@ public class MxCloudCom extends antiDDoSForDecrypt {
             return null;
         }
 
-        final String[] links = new Regex(result, "\"(.*?)\"").getColumn(0);
+        final String[] links = new Regex(result, "\"(http.*?)\"").getColumn(0);
         if (links != null && links.length != 0) {
             for (final String temp : links) {
                 tempLinks.add(temp);
@@ -118,8 +121,10 @@ public class MxCloudCom extends antiDDoSForDecrypt {
             return null;
         }
         final HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
+        boolean streamFailed;
         br.setFollowRedirects(true);
         for (final String dl : tempLinks) {
+            streamFailed = false;
             if (!dl.endsWith(".mp3") && !dl.endsWith(".m4a")) {
                 continue;
             }
@@ -129,8 +134,12 @@ public class MxCloudCom extends antiDDoSForDecrypt {
             dlink.setFinalFileName(Encoding.htmlDecode(theName).trim() + new Regex(dl, "(\\..{3}$)").getMatch(0));
             /* Nicht alle Links im Array sets[] sind verfügbar. */
             try {
-                con = br.openGetConnection(dl);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                try {
+                    con = br.openGetConnection(dl);
+                } catch (final Throwable e) {
+                    streamFailed = true;
+                }
+                if (streamFailed || con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     continue;
                 }
                 if (alreadyFound.get(dlink.getName()) != null && alreadyFound.get(dlink.getName()) == con.getLongContentLength()) {
