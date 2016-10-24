@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -55,6 +56,7 @@ public class TunePk extends PluginForHost {
 
     private String               dllink            = null;
     private boolean              server_issues     = false;
+    BrowserException             e                 = null;
 
     @Override
     public String getAGBLink() {
@@ -66,6 +68,7 @@ public class TunePk extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
+        e = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
@@ -134,12 +137,18 @@ public class TunePk extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
-                } else {
-                    server_issues = true;
+                try {
+                    con = br2.openHeadConnection(dllink);
+                } catch (final BrowserException ebr) {
+                    this.e = ebr;
+                }
+                if (this.e == null) {
+                    if (!con.getContentType().contains("html")) {
+                        link.setDownloadSize(con.getLongContentLength());
+                        link.setProperty("directlink", dllink);
+                    } else {
+                        server_issues = true;
+                    }
                 }
             } finally {
                 try {
@@ -157,7 +166,9 @@ public class TunePk extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (server_issues) {
+        if (this.e != null) {
+            throw this.e;
+        } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
