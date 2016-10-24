@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -178,8 +179,10 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         });
     }
 
-    @Override
+    private final AtomicLong mouseEvent = new AtomicLong(0);
+
     protected void processMouseEvent(final MouseEvent e) {
+        System.out.println("LinkGrabberTable|" + mouseEvent.incrementAndGet() + "|" + e);
         // a left-click with mouse on empty space under the rows selects last row to improve user experience
         // like dragging the mouse to select rows
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
