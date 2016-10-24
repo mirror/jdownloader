@@ -54,7 +54,7 @@ public class TransloadMe extends PluginForHost {
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     private final boolean                                  USE_API                      = true;
 
@@ -363,38 +363,43 @@ public class TransloadMe extends PluginForHost {
             if (cookies != null && !force) {
                 this.br.setCookies(this.getHost(), cookies);
                 this.br.getPage("http://" + this.getHost());
-                if (this.br.containsHTML("action=logout")) {
+                if (isLoggedInWebsite()) {
                     return;
                 }
                 newBrowser(new Browser());
             }
+            // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0");
             final DownloadLink dlinkbefore = this.getDownloadLink();
             if (dlinkbefore == null) {
                 this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
             }
 
-            this.br.setCookie(this.getHost(), "auth", "true");
-            this.br.getPage("http://" + this.getHost() + "/ru/?p=login");
+            // this.br.setCookie(this.getHost(), "auth", "true");
+            this.br.getPage("http://transload.me/main/?p=main");
+            this.br.getPage("/ru/?p=login");
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             if (dlinkbefore != null) {
                 this.setDownloadLink(dlinkbefore);
             }
             this.br.postPage("/user.php", "action=login&redir=&rid=&action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-
-            if (!"true".equalsIgnoreCase(this.br.getCookie(this.getHost(), "auth"))) {
+            this.br.getPage("/main/?p=main");
+            if (!isLoggedInWebsite()) {
                 if (System.getProperty("user.language").equals("de")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            this.br.getPage("http://transload.me/?p=download");
             account.saveCookies(br.getCookies(account.getHoster()), "");
             handleErrors(this.br);
         } catch (final PluginException e) {
             account.clearCookies("");
             throw e;
         }
+    }
+
+    private boolean isLoggedInWebsite() {
+        return this.br.containsHTML("action=logout");
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {

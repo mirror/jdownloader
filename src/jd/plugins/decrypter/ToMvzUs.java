@@ -48,6 +48,12 @@ public class ToMvzUs extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* Prevent "bot warning" messages. */
+        return 1;
+    }
+
     final String host = "https?://(?:www\\.)?twomovies\\.(?:us|net)/";
     final String fm   = host + "full_movie/\\d+/\\d+/\\d+/(?:episode/\\d+/\\d+/|movie/)";
     final String wt   = host + "(?:watch_episode/[a-zA-Z0-9_]+/\\d+/\\d+|watch_movie/[a-zA-z0-9_]+)";
