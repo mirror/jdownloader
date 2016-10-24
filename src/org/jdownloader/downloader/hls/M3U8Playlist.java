@@ -7,6 +7,16 @@ public class M3U8Playlist {
     public static class M3U8Segment {
         private final String url;
 
+        private boolean      isLoaded = false;
+
+        public boolean isLoaded() {
+            return isLoaded;
+        }
+
+        public void setLoaded(boolean isLoaded) {
+            this.isLoaded = isLoaded;
+        }
+
         public long getSize() {
             return size;
         }
@@ -43,6 +53,26 @@ public class M3U8Playlist {
 
     private final ArrayList<M3U8Segment> segments = new ArrayList<M3U8Segment>();
 
+    public boolean isSegmentLoaded(final int index) {
+        if (index >= 0 && index < segments.size()) {
+            return segments.get(index).isLoaded();
+        } else {
+            return false;
+        }
+    }
+
+    public void setSegmentLoaded(final int index, boolean loaded) {
+        if (index >= 0 && index < segments.size()) {
+            segments.get(index).setLoaded(loaded);
+        }
+    }
+
+    public void clearLoadedSegments() {
+        for (final M3U8Segment segment : segments) {
+            segment.setLoaded(false);
+        }
+    }
+
     public M3U8Segment getSegment(final int index) {
         if (index >= 0 && index < segments.size()) {
             return segments.get(index);
@@ -58,6 +88,10 @@ public class M3U8Playlist {
             }
         }
         return false;
+    }
+
+    public int size() {
+        return segments.size();
     }
 
     public int addSegment(M3U8Segment segment) {

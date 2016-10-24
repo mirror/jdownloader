@@ -105,7 +105,6 @@ public class HLSDownloader extends DownloadInterface {
         if (plg == null) {
             plg = link.getDefaultPlugin();
         }
-
         return plg == null ? null : plg.getLogger();
     }
 
@@ -578,24 +577,40 @@ public class HLSDownloader extends DownloadInterface {
                         requestOkay = true;
                         return true;
                     } else if ("/download".equals(request.getRequestedPath())) {
-                        final String index = request.getParameterbyKey("ts_index");
-                        if (index == null) {
+                        final String indexString = request.getParameterbyKey("ts_index");
+                        if (indexString == null) {
                             return false;
                         }
                         M3U8Segment segment = null;
                         try {
-                            segment = m3u8Playlists.getSegment(Integer.parseInt(index));
+                            final int index = Integer.parseInt(indexString);
+                            segment = m3u8Playlists.getSegment(index);
                             if (segment == null) {
-                                return false;
+                                throw new IndexOutOfBoundsException("Unknown segment:" + index);
+                            } else {
+                                if (logger != null) {
+                                    logger.info("Forward segment:" + index + "/" + m3u8Playlists.size());
+                                }
                             }
+                        } catch (final NumberFormatException e) {
+                            if (logger != null) {
+                                logger.log(e);
+                            }
+                            return false;
                         } catch (final IndexOutOfBoundsException e) {
-                            logger.log(e);
+                            if (logger != null) {
+                                logger.log(e);
+                            }
                             return false;
                         }
                         OutputStream outputStream = null;
                         final FileBytesMap fileBytesMap = new FileBytesMap();
+                        final Browser br = obr.cloneBrowser();
                         retryLoop: for (int retry = 0; retry < 10; retry++) {
-                            final Browser br = obr.cloneBrowser();
+                            try {
+                                br.disconnect();
+                            } catch (final Throwable e) {
+                            }
                             final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(segment.getUrl());
                             if (fileBytesMap.getFinalSize() > 0) {
                                 if (logger != null) {
@@ -604,15 +619,25 @@ public class HLSDownloader extends DownloadInterface {
                                 final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
                                 getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
                             }
-                            final URLConnectionAdapter connection;
+                            URLConnectionAdapter connection = null;
                             try {
                                 connection = br.openRequestConnection(getRequest);
+                                if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
+                                    throw new IOException("ResponseCode must be 200 or 206!");
+                                }
                             } catch (IOException e) {
-                                Thread.sleep(250);
-                                continue retryLoop;
-                            }
-                            if (connection != null && connection.getResponseCode() == 400 && isTwitchOptimized) {
-                                SubConfiguration.getConfig(link.getHost()).setProperty("expspeed", false);
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                                if (connection == null || connection.getResponseCode() == 504) {
+                                    Thread.sleep(250 + (retry * 50));
+                                    continue retryLoop;
+                                } else {
+                                    if (isTwitchOptimized && connection != null && connection.getResponseCode() == 400) {
+                                        SubConfiguration.getConfig(link.getHost()).setProperty("expspeed", false);
+                                    }
+                                    return false;
+                                }
                             }
                             byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
                             final boolean instanceBuffer;
@@ -648,7 +673,7 @@ public class HLSDownloader extends DownloadInterface {
                                         len = meteredThrottledInputStream.read(readWriteBuffer);
                                     } catch (IOException e) {
                                         if (fileBytesMap.getFinalSize() > 0) {
-                                            Thread.sleep(250);
+                                            Thread.sleep(250 + (retry * 50));
                                             continue retryLoop;
                                         } else {
                                             throw e;
@@ -656,6 +681,7 @@ public class HLSDownloader extends DownloadInterface {
                                     }
                                     if (len > 0) {
                                         outputStream.write(readWriteBuffer, 0, len);
+                                        segment.setLoaded(true);
                                         fileBytesMap.mark(position, len);
                                         position += len;
                                     } else if (len == -1) {
@@ -671,7 +697,7 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                                 return true;
                             } finally {
-                                if (segment != null) {
+                                if (segment != null && (connection.getResponseCode() == 200 || connection.getResponseCode() == 206)) {
                                     segment.setSize(Math.max(connection.getCompleteContentLength(), fileBytesMap.getSize()));
                                 }
                                 if (instanceBuffer) {
@@ -682,9 +708,13 @@ public class HLSDownloader extends DownloadInterface {
                         }
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    if (logger != null) {
+                        logger.log(e);
+                    }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    if (logger != null) {
+                        logger.log(e);
+                    }
                 } finally {
                     if (logger != null) {
                         logger.info("END:" + requestOkay + ">" + request.getRequestedURL());
@@ -767,9 +797,7 @@ public class HLSDownloader extends DownloadInterface {
                 downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                 downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
-
                 run();
-
             } finally {
                 try {
                     downloadable.free(reservation);
@@ -783,7 +811,6 @@ public class HLSDownloader extends DownloadInterface {
                 downloadable.removePluginProgress(downloadPluginProgress);
             }
             onDownloadReady();
-
             return handleErrors();
         } finally {
             downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
@@ -807,19 +834,14 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected void onDownloadReady() throws Exception {
-
         cleanupDownladInterface();
         if (!handleErrors() && !isAcceptDownloadStopAsValidEnd()) {
             return;
         }
-        // link.setVerifiedFileSize(bytesWritten);
-
-        boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
+        final boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
         if (!renameOkay) {
-
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
         }
-
     }
 
     protected void cleanupDownladInterface() {
@@ -850,7 +872,13 @@ public class HLSDownloader extends DownloadInterface {
         if (externalDownloadStop()) {
             return false;
         }
-
+        if (!isAcceptDownloadStopAsValidEnd()) {
+            for (int index = 0; index < m3u8Playlists.size(); index++) {
+                if (!m3u8Playlists.isSegmentLoaded(index)) {
+                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, LinkStatus.VALUE_NETWORK_IO_ERROR);
+                }
+            }
+        }
         if (caughtPluginException == null) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);
             downloadable.setVerifiedFileSize(outputCompleteFile.length());

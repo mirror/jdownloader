@@ -284,6 +284,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
             }
         } catch (final IllegalStateException e) {
+            logger.log(e);
             if (StringUtils.containsIgnoreCase(e.getMessage(), "Range Error. Requested bytes=0- Got range: bytes 0-")) {
                 try {
                     dl.getConnection().disconnect();
@@ -291,7 +292,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 logger.info("Workaround for Cloudflare-Cache transparent image compression!");
                 downloadLink.setVerifiedFileSize(-1);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
             }
             throw e;
         }
@@ -317,7 +318,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     /* clear chunkProgress and disable resume(ranges) and retry */
                     downloadLink.setChunksProgress(null);
                     downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
                 }
             } else if (downloadLink.getLinkStatus().hasStatus(1 << 13)) {
                 return;
@@ -328,7 +329,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     } else {
                         /* disable multiple chunks => use only 1 chunk and retry */
                         downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.TRUE);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
                     }
                 } else if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
                     boolean disableRanges = false;
@@ -337,7 +338,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         if (progress.length > 1) {
                             /* reset chunkProgress to first chunk and retry */
                             downloadLink.setChunksProgress(new long[] { progress[0] });
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                            throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
                         } else {
                             if (downloadLink.getDownloadCurrent() == downloadCurrentRaw) {
                                 disableRanges = true;
@@ -350,7 +351,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         /* clear chunkProgress and disable resume(ranges) and retry */
                         downloadLink.setChunksProgress(null);
                         downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
                     }
                 }
             }
