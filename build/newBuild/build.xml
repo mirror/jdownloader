@@ -389,6 +389,9 @@
 
 			<fileset dir="${dep.awu}/src">
 				<include name="org/appwork/utils/net/effective_tld_names.dat" />
+				<include name="org/appwork/remoteapi/html/*.css" />
+				<include name="org/appwork/remoteapi/html/*.js" />
+				<include name="org/appwork/remoteapi/html/*.html" />
 
 			</fileset>
 			<fileset dir="${dep.jdupdateclient}/src">
