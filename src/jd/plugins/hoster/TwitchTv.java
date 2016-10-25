@@ -48,6 +48,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -226,11 +227,36 @@ public class TwitchTv extends PluginForHost {
     private final void doHLS(final DownloadLink downloadLink) throws Exception {
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         if (downloadLink.getBooleanProperty("encrypted")) {
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
         }
         // requestFileInformation(downloadLink);
-        dl = new HLSDownloader(downloadLink, br, dllink);
+        if (getPluginConfig().getBooleanProperty("meta", true) == false) {
+            dl = new HLSDownloader(downloadLink, br, dllink);
+        } else {
+            final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
+            ffMpegMetaData.setValue(FFmpegMetaData.KEY.TITLE, downloadLink.getStringProperty("plainfilename", null));
+            ffMpegMetaData.setValue(FFmpegMetaData.KEY.SHOW, downloadLink.getStringProperty("plainfilename", null));
+            ffMpegMetaData.setValue(FFmpegMetaData.KEY.ARTIST, downloadLink.getStringProperty("channel", null));
+            final String originaldate = downloadLink.getStringProperty("originaldate", null);
+            if (originaldate != null) {
+                final String year = new Regex(originaldate, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                if (year != null) {
+                    ffMpegMetaData.setValue(FFmpegMetaData.KEY.DATE, year);
+                }
+            }
+            ffMpegMetaData.setValue(FFmpegMetaData.KEY.COMMENT, downloadLink.getContentUrl());
+            dl = new HLSDownloader(downloadLink, br, dllink) {
+                @Override
+                protected boolean isMapMetaDataEnabled() {
+                    return true;
+                }
+
+                @Override
+                protected FFmpegMetaData getFFmpegMetaData() {
+                    return ffMpegMetaData;
+                }
+            };
+        }
         dl.startDownload();
     }
 
@@ -530,6 +556,7 @@ public class TwitchTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.twitchtv.check240p", "Grab 240p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "avoidChunked", JDL.L("plugins.hoster.twitchtv.avoidChunked", "Avoid source quality (chunked)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "expspeed", JDL.L("plugins.hoster.twitchtv.expspeed", "Increase download speed (experimental)? ")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "meta", JDL.L("plugins.hoster.twitchtv.meta", "Set meta data? ")).setDefaultValue(true));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), grabChatHistory,
         // JDL.L("plugins.hoster.twitchtv.grabChatHistory", "Download given videos chat
         // history.")).setDefaultValue(defaultGrabChatHistory));

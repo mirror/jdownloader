@@ -523,4 +523,10 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isRateBypassEnabled();
 
     void setRateBypassEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isMetaDataEnabled();
+
+    void setMetaDataEnabled(boolean b);
 }
