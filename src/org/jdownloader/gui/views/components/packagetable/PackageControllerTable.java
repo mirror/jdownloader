@@ -233,10 +233,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return false;
     }
 
-    private final AtomicLong mouseEvent = new AtomicLong(0);
-
     protected void processMouseEvent(final MouseEvent e) {
-        System.out.println("PackageController|" + mouseEvent.incrementAndGet() + "|" + e);
         final boolean isPressed = e.getID() == MouseEvent.MOUSE_PRESSED;
         if (isPressed) {
             final int row = this.rowAtPoint(e.getPoint());
