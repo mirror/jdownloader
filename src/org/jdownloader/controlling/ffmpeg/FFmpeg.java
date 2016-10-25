@@ -76,7 +76,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
 
     private static final Object LOCK = new Object();
 
-    private boolean demux(FFMpegProgress progress, String out, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
+    protected boolean demux(FFMpegProgress progress, String out, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
         synchronized (LOCK) {
             logger.info("Demux:Input=" + audioIn + "|Output=" + out);
             if (StringUtils.equals(out, audioIn)) {
@@ -130,7 +130,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
         }
     }
 
-    private boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, final String demuxCommand[]) throws InterruptedException, IOException, FFMpegException {
+    protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, final String muxCommand[]) throws InterruptedException, IOException, FFMpegException {
         synchronized (LOCK) {
             logger.info("Mux:Video=" + videoIn + "|Audio=" + audioIn + "|Output=" + out);
             if (StringUtils.equals(out, videoIn) || StringUtils.equals(out, audioIn)) {
@@ -141,7 +141,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
             final File outFile = new File(out);
             String stdOut = null;
             try {
-                stdOut = runCommand(progress, fillCommand(out, videoIn, audioIn, null, demuxCommand));
+                stdOut = runCommand(progress, fillCommand(out, videoIn, audioIn, null, muxCommand));
             } catch (FFMpegException e) {
                 // some systems have problems with special chars to find the in or out file.
                 if ((e.getError() != null && e.getError().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
@@ -156,7 +156,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                     try {
                         IO.copyFile(new File(videoIn), tmpVideoIn);
                         IO.copyFile(new File(audioIn), tmpAudioIn);
-                        stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), tmpVideoIn.getAbsolutePath(), tmpAudioIn.getAbsolutePath(), null, demuxCommand));
+                        stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), tmpVideoIn.getAbsolutePath(), tmpAudioIn.getAbsolutePath(), null, muxCommand));
                         outFile.delete();
                         okay = tmpOut.renameTo(outFile);
                         if (!okay) {

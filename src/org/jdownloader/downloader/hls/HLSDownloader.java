@@ -54,6 +54,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.ffmpeg.FFMpegException;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.ffmpeg.FFprobe;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -66,30 +67,30 @@ import org.jdownloader.translate._JDT;
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
 
-    private long                              bytesWritten   = 0l;
-    private DownloadLinkDownloadable          downloadable;
-    private final DownloadLink                link;
-    private long                              startTimeStamp;
-    private final LogInterface                logger;
-    private URLConnectionAdapter              currentConnection;
-    private ManagedThrottledConnectionHandler connectionHandler;
-    private File                              outputCompleteFile;
-    private File                              outputFinalCompleteFile;
-    private File                              outputPartFile;
+    private volatile long                           bytesWritten   = 0l;
+    private final DownloadLinkDownloadable          downloadable;
+    private final DownloadLink                      link;
+    private long                                    startTimeStamp;
+    private final LogInterface                      logger;
+    private URLConnectionAdapter                    currentConnection;
+    private final ManagedThrottledConnectionHandler connectionHandler;
+    private File                                    outputCompleteFile;
+    private File                                    outputFinalCompleteFile;
+    private File                                    outputPartFile;
 
-    private PluginException                   caughtPluginException;
-    private final String                      m3uUrl;
-    private HttpServer                        server;
+    private PluginException                         caughtPluginException;
+    private final String                            m3uUrl;
+    private HttpServer                              server;
 
-    private final Browser                     obr;
+    private final Browser                           obr;
 
-    protected long                            duration       = -1l;
-    protected int                             bitrate        = -1;
-    private long                              processID;
-    protected MeteredThrottledInputStream     meteredThrottledInputStream;
-    protected final AtomicReference<byte[]>   instanceBuffer = new AtomicReference<byte[]>();
-    private final boolean                     isTwitch;
-    private final boolean                     isTwitchOptimized;
+    protected volatile long                         duration       = -1l;
+    protected volatile int                          bitrate        = -1;
+    private long                                    processID;
+    protected MeteredThrottledInputStream           meteredThrottledInputStream;
+    protected final AtomicReference<byte[]>         instanceBuffer = new AtomicReference<byte[]>();
+    private final boolean                           isTwitch;
+    private final boolean                           isTwitchOptimized;
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
@@ -98,6 +99,19 @@ public class HLSDownloader extends DownloadInterface {
         logger = initLogger(link);
         isTwitch = "twitch.tv".equals(link.getHost());
         isTwitchOptimized = isTwitch && Boolean.TRUE.equals(SubConfiguration.getConfig(link.getHost()).getBooleanProperty("expspeed", false));
+        connectionHandler = new ManagedThrottledConnectionHandler();
+        downloadable = new DownloadLinkDownloadable(link) {
+            @Override
+            public boolean isResumable() {
+                return link.getBooleanProperty("RESUME", true);
+            }
+
+            @Override
+            public void setResumeable(boolean value) {
+                link.setProperty("RESUME", value);
+                super.setResumeable(value);
+            }
+        };
     }
 
     public LogInterface initLogger(final DownloadLink link) {
@@ -133,10 +147,7 @@ public class HLSDownloader extends DownloadInterface {
         initPipe();
         processID = new UniqueAlltimeID().getID();
         link.setDownloadSize(-1);
-        File file = new File(link.getFileOutput() + ".part");
-        FFMpegProgress set = new FFMpegProgress() {
-
-        };
+        final FFMpegProgress set = new FFMpegProgress();
         try {
             // link.addPluginProgress(set);
             FFmpegSetup config = JsonConfig.create(FFmpegSetup.class);
@@ -150,7 +161,6 @@ public class HLSDownloader extends DownloadInterface {
             link.setCustomExtension(cust);
             String extension = Files.getExtension(name);
             String format = (extension != null ? map.get(extension.toLowerCase(Locale.ENGLISH)) : null);
-
             FFmpeg ffmpeg = new FFmpeg() {
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     System.out.println(line);
@@ -247,15 +257,22 @@ public class HLSDownloader extends DownloadInterface {
             e.printStackTrace();
         } catch (final FFMpegException e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage()) {
+                /**
+                 *
+                 */
+                private static final long serialVersionUID = 904727698888470052L;
+
                 @Override
                 public synchronized Throwable getCause() {
                     return e;
                 }
             };
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(e);
+            }
         } finally {
-            if (connectionHandler != null && meteredThrottledInputStream != null) {
+            if (meteredThrottledInputStream != null) {
                 connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
             }
             // link.removePluginProgress(set);
@@ -397,21 +414,29 @@ public class HLSDownloader extends DownloadInterface {
         return m3u8Playlist;
     }
 
-    protected void runFF(FFMpegProgress set, String extension, String format, FFmpeg ffmpeg, String out) throws IOException, InterruptedException, FFMpegException {
+    protected ArrayList<String> buildCommandLine(String extension, String format, FFmpeg ffmpeg, String out) {
         ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
         l.add("-i");
         l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
-        // l.add(m3uUrl);
-        // 2.1 aac_adtstoasc
-        // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
-        //
-        // This filter creates an MPEG-4 AudioSpecificConfig from an MPEG-2/4 ADTS header and removes the ADTS header.
-        //
-        // This is required for example when copying an AAC stream from a raw ADTS AAC container to a FLV or a MOV/MP4 file.
-        //
-        //
+        if (isMapMetaDataEnabled()) {
+            final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
+            if (ffMpegMetaData != null && ffMpegMetaData.hasValues()) {
+                l.add("-i");
+                l.add("http://127.0.0.1:" + server.getPort() + "/meta?id=" + processID);
+                l.add("-map_metadata");
+                l.add("1");
+            }
+        }
         if ("mp4".equalsIgnoreCase(extension) || "m4v".equalsIgnoreCase(extension) || "m4a".equalsIgnoreCase(extension) || "mov".equalsIgnoreCase(extension) || "flv".equalsIgnoreCase(extension)) {
+            // 2.1 aac_adtstoasc
+            // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
+            //
+            // This filter creates an MPEG-4 AudioSpecificConfig from an MPEG-2/4 ADTS header and removes the ADTS header.
+            //
+            // This is required for example when copying an AAC stream from a raw ADTS AAC container to a FLV or a MOV/MP4 file.
+            //
+            //
             l.add("-bsf:a");
             l.add("aac_adtstoasc");
         }
@@ -423,7 +448,19 @@ public class HLSDownloader extends DownloadInterface {
         l.add("-y");
         l.add("-progress");
         l.add("http://127.0.0.1:" + server.getPort() + "/progress?id=" + processID);
-        ffmpeg.runCommand(set, l);
+        return l;
+    }
+
+    protected boolean isMapMetaDataEnabled() {
+        return false;
+    }
+
+    protected void runFF(FFMpegProgress set, String extension, String format, FFmpeg ffmpeg, String out) throws IOException, InterruptedException, FFMpegException {
+        ffmpeg.runCommand(set, buildCommandLine(extension, format, ffmpeg, out));
+    }
+
+    protected FFmpegMetaData getFFmpegMetaData() {
+        return null;
     }
 
     private volatile M3U8Playlist m3u8Playlists = new M3U8Playlist();
@@ -449,7 +486,6 @@ public class HLSDownloader extends DownloadInterface {
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
-
                     if ("/progress".equals(request.getRequestedPath())) {
                         BufferedReader f = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
                         final StringBuilder ret = new StringBuilder();
@@ -492,15 +528,37 @@ public class HLSDownloader extends DownloadInterface {
                     if (logger != null) {
                         logger.info(request.toString());
                     }
-                    String id = request.getParameterbyKey("id");
+                    final String id = request.getParameterbyKey("id");
                     if (id == null) {
-
                         return false;
                     }
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
-                    if ("/m3u8".equals(request.getRequestedPath())) {
+                    if ("/meta".equals(request.getRequestedPath())) {
+                        final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
+                        final byte[] bytes;
+                        if (ffMpegMetaData != null) {
+                            final String content = ffMpegMetaData.getFFmpegMetaData();
+                            bytes = content.getBytes("UTF-8");
+                        } else {
+                            bytes = new byte[0];
+                        }
+                        if (bytes.length > 0) {
+                            response.setResponseCode(HTTPConstants.ResponseCode.get(200));
+                        } else {
+                            response.setResponseCode(HTTPConstants.ResponseCode.get(404));
+                        }
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/plain; charset=utf-8"));
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
+                        final OutputStream out = response.getOutputStream(true);
+                        if (bytes.length > 0) {
+                            out.write(bytes);
+                            out.flush();
+                        }
+                        requestOkay = true;
+                        return true;
+                    } else if ("/m3u8".equals(request.getRequestedPath())) {
                         final Browser br = obr.cloneBrowser();
                         // work around for longggggg m3u pages
                         final int was = obr.getLoadLimit();
@@ -748,31 +806,7 @@ public class HLSDownloader extends DownloadInterface {
     @Override
     public boolean startDownload() throws Exception {
         try {
-
-            connectionHandler = new ManagedThrottledConnectionHandler();
-            downloadable = new DownloadLinkDownloadable(link) {
-                @Override
-                public boolean isResumable() {
-                    return link.getBooleanProperty("RESUME", true);
-                }
-
-                @Override
-                public void setResumeable(boolean value) {
-                    link.setProperty("RESUME", value);
-                    super.setResumeable(value);
-                }
-            };
             downloadable.setDownloadInterface(this);
-
-            String fileOutput = downloadable.getFileOutput();
-            String finalFileOutput = downloadable.getFinalFileOutput();
-            outputCompleteFile = new File(fileOutput);
-            outputFinalCompleteFile = outputCompleteFile;
-            if (!fileOutput.equals(finalFileOutput)) {
-                outputFinalCompleteFile = new File(finalFileOutput);
-            }
-            outputPartFile = new File(downloadable.getFileOutputPart());
-
             DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
@@ -850,21 +884,11 @@ public class HLSDownloader extends DownloadInterface {
         } catch (final Throwable e) {
         }
         try {
+            final URLConnectionAdapter currentConnection = getConnection();
             if (currentConnection != null) {
                 currentConnection.disconnect();
             }
         } catch (Throwable e) {
-        }
-        closeOutputChannel();
-    }
-
-    private void closeOutputChannel() {
-        try {
-
-        } catch (Throwable e) {
-            LogSource.exception(logger, e);
-        } finally {
-
         }
     }
 
@@ -881,7 +905,9 @@ public class HLSDownloader extends DownloadInterface {
         }
         if (caughtPluginException == null) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);
-            downloadable.setVerifiedFileSize(outputCompleteFile.length());
+            final long fileSize = outputCompleteFile.length();
+            downloadable.setDownloadBytesLoaded(fileSize);
+            downloadable.setVerifiedFileSize(fileSize);
             return true;
         } else {
             throw caughtPluginException;
@@ -890,18 +916,17 @@ public class HLSDownloader extends DownloadInterface {
 
     private void createOutputChannel() throws SkipReasonException {
         try {
-            String fileOutput = downloadable.getFileOutput();
+            final String fileOutput = downloadable.getFileOutput();
             if (logger != null) {
                 logger.info("createOutputChannel for " + fileOutput);
             }
-            String finalFileOutput = downloadable.getFinalFileOutput();
+            final String finalFileOutput = downloadable.getFinalFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
             if (!fileOutput.equals(finalFileOutput)) {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
             outputPartFile = new File(downloadable.getFileOutputPart());
-
         } catch (Exception e) {
             LogSource.exception(logger, e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
@@ -943,6 +968,7 @@ public class HLSDownloader extends DownloadInterface {
 
     @Override
     public void close() {
+        final URLConnectionAdapter currentConnection = getConnection();
         if (currentConnection != null) {
             currentConnection.disconnect();
         }
