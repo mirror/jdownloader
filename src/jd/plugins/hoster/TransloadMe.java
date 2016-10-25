@@ -427,6 +427,7 @@ public class TransloadMe extends PluginForHost {
         if (this.USE_API) {
             accesslink = API_BASE + "?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass());
             accesslink += "&" + input;
+            accesslink += "&client_id=jdownloader";
         } else {
             accesslink = input;
         }
