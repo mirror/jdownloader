@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "http://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "http://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" })
 public class ImgBoxCom extends PluginForDecrypt {
 
     public ImgBoxCom(PluginWrapper wrapper) {
@@ -116,7 +116,7 @@ public class ImgBoxCom extends PluginForDecrypt {
     }
 
     private DownloadLink decryptSingle() {
-        final String finallink = br.getRegex("\"(http://(i|[a-z0-9\\-]+)\\.imgbox\\.com/[^<>\"]*?)\"").getMatch(0);
+        final String finallink = br.getRegex("\"(https?://(i|[a-z0-9\\-]+)\\.imgbox\\.com/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             return null;
         }
