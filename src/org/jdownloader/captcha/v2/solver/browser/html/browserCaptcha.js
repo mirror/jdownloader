@@ -167,11 +167,7 @@ function closeWindowOrTab() {
 	} catch (e) {
 
 	}
-	try {
-		open(location, '_self').close();
-	} catch (e) {
-
-	}
+	
 
 }
 /*
