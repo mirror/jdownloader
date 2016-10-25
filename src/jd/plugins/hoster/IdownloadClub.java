@@ -33,9 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idownload.club" }, urls = { "http://(?:www\\.)?idownload\\.club/members/ext/get_file\\.php\\?file=.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "idownload.club" }, urls = { "http://(?:www\\.)?idownload\\.club/members/ext/get_file\\.php\\?file=.+" })
 public class IdownloadClub extends PluginForHost {
 
     public IdownloadClub(PluginWrapper wrapper) {
@@ -125,18 +123,15 @@ public class IdownloadClub extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null && !force && cookies.get("PHPSESSID") != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://" + this.getHost() + "/members//index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://" + getHost());
+                br.postPage("/members//index.php", "hidLogin=1&chkKeepLogged=on&txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + Encoding.urlEncode(account.getPass()));
                 final String txtPassword_hashed = this.br.getRegex("txtPassword=\"\\+encodeURIComponent\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
-                if (txtPassword_hashed != null) {
-                    /* Important to get the JSESSIONID cookie. If we do not have that cookie, login is fine but we cannot download!! */
-                    br.getPage("/java/login/get_file.php?txtEmail=" + Encoding.urlEncode(account.getUser()) + "&txtPassword=" + txtPassword_hashed);
-                }
-                if (this.br.getCookie(this.getHost(), "JSESSIONID") == null) {
+                if (this.br.getCookie(this.getHost(), "PHPSESSID") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -160,7 +155,6 @@ public class IdownloadClub extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (!account.getUser().matches(".+@.+\\..+")) {
@@ -171,32 +165,22 @@ public class IdownloadClub extends PluginForHost {
             }
         }
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String traffic_max = this.br.getRegex("(\\d+GB) Membership").getMatch(0);
-        final String traffic_used = this.br.getRegex("Data Use\\s*?:\\s*?(\\d+\\s*?(?:GB|MB))").getMatch(0);
-        if (traffic_max == null || traffic_used == null) {
+        login(account, true);
+        final String days_left = this.br.getRegex(";\\s*(\\d+)\\s*Days Left").getMatch(0);
+        long expireIn = days_left == null ? -1 : (System.currentTimeMillis() + Integer.parseInt(days_left) * (1000l * 60 * 60 * 24));
+        if (days_left == null || expireIn - System.currentTimeMillis() < 60 * 1000l) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
             ai.setStatus("Registered (free) user");
         } else {
-            final long traffic_max_l = SizeFormatter.getSize(traffic_max);
-            final long traffic_used_l = SizeFormatter.getSize(traffic_used);
-
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
+            ai.setValidUntil(expireIn);
             ai.setStatus("Premium account");
-            ai.setTrafficMax(traffic_max_l);
-            ai.setTrafficLeft(traffic_max_l - traffic_used_l);
         }
-        account.setValid(true);
         return ai;
     }
 
