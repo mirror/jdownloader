@@ -1178,6 +1178,150 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return true;
     }
 
+    public FFmpeg getFFmpeg(final DownloadLink downloadLink) {
+        if (PluginJsonConfig.get(YoutubeConfig.class).isMetaDataEnabled()) {
+            final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
+            ffMpegMetaData.setTitle(downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null));
+            ffMpegMetaData.setArtist(downloadLink.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, null));
+            final String contentURL = downloadLink.getContentUrl();
+            if (contentURL != null) {
+                ffMpegMetaData.setComment(contentURL.replaceFirst("(#variant=.+)", ""));
+            }
+            final long timestamp = downloadLink.getLongProperty(YoutubeHelper.YT_DATE, -1);
+            if (timestamp > 0) {
+                final GregorianCalendar calendar = new GregorianCalendar();
+                calendar.setTimeInMillis(timestamp);
+                ffMpegMetaData.setYear(calendar);
+            }
+            if (!ffMpegMetaData.isEmpty()) {
+                return new FFmpeg() {
+                    private final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
+                    private HttpServer            httpServer        = null;
+
+                    private HttpServer startHttpServer() {
+                        try {
+                            final HttpServer httpServer = new HttpServer(0);
+                            httpServer.setLocalhostOnly(true);
+                            httpServer.registerRequestHandler(new HttpRequestHandler() {
+
+                                @Override
+                                public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                                    return false;
+                                }
+
+                                @Override
+                                public boolean onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                                    try {
+                                        final String id = request.getParameterbyKey("id");
+                                        if (id != null && metaDataProcessID.getID() == Long.parseLong(request.getParameterbyKey("id")) && "/meta".equals(request.getRequestedPath())) {
+                                            final String content = ffMpegMetaData.getFFmpegMetaData();
+                                            final byte[] bytes = content.getBytes("UTF-8");
+                                            response.setResponseCode(HTTPConstants.ResponseCode.get(200));
+                                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/plain; charset=utf-8"));
+                                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
+                                            final OutputStream out = response.getOutputStream(true);
+                                            out.write(bytes);
+                                            out.flush();
+                                            return true;
+                                        }
+                                    } catch (final IOException e) {
+                                        logger.log(e);
+                                    }
+                                    return false;
+                                }
+                            });
+                            httpServer.start();
+                            return httpServer;
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        return null;
+                    }
+
+                    private void stopHttpServer() {
+                        final HttpServer httpServer = this.httpServer;
+                        if (httpServer != null) {
+                            httpServer.stop();
+                        }
+                        this.httpServer = null;
+                    }
+
+                    @Override
+                    public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
+                        httpServer = startHttpServer();
+                        try {
+                            return super.muxToMp4(progress, out, videoIn, audioIn);
+                        } finally {
+                            stopHttpServer();
+                        }
+                    }
+
+                    @Override
+                    public boolean demuxM4a(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
+                        httpServer = startHttpServer();
+                        try {
+                            return super.demuxM4a(progress, out, audioIn);
+                        } finally {
+                            stopHttpServer();
+                        }
+                    }
+
+                    @Override
+                    protected boolean demux(FFMpegProgress progress, String out, String audioIn, String[] demuxCommands) throws InterruptedException, IOException, FFMpegException {
+                        if (httpServer != null) {
+                            final ArrayList<String> newDemuxCommands = new ArrayList<String>();
+                            boolean metaParamsAdded = false;
+                            String lastDemuxCommand = null;
+                            for (final String demuxCommand : demuxCommands) {
+                                if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
+                                    newDemuxCommands.add("-i");
+                                    newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                    newDemuxCommands.add("-map_metadata");
+                                    newDemuxCommands.add("1");
+                                    metaParamsAdded = true;
+                                }
+                                newDemuxCommands.add(demuxCommand);
+                                lastDemuxCommand = demuxCommand;
+                            }
+                            if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
+                                newDemuxCommands.add("-i");
+                                newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                newDemuxCommands.add("-map_metadata");
+                                newDemuxCommands.add("1");
+                                metaParamsAdded = true;
+                            }
+                            return super.demux(progress, out, audioIn, newDemuxCommands.toArray(new String[0]));
+                        } else {
+                            return super.demux(progress, out, audioIn, demuxCommands);
+                        }
+                    }
+
+                    @Override
+                    protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, String[] muxCommands) throws InterruptedException, IOException, FFMpegException {
+                        if (httpServer != null) {
+                            final ArrayList<String> newMuxCommands = new ArrayList<String>();
+                            boolean metaParamsAdded = false;
+                            for (final String muxCommand : muxCommands) {
+                                if ("-map".equals(muxCommand) && !metaParamsAdded) {
+                                    newMuxCommands.add("-i");
+                                    newMuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                    newMuxCommands.add("-map_metadata");
+                                    newMuxCommands.add("2");
+                                    metaParamsAdded = true;
+                                }
+                                newMuxCommands.add(muxCommand);
+                            }
+                            return super.mux(progress, out, videoIn, audioIn, newMuxCommands.toArray(new String[0]));
+                        } else {
+                            return super.mux(progress, out, videoIn, audioIn, muxCommands);
+                        }
+                    }
+                };
+            }
+        }
+        return new FFmpeg();
+    }
+
     public void handleDash(final DownloadLink downloadLink, final YoutubeProperties data, Account account) throws Exception {
         DownloadLinkView oldView = null;
         DefaultDownloadLinkViewImpl newView = null;
@@ -1257,95 +1401,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
                 if (new File(audioStreamPath).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                     downloadLink.setAvailable(true);
-                    final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
-                    if (PluginJsonConfig.get(YoutubeConfig.class).isMetaDataEnabled()) {
-                        try {
-                            final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
-                            ffMpegMetaData.setTitle(downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null));
-                            ffMpegMetaData.setArtist(downloadLink.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, null));
-                            final String contentURL = downloadLink.getContentUrl();
-                            if (contentURL != null) {
-                                ffMpegMetaData.setComment(contentURL.replaceFirst("(#variant=.+)", ""));
-                            }
-                            final long timestamp = downloadLink.getLongProperty(YoutubeHelper.YT_DATE, -1);
-                            if (timestamp > 0) {
-                                final GregorianCalendar calendar = new GregorianCalendar();
-                                calendar.setTimeInMillis(timestamp);
-                                ffMpegMetaData.setYear(calendar);
-                            }
-                            if (!ffMpegMetaData.isEmpty()) {
-                                httpServer = new HttpServer(0);
-                                httpServer.setLocalhostOnly(true);
-                                httpServer.registerRequestHandler(new HttpRequestHandler() {
-
-                                    @Override
-                                    public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-                                        return false;
-                                    }
-
-                                    @Override
-                                    public boolean onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
-                                        try {
-                                            final String id = request.getParameterbyKey("id");
-                                            if (id != null && metaDataProcessID.getID() == Long.parseLong(request.getParameterbyKey("id")) && "/meta".equals(request.getRequestedPath())) {
-                                                final String content = ffMpegMetaData.getFFmpegMetaData();
-                                                final byte[] bytes = content.getBytes("UTF-8");
-                                                response.setResponseCode(HTTPConstants.ResponseCode.get(200));
-                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/plain; charset=utf-8"));
-                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
-                                                final OutputStream out = response.getOutputStream(true);
-                                                out.write(bytes);
-                                                out.flush();
-                                                return true;
-                                            }
-                                        } catch (final IOException e) {
-                                            logger.log(e);
-                                        }
-                                        return false;
-                                    }
-                                });
-                                httpServer.start();
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                        }
-                    }
-                    final HttpServer finalhttpServer = httpServer;
-                    final FFmpeg ffmpeg = new FFmpeg() {
-
-                        private boolean addMetaData = false;
-
-                        @Override
-                        public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
-                            addMetaData = true;
-                            try {
-                                return super.muxToMp4(progress, out, videoIn, audioIn);
-                            } finally {
-                                addMetaData = false;
-                            }
-                        }
-
-                        @Override
-                        protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, String[] muxCommands) throws InterruptedException, IOException, FFMpegException {
-                            if (finalhttpServer != null && addMetaData) {
-                                final ArrayList<String> newMuxCommand = new ArrayList<String>();
-                                boolean metaParamsAdded = false;
-                                for (String muxCommand : muxCommands) {
-                                    if ("-map".equals(muxCommand) && !metaParamsAdded) {
-                                        newMuxCommand.add("-i");
-                                        newMuxCommand.add("http://127.0.0.1:" + finalhttpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
-                                        newMuxCommand.add("-map_metadata");
-                                        newMuxCommand.add("2");
-                                        metaParamsAdded = true;
-                                    }
-                                    newMuxCommand.add(muxCommand);
-                                }
-                                return super.mux(progress, out, videoIn, audioIn, newMuxCommand.toArray(new String[0]));
-                            } else {
-                                return super.mux(progress, out, videoIn, audioIn, muxCommands);
-                            }
-                        }
-                    };
+                    final FFmpeg ffmpeg = getFFmpeg(downloadLink);
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
                     if (videoStreamPath != null && new File(videoStreamPath).exists()) {

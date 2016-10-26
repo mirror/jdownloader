@@ -870,8 +870,12 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    public FFmpeg getFFmpeg(DownloadLink downloadLink) {
+        return new FFmpeg();
+    }
+
     public void checkFFmpeg(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
-        final FFmpeg ffmpeg = new FFmpeg();
+        final FFmpeg ffmpeg = getFFmpeg(downloadLink);
         if (!ffmpeg.isAvailable()) {
             if (UpdateController.getInstance().getHandler() == null) {
                 getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
