@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -293,6 +294,9 @@ public class OpenLoadIo extends antiDDoSForHost {
                 if (result == null) {
                     result = decode20161010(html);
                 }
+                if (result == null) {
+                    result = decode20161026(html);
+                }
                 dllink = br.getURL("/stream/" + result + "?mime=true").toString();
                 boolean fol = br.isFollowingRedirects();
                 try {
@@ -328,6 +332,27 @@ public class OpenLoadIo extends antiDDoSForHost {
             downloadLink.setProperty(directlinkproperty, dllink);
         }
         dl.startDownload();
+    }
+
+    private String decode20161026(String html) throws Exception {
+        String decoded = new org.jdownloader.encoding.AADecoder(html).decode();
+        String xKey = new Regex(decoded, Pattern.quote("var x = $(\"#") + "([^\"]+)").getMatch(0);
+        String yKey = new Regex(decoded, Pattern.quote("var y = $(\"#") + "([^\"]+)").getMatch(0);
+        decoded = new Regex(decoded, "(var magic\\s*=.*?)" + Pattern.quote("$(\"#streamurl\"")).getMatch(0);
+        String x = new Regex(html, "<span id=\"" + xKey + "\">([^<]+)").getMatch(0);
+        String y = new Regex(html, "<span id=\"" + yKey + "\">([^<]+)").getMatch(0);
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String result = null;
+        try {
+            engine.put("x", Encoding.htmlOnlyDecode(x));
+            engine.put("y", Encoding.htmlOnlyDecode(y));
+            engine.eval(decoded);
+            result = engine.get("str").toString();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     protected String decode20161010(String html) {
