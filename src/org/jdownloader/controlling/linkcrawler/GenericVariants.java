@@ -5,14 +5,6 @@ import java.util.List;
 
 import javax.swing.Icon;
 
-import org.appwork.utils.Files;
-import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.translate._JDT;
-
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.plugins.Account;
@@ -20,6 +12,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Files;
+import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.translate._JDT;
 
 public enum GenericVariants implements LinkVariant {
     ORIGINAL(null, new AbstractIcon(IconKey.ICON_VIDEO, 16)) {
@@ -192,9 +192,7 @@ public enum GenericVariants implements LinkVariant {
         FFMpegProgress set = new FFMpegProgress();
         try {
             downloadLink.addPluginProgress(set);
-
-            FFmpeg ffmpeg = new FFmpeg();
-
+            final FFmpeg ffmpeg = pluginForHost.getFFmpeg(downloadLink);
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             boolean res = ffmpeg(downloadLink, file, set, ffmpeg, finalFile);
             if (!res) {

@@ -43,7 +43,7 @@ public class YoutubeConverterFLVToM4AAudio extends AbstractDemuxToAudioConverter
             downloadLink.addPluginProgress(set);
             final File file = new File(downloadLink.getFileOutput());
             plugin.checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_dash());
-            final FFmpeg ffmpeg = new FFmpeg();
+            final FFmpeg ffmpeg = plugin.getFFmpeg(downloadLink);
             final File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             if (!ffmpeg.demuxM4a(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI.T.YoutubeDash_handleFree_error_());

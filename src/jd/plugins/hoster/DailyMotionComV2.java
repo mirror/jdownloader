@@ -39,7 +39,7 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionComV2 extends DailyMotionCom {
 
     public DailyMotionComV2(PluginWrapper wrapper) {
@@ -88,7 +88,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
                     downloadLink.addPluginProgress(set);
                     File file = new File(downloadLink.getFileOutput());
 
-                    FFmpeg ffmpeg = new FFmpeg();
+                    FFmpeg ffmpeg = getFFmpeg(downloadLink);
 
                     File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
                     if ("aac".equals(var.getConvertTo())) {
