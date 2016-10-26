@@ -1178,8 +1178,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return true;
     }
 
+    @Override
     public FFmpeg getFFmpeg(final DownloadLink downloadLink) {
-        if (PluginJsonConfig.get(YoutubeConfig.class).isMetaDataEnabled()) {
+        if (downloadLink != null && PluginJsonConfig.get(YoutubeConfig.class).isMetaDataEnabled()) {
             final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
             ffMpegMetaData.setTitle(downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null));
             ffMpegMetaData.setArtist(downloadLink.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, null));
@@ -1198,7 +1199,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     private final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
                     private HttpServer            httpServer        = null;
 
-                    private HttpServer startHttpServer() {
+                    private final HttpServer startHttpServer() {
                         try {
                             final HttpServer httpServer = new HttpServer(0);
                             httpServer.setLocalhostOnly(true);
@@ -1225,7 +1226,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                             return true;
                                         }
                                     } catch (final IOException e) {
-                                        logger.log(e);
+                                        if (logger != null) {
+                                            logger.log(e);
+                                        }
                                     }
                                     return false;
                                 }
@@ -1233,7 +1236,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             httpServer.start();
                             return httpServer;
                         } catch (final IOException e) {
-                            logger.log(e);
+                            if (logger != null) {
+                                logger.log(e);
+                            }
                         }
                         return null;
                     }
