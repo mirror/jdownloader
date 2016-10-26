@@ -24,6 +24,7 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
@@ -57,6 +58,7 @@ import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.ffmpeg.FFprobe;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 import org.jdownloader.plugins.DownloadPluginProgress;
@@ -135,7 +137,7 @@ public class HLSDownloader extends DownloadInterface {
     public StreamInfo getProbe() throws IOException {
         initPipe();
         try {
-            FFprobe ffmpeg = new FFprobe();
+            final FFprobe ffmpeg = new FFprobe();
             this.processID = new UniqueAlltimeID().getID();
             return ffmpeg.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
         } finally {
@@ -143,25 +145,81 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    protected String guessFFmpegFormat(final StreamInfo streamInfo) {
+        if (streamInfo != null && streamInfo.getStreams() != null) {
+            for (final Stream s : streamInfo.getStreams()) {
+                if ("video".equalsIgnoreCase(s.getCodec_type())) {
+                    return "mp4";
+                }
+            }
+        }
+        return null;
+    }
+
+    protected String getFFmpegFormat(FFmpeg ffmpeg) throws PluginException, IOException, InterruptedException, FFMpegException {
+        String name = link.getForcedFileName();
+        if (StringUtils.isEmpty(name)) {
+            name = link.getFinalFileName();
+            if (StringUtils.isEmpty(name)) {
+                name = link.getRawName();
+            }
+            if (StringUtils.isEmpty(name)) {
+                final String url = link.getContentUrlOrPatternMatcher();
+                name = Plugin.extractFileNameFromURL(url);
+            }
+        }
+        String format = ffmpeg.getDefaultFormatByFileName(name);
+        if (format == null) {
+            final StreamInfo streamInfo = getProbe();
+            format = guessFFmpegFormat(streamInfo);
+            if (format == null) {
+                final String extension = Files.getExtension(name);
+                if (extension == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String extensionID = extension.toLowerCase(Locale.ENGLISH);
+                final FFmpegSetup config = JsonConfig.create(FFmpegSetup.class);
+                synchronized (HLSDownloader.class) {
+                    HashMap<String, String> map = config.getExtensionToFormatMap();
+                    if (map == null) {
+                        map = new HashMap<String, String>();
+                    } else {
+                        map = new HashMap<String, String>(map);
+                    }
+                    try {
+                        format = map.get(extensionID);
+                        if (format == null) {
+                            final ArrayList<String> queryDefaultFormat = new ArrayList<String>();
+                            queryDefaultFormat.add(ffmpeg.getFullPath());
+                            final File dummy = Application.getTempResource("ffmpeg_dummy-" + System.currentTimeMillis() + "." + extension);
+                            try {
+                                queryDefaultFormat.add(dummy.getAbsolutePath());
+                                queryDefaultFormat.add("-y");
+                                ffmpeg.runCommand(null, queryDefaultFormat);
+                            } finally {
+                                dummy.delete();
+                            }
+                        }
+                    } catch (FFMpegException e) {
+                        final String res = e.getError();
+                        format = new Regex(res, "Output \\#0\\, ([^\\,]+)").getMatch(0);
+                        if (format == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e);
+                        }
+                        map.put(extensionID, format);
+                        config.setExtensionToFormatMap(map);
+                    }
+                }
+            }
+        }
+        return format;
+    }
+
     public void run() throws IOException, PluginException {
-        initPipe();
-        processID = new UniqueAlltimeID().getID();
         link.setDownloadSize(-1);
         final FFMpegProgress set = new FFMpegProgress();
         try {
-            // link.addPluginProgress(set);
-            FFmpegSetup config = JsonConfig.create(FFmpegSetup.class);
-            HashMap<String, String> map = config.getExtensionToFormatMap();
-            if (map == null) {
-                map = new HashMap<String, String>();
-            }
-            String cust = link.getCustomExtension();
-            link.setCustomExtension(null);
-            String name = link.getName();
-            link.setCustomExtension(cust);
-            String extension = Files.getExtension(name);
-            String format = (extension != null ? map.get(extension.toLowerCase(Locale.ENGLISH)) : null);
-            FFmpeg ffmpeg = new FFmpeg() {
+            final FFmpeg ffmpeg = new FFmpeg() {
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     System.out.println(line);
                     try {
@@ -171,7 +229,7 @@ public class HLSDownloader extends DownloadInterface {
                                 HLSDownloader.this.duration = formatStringToMilliseconds(duration);
                             }
                         } else if (line.trim().startsWith("Stream #")) {
-                            String bitrate = new Regex(line, "(\\d+) kb\\/s").getMatch(0);
+                            final String bitrate = new Regex(line, "(\\d+) kb\\/s").getMatch(0);
                             if (bitrate != null) {
                                 if (HLSDownloader.this.bitrate == -1) {
                                     HLSDownloader.this.bitrate = 0;
@@ -188,7 +246,7 @@ public class HLSDownloader extends DownloadInterface {
                             bytesWritten = newSize;
                             downloadable.setDownloadBytesLoaded(bytesWritten);
                             final String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
-                            final String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
+                            // final String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
                             long timeInSeconds = (formatStringToMilliseconds(time) / 1000);
                             if (timeInSeconds > 0 && duration > 0) {
                                 long rate = bytesWritten / timeInSeconds;
@@ -206,53 +264,23 @@ public class HLSDownloader extends DownloadInterface {
 
                 };
             };
-            if (format == null) {
-                try {
-                    ArrayList<String> l = new ArrayList<String>();
-                    l.add(ffmpeg.getFullPath());
-                    File dummy = Application.getTempResource("ffmpeg_dummy." + extension);
-                    l.add(dummy.getAbsolutePath());
-                    l.add("-y");
-                    ffmpeg.runCommand(null, l);
-
-                } catch (FFMpegException e) {
-                    String res = e.getError();
-                    format = new Regex(res, "Output \\#0\\, ([^\\,]+)").getMatch(0);
-                    if (format == null) {
-                        throw e;
-                    }
-                    synchronized (config) {
-                        map = config.getExtensionToFormatMap();
-                        if (map == null) {
-                            map = new HashMap<String, String>();
-                        }
-                        map.put(extension.toLowerCase(Locale.ENGLISH), format);
-                        config.setExtensionToFormatMap(map);
-                    }
-
-                }
-            }
-
-            String out = outputPartFile.getAbsolutePath();
+            final String format = getFFmpegFormat(ffmpeg);
+            final String out = outputPartFile.getAbsolutePath();
             try {
-                runFF(set, extension, format, ffmpeg, out);
-
+                initPipe();
+                processID = new UniqueAlltimeID().getID();
+                runFF(set, format, ffmpeg, out);
             } catch (FFMpegException e) {
                 // some systems have problems with special chars to find the in or out file.
                 if (e.getError() != null && e.getError().contains("No such file or directory")) {
-
-                    File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-
-                    runFF(set, extension, format, ffmpeg, tmpOut.getAbsolutePath());
-
+                    final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                    runFF(set, format, ffmpeg, tmpOut.getAbsolutePath());
                     outputPartFile.delete();
                     tmpOut.renameTo(outputPartFile);
-
                 } else {
                     throw e;
                 }
             }
-
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (final FFMpegException e) {
@@ -414,29 +442,29 @@ public class HLSDownloader extends DownloadInterface {
         return m3u8Playlist;
     }
 
-    protected ArrayList<String> buildCommandLine(String extension, String format, FFmpeg ffmpeg, String out) {
+    protected boolean isMapMetaDataEnabled() {
+        return false;
+    }
+
+    protected boolean requiresAdtstoAsc(final String format, final FFmpeg ffmpeg) {
+        return ffmpeg.requiresAdtstoAsc(format);
+    }
+
+    protected ArrayList<String> buildCommandLine(String format, FFmpeg ffmpeg, String out) {
         ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
         l.add("-i");
         l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
         if (isMapMetaDataEnabled()) {
             final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
-            if (ffMpegMetaData != null && ffMpegMetaData.hasValues()) {
+            if (ffMpegMetaData != null && !ffMpegMetaData.isEmpty()) {
                 l.add("-i");
                 l.add("http://127.0.0.1:" + server.getPort() + "/meta?id=" + processID);
                 l.add("-map_metadata");
                 l.add("1");
             }
         }
-        if ("mp4".equalsIgnoreCase(extension) || "m4v".equalsIgnoreCase(extension) || "m4a".equalsIgnoreCase(extension) || "mov".equalsIgnoreCase(extension) || "flv".equalsIgnoreCase(extension)) {
-            // 2.1 aac_adtstoasc
-            // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
-            //
-            // This filter creates an MPEG-4 AudioSpecificConfig from an MPEG-2/4 ADTS header and removes the ADTS header.
-            //
-            // This is required for example when copying an AAC stream from a raw ADTS AAC container to a FLV or a MOV/MP4 file.
-            //
-            //
+        if (requiresAdtstoAsc(format, ffmpeg)) {
             l.add("-bsf:a");
             l.add("aac_adtstoasc");
         }
@@ -451,12 +479,8 @@ public class HLSDownloader extends DownloadInterface {
         return l;
     }
 
-    protected boolean isMapMetaDataEnabled() {
-        return false;
-    }
-
-    protected void runFF(FFMpegProgress set, String extension, String format, FFmpeg ffmpeg, String out) throws IOException, InterruptedException, FFMpegException {
-        ffmpeg.runCommand(set, buildCommandLine(extension, format, ffmpeg, out));
+    protected void runFF(FFMpegProgress set, String format, FFmpeg ffmpeg, String out) throws IOException, InterruptedException, FFMpegException {
+        ffmpeg.runCommand(set, buildCommandLine(format, ffmpeg, out));
     }
 
     protected FFmpegMetaData getFFmpegMetaData() {

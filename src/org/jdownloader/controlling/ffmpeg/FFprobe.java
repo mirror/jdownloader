@@ -3,6 +3,9 @@ package org.jdownloader.controlling.ffmpeg;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -13,13 +16,9 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.logging.LogController;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 public class FFprobe extends AbstractFFmpegBinary {
     public FFprobe(Browser br) {
         super(br);
-
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFprobe.class.getName());
         path = config.getBinaryPathProbe();
@@ -31,7 +30,6 @@ public class FFprobe extends AbstractFFmpegBinary {
 
     public FFprobe() {
         this(null);
-
     }
 
     private boolean validatePaths() {
@@ -59,12 +57,11 @@ public class FFprobe extends AbstractFFmpegBinary {
         return true;
     }
 
-    public StreamInfo getStreamInfo(String dllink) {
-
+    public StreamInfo getStreamInfo(String url) {
         try {
             initPipe();
             this.processID = new UniqueAlltimeID().getID();
-            ArrayList<String> commandLine = new ArrayList<String>();
+            final ArrayList<String> commandLine = new ArrayList<String>();
             commandLine.add(getFullPath());
             commandLine.add("-loglevel");
             commandLine.add("48");
@@ -76,28 +73,28 @@ public class FFprobe extends AbstractFFmpegBinary {
             commandLine.add("json");
             commandLine.add("-i");
             if (server != null && server.isRunning()) {
-                commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(dllink));
-
+                commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
             } else {
-                commandLine.add(dllink);
+                commandLine.add(url);
             }
-
-            String ret = runCommand(null, commandLine);
-            StreamInfo data = JSonStorage.restoreFromString(ret, new TypeRef<StreamInfo>() {
+            final String ret = runCommand(null, commandLine);
+            final StreamInfo data = JSonStorage.restoreFromString(ret, new TypeRef<StreamInfo>() {
             });
             return data;
-
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
-
         } finally {
             closePipe();
         }
     }
 
     public StreamInfo getStreamInfo(File dummy) {
-        return getStreamInfo(dummy.toString());
+        if (dummy != null) {
+            return getStreamInfo(dummy.toString());
+        } else {
+            return null;
+        }
     }
 
 }

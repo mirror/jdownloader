@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -424,6 +425,44 @@ public class AbstractFFmpegBinary {
             }
         });
 
+    }
+
+    private final static HashMap<String, String> DEFAULT_FORMAT_BY_EXTENSION;
+    static {
+        DEFAULT_FORMAT_BY_EXTENSION = new HashMap<String, String>();
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mp3", "mp3");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mp4", "mp4");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mpg", "mpeg");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mov", "mov");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".avi", "avi");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".flv", "flv");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".ogg", "ogg");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mkv", "matroska");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".webm", "webm");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".mpeg", "mpeg");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".aac", "adts");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".wav", "wav");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".m4a", "ipod");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".m4v", "ipod");
+    }
+
+    public boolean requiresAdtstoAsc(final String format) {
+        return ("mp4".equalsIgnoreCase(format) || "m4v".equalsIgnoreCase(format) || "m4a".equalsIgnoreCase(format) || "mov".equalsIgnoreCase(format) || "flv".equalsIgnoreCase(format));
+    }
+
+    public String getDefaultFormatByFileName(final String fileName) {
+        String checkForExtension = fileName;
+        int dotIndex = checkForExtension.lastIndexOf(".");
+        while (dotIndex > 0) {
+            final String ext = checkForExtension.substring(dotIndex, checkForExtension.length()).toLowerCase(Locale.ENGLISH);
+            final String format = DEFAULT_FORMAT_BY_EXTENSION.get(ext);
+            if (format != null) {
+                return format;
+            }
+            checkForExtension = checkForExtension.substring(0, dotIndex);
+            dotIndex = checkForExtension.lastIndexOf(".");
+        }
+        return null;
     }
 
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
