@@ -286,17 +286,7 @@ public class HLSDownloader extends DownloadInterface {
                 logger.log(e);
             }
         } catch (final FFMpegException e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage()) {
-                /**
-                 *
-                 */
-                private static final long serialVersionUID = 904727698888470052L;
-
-                @Override
-                public synchronized Throwable getCause() {
-                    return e;
-                }
-            };
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
         } catch (Throwable e) {
             if (logger != null) {
                 logger.log(e);
