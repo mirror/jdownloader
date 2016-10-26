@@ -282,7 +282,9 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(e);
+            }
         } catch (final FFMpegException e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage()) {
                 /**
