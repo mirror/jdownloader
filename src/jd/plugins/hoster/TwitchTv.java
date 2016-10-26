@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -234,17 +236,18 @@ public class TwitchTv extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, dllink);
         } else {
             final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
-            ffMpegMetaData.setValue(FFmpegMetaData.KEY.TITLE, downloadLink.getStringProperty("plainfilename", null));
-            ffMpegMetaData.setValue(FFmpegMetaData.KEY.SHOW, downloadLink.getStringProperty("plainfilename", null));
-            ffMpegMetaData.setValue(FFmpegMetaData.KEY.ARTIST, downloadLink.getStringProperty("channel", null));
+            ffMpegMetaData.setTitle(downloadLink.getStringProperty("plainfilename", null));
+            ffMpegMetaData.setArtist(downloadLink.getStringProperty("channel", null));
             final String originaldate = downloadLink.getStringProperty("originaldate", null);
             if (originaldate != null) {
-                final String year = new Regex(originaldate, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                final String year = new Regex(originaldate, "^(\\d{4})").getMatch(0);
                 if (year != null) {
-                    ffMpegMetaData.setValue(FFmpegMetaData.KEY.DATE, year);
+                    final GregorianCalendar calendar = new GregorianCalendar();
+                    calendar.set(Calendar.YEAR, Integer.parseInt(year));
+                    ffMpegMetaData.setYear(calendar);
                 }
             }
-            ffMpegMetaData.setValue(FFmpegMetaData.KEY.COMMENT, downloadLink.getContentUrl());
+            ffMpegMetaData.setComment(downloadLink.getContentUrl());
             dl = new HLSDownloader(downloadLink, br, dllink) {
                 @Override
                 protected boolean isMapMetaDataEnabled() {
