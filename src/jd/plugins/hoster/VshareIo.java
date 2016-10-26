@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/d/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.io" }, urls = { "http://(?:www\\.)?vshare\\.io/d/[a-z0-9]+" })
 public class VshareIo extends PluginForHost {
 
     public VshareIo(PluginWrapper wrapper) {
@@ -66,7 +66,7 @@ public class VshareIo extends PluginForHost {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404/")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404/") || br.containsHTML(">We are sorry,")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = this.br.getRegex("<p>([^<>\"]+) \\- (\\d{1,4}(?:\\.\\d{1,2})? [A-Za-z]{1,5})</p>");
