@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +62,8 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -73,8 +77,13 @@ import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.net.httpserver.HttpServer;
+import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -82,8 +91,11 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.ffmpeg.FFMpegException;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.segment.SegmentDownloader;
@@ -878,6 +890,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             public SingleDownloadController getDownloadLinkController() {
                 return downloadLink.getDownloadLinkController();
             }
+
+            @Override
+            public void setAvailableStatus(AvailableStatus availableStatus) {
+                downloadLink.setAvailableStatus(availableStatus);
+            }
+
+            @Override
+            public void setAvailable(boolean available) {
+                downloadLink.setAvailable(available);
+            }
         };
         dashLink.setLivePlugin(this);
         final LinkStatus videoLinkStatus = new LinkStatus(dashLink);
@@ -1171,12 +1193,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             };
             oldView = downloadLink.setView(newView);
-            FFmpeg ffmpeg = new FFmpeg();
             // debug
             requestFileInformation(downloadLink);
             final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
             final List<File> locks = new ArrayList<File>();
             locks.addAll(listProcessFiles(downloadLink));
+            HttpServer httpServer = null;
             try {
                 new DownloadLinkDownloadable(downloadLink).checkIfWeCanWrite(new ExceptionRunnable() {
                     @Override
@@ -1198,7 +1220,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                     data.setDashVideoFinished(true);
                 }
-                AbstractVariant variant = getVariant(downloadLink);
+                final AbstractVariant variant = getVariant(downloadLink);
                 boolean loadVideo = !data.isDashVideoFinished();
                 if (videoStreamPath == null || variant.getType() == DownloadType.DASH_AUDIO) {
                     /* Skip video if just audio should be downloaded */
@@ -1208,7 +1230,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
                 if (loadVideo) {
                     /* videoStream not finished yet, resume/download it */
-                    Boolean ret = downloadDashStream(downloadLink, data, true);
+                    final Boolean ret = downloadDashStream(downloadLink, data, true);
                     if (ret == null) {
                         return;
                     }
@@ -1225,7 +1247,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 loadAudio |= !(new File(audioStreamPath).exists() && new File(audioStreamPath).length() > 0);
                 if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
-                    Boolean ret = downloadDashStream(downloadLink, data, false);
+                    final Boolean ret = downloadDashStream(downloadLink, data, false);
                     if (ret == null) {
                         return;
                     }
@@ -1234,6 +1256,96 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     }
                 }
                 if (new File(audioStreamPath).exists() && !new File(downloadLink.getFileOutput()).exists()) {
+                    downloadLink.setAvailable(true);
+                    final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
+                    if (PluginJsonConfig.get(YoutubeConfig.class).isMetaDataEnabled()) {
+                        try {
+                            final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
+                            ffMpegMetaData.setTitle(downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null));
+                            ffMpegMetaData.setArtist(downloadLink.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, null));
+                            final String contentURL = downloadLink.getContentUrl();
+                            if (contentURL != null) {
+                                ffMpegMetaData.setComment(contentURL.replaceFirst("(#variant=.+)", ""));
+                            }
+                            final long timestamp = downloadLink.getLongProperty(YoutubeHelper.YT_DATE, -1);
+                            if (timestamp > 0) {
+                                final GregorianCalendar calendar = new GregorianCalendar();
+                                calendar.setTimeInMillis(timestamp);
+                                ffMpegMetaData.setYear(calendar);
+                            }
+                            if (!ffMpegMetaData.isEmpty()) {
+                                httpServer = new HttpServer(0);
+                                httpServer.setLocalhostOnly(true);
+                                httpServer.registerRequestHandler(new HttpRequestHandler() {
+
+                                    @Override
+                                    public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                                        return false;
+                                    }
+
+                                    @Override
+                                    public boolean onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                                        try {
+                                            final String id = request.getParameterbyKey("id");
+                                            if (id != null && metaDataProcessID.getID() == Long.parseLong(request.getParameterbyKey("id")) && "/meta".equals(request.getRequestedPath())) {
+                                                final String content = ffMpegMetaData.getFFmpegMetaData();
+                                                final byte[] bytes = content.getBytes("UTF-8");
+                                                response.setResponseCode(HTTPConstants.ResponseCode.get(200));
+                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/plain; charset=utf-8"));
+                                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
+                                                final OutputStream out = response.getOutputStream(true);
+                                                out.write(bytes);
+                                                out.flush();
+                                                return true;
+                                            }
+                                        } catch (final IOException e) {
+                                            logger.log(e);
+                                        }
+                                        return false;
+                                    }
+                                });
+                                httpServer.start();
+                            }
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
+                    }
+                    final HttpServer finalhttpServer = httpServer;
+                    final FFmpeg ffmpeg = new FFmpeg() {
+
+                        private boolean addMetaData = false;
+
+                        @Override
+                        public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
+                            addMetaData = true;
+                            try {
+                                return super.muxToMp4(progress, out, videoIn, audioIn);
+                            } finally {
+                                addMetaData = false;
+                            }
+                        }
+
+                        @Override
+                        protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, String[] muxCommands) throws InterruptedException, IOException, FFMpegException {
+                            if (finalhttpServer != null && addMetaData) {
+                                final ArrayList<String> newMuxCommand = new ArrayList<String>();
+                                boolean metaParamsAdded = false;
+                                for (String muxCommand : muxCommands) {
+                                    if ("-map".equals(muxCommand) && !metaParamsAdded) {
+                                        newMuxCommand.add("-i");
+                                        newMuxCommand.add("http://127.0.0.1:" + finalhttpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                        newMuxCommand.add("-map_metadata");
+                                        newMuxCommand.add("2");
+                                        metaParamsAdded = true;
+                                    }
+                                    newMuxCommand.add(muxCommand);
+                                }
+                                return super.mux(progress, out, videoIn, audioIn, newMuxCommand.toArray(new String[0]));
+                            } else {
+                                return super.mux(progress, out, videoIn, audioIn, muxCommands);
+                            }
+                        }
+                    };
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
                     if (videoStreamPath != null && new File(videoStreamPath).exists()) {
@@ -1241,7 +1353,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         progress.setProgressSource(this);
                         try {
                             downloadLink.addPluginProgress(progress);
-                            VideoCodec codec = variant.getiTagVideo().getVideoCodec();
+                            final VideoCodec codec = variant.getiTagVideo().getVideoCodec();
                             switch (codec) {
                             case VP8:
                             case VP9:
@@ -1323,7 +1435,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 logger.log(e);
                 throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             } finally {
-                for (File lock : locks) {
+                if (httpServer != null) {
+                    httpServer.stop();
+                }
+                for (final File lock : locks) {
                     dlc.unlockFile(lock);
                 }
             }
