@@ -176,7 +176,7 @@ public class AtvAt extends PluginForDecrypt {
                     src = "http://109.68.230.208/vod/fallback/" + linkpart_old_geo_block_workaround + "/index.m3u8";
                 } else {
                     /* Get around GEO-block - for new content */
-                    src = src.replaceAll("http?://blocked.", "http://");
+                    src = src.replaceAll("http(s?)://blocked(\\.|-)", "http$1://");
                 }
                 /* Some variables we need in that loop below. */
                 DownloadLink link = null;
@@ -215,9 +215,9 @@ public class AtvAt extends PluginForDecrypt {
                             long estimatedSize = 0;
                             /* Reset quality value */
                             quality = null;
-                            link = createDownloadlink(br.getBaseURL() + line);
+                            line = line.replaceAll("http(s?)://blocked(\\.|-)", "http$1://");
+                            link = createDownloadlink(br.getURL(line).toString());
                             link.setContainerUrl(parameter);
-
                             try {
                                 /* try to get the video quality */
                                 final HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
