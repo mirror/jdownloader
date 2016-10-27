@@ -13,14 +13,9 @@ import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class Recaptcha {
     private static final int MAX_TRIES    = 5;
@@ -87,7 +82,7 @@ public class Recaptcha {
     }
 
     public void findID() throws PluginException {
-        this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)(?:\"|\\&)").getMatch(0);
+        this.id = this.br.getRegex("(challenge|noscript|fallback)\\?k=([A-Za-z0-9%_\\+\\- ]+)(?:\"|\\&)").getMatch(1);
         if (this.id == null) {
             this.id = this.br.getRegex("Recaptcha\\.create\\((\"|\\')([A-Za-z0-9%_\\+\\- ]+)\\1").getMatch(1);
         }
@@ -155,28 +150,17 @@ public class Recaptcha {
                 this.rcBr.setRequest(null);
             }
             try {
-                LazyHostPlugin lPlg = HostPluginController.getInstance().get("recaptcha.google.com");
-                PluginForHost googlePlugin = lPlg.newInstance(null);
-
-                PluginConfigInterface config = PluginJsonConfig.get(googlePlugin.getConfigInterface());
-
                 org.jdownloader.captcha.v2.solver.service.BrowserSolverService.fillCookies(rcBr);
                 if (rcBr.getCookie("http://google.com", "SID") != null) {
-
                     if (StringUtils.isNotEmpty(org.jdownloader.captcha.v2.solver.service.BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueSID()) && StringUtils.isNotEmpty(org.jdownloader.captcha.v2.solver.service.BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueHSID())) {
                         helperID = "SID";
-
                     } else {
                         helperID = "ACC";
-
                     }
-
                 }
-
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-
             // end of privacy protection
         }
     }
@@ -184,7 +168,6 @@ public class Recaptcha {
     public void load() throws IOException, PluginException {
         runDdosProtection();
         prepRcBr();
-
         try {
             challenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
             if (challenge != null) {
