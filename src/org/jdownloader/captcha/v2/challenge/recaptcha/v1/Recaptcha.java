@@ -28,14 +28,12 @@ public class Recaptcha {
     private Form             form;
     private int              tries        = 0;
     private boolean          clearReferer = true;
-    private final String     sourceHost;
     private String           helperID;
     private final Plugin     plg;
 
     public Recaptcha(final Browser br, Plugin plg) {
         this.br = br;
         this.plg = plg;
-        sourceHost = br.getHost();
         track("challenge/");
     }
 
