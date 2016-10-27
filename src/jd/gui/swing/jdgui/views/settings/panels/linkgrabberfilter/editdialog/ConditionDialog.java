@@ -179,11 +179,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     public void setFilesizeFilter(FilesizeFilter f) {
         if (f == null) {
             return;
+        } else {
+            cbSize.setSelected(f.isEnabled());
+            cobSize.setSelectedIndex(f.getMatchType().ordinal());
+            fromSize.setValue(f.getFrom());
+            toSize.setValue(f.getTo());
         }
-        cbSize.setSelected(f.isEnabled());
-        cobSize.setSelectedIndex(f.getMatchType().ordinal());
-        fromSize.setValue(f.getFrom());
-        toSize.setValue(f.getTo());
     }
 
     public void setConditionFilter(ConditionFilter filter) {
@@ -1079,8 +1080,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     private FilterPanel createSizeFilter() {
         final JLabel to = new JLabel(new AbstractIcon(IconKey.ICON_RIGHT, 14));
-
-        minSizeModel = new SpinnerNumberModel(Long.valueOf(50000l), Long.valueOf(0l), Long.valueOf(Long.MAX_VALUE), Long.valueOf(1l)) {
+        minSizeModel = new SpinnerNumberModel(Long.valueOf(50000l), Long.valueOf(-1l), Long.valueOf(Long.MAX_VALUE), Long.valueOf(1l)) {
 
             /**
              *
@@ -1097,7 +1097,6 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                 return super.getMinimum();
             }
         };
-
         maxSizeModel = new SpinnerNumberModel(Long.valueOf(100 * 1024l), Long.valueOf(0l), Long.valueOf(Long.MAX_VALUE), Long.valueOf(1l)) {
 
             /**
@@ -1112,16 +1111,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         };
         fromSize = new SizeSpinner(minSizeModel);
-
         toSize = new SizeSpinner(maxSizeModel);
-
         toSize.setValue(10 * 1024 * 1024l * 1024l);
         final FilterPanel ret = new FilterPanel("[grow,fill][][grow,fill]", "[]");
-
         ret.add(fromSize, "sg 1");
         ret.add(to);
         ret.add(toSize, "sg 1");
-
         return ret;
     }
 
