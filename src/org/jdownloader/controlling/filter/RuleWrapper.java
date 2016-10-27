@@ -203,6 +203,8 @@ public class RuleWrapper<T extends FilterRule> {
                 return fileSizeRule.matches(downloadLink.getVerifiedFileSize());
             } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
                 return fileSizeRule.matches(link.getSize());
+            } else if (checkOnlineStatus(link)) {
+                return fileSizeRule.matches(link.getSize());
             } else {
                 return false;
             }
