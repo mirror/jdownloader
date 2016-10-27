@@ -401,6 +401,14 @@ public class DownloadLinkSandBox {
         return storable.isEnabled();
     }
 
+    public boolean isResumeable() {
+        if (downloadLink != null) {
+            return downloadLink.isResumeable();
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public String toString() {
         return "DownloadLink Instance: " + getName();
