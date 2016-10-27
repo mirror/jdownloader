@@ -140,7 +140,7 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.containsHTML("<title> - (?:Yunfile|Dix3)\\.com - Free File Hosting and Sharing, Permanently Save </title>")) {
+        if (br.containsHTML("<title>\\s*-\\s*(?:Yunfile|Dix3)[^<]*</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Access denied
@@ -159,7 +159,7 @@ public class YunFileCom extends PluginForHost {
         // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
         filename = br.getRegex("Downloading:&nbsp;<a></a>&nbsp;([^<>]*) - [^<>]+<").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) - (?:Yunfile|Dix3)\\.com - Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?)\\s*-\\s*(?:Yunfile|Dix3)[^<]*</title>").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("<h2 class=\"title\">文件下载&nbsp;&nbsp;([^<>\"]*?)</h2>").getMatch(0);
