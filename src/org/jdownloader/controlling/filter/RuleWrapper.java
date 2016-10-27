@@ -313,8 +313,10 @@ public class RuleWrapper<T extends FilterRule> {
                         if (sourceRule.matches(url)) {
                             return true;
                         }
+                        break;
                     default:
                         // nothing
+                        break;
                     }
                 }
             }
