@@ -469,6 +469,7 @@ public class CosmoBoxOrg extends PluginForHost {
             final Form download1 = this.br.getFormByInputFieldKeyValue("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                download1.put("method_free", "Free+Download");
                 /*
                  * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                  */
