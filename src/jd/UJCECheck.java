@@ -2,6 +2,7 @@ package jd;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Map;
@@ -109,6 +110,12 @@ public class UJCECheck {
                  * JceSecurity.isRestricted = false;
                  */
                 isRestrictedField.setAccessible(true);
+                if (Modifier.isFinal(isRestrictedField.getModifiers())) {
+                    // >=1.8U102
+                    Field modifiers = Field.class.getDeclaredField("modifiers");
+                    modifiers.setAccessible(true);
+                    modifiers.setInt(isRestrictedField, isRestrictedField.getModifiers() & ~Modifier.FINAL);
+                }
                 isRestrictedField.set(null, false);
 
                 defaultPolicyField.setAccessible(true);
@@ -143,6 +150,12 @@ public class UJCECheck {
                      * JceSecurity.isRestricted = false;
                      */
                     isRestrictedField.setAccessible(true);
+                    if (Modifier.isFinal(isRestrictedField.getModifiers())) {
+                        // >=1.8U102
+                        Field modifiers = Field.class.getDeclaredField("modifiers");
+                        modifiers.setAccessible(true);
+                        modifiers.setInt(isRestrictedField, isRestrictedField.getModifiers() & ~Modifier.FINAL);
+                    }
                     isRestrictedField.set(null, false);
 
                     defaultPolicyField.setAccessible(true);
