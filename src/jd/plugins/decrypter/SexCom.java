@@ -28,7 +28,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+/|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+/|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+)" })
 public class SexCom extends PornEmbedParser {
 
     public SexCom(PluginWrapper wrapper) {
@@ -118,6 +118,9 @@ public class SexCom extends PornEmbedParser {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| Sex\\.com</title>").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return;
@@ -127,23 +130,19 @@ public class SexCom extends PornEmbedParser {
         if (embedLink != null) {
             br.getPage(embedLink);
         }
-        String externID = br.getRegex("file:[\t\n\r ]*?\"(/video/stream[^<>\"]*?)\"").getMatch(0);
+        String externID = br.getRegex("(file|src):\\s*(\"|')(/video/stream[^<>\"]*?)(\"|')").getMatch(2);
         if (externID == null) {
             externID = br.getRegex("file:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
         }
         if (externID != null) {
-            if (externID.startsWith("/")) {
-                externID = "http://www.sex.com" + externID;
-            }
-            final DownloadLink fina = createDownloadlink("directhttp://" + externID);
+            final DownloadLink fina = createDownloadlink("directhttp://" + br.getURL(externID).toString());
             fina.setFinalFileName(filename + ".mp4");
             decryptedLinks.add(fina);
             return;
         }
         externID = br.getRegex("\"(/link/out\\?id=\\d+)\" data\\-hostname").getMatch(0);
         if (externID != null) {
-            externID = "http://www.sex.com" + externID;
-            decryptedLinks.add(this.createDownloadlink(externID));
+            decryptedLinks.add(this.createDownloadlink(br.getURL(externID).toString()));
             return;
         }
         throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
