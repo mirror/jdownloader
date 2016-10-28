@@ -30,6 +30,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -115,14 +116,20 @@ public class TwitchTv extends PluginForHost {
                 if (downloadLink.getBooleanProperty("encrypted")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
                 }
-
+                if (Thread.currentThread() instanceof SingleDownloadController) {
+                    // we can skip it here
+                    return AvailableStatus.TRUE;
+                }
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.192");
                 br.getHeaders().put("Referer", downloadLink.getContentUrl());
                 final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
                 final StreamInfo streamInfo = downloader.getProbe();
+                if (downloadLink.getBooleanProperty("encrypted")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
+                }
                 if (streamInfo == null) {
-                    return AvailableStatus.FALSE;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
                 final long estimatedSize = m3u8PlayList.getEstimatedSize();
