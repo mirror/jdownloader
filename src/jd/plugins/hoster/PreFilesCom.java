@@ -57,7 +57,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision: 31456 $", interfaceVersion = 2, names = { "prefiles.com" }, urls = { "https?://(www\\.)?prefiles\\.com/[a-z0-9]{12}(?:/\\S+)?" }) 
+@HostPlugin(revision = "$Revision: 31456 $", interfaceVersion = 2, names = { "prefiles.com" }, urls = { "https?://(www\\.)?prefiles\\.com/[a-z0-9]{12}(?:/\\S+)?" })
 public class PreFilesCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -295,6 +295,7 @@ public class PreFilesCom extends antiDDoSForHost {
                     }
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     dlForm.put("code", code);
+                    logger.info("captchaurl: " + captchaurl);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
@@ -442,7 +443,7 @@ public class PreFilesCom extends antiDDoSForHost {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (correctedBR.contains("Wrong captcha")) {
+            if (correctedBR.contains("Wrong captchaptcha") || correctedBR.contains("Enter captcha")) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
