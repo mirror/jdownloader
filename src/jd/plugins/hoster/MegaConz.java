@@ -551,7 +551,8 @@ public class MegaConz extends PluginForHost {
         if (response == null) {
             final String error = getError(br);
             if ("-6".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
             }
             if ("-9".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
