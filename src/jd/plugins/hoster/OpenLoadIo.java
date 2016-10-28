@@ -179,6 +179,12 @@ public class OpenLoadIo extends antiDDoSForHost {
                     break;
                 }
             }
+            // if (urls.length == 1) {
+            // br.getPage(urls[0].getPluginPatternMatcher());
+            // if (br.containsHTML("find the file you are looking for")) {
+            // urls[0].setAvailable(false);
+            // }
+            // }
         } catch (final Exception e) {
             return false;
         }
@@ -282,6 +288,9 @@ public class OpenLoadIo extends antiDDoSForHost {
                 br.addAllowedResponseCodes(500);
                 br.setFollowRedirects(true);
                 getPage(downloadLink.getDownloadURL());
+                if (br.containsHTML("We can't find the file you are looking for")) {
+                    getPage("https://openload.co/embed/" + fid + "/");
+                }
                 if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -292,11 +301,12 @@ public class OpenLoadIo extends antiDDoSForHost {
                 // not sure if this is actually used
                 String result = decode(html);
                 if (result == null) {
-                    result = decode20161010(html);
-                }
-                if (result == null) {
                     result = decode20161026(html);
                 }
+                if (result == null) {
+                    result = decode20161010(html);
+                }
+                getLogger().info("Result: " + result);
                 dllink = br.getURL("/stream/" + result + "?mime=true").toString();
                 boolean fol = br.isFollowingRedirects();
                 try {
