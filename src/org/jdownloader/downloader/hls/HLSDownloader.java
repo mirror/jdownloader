@@ -223,12 +223,13 @@ public class HLSDownloader extends DownloadInterface {
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     System.out.println(line);
                     try {
-                        if (line.trim().startsWith("Duration:")) {
+                        final String trimmedLine = line.trim();
+                        if (trimmedLine.startsWith("Duration:")) {
                             if (!line.contains("Duration: N/A")) {
                                 String duration = new Regex(line, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
                                 HLSDownloader.this.duration = formatStringToMilliseconds(duration);
                             }
-                        } else if (line.trim().startsWith("Stream #")) {
+                        } else if (trimmedLine.startsWith("Stream #")) {
                             final String bitrate = new Regex(line, "(\\d+) kb\\/s").getMatch(0);
                             if (bitrate != null) {
                                 if (HLSDownloader.this.bitrate == -1) {
@@ -236,11 +237,11 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                                 HLSDownloader.this.bitrate += Integer.parseInt(bitrate);
                             }
-                        } else if (line.trim().startsWith("Output #0")) {
+                        } else if (trimmedLine.startsWith("Output #0")) {
                             if (duration > 0 && bitrate > 0) {
                                 link.setDownloadSize(((duration / 1000) * bitrate * 1024) / 8);
                             }
-                        } else if (line.trim().startsWith("frame=")) {
+                        } else if (trimmedLine.startsWith("frame=") || trimmedLine.startsWith("size=")) {
                             final String size = new Regex(line, "size=\\s*(\\S+)\\s+").getMatch(0);
                             long newSize = SizeFormatter.getSize(size);
                             bytesWritten = newSize;
@@ -254,14 +255,12 @@ public class HLSDownloader extends DownloadInterface {
                             } else {
                                 link.setDownloadSize(bytesWritten);
                             }
-
                         }
                     } catch (Throwable e) {
                         if (logger != null) {
                             logger.log(e);
                         }
                     }
-
                 };
             };
             final String format = getFFmpegFormat(ffmpeg);
@@ -443,8 +442,10 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected ArrayList<String> buildCommandLine(String format, FFmpeg ffmpeg, String out) {
-        ArrayList<String> l = new ArrayList<String>();
+        final ArrayList<String> l = new ArrayList<String>();
         l.add(ffmpeg.getFullPath());
+        l.add("-analyzeduration");// required for low bandwidth streams!
+        l.add("15000000");// 15 secs
         l.add("-i");
         l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
         if (isMapMetaDataEnabled()) {
@@ -915,7 +916,7 @@ public class HLSDownloader extends DownloadInterface {
         if (!isAcceptDownloadStopAsValidEnd()) {
             for (int index = 0; index < m3u8Playlists.size(); index++) {
                 if (!m3u8Playlists.isSegmentLoaded(index)) {
-                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, LinkStatus.VALUE_NETWORK_IO_ERROR);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
             }
         }

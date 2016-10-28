@@ -67,8 +67,8 @@ public class FFprobe extends AbstractFFmpegBinary {
             commandLine.add("48");
             commandLine.add("-show_format");
             commandLine.add("-show_streams");
-            commandLine.add("-probesize");
-            commandLine.add("24000");
+            commandLine.add("-analyzeduration");
+            commandLine.add("15000000");// 15 secs
             commandLine.add("-of");
             commandLine.add("json");
             commandLine.add("-i");
