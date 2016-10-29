@@ -58,7 +58,7 @@ public class MovikiRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("404.php") || br.containsHTML(">window\\.location=\\'/404\\.php\\'")) {
+        if (br.getURL().contains("404.php") || br.containsHTML(">window\\.location=\\'/404\\.php\\'|Это личное видео")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"block_header\">([^<>\"]*?)<").getMatch(0);
