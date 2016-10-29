@@ -44,7 +44,7 @@ public class BigimageTo extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = -1;
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
