@@ -63,7 +63,7 @@ public class BigholestubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("id=\"playerbox\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("id=\"(playerbox|Video_Player)\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
