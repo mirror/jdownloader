@@ -49,7 +49,7 @@ public class BollywoodHungamaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.bollywoodhungama.com//xml/videos/content/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
-        if (br.containsHTML(">We\\'re sorry, the page you requested cannot be found")) {
+        if (br.containsHTML("sorry, the page you requested cannot be found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Order = Size, checked via JD
