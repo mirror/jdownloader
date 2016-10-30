@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,15 +29,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32927 $", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?coinlink\\.co/[A-Za-z0-9]+" }) 
-public class CnLnk extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 32927 $", interfaceVersion = 2, names = { "coinlink.co" }, urls = { "https?://(?:www\\.)?coinlink\\.co/[A-Za-z0-9]+" })
+public class CnLnk extends antiDDoSForDecrypt {
 
     public CnLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +51,7 @@ public class CnLnk extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -62,29 +64,40 @@ public class CnLnk extends PluginForDecrypt {
         if (form.hasInputFieldByName("captcha")) {
             final String code = getCaptchaCode("cp.php", param);
             form.put("captcha", Encoding.urlEncode(code));
-        }
-        br.submitForm(form);
-        if (br.containsHTML("<script>alert\\('(?:Empty Captcha|Incorrect Captcha)\\s*!'\\);")) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
-        form = br.getForm(0);
-        if (form == null) {
-            return null;
-        }
-        // we want redirect off here
-        br.setFollowRedirects(false);
-        br.submitForm(form);
-        final String finallink = br.getRedirectLocation();
-        if (finallink == null) {
-            if (br.containsHTML("<script>alert\\('(?:Link not found)\\s*!'\\);")) {
-                // invalid link
-                logger.warning("Invalid link : " + parameter);
-                return decryptedLinks;
+            submitForm(form);
+            if (br.containsHTML("<script>alert\\('(?:Empty Captcha|Incorrect Captcha)\\s*!'\\);")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            form = br.getForm(0);
+            if (form == null) {
+                return null;
+            }
+            // we want redirect off here
+            br.setFollowRedirects(false);
+            submitForm(form);
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                if (br.containsHTML("<script>alert\\('(?:Link not found)\\s*!'\\);")) {
+                    // invalid link
+                    logger.warning("Invalid link : " + parameter);
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else if (form.containsHTML("class=(\"|')g-recaptcha\\1")) {
+            // recaptchav2 is different.
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            submitForm(form);
+            final String finallink = br.getRegex(".+<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s+Link\\s*</a>").getMatch(1);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
-        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
