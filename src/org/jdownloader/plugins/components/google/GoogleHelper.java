@@ -18,19 +18,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.InputDialogInterface;
@@ -50,6 +37,19 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     private static final String COOKIES2                                      = "googleComCookies";
@@ -204,6 +204,9 @@ public class GoogleHelper {
                     }
                 }
             }
+            this.br.clearCookies("google.com");
+            this.br.clearCookies("youtube.com");
+            this.br.setCookie("http://google.com", "PREF", "hl=en-GB");
             this.br.setFollowRedirects(true);
             /* first call to google */
             getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
