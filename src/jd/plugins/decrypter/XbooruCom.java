@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "https?://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "https?://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9\\_]+" })
 public class XbooruCom extends PluginForDecrypt {
 
     public XbooruCom(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class XbooruCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "tags=([A-Za-z0-9]+)").getMatch(0);
+        final String fpName = new Regex(parameter, "tags=([A-Za-z0-9\\_]+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
 
