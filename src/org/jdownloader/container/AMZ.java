@@ -83,6 +83,7 @@ public class AMZ extends PluginsC {
             cs.setStatus(ContainerStatus.STATUS_FINISHED);
             return cs;
         } catch (Exception e) {
+            cs.setStatus(ContainerStatus.STATUS_FAILED);
             logger.log(e);
         }
         return null;

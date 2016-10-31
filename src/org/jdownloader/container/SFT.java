@@ -26,17 +26,14 @@ public class SFT extends PluginsC {
 
     @Override
     public ContainerStatus callDecryption(File file) {
-        ContainerStatus cs = new ContainerStatus(file);
-
+        final ContainerStatus cs = new ContainerStatus(file);
+        cs.setStatus(ContainerStatus.STATUS_FAILED);
         try {
-            sftContainer container = sftBinary.load(file);
-
-            FileInfoDialog dialog = new FileInfoDialog(container);
+            final sftContainer container = sftBinary.load(file);
+            final FileInfoDialog dialog = new FileInfoDialog(container);
             Dialog.getInstance().showDialog(dialog);
-
             if (container.isDecrypted()) {
-                ArrayList<String> linkList = container.getFormatedLinks();
-
+                final ArrayList<String> linkList = container.getFormatedLinks();
                 if (!linkList.isEmpty()) {
                     for (String element : linkList) {
                         cls.add(new CrawledLink(element));
@@ -45,12 +42,11 @@ public class SFT extends PluginsC {
                 } else {
                     throw new Exception("container didn't contain any ftp links");
                 }
-            } else {
-                cs.setStatus(ContainerStatus.STATUS_FAILED);
             }
         } catch (DialogNoAnswerException e) {
-            cs.setStatus(ContainerStatus.STATUS_FAILED);
+            cs.setStatus(ContainerStatus.STATUS_ABORT);
         } catch (Exception e) {
+            logger.log(e);
             cs.setStatus(ContainerStatus.STATUS_FAILED);
             if ((e.getMessage() != null) | (e.getMessage().length() > 0)) {
                 UserIO.getInstance().requestMessageDialog(e.getMessage());
@@ -58,7 +54,6 @@ public class SFT extends PluginsC {
                 UserIO.getInstance().requestMessageDialog("sft decrypt error");
             }
         }
-
         return cs;
     }
 

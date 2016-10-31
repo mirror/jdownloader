@@ -104,7 +104,7 @@ public class JD1Import extends PluginsC {
                         return cs;
                     } catch (DialogNoAnswerException e) {
                         if (e.isCausedbyESC() || e.isCausedByTimeout()) {
-                            cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                            cs.setStatus(ContainerStatus.STATUS_ABORT);
                             return cs;
                         }
                     }

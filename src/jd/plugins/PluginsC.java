@@ -159,8 +159,8 @@ public abstract class PluginsC {
                 k = key;
             }
             try {
-                callDecryption(file);
-                if (isDeleteContainer(source, file)) {
+                final ContainerStatus cs = callDecryption(file);
+                if (cs != null && cs.isStatus(ContainerStatus.STATUS_FINISHED) && isDeleteContainer(source, file)) {
                     deleteContainer(source, file);
                 }
             } catch (Throwable e) {
