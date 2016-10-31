@@ -1345,9 +1345,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2272,7 +2272,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     final long fileLength = linkcollectorLists.get(0).length();
                     if (fileLength > 0) {
                         final int paddedFileLength = (((int) fileLength / 32768) + 1) * 32768;
-                        bufferSize = Math.max(32768, paddedFileLength);
+                        bufferSize = Math.max(32768, Math.min(1024 * 1024, paddedFileLength));
                     } else {
                         bufferSize = 32768;
                     }
