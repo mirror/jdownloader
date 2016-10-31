@@ -17,19 +17,28 @@ public class FilePackageStorable implements Storable {
     @SuppressWarnings("unused")
     private FilePackageStorable(/* Storable */) {
         this.filePackage = FilePackage.getInstance();
+        links = new ArrayList<DownloadLinkStorable>();
+    }
+
+    public FilePackageStorable(FilePackage filePackage, final boolean includeChildren) {
+        this.filePackage = filePackage;
+        if (!includeChildren) {
+            links = new ArrayList<DownloadLinkStorable>();
+        } else {
+            links = new ArrayList<DownloadLinkStorable>(filePackage.size());
+            boolean readL = filePackage.getModifyLock().readLock();
+            try {
+                for (DownloadLink link : filePackage.getChildren()) {
+                    links.add(new DownloadLinkStorable(link));
+                }
+            } finally {
+                filePackage.getModifyLock().readUnlock(readL);
+            }
+        }
     }
 
     public FilePackageStorable(FilePackage filePackage) {
-        this.filePackage = filePackage;
-        links = new ArrayList<DownloadLinkStorable>(filePackage.size());
-        boolean readL = filePackage.getModifyLock().readLock();
-        try {
-            for (DownloadLink link : filePackage.getChildren()) {
-                links.add(new DownloadLinkStorable(link));
-            }
-        } finally {
-            filePackage.getModifyLock().readUnlock(readL);
-        }
+        this(filePackage, false);
     }
 
     public long getUID() {
