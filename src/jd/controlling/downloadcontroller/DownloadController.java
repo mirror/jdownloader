@@ -1002,7 +1002,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 final long fileLength = downloadLists.get(0).length();
                 if (fileLength > 0) {
                     final int paddedFileLength = (((int) fileLength / 32768) + 1) * 32768;
-                    bufferSize = Math.max(32768, paddedFileLength);
+                    bufferSize = Math.max(32768, Math.min(1024 * 1024, paddedFileLength));
                 } else {
                     bufferSize = 32768;
                 }
