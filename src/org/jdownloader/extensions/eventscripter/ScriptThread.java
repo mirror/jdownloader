@@ -250,7 +250,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public void requireJavascript(final String fileOrUrl) throws IOException {
-        ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.securityLoading_title(), T.T.securityLoading(fileOrUrl), new AbstractIcon(IconKey.ICON_SERVER, 32), null, null) {
+        final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.securityLoading_title(), T.T.securityLoading(fileOrUrl), new AbstractIcon(IconKey.ICON_SERVER, 32), null, null) {
             @Override
             public String getDontShowAgainKey() {
                 return "ASK_TO_REQUIRE_JS_" + fileOrUrl;
@@ -272,21 +272,25 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         // return;
         // }
         if (d.show().getCloseReason() == CloseReason.OK) {
+            final String js;
             if (fileOrUrl.matches("^https?\\:\\/\\/.+")) {
                 // url
-                Browser br = new Browser();
-                String js = br.getPage(fileOrUrl);
-                logger.info(js);
-                evalUNtrusted(js);
+                final Browser br = new Browser();
+                br.setFollowRedirects(true);
+                js = br.getPage(fileOrUrl);
             } else {
                 File file = new File(fileOrUrl);
                 if (!file.exists()) {
                     file = Application.getResource(fileOrUrl);
                 }
-                String js = IO.readFileToString(file);
-                logger.info(js);
-                evalUNtrusted(js);
+                if (file.exists()) {
+                    js = IO.readFileToString(file);
+                } else {
+                    js = "";
+                }
             }
+            logger.info(js);
+            evalUNtrusted(js);
         }
     }
 
