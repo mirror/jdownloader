@@ -240,7 +240,7 @@ public class PreFilesCom extends antiDDoSForHost {
             }
             // how many forms deep do you want to try.
             int repeat = 3;
-            for (int i = 1; i < repeat; i++) {
+            for (int i = 0; i < repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
@@ -293,7 +293,12 @@ public class PreFilesCom extends antiDDoSForHost {
                         logger.warning("Standard captcha captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                    final String code;
+                    if (i > 1) {
+                        code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                    } else {
+                        code = getCaptchaCode("manual-xfilesharingprobasic", captchaurl, downloadLink);
+                    }
                     dlForm.put("code", code);
                     logger.info("captchaurl: " + captchaurl);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
@@ -325,8 +330,8 @@ public class PreFilesCom extends antiDDoSForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat - 1)) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!(" + i + ")");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
@@ -335,6 +340,9 @@ public class PreFilesCom extends antiDDoSForHost {
                     break;
                 }
             }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
