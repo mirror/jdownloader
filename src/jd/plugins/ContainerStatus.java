@@ -24,6 +24,7 @@ import org.jdownloader.logging.LogController;
 
 public class ContainerStatus {
 
+    public static final int STATUS_ABORT    = 1 << 3;
     public static final int STATUS_FAILED   = 1 << 2;
     public static final int STATUS_FINISHED = 1 << 1;
     public static final int TODO            = 1 << 0;
@@ -40,23 +41,13 @@ public class ContainerStatus {
         container = lc;
     }
 
-    /**
-     * Fügt einen LinkStatus.* Status hinzu.Der alte Status wird dabei nicht gelöscht.
-     * 
-     * @param status
-     */
-    public void addStatus(int status) {
-        latestStatus = status;
-        this.status |= status;
-    }
-
     public File getContainer() {
         return container;
     }
 
     /**
      * Gibt zurück ob der zugehörige Link einen bestimmten Status hat.
-     * 
+     *
      * @param status
      * @return
      */
@@ -76,7 +67,7 @@ public class ContainerStatus {
 
     /**
      * Setzt den Linkstatus. Es dürfen nur LinkStatus.*STATUS ids verwendet werden
-     * 
+     *
      * @param status
      */
     public void setStatus(int status) {

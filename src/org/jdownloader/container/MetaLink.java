@@ -38,16 +38,14 @@ public class MetaLink extends PluginsC {
     }
 
     public ContainerStatus callDecryption(File lc) {
-        ContainerStatus cs = new ContainerStatus(lc);
-
+        final ContainerStatus cs = new ContainerStatus(lc);
         /* load plugin first, then we can include it */
-        PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt("metalinker.org");
-
+        final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt("metalinker.org");
         if (decrypter == null) {
             cs.setStatus(ContainerStatus.STATUS_FAILED);
             return cs;
         }
-        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         try {
             decrypter.pluginAPI("decryptString", JDIO.readFileToString(lc), links);
         } catch (final Exception e) {

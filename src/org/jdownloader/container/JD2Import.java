@@ -96,7 +96,7 @@ public class JD2Import extends PluginsC {
                 return cs;
             }
         } catch (DialogNoAnswerException e) {
-            cs.setStatus(ContainerStatus.STATUS_FINISHED);
+            cs.setStatus(ContainerStatus.STATUS_ABORT);
             return cs;
         } catch (Throwable e) {
             logger.log(e);
