@@ -4152,7 +4152,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Import Accounts?" })
     String AccountLoader_onNewFile_title();
 
-    @Default(lngs = { "en" }, values = { "Do you want to import these Premium Accou\r\n%s1?" })
+    @Default(lngs = { "en" }, values = { "Do you want to import these Premium Account(s)\r\n%s1?" })
     String AccountLoader_onNewFile_msg(String absolutePath);
 
     @Default(lngs = { "en" }, values = { "Could not import and new Accounts..." })
