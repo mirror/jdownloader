@@ -199,12 +199,16 @@ public class RuleWrapper<T extends FilterRule> {
         final CompiledFilesizeFilter fileSizeRule = getFilesizeRule();
         if (fileSizeRule != null) {
             final DownloadLink downloadLink = link.getDownloadLink();
-            if (downloadLink != null && downloadLink.getVerifiedFileSize() >= 0) {
-                return fileSizeRule.matches(downloadLink.getVerifiedFileSize());
-            } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
-                return fileSizeRule.matches(link.getSize());
-            } else if (checkOnlineStatus(link)) {
-                return fileSizeRule.matches(link.getSize());
+            if (downloadLink != null) {
+                if (downloadLink.getVerifiedFileSize() >= 0) {
+                    return fileSizeRule.matches(downloadLink.getVerifiedFileSize());
+                } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
+                    return fileSizeRule.matches(link.getSize());
+                } else if (checkOnlineStatus(link)) {
+                    return fileSizeRule.matches(link.getSize());
+                } else {
+                    return false;
+                }
             } else {
                 return false;
             }
@@ -239,15 +243,19 @@ public class RuleWrapper<T extends FilterRule> {
         final CompiledRegexFilter fileNameRule = getFileNameRule();
         if (fileNameRule != null) {
             final DownloadLink downloadLink = link.getDownloadLink();
-            if (downloadLink != null && (downloadLink.getFinalFileName() != null || downloadLink.getForcedFileName() != null)) {
-                // final or forced filename available
-                return fileNameRule.matches(link.getName());
-            } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
-                // file is online
-                return fileNameRule.matches(link.getName());
-            } else if (checkOnlineStatus(link)) {
-                // onlinestatus matches so we trust the available filename
-                return fileNameRule.matches(link.getName());
+            if (downloadLink != null) {
+                if (downloadLink.getFinalFileName() != null || downloadLink.getForcedFileName() != null) {
+                    // final or forced filename available
+                    return fileNameRule.matches(link.getName());
+                } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
+                    // file is online
+                    return fileNameRule.matches(link.getName());
+                } else if (checkOnlineStatus(link)) {
+                    // onlinestatus matches so we trust the available filename
+                    return fileNameRule.matches(link.getName());
+                } else {
+                    return false;
+                }
             } else {
                 return false;
             }

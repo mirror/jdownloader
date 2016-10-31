@@ -1680,13 +1680,18 @@ public class LinkCrawler {
                             try {
                                 final String maybeURL;
                                 if (checkParam.contains("%3")) {
-                                    maybeURL = "http://" + URLDecoder.decode(checkParam, "UTF-8").replaceFirst("^:?/?/?", "");
+                                    maybeURL = URLDecoder.decode(checkParam, "UTF-8").replaceFirst("^:?/?/?", "");
                                 } else {
-                                    maybeURL = "http://" + checkParam.replaceFirst("^:?/?/?", "");
+                                    maybeURL = checkParam.replaceFirst("^:?/?/?", "");
                                 }
-                                final URL dummyURL = new URL(maybeURL);
+                                final URL dummyURL;
+                                if (HTMLParser.getProtocol(maybeURL) == null) {
+                                    dummyURL = new URL("http://" + maybeURL.replaceFirst("^(.+?://)", ""));
+                                } else {
+                                    dummyURL = new URL(maybeURL);
+                                }
                                 if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".")) {
-                                    possibleEmbeddedLinks.add(maybeURL);
+                                    possibleEmbeddedLinks.add(dummyURL.toString());
                                 }
                             } catch (final MalformedURLException e) {
                             }
