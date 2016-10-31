@@ -71,7 +71,6 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.afterdownload.AccountLoader;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationManager;
@@ -272,7 +271,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         });
 
-        new AccountLoader().init();
     }
 
     public void requestSaving() {

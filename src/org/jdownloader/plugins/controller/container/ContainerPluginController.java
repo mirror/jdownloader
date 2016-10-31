@@ -70,6 +70,11 @@ public class ContainerPluginController {
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
+        try {
+            plugins.add(new org.jdownloader.container.JD2AccountsImport());
+        } catch (final Throwable e) {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+        }
         list = Collections.unmodifiableList(plugins);
     }
 
