@@ -1072,29 +1072,36 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     int packageIndex = 0;
                     for (FilePackage pkg : packages) {
                         final String packageEntryID = String.format(packageFormat, packageIndex++);
-                        /* convert FilePackage to JSon */
-                        final FilePackageStorable packageStorable = new FilePackageStorable(pkg);
-                        final List<DownloadLinkStorable> linkStorables = new ArrayList<DownloadLinkStorable>(packageStorable.getLinks());
-                        packageStorable.getLinks().clear();
-                        final ZipEntry packageEntry = new ZipEntry(packageEntryID);
-                        packageEntry.setMethod(ZipEntry.DEFLATED);
-                        zos.putNextEntry(packageEntry);
-                        JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
-                        zos.closeEntry();
-                        final String childFormat;
-                        if (linkStorables.size() >= 10) {
-                            childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
-                        } else {
-                            childFormat = "%02d";
-                        }
-                        int childIndex = 0;
-                        for (final DownloadLinkStorable linkStorable : linkStorables) {
-                            final String childEntryID = String.format(childFormat, childIndex++);
-                            final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
-                            linkEntry.setMethod(ZipEntry.DEFLATED);
-                            zos.putNextEntry(linkEntry);
-                            JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                        {
+                            /* convert FilePackage to JSon */
+                            final FilePackageStorable packageStorable = new FilePackageStorable(pkg, false);
+                            final ZipEntry packageEntry = new ZipEntry(packageEntryID);
+                            packageEntry.setMethod(ZipEntry.DEFLATED);
+                            zos.putNextEntry(packageEntry);
+                            JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
                             zos.closeEntry();
+                        }
+                        final boolean readL = pkg.getModifyLock().readLock();
+                        try {
+                            final int childrenSize = pkg.getChildren().size();
+                            final String childFormat;
+                            if (childrenSize >= 10) {
+                                childFormat = String.format("%%0%dd", (int) Math.log10(childrenSize) + 1);
+                            } else {
+                                childFormat = "%02d";
+                            }
+                            int childIndex = 0;
+                            for (final DownloadLink link : pkg.getChildren()) {
+                                final DownloadLinkStorable linkStorable = new DownloadLinkStorable(link);
+                                final String childEntryID = String.format(childFormat, childIndex++);
+                                final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
+                                linkEntry.setMethod(ZipEntry.DEFLATED);
+                                zos.putNextEntry(linkEntry);
+                                JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                                zos.closeEntry();
+                            }
+                        } finally {
+                            pkg.getModifyLock().readUnlock(readL);
                         }
                     }
                     final DownloadControllerStorable dcs = new DownloadControllerStorable();

@@ -121,14 +121,14 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                     final Thread thread = LinkCollector.getInstance().getAddLinksThread(job, lcReference);
                     thread.run();
                 } finally {
-                    if (isInitialized()) {
-                        new EDTRunner() {
-                            @Override
-                            protected void runInEDT() {
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            if (isInitialized()) {
                                 dispose();
                             }
-                        };
-                    }
+                        }
+                    };
                 }
             }
         };

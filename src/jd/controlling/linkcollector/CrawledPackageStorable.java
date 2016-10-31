@@ -63,11 +63,11 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public String getSorterId() {
-        PackageControllerComparator<CrawledLink> lSorter = pkg.getCurrentSorter();
+        final PackageControllerComparator<CrawledLink> lSorter = pkg.getCurrentSorter();
         if (lSorter == null) {
             return null;
         }
-        boolean asc = lSorter.isAsc();
+        final boolean asc = lSorter.isAsc();
         return ((asc ? "ASC" : "DSC") + "." + lSorter.getID());
     }
 
@@ -151,15 +151,23 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public CrawledPackageStorable(CrawledPackage pkg) {
+        this(pkg, true);
+    }
+
+    public CrawledPackageStorable(CrawledPackage pkg, boolean includeChildren) {
         this.pkg = pkg;
-        boolean readL = pkg.getModifyLock().readLock();
-        try {
-            links = new ArrayList<CrawledLinkStorable>(pkg.getChildren().size());
-            for (CrawledLink link : pkg.getChildren()) {
-                links.add(new CrawledLinkStorable(link));
+        if (!includeChildren) {
+            links = new ArrayList<CrawledLinkStorable>();
+        } else {
+            final boolean readL = pkg.getModifyLock().readLock();
+            try {
+                links = new ArrayList<CrawledLinkStorable>(pkg.getChildren().size());
+                for (CrawledLink link : pkg.getChildren()) {
+                    links.add(new CrawledLinkStorable(link));
+                }
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
             }
-        } finally {
-            pkg.getModifyLock().readUnlock(readL);
         }
     }
 

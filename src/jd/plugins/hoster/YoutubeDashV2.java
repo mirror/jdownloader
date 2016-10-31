@@ -1271,6 +1271,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
 
                 @Override
+                public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
+                    httpServer = startHttpServer();
+                    try {
+                        return super.generateM4a(progress, out, audioIn);
+                    } finally {
+                        stopHttpServer();
+                    }
+                }
+
+                @Override
                 public boolean demuxM4a(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
                     httpServer = startHttpServer();
                     try {

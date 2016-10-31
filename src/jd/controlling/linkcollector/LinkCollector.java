@@ -2338,59 +2338,59 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         };
                         int packageIndex = 0;
                         for (final CrawledPackage pkg : packages) {
-                            /* convert FilePackage to JSon */
-                            final CrawledPackageStorable packageStorable = new CrawledPackageStorable(pkg);
-                            /* save packageID */
-                            final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
-                            if (crawledPackageMappingID != null) {
-                                packageStorable.setPackageID(crawledPackageMappingID.getMappingID());
-                            }
-                            if (!CrawledPackageStorable.TYPE.NORMAL.equals(packageStorable.getType())) {
-                                if (CrawledPackageStorable.TYPE.VARIOUS.equals(packageStorable.getType())) {
-                                    /* save ID for variousMap */
-                                    for (CrawledLinkStorable link : packageStorable.getLinks()) {
-                                        final CrawledLink cLink = link._getCrawledLink();
-                                        final CrawledPackageMappingID id = getIDFromMap(variousMap, cLink);
-                                        if (id != null) {
-                                            link.setID(id.getMappingID());
-                                        }
-                                    }
-                                } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(packageStorable.getType())) {
-                                    /* save ID for offlineMap */
-                                    for (CrawledLinkStorable link : packageStorable.getLinks()) {
-                                        final CrawledLink cLink = link._getCrawledLink();
-                                        final CrawledPackageMappingID id = getIDFromMap(offlineMap, cLink);
-                                        if (id != null) {
-                                            link.setID(id.getMappingID());
-                                        }
-                                    }
-                                }
-                            }
-                            final List<CrawledLinkStorable> linkStorables = new ArrayList<CrawledLinkStorable>(packageStorable.getLinks());
-                            packageStorable.getLinks().clear();
                             final String packageEntryID = String.format(packageFormat, packageIndex++);
-                            final ZipEntry packageEntry = new ZipEntry(packageEntryID);
-                            packageEntry.setMethod(ZipEntry.DEFLATED);
-                            zos.putNextEntry(packageEntry);
-                            JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
-                            zos.closeEntry();
-                            final String childFormat;
-                            if (linkStorables.size() >= 10) {
-                                childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
-                            } else {
-                                childFormat = "%02d";
-                            }
-                            int childIndex = 0;
-                            for (final CrawledLinkStorable linkStorable : linkStorables) {
-                                final String childEntryID = String.format(childFormat, childIndex++);
-                                final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
-                                linkEntry.setMethod(ZipEntry.DEFLATED);
-                                zos.putNextEntry(linkEntry);
-                                JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                            {
+                                /* convert FilePackage to JSon */
+                                final CrawledPackageStorable packageStorable = new CrawledPackageStorable(pkg, false);
+                                /* save packageID */
+                                final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
+                                if (crawledPackageMappingID != null) {
+                                    packageStorable.setPackageID(crawledPackageMappingID.getMappingID());
+                                }
+                                final ZipEntry packageEntry = new ZipEntry(packageEntryID);
+                                packageEntry.setMethod(ZipEntry.DEFLATED);
+                                zos.putNextEntry(packageEntry);
+                                JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
                                 zos.closeEntry();
                             }
+                            final boolean readL = pkg.getModifyLock().readLock();
+                            try {
+                                final int childrenSize = pkg.getChildren().size();
+                                final String childFormat;
+                                if (childrenSize >= 10) {
+                                    childFormat = String.format("%%0%dd", (int) Math.log10(childrenSize) + 1);
+                                } else {
+                                    childFormat = "%02d";
+                                }
+                                int childIndex = 0;
+                                for (final CrawledLink link : pkg.getChildren()) {
+                                    final CrawledLinkStorable linkStorable = new CrawledLinkStorable(link);
+                                    CrawledPackageMappingID id = null;
+                                    switch (pkg.getType()) {
+                                    case VARIOUS:
+                                        id = getIDFromMap(variousMap, link);
+                                        break;
+                                    case OFFLINE:
+                                        id = getIDFromMap(offlineMap, link);
+                                        break;
+                                    default:
+                                        break;
+                                    }
+                                    if (id != null) {
+                                        linkStorable.setID(id.getMappingID());
+                                    }
+                                    final String childEntryID = String.format(childFormat, childIndex++);
+                                    final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
+                                    linkEntry.setMethod(ZipEntry.DEFLATED);
+                                    zos.putNextEntry(linkEntry);
+                                    JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                                    zos.closeEntry();
+                                }
+                            } finally {
+                                pkg.getModifyLock().readUnlock(readL);
+                            }
                         }
-                        LinkCollectorStorable lcs = new LinkCollectorStorable();
+                        final LinkCollectorStorable lcs = new LinkCollectorStorable();
                         try {
                             /*
                              * set current RootPath of JDownloader, so we can update it when user moves JDownloader folder
