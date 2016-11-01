@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+\\&uploadid=\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+\\&uploadid=\\d+)" })
 public class ThreehundredTwenteekIn extends PluginForDecrypt {
 
     public ThreehundredTwenteekIn(PluginWrapper wrapper) {
@@ -78,23 +79,13 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
                     logger.info("Decryption aborted by user");
                     return decryptedLinks;
                 }
-                br.getPage("http://320k.in/index.php?surf=redirect&url=" + singleLink);
-                finallink = decryptSingle(param);
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                if (finallink.contains("320k.in/") && !finallink.contains("320k.in/referer")) {
-                    continue;
-                }
+                finallink = Request.getLocation("/index.php?surf=redirect&url=" + singleLink, br.getRequest());
                 final DownloadLink dl = createDownloadlink(finallink);
                 if (fp != null) {
-                    dl._setFilePackage(fp);
+                    fp.add(dl);
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
-                distribute(dl);
             }
-
         }
 
         return decryptedLinks;
