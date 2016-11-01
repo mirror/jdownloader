@@ -529,9 +529,9 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait|Vous devez attendre)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait|you can wait|Vous devez attendre)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
-            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait|Vous devez attendre)[^<>]+)").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait|you can wait|Vous devez attendre)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
