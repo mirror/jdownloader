@@ -332,6 +332,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
+            dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
                 /* No licence key present in html and/or no player --> No video --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
