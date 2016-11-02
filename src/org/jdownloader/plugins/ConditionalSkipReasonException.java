@@ -3,7 +3,7 @@ package org.jdownloader.plugins;
 public class ConditionalSkipReasonException extends Exception {
 
     /**
-     * 
+     *
      */
     private static final long           serialVersionUID = 6115409562693904160L;
     private final ConditionalSkipReason skipReason;
@@ -13,6 +13,10 @@ public class ConditionalSkipReasonException extends Exception {
     }
 
     public ConditionalSkipReasonException(ConditionalSkipReason skipReason) {
-        this.skipReason = skipReason;
+        if (skipReason == null) {
+            throw new IllegalArgumentException("ConditionalSkipReason is null");
+        } else {
+            this.skipReason = skipReason;
+        }
     }
 }
