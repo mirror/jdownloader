@@ -63,6 +63,16 @@ public class AccountInfo extends Property {
      */
     private boolean           specialTraffic         = false;
 
+    private boolean           account_trafficRefill  = true;
+
+    public boolean isTrafficRefill() {
+        return account_trafficRefill;
+    }
+
+    public void setTrafficRefill(boolean account_trafficRefill) {
+        this.account_trafficRefill = account_trafficRefill;
+    }
+
     public long getCreateTime() {
         return account_createTime;
     }

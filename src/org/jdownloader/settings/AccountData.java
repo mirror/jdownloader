@@ -75,6 +75,16 @@ public class AccountData implements Storable {
 
     private String              statusString;
 
+    private boolean             trafficRefill         = true;
+
+    public boolean isTrafficRefill() {
+        return trafficRefill;
+    }
+
+    public void setTrafficRefill(boolean account_trafficRefill) {
+        this.trafficRefill = account_trafficRefill;
+    }
+
     public String getStatusString() {
         return statusString;
     }
@@ -120,6 +130,7 @@ public class AccountData implements Storable {
                  */
                 ret.infoProperties = new HashMap<String, Object>();
             }
+            ret.trafficRefill = ai.isTrafficRefill();
             ret.createTime = ai.getCreateTime();
             ret.trafficLeft = ai.getTrafficLeft();
             ret.trafficMax = ai.getTrafficMax();
@@ -260,6 +271,7 @@ public class AccountData implements Storable {
             ai.setTrafficMax(trafficMax);
             ai.setValidUntil(validUntil);
             ai.setStatus(statusString);
+            ai.setTrafficRefill(trafficRefill);
             if (trafficUnlimited) {
                 ai.setUnlimitedTraffic();
             }
