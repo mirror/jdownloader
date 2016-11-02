@@ -29,6 +29,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "https?://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9\\_]+" })
 public class XbooruCom extends PluginForDecrypt {
 
@@ -62,18 +64,23 @@ public class XbooruCom extends PluginForDecrypt {
                 this.br.getPage(url_part + "&pid=" + offset);
             }
             logger.info("Decrypting: " + this.br.getURL());
-            final String[] linkids = br.getRegex("id=\"s(\\d+)\"").getColumn(0);
-            if (linkids == null || linkids.length == 0) {
+            final String[][] links = br.getRegex("id=\"s(\\d+)\".*?alt=\"\\s*(.*?)\\s*\"").getMatches();
+            if (links == null || links.length == 0) {
                 logger.warning("Decrypter might be broken for link: " + parameter);
                 break;
             }
-            entries_per_page_current = linkids.length;
-            for (final String linkid : linkids) {
-                final String link = "http://" + this.getHost() + "/index.php?page=post&s=view&id=" + linkid;
-                final DownloadLink dl = createDownloadlink(link);
-                dl.setLinkID(linkid);
+            entries_per_page_current = links.length;
+            for (final String[] link : links) {
+                final String linkID = link[0];
+                final String url = "http://" + this.getHost() + "/index.php?page=post&s=view&id=" + linkID;
+                final DownloadLink dl = createDownloadlink(url);
+                dl.setLinkID(getHost() + "://" + linkID);
                 dl.setAvailable(true);
-                dl.setName(linkid + ".jpeg");
+                if (StringUtils.isNotEmpty(link[1])) {
+                    dl.setName(linkID + "_" + link[1] + ".jpeg");
+                } else {
+                    dl.setName(linkID + ".jpeg");
+                }
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);
