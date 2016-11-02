@@ -173,14 +173,16 @@ public class ChoMikujPl extends PluginForDecrypt {
                     if (filename.equals("nullnull")) {
                         filename = parameter.substring(parameter.lastIndexOf("/") + 1);
                     }
+                    if (filename != null) {
+                        filename = filename.replaceAll("(\\*([a-f0-9]{2}))", "%$2");
+                        if (filename.contains("%")) {
+                            filename = URLDecoder.decode(filename, "UTF-8");
+                        }
+                    }
                     String fileid = info.getMatch(1);
                     if (fileid == null) {
                         br.getPage(parameter);
                         fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
-                    }
-                    String ext = null;
-                    if (filename.contains(".")) {
-                        ext = filename.substring(filename.lastIndexOf("."));
                     }
                     if (fileid == null) {
                         /* No ID --> We can't download anything --> Must be offline */
@@ -521,6 +523,12 @@ public class ChoMikujPl extends PluginForDecrypt {
                 /* Use filename from content_url if necessary */
                 if (filename == null && content_url != null) {
                     filename = url_filename;
+                }
+                if (filename != null) {
+                    filename = filename.replaceAll("(\\*([a-f0-9]{2}))", "%$2");
+                    if (filename.contains("%")) {
+                        filename = URLDecoder.decode(filename, "UTF-8");
+                    }
                 }
 
                 filename = correctFilename(Encoding.htmlDecode(filename).trim());
