@@ -151,6 +151,7 @@ import org.jdownloader.plugins.IgnorableConditionalSkipReason;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.TimeOutCondition;
 import org.jdownloader.plugins.ValidatableConditionalSkipReason;
 import org.jdownloader.plugins.WaitForAccountSkipReason;
 import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
@@ -1485,32 +1486,54 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 selector.addExcluded(link);
                 final AccountCache accountCache = currentSession.getAccountCache(link);
                 boolean ok = false;
-                CachedAccount tempDisabledCachedAccount = null;
+                CachedAccount waitForAccount = null;
+                ConditionalSkipReason conditionalSkipReason = null;
                 for (final CachedAccount cachedAccount : accountCache) {
-                    if (!cachedAccount.canHandle(link)) {
-                        continue;
-                    }
                     final CachedAccountPermission permission = selector.getCachedAccountPermission(cachedAccount);
-                    if (CachedAccountPermission.OK.equals(permission)) {
-                        final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
-                        ok = true;
-                        if (cachedAccount.hasCaptcha(link) && (skipAllCaptchas || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(link)) != null)) {
-                            if (selector.validateDownloadLinkCandidate(checkNextCandidate)) {
-                                selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
+                    try {
+                        if (CachedAccountPermission.OK.equals(permission)) {
+                            if (cachedAccount.canHandle(link)) {
+                                final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
+                                ok = true;
+                                if (cachedAccount.hasCaptcha(link) && (skipAllCaptchas || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(link)) != null)) {
+                                    if (selector.validateDownloadLinkCandidate(checkNextCandidate)) {
+                                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
+                                    }
+                                    continue;
+                                }
+                                checkNextCandidatesStage1.add(checkNextCandidate);
                             }
-                            continue;
+                        } else if (CachedAccountPermission.TEMP_DISABLED.equals(permission)) {
+                            if (cachedAccount.canHandle(link)) {
+                                if (waitForAccount == null || waitForAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
+                                    waitForAccount = cachedAccount;
+                                }
+                            }
                         }
-                        checkNextCandidatesStage1.add(checkNextCandidate);
-                    } else if (CachedAccountPermission.TEMP_DISABLED.equals(permission)) {
-                        if (tempDisabledCachedAccount == null || tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
-                            tempDisabledCachedAccount = cachedAccount;
+                    } catch (final ConditionalSkipReasonException e) {
+                        final ConditionalSkipReason skipReason = e.getConditionalSkipReason();
+                        if (skipReason != null) {
+                            if (conditionalSkipReason == null) {
+                                conditionalSkipReason = skipReason;
+                            } else {
+                                if (skipReason instanceof TimeOutCondition && conditionalSkipReason instanceof TimeOutCondition) {
+                                    if (((TimeOutCondition) conditionalSkipReason).getTimeOutLeft() < ((TimeOutCondition) skipReason).getTimeOutLeft()) {
+                                        conditionalSkipReason = skipReason;
+                                    }
+                                }
+                            }
+                        } else {
+                            logger.log(e);
                         }
+                    } catch (final Exception e) {
+                        logger.log(e);
                     }
                 }
                 if (!ok) {
-                    /* candidate does not have a cachedAccount yet, so validation possible */
-                    if (tempDisabledCachedAccount != null) {
-                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, null));
+                    if (conditionalSkipReason != null) {
+                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(conditionalSkipReason, null, null));
+                    } else if (waitForAccount != null) {
+                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(waitForAccount.getAccount()), null, null));
                     } else {
                         selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, null, null));
                     }
@@ -3382,39 +3405,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                                                          @Override
-                                                          public void delayedrun() {
-                                                              enqueueJob(new DownloadWatchDogJob() {
+                            @Override
+                            public void delayedrun() {
+                                enqueueJob(new DownloadWatchDogJob() {
 
-                                                                  @Override
-                                                                  public void interrupt() {
-                                                                  }
+                                    @Override
+                                    public void interrupt() {
+                                    }
 
-                                                                  @Override
-                                                                  public void execute(DownloadSession currentSession) {
-                                                                      /* reset CONNECTION_UNAVAILABLE */
-                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        /* reset CONNECTION_UNAVAILABLE */
+                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                                                          @Override
-                                                                          public int returnMaxResults() {
-                                                                              return 0;
-                                                                          }
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 0;
+                                            }
 
-                                                                          @Override
-                                                                          public boolean acceptNode(DownloadLink node) {
-                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                                                          }
-                                                                      });
-                                                                      unSkip(unSkip);
-                                                                  }
+                                            @Override
+                                            public boolean acceptNode(DownloadLink node) {
+                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                            }
+                                        });
+                                        unSkip(unSkip);
+                                    }
 
-                                                                  @Override
-                                                                  public boolean isHighPriority() {
-                                                                      return false;
-                                                                  }
-                                                              });
-                                                          }
-                                                      };
+                                    @Override
+                                    public boolean isHighPriority() {
+                                        return false;
+                                    }
+                                });
+                            }
+                        };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
