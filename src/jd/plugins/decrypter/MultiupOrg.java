@@ -52,8 +52,8 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString().replaceFirst("://multiup", "://www.multiup");
-        parameter = param.toString().replaceFirst("org/en/", "org/");
-        parameter = param.toString().replaceFirst("org/fr/", "org/");
+        parameter = parameter.replaceFirst("org/en/", "org/");
+        parameter = parameter.replaceFirst("org/fr/", "org/");
         // link structure parser!
         String reg = "org/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|mirror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
         String[][] matches = new Regex(parameter, reg).getMatches();
