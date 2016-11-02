@@ -803,6 +803,9 @@ public class FileFactory extends PluginForHost {
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
                 account.setProperty("cookies", null);
+                if (StringUtils.containsIgnoreCase(lbr.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(lbr.getURL(), "code=105")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 throw e;
             }
         }
@@ -1298,6 +1301,9 @@ public class FileFactory extends PluginForHost {
                         // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
                         ibr.getPage(url + (url.matches("(" + getApi() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                     } else {
+                        if (StringUtils.containsIgnoreCase(ibr.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(ibr.getURL(), "code=105")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                         // failure occurred.
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }

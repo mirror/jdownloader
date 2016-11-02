@@ -142,7 +142,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     private DownloadController() {
-
         dupeController = new DupeManager();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
