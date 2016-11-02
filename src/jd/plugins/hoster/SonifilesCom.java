@@ -52,7 +52,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sonifiles.com" }, urls = { "https?://(?:www\\.)?sonifiles\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sonifiles.com" }, urls = { "https?://(?:www\\.)?sonifiles\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class SonifilesCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -419,7 +419,7 @@ public class SonifilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })

@@ -20,14 +20,18 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.org/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" })
 public class MultiupOrg extends antiDDoSForDecrypt {
 
     // DEV NOTES:
@@ -48,6 +52,8 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString().replaceFirst("://multiup", "://www.multiup");
+        parameter = param.toString().replaceFirst("org/en/", "org/");
+        parameter = param.toString().replaceFirst("org/fr/", "org/");
         // link structure parser!
         String reg = "org/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|mirror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
         String[][] matches = new Regex(parameter, reg).getMatches();
@@ -81,7 +87,16 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String[] links = br.getRegex("[\r\n\t ]{3,}href=\"([^\"]+)\"[\r\n\t ]{3,}").getColumn(0);
+        if (br.containsHTML("g-recaptcha")) {
+            final Form form = br.getFormbyActionRegex("/mirror/");
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(form);
+            if (br.containsHTML("g-recaptcha")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+        }
+        final String[] links = br.getRegex("[\r\n\t ]{3,}href=\"([^\"]+)\"[\r\n\t ]{3,}").getColumn(0);
         if (links == null || links.length == 0) {
             logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
             return null;
@@ -90,7 +105,6 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             singleLink = singleLink.trim().replaceFirst(":/+", "://");
             decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         return decryptedLinks;
     }
 
