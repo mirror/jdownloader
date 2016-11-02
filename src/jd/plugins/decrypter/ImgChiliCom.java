@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgchili.com" }, urls = { "http://((www\\.)?imgchili\\.(com|net)/show/|t\\d+\\.imgchili\\.(com|net)/)\\d+/[a-z0-9_\\.\\(\\)]+|http://(www\\.)?imgchili\\.(com|net)/album/[a-z0-9]{32}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgchili.com" }, urls = { "http://((www\\.)?imgchili\\.(com|net)/show/|t\\d+\\.imgchili\\.(com|net)/)\\d+/[a-z0-9_\\.\\(\\)%\\-]+|http://(www\\.)?imgchili\\.(com|net)/album/[a-z0-9]{32}" })
 public class ImgChiliCom extends PluginForDecrypt {
 
     public ImgChiliCom(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class ImgChiliCom extends PluginForDecrypt {
     // http://((www\\.)?imgchili\\.(com|net)/show/|[it]\\d+\\.imgchili\\.(com|net)/)\\d+/[a-z0-9_\\.\\(\\)]+
 
     private static final String ALBUMLINK       = "http://(www\\.)?imgchili\\.(com|net)/album/[a-z0-9]{32}";
-    private static final String SINGLEFINALLINK = "http://(www\\.)?[it]\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.\\(\\)]+";
+    private static final String SINGLEFINALLINK = "http://(www\\.)?[it]\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.\\(\\)%\\-]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -62,7 +62,7 @@ public class ImgChiliCom extends PluginForDecrypt {
             }
 
             final String fpName = br.getRegex("<title>imgChili \\&raquo; ([^<>\"]*?)</title>").getMatch(0);
-            final String[] thumbs = br.getRegex("<img src=\"(http://t\\d+\\.imgchili\\.net/\\d+/[A-Za-z0-9\\-_\\.\\(\\)]+\\.jpg)\"").getColumn(0);
+            final String[] thumbs = br.getRegex("<img src=\"(http://t\\d+\\.imgchili\\.net/\\d+/[A-Za-z0-9\\-_\\.\\(\\)%\\-]+\\.jpg)\"").getColumn(0);
             if (thumbs == null || thumbs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -94,10 +94,10 @@ public class ImgChiliCom extends PluginForDecrypt {
             }
             String finallink = br.getRegex("onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("id=\"show_image\"\\s*?src=\"(https?://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.]+)\"").getMatch(0);
+                finallink = br.getRegex("id=\"show_image\"\\s*?src=\"(https?://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.\\(\\)%\\-]+)\"").getMatch(0);
             }
             if (finallink == null) {
-                finallink = br.getRegex("\"(https?://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.]+)\"").getMatch(0);
+                finallink = br.getRegex("\"(https?://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_\\.\\(\\)%\\-]+)\"").getMatch(0);
             }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
