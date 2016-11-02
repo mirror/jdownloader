@@ -1045,7 +1045,7 @@ public class JunoCloudMe extends PluginForHost {
      * Rules to prevent new downloads from commencing
      *
      */
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
             // to download.

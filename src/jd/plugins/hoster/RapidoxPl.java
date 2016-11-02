@@ -100,7 +100,7 @@ public class RapidoxPl extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;

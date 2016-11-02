@@ -1904,7 +1904,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download any link for this host */
             return false;

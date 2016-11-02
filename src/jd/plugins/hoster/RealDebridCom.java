@@ -191,7 +191,7 @@ public class RealDebridCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (isDirectLink(downloadLink)) {
             // generated links do not require an account to download
             return true;

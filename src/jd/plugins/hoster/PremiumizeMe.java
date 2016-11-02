@@ -155,7 +155,7 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (StringUtils.equals(getHost(), downloadLink.getHost()) && account == null) {
             // generated links do not require an account
             return true;

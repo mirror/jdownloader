@@ -241,7 +241,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() > 1073741824) {
             return false;
         } else {

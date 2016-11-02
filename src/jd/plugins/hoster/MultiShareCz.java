@@ -409,7 +409,7 @@ public class MultiShareCz extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) {
             if (downloadLink.getDownloadURL().matches(mhLink)) {
                 // multihoster link

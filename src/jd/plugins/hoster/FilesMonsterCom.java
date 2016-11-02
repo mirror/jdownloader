@@ -76,7 +76,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     // @Override to keep compatible to stable
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (downloadLink.getBooleanProperty("PREMIUMONLY", false) && account == null) {
             /* premium only */
             return false;

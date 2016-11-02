@@ -494,7 +494,7 @@ public class PremiumTo extends UseNet {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account != null) {
             synchronized (hostUnavailableMap) {
                 final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);

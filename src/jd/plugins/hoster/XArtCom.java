@@ -232,7 +232,7 @@ public class XArtCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         return account != null;
     }
 

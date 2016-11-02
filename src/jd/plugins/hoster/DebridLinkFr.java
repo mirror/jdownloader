@@ -539,7 +539,7 @@ public class DebridLinkFr extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         final String currenthost = downloadLink.getHost();
         final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
         if (account.getType() == AccountType.FREE && plain_hostinfo != null) {
