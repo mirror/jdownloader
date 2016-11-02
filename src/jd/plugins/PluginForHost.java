@@ -141,10 +141,12 @@ import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallProgress;
 import org.jdownloader.phantomjs.installation.InstallThread;
 import org.jdownloader.plugins.CaptchaStepProgress;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
+import org.jdownloader.plugins.WaitForAccountSkipReason;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.AccountJsonConfig;
@@ -831,7 +833,7 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
-    public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) {
+    public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) throws Exception {
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null) {
             if (ai.isUnlimitedTraffic() || ai.isSpecialTraffic()) {
@@ -839,12 +841,20 @@ public abstract class PluginForHost extends Plugin {
             }
             final long left = ai.getTrafficLeft();
             if (left == 0) {
+                if (ai.isTrafficRefill()) {
+                    throw new ConditionalSkipReasonException(new WaitForAccountSkipReason(account));
+                }
                 return false;
             } else {
                 final long size = downloadLink.getView().getBytesTotalEstimated();
                 if (size >= 0) {
-                    final long need = Math.max(0, size - downloadLink.getView().getBytesLoaded());
-                    return left - need > 0;
+                    final long required = Math.max(0, size - downloadLink.getView().getBytesLoaded());
+                    if (left - required <= 0) {
+                        if (ai.isTrafficRefill()) {
+                            throw new ConditionalSkipReasonException(new WaitForAccountSkipReason(account));
+                        }
+                        return false;
+                    }
                 }
             }
         }

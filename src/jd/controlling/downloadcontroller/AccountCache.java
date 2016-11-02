@@ -66,7 +66,7 @@ public class AccountCache implements Iterable<CachedAccount> {
             return plugin != null && Boolean.TRUE.equals(plugin.expectCaptcha(link, account));
         }
 
-        public boolean canHandle(DownloadLink link) {
+        public boolean canHandle(DownloadLink link) throws Exception {
             if (plugin == null) {
                 return false;
             }
