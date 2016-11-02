@@ -68,7 +68,7 @@ public class DataTorCz extends PluginForHost {
      * Rules to prevent new downloads from commencing
      *
      * */
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) {
             return false;
         } else {

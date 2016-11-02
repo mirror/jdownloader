@@ -267,7 +267,7 @@ public class BrazzersCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         /*
          * Usually an account is needed for this host but in case content has not yet been released the plugin should jump into download
          * mode to display this errormessage to the user!

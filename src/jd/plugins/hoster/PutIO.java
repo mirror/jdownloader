@@ -144,7 +144,7 @@ import org.appwork.utils.parser.UrlQuery;
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) {
             // freemode is possible if the link has a token
             return StringUtils.isNotEmpty(downloadLink.getPluginPatternMatcher());

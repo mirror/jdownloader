@@ -232,7 +232,7 @@ public class ConexaomegaCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         return true;
     }
 

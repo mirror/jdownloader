@@ -540,7 +540,7 @@ public class BigfileTo extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if ((account == null || account.getType() == AccountType.FREE) && downloadLink.getDownloadSize() > FREE_SIZELIMIT) {
             return false;
         } else {

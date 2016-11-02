@@ -555,7 +555,7 @@ public class CloudSixMe extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink != null) {
             final long size = downloadLink.getKnownDownloadSize();
             if (size > 200 * 1000 * 1000l) {

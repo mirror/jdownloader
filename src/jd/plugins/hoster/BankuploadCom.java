@@ -133,7 +133,7 @@ public class BankuploadCom extends PluginForHost {
      */
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         /**
          * download button and captcha is missing with downloads over 1gb... this isn't downloadable in browser! This doesn't get evaluated
          * when user has linkchecking disabled!! so we still need something within download method! -raztoki

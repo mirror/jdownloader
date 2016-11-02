@@ -75,7 +75,7 @@ import jd.plugins.PluginForHost;
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account == null) return false;
         return true;
     }

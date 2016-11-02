@@ -127,7 +127,7 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;

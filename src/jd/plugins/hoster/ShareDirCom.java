@@ -476,7 +476,7 @@ public class ShareDirCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         /* Make sure that our account type allows downloading a link with this filesize. */
         long fsize = downloadLink.getVerifiedFileSize();
         if (fsize == -1) {

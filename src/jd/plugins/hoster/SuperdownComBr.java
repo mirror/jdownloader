@@ -81,7 +81,7 @@ public class SuperdownComBr extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink != null) {
             if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", getHost()), getHost())) {
                 return false;

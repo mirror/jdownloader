@@ -127,7 +127,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink != null) {
             if (account == null || account.getType() == AccountType.FREE) {
                 return !(downloadLink.getBooleanProperty("premiumRequired", false));

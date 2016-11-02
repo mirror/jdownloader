@@ -558,7 +558,7 @@ public class EasyFilesPl extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         return true;
     }
 

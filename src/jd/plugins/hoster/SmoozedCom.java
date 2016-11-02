@@ -692,7 +692,7 @@ public class SmoozedCom extends antiDDoSForHost {
     private final String premiumRequiredProperty = "sRAT"; // smoozedRequiredAccountType
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (account != null) {
             final Map<String, Object> map;
             synchronized (ACCOUNTINFOS) {

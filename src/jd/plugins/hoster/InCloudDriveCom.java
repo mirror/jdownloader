@@ -486,7 +486,7 @@ public class InCloudDriveCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, msg);
     }
 
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getBooleanProperty("premiumRequired", false) && (account == null || account.getBooleanProperty("free", false))) {
             return false;
         } else {

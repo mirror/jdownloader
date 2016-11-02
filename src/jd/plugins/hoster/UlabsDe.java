@@ -400,7 +400,7 @@ public class UlabsDe extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         synchronized (hostTrafficleftMap) {
             final String host = downloadLink.getHost();
             if (hostTrafficleftMap.containsKey(host)) {

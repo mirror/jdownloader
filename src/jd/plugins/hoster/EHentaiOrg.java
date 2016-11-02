@@ -98,7 +98,7 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null && new Regex(downloadLink.getDownloadURL(), TYPE_EXHENTAI).matches()) {
             return false;
         }
