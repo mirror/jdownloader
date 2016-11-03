@@ -15,7 +15,6 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -67,12 +66,10 @@ public class PornHubCom extends PluginForHost {
                                                                                      * Video-bitrates and resultions here are not exact as
                                                                                      * they vary.
                                                                                      */
-                                                                                    /**
-                                                                                     * TODO: Check for other resolutions, check: 180p, 1080p
-                                                                                     */
                                                                                     put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
                                                                                     put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
                                                                                     put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
                                                                                 }
                                                                             });
@@ -110,13 +107,13 @@ public class PornHubCom extends PluginForHost {
         /* User-chosen quality, set in decrypter */
         final String quality = downloadLink.getStringProperty("quality", null);
         LinkedHashMap<String, String> fresh_directurls = null;
-        final String fid;
+        final String viewkey;
         boolean isVideo = true;
         if (downloadLink.getDownloadURL().matches(type_photo)) {
             isVideo = false;
-            fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+            viewkey = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
             /* Offline links should also have nice filenames */
-            downloadLink.setName(fid + ".jpg");
+            downloadLink.setName(viewkey + ".jpg");
             br.getPage(downloadLink.getDownloadURL());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -125,49 +122,29 @@ public class PornHubCom extends PluginForHost {
             if (dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setFinalFileName(fid + dlUrl.substring(dlUrl.lastIndexOf(".")));
+            downloadLink.setFinalFileName(viewkey + dlUrl.substring(dlUrl.lastIndexOf(".")));
         } else {
             String filename = downloadLink.getStringProperty("decryptedfilename", null);
             dlUrl = downloadLink.getStringProperty("directlink", null);
+            if (dlUrl == null || filename == null) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             prepBr(this.br);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
-                try {
-                    this.login(this.br, aa, false);
-                } catch (final Throwable e) {
-                }
-            }
-            if (dlUrl == null) {
-                // Handle links that were grabbed before decrypter exist (20150831)
-                // TODO: Remove 2016
-                source_url = downloadLink.getDownloadURL();
-                this.br.setFollowRedirects(true);
+                this.login(this.br, aa, false);
             }
 
-            fid = new Regex(source_url, "([A-Za-z0-9\\-_]+)$").getMatch(0);
+            viewkey = new Regex(source_url, "([A-Za-z0-9\\-_]+)$").getMatch(0);
             /* Offline links should also have nice filenames */
-            downloadLink.setName(fid + ".mp4");
+            downloadLink.setName(viewkey + ".mp4");
 
-            this.br.getPage(source_url);
+            this.br.getPage(createPornhubVideolink(viewkey, aa));
             if (br.containsHTML(html_privatevideo)) {
                 downloadLink.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
                 downloadLink.setName(filename);
                 return AvailableStatus.TRUE;
-            }
-            if (dlUrl == null) {
-                // Handle links that were grabbed before decrypter exist (20150831)
-                // TODO: Remove 2016
-                String[] qualities = { "720", "480", "240" };
-                final SubConfiguration cfg = SubConfiguration.getConfig("pornhub.com");
-                for (String qualityInfo : qualities) {
-                    if (cfg.getBooleanProperty(qualityInfo, true)) {
-                        dlUrl = br.getRegex(qualityInfo + "p = \'(http://[^\']*?)\'").getMatch(0);
-                        filename = getSiteTitle(this, br) + "." + qualityInfo + "p.mp4";
-                    }
-                    if (dlUrl != null) {
-                        break;
-                    }
-                }
             }
             if (source_url == null || filename == null || this.dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -362,6 +339,7 @@ public class PornHubCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(account.getHoster(), cookies);
+                    br.setCookies("pornhubpremium.com", cookies);
                     return;
                 }
                 br.setFollowRedirects(false);
@@ -399,7 +377,7 @@ public class PornHubCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies("pornhubpremium.com"), "");
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
@@ -564,6 +542,16 @@ public class PornHubCom extends PluginForHost {
             } else {
                 return;
             }
+        }
+    }
+
+    public static String createPornhubVideolink(final String viewkey, final Account acc) {
+        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+            /* Premium url */
+            return "http://www.pornhubpremium.com/view_video.php?viewkey=" + viewkey;
+        } else {
+            /* Free url */
+            return "http://www.pornhub.com/view_video.php?viewkey=" + viewkey;
         }
     }
 

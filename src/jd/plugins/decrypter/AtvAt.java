@@ -40,12 +40,14 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.tv/[^/]+/[^/]+" })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_ATVSMART = "https?://(?:www\\.)?atvsmart\\.tv/.+";
 
     /**
      * Important note: Via browser the videos are streamed via RTSP.
@@ -59,76 +61,114 @@ public class AtvAt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final Regex linkinfo = new Regex(parameter, "atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
-        String url_seriesname = linkinfo.getMatch(0);
-        String url_episodename = linkinfo.getMatch(1);
-        boolean geo_blocked = false;
-        final String fid = linkinfo.getMatch(2);
-        final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
-        final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
-        String seriesname = null;
-        String episodename = null;
-        short seasonnumber = -1;
-        short episodenumber = -1;
+        final String fid;
+        String seriesname;
+        String episodename;
+        String url_seriesname;
+        String url_episodename;
+        String json_source = null;
         String seasonnumber_str = null;
         String episodenumber_str = null;
+
+        LinkedHashMap<String, Object> entries;
+        final ArrayList<Object> parts;
+        boolean geo_blocked = false;
+        if (parameter.matches(TYPE_ATVSMART)) {
+            final Regex linkinfo = new Regex(parameter, "atvsmart\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
+            url_seriesname = linkinfo.getMatch(0);
+            url_episodename = linkinfo.getMatch(1);
+
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">404 \\- Nicht gefunden|Leider ist die von Ihnen aufgerufene Seite nicht")) {
+                logger.info("Link offline (404 error): " + parameter);
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            final String api_b64 = this.br.getRegex("asm_viewData\\s*?=\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+            json_source = Encoding.Base64Decode(api_b64);
+            json_source = Encoding.urlDecode(json_source, false);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            episodename = (String) JavaScriptEngineFactory.walkJson(entries, "api/{0}/title");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/{0}/reference/episode");
+            seriesname = (String) entries.get("title");
+            seasonnumber_str = Long.toString(JavaScriptEngineFactory.toLong(entries.get("season"), 0));
+            episodenumber_str = Long.toString(JavaScriptEngineFactory.toLong(entries.get("episode"), 0));
+            if (seasonnumber_str.equals("0")) {
+                seasonnumber_str = null;
+            }
+            if (episodenumber_str.equals("0")) {
+                episodenumber_str = null;
+            }
+            parts = (ArrayList<Object>) entries.get("videoUrl");
+        } else {
+            final Regex linkinfo = new Regex(parameter, "atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
+            url_seriesname = linkinfo.getMatch(0);
+            url_episodename = linkinfo.getMatch(1);
+            fid = linkinfo.getMatch(2);
+
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline (404 error): " + parameter);
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            } else if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"")) {
+                logger.info("There is no downloadable content: " + parameter);
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            } else if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
+                /*
+                 * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at
+                 * all - this does not necessarily mean that it is blocked in the users'country!
+                 */
+                logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
+                geo_blocked = true;
+            }
+            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+
+            /* Get filename information */
+            seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
+            episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
+            episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+
+            json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
+            json_source = Encoding.htmlDecode(json_source);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
+            parts = (ArrayList<Object>) entries.get("parts");
+        }
+        final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
+        final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
+        short seasonnumber = -1;
+        short episodenumber = -1;
         final DecimalFormat df = new DecimalFormat("00");
-
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline (404 error): " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(fid);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"")) {
-            logger.info("There is no downloadable content: " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(fid);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
-            /*
-             * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at all -
-             * this does not necessarily mean that it is blocked in the users'country!
-             */
-            logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
-            geo_blocked = true;
-        }
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-
-        String json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
-        json_source = Encoding.htmlDecode(json_source);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
-        final ArrayList<Object> parts = (ArrayList<Object>) entries.get("parts");
         ArrayList<Object> sources = null;
-        /* Get filename information */
-        seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
         if (seriesname == null) {
             /* Fallback to URL information */
             seriesname = url_seriesname.replace("-", " ");
         }
-
-        episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
         if (episodename == null) {
             /* Fallback to URL information */
             episodename = url_episodename.replace("-", " ");
         }
         if (url_seriesname_remove != null) {
-            seasonnumber_str = new Regex(url_seriesname_remove, "(\\d+)$").getMatch(0);
+            if (seasonnumber_str == null) {
+                seasonnumber_str = new Regex(url_seriesname_remove, "(\\d+)$").getMatch(0);
+            }
             /* Clean url_seriesname */
             url_seriesname = url_seriesname.replace(url_seriesname_remove, "");
         }
         if (url_episodename_remove != null) {
-            episodenumber_str = new Regex(url_episodename_remove, "(\\d+)$").getMatch(0);
+            if (episodenumber_str == null) {
+                episodenumber_str = new Regex(url_episodename_remove, "(\\d+)$").getMatch(0);
+            }
             /* Clean url_episodename! */
             url_episodename = url_episodename.replace(url_episodename_remove, "");
-        }
-        if (episodenumber_str == null) {
-            episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
         }
         if (seasonnumber_str != null && episodenumber_str != null) {
             seasonnumber = Short.parseShort(seasonnumber_str);
@@ -293,7 +333,7 @@ public class AtvAt extends PluginForDecrypt {
         if (decryptedLinks.size() == 0 && geo_blocked) {
             logger.info("GEO-blocked");
             final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName("GEO_blocked_" + fid);
+            offline.setFinalFileName("GEO_blocked_" + url_seriesname + "_" + url_episodename);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }

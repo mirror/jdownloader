@@ -29,6 +29,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -44,6 +45,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends PluginForHost {
@@ -116,20 +118,10 @@ public class ChoMikujPl extends PluginForHost {
             }
         }
         plus18 = this.br.containsHTML("\"FormAdultViewAccepted\"");
-        if (!plus18) {
-            if (!getDllink(link, br.cloneBrowser(), false)) {
-                premiumonly = true;
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-                return AvailableStatus.TRUE;
-            }
-            if (cbr.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (cbr.containsHTML(PREMIUMONLY)) {
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-                return AvailableStatus.TRUE;
-            }
-        }
+        /*
+         * 2016-11-03: Removed filesize check [for free download attempts] because free downloads are only rarely possible and usually
+         * require a captcha.
+         */
         if (DLLINK != null) {
             // In case the link redirects to the finallink
             br.setFollowRedirects(true);
@@ -138,8 +130,8 @@ public class ChoMikujPl extends PluginForHost {
                 con = br.openHeadConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                    // Only set final filename if it wasn't set before as video and
-                    // audio streams can have bad filenames
+                    /* Only set final filename if it wasn't set before as video and */
+                    /* audio streams can have bad filenames */
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                     }
@@ -216,6 +208,7 @@ public class ChoMikujPl extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         /* Premium users can always download the original file */
         if (isVideo(theLink) && !premium) {
+            /* Download video stream (free download) */
             br.setFollowRedirects(true);
             getPage(br, "http://chomikuj.pl/ShowVideo.aspx?id=" + fid);
             if (br.getURL().contains("chomikuj.pl/Error404.aspx") || cbr.containsHTML("(Nie znaleziono|Strona, której szukasz nie została odnaleziona w portalu\\.<|>Sprawdź czy na pewno posługujesz się dobrym adresem)")) {
@@ -230,6 +223,7 @@ public class ChoMikujPl extends PluginForHost {
             }
             theLink.setFinalFileName(theLink.getName());
         } else if (theLink.getName().toLowerCase().endsWith(".mp3") && !premium) {
+            /* Download mp3 stream */
             DLLINK = getDllinkMP3(theLink);
             theLink.setFinalFileName(theLink.getName());
         } else {
@@ -277,7 +271,26 @@ public class ChoMikujPl extends PluginForHost {
             if (cbr.containsHTML(ACCESSDENIED)) {
                 return false;
             }
-            DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+            if (br.containsHTML("g\\-recaptcha")) {
+                final String brUnescaped = unescape(br.toString());
+                final String rcSiteKey = PluginJSonUtils.getJson(brUnescaped, "sitekey");
+                final String serializedUserSelection = new Regex(brUnescaped, "name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
+                final String serializedOrgFile = new Regex(brUnescaped, "name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
+                if (rcSiteKey == null || serializedUserSelection == null || serializedOrgFile == null) {
+                    /* Plugin broken */
+                    return false;
+                }
+                /* Handle captcha */
+                logger.info("Handling captcha");
+                /* TODO 2016-11-03 */
+                if (true) {
+                    return false;
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcSiteKey).getToken();
+                final String postData = "fileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&FileName=" + Encoding.urlEncode(theLink.getName()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
+                postPage(br, "/action/License/DownloadNotLoggedCaptchaEntered", postData);
+            }
+            DLLINK = br.getRegex("redirectUrl\"\\s*?:\\s*?\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             }
@@ -463,7 +476,7 @@ public class ChoMikujPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (serverIssue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-        } else if (cbr.containsHTML(PREMIUMONLY) || premiumonly) {
+        } else if (cbr != null && cbr.containsHTML(PREMIUMONLY) || premiumonly) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (!isVideo(downloadLink)) {

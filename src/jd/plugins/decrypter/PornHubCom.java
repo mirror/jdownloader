@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -37,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)|https?://(?:www\\.)?pornhubpremium\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" })
 public class PornHubCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -62,19 +63,9 @@ public class PornHubCom extends PluginForDecrypt {
         jd.plugins.hoster.PornHubCom.prepBr(this.br);
         final Account aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
         if (aa != null) {
-            try {
-                jd.plugins.hoster.PornHubCom.login(this.br, aa, false);
-            } catch (final Throwable e) {
-            }
+            jd.plugins.hoster.PornHubCom.login(this.br, aa, false);
         }
-        try {
-            br.getPage(parameter);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        // Convert embed links to normal links
+        /* Convert embed links to normal links */
         if (parameter.matches("http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+")) {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -88,8 +79,9 @@ public class PornHubCom extends PluginForDecrypt {
             br.getPage(parameter);
         }
         final String viewkey = new Regex(parameter, "viewkey=([a-z0-9]+)").getMatch(0);
+        this.br.getPage(jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, this.br);
-        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -119,6 +111,7 @@ public class PornHubCom extends PluginForDecrypt {
                 dl.setProperty("quality", qualityInfo);
                 dl.setProperty("decryptedfilename", final_filename);
                 dl.setProperty("mainlink", parameter);
+                dl.setProperty("viewkey", viewkey);
                 dl.setLinkID(getHost() + "://" + viewkey + qualityInfo);
                 dl.setFinalFileName(final_filename);
                 dl.setContentUrl(parameter);
@@ -137,6 +130,10 @@ public class PornHubCom extends PluginForDecrypt {
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\'embedSWF\\'") || br.getHttpConnection().getResponseCode() == 404;
     }
 
     private DownloadLink getDecryptDownloadlink() {
