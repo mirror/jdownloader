@@ -28,6 +28,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -39,7 +40,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us", "paylinks.xyz" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?paylinks\\.xyz/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
 
     public CatlyUs(PluginWrapper wrapper) {
@@ -78,6 +79,7 @@ public class CatlyUs extends antiDDoSForDecrypt {
         }
         form = this.br.getForm(0);
         if (form != null) {
+            /* Usually POST to "[...]/links/go" */
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.submitForm(form);
@@ -112,6 +114,11 @@ public class CatlyUs extends antiDDoSForDecrypt {
 
     public boolean hasAutoCaptcha() {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.OuoIoCryptor;
     }
 
 }

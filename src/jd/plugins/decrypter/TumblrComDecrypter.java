@@ -58,6 +58,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     private static final String     GENERALOFFLINE         = ">Not found\\.<";
 
+    private static final String     TYPE_INVALID           = "https?://(?:(?:www|platform|embed|assets)\\.)tumblr\\.com/.+";
+
     private static final String     TYPE_FILE              = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
     private static final String     TYPE_POST              = ".+tumblr\\.com/post/\\d+";
     private static final String     TYPE_IMAGE             = ".+tumblr\\.com/image/\\d+";
@@ -90,6 +92,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         br = new Browser();
         decryptedLinks = new ArrayList<DownloadLink>();
         this.param = param;
+        if (param.toString().matches(TYPE_INVALID)) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         parameter = param.toString().replace("www.", "");
         passCode = new Regex(parameter, "\\?password=(.+)").getMatch(0);
         if (passCode != null) {
@@ -172,7 +178,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         if (source.matches(TYPE_USER_LOGGEDIN)) {
             url_username = new Regex(source, "/([^/]+)$").getMatch(0);
         } else {
-            url_username = new Regex(source, "https?://([^/]+)\\.tumblr\\.com/").getMatch(0);
+            url_username = new Regex(source, "^https?://([^/]+)\\.tumblr\\.com").getMatch(0);
         }
         return url_username;
     }

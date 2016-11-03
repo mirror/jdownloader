@@ -1339,6 +1339,7 @@ public class WickedcloudIo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                /* 2016-11-03: Accessing this url will cause http response 500 (even in browser) */
                 if (!this.br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }

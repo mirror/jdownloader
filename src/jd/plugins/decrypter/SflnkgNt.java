@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.abstractSafeLinking;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.plugins.components.abstractSafeLinking;
 
 //Similar to SafeUrlMe (safeurl.me)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -39,7 +39,7 @@ public class SflnkgNt extends abstractSafeLinking {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "hosmy.com", "i7q.com", "jessica.suyalynx.com", "linkler.us", "link.yify.info", "links.sceper.ws", "linkshield.org", "mtsafelinking.org", "nexushd2urlprotector.tytung.com", "ninjasecure.cf", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinknsn.net", "savelinks.net", "safelinking.mobi", "sf.anime4u.ir", "slinx.tk", "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "yls.re", "sflk.in" };
+        return new String[] { "sharelinked.com", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "hosmy.com", "i7q.com", "jessica.suyalynx.com", "linkler.us", "link.yify.info", "links.sceper.ws", "linkshield.org", "mtsafelinking.org", "nexushd2urlprotector.tytung.com", "ninjasecure.cf", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinknsn.net", "savelinks.net", "safelinking.mobi", "sf.anime4u.ir", "slinx.tk", "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "yls.re", "sflk.in" };
         // add new domains at the beginning of the array, not the END
     }
 
