@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,7 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" }) 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" })
 public class ShorteSt extends antiDDoSForDecrypt {
 
     public ShorteSt(PluginWrapper wrapper) {
@@ -41,8 +41,8 @@ public class ShorteSt extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         if (parameter.contains("%29")) {
-            parameter = parameter.replace("%29", "e");
-            parameter = parameter.replace("%28", "o");
+            parameter = parameter.replace("%29", ")");
+            parameter = parameter.replace("%28", "(");
             parameter = parameter.replace("_", "i");
             parameter = parameter.replace("*", "u");
             parameter = parameter.replace("!", "a");
