@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,7 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api)#?[A-Za-z0-9]+(/v/\\d+)?" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "https?://(?:www\\.)?ge\\.tt/(?!api)#?[A-Za-z0-9]+(?:/v/\\d+)?" })
 public class GeTtDecrypter extends PluginForDecrypt {
 
     public GeTtDecrypter(PluginWrapper wrapper) {
@@ -38,6 +41,11 @@ public class GeTtDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString().replace("#", "");
 
+        if (parameter.matches("https?://(?:www\\.)?ge\\.tt/(?:developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api).*?")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
         br.setAllowedResponseCodes(410);
         br.getPage(parameter);
 
@@ -46,35 +54,39 @@ public class GeTtDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String singleFile = new Regex(parameter, "/v/(\\d+)").getMatch(0);
-        final String fid = new Regex(parameter, "ge\\.tt/([A-Za-z0-9]+)(/v/\\d+)?").getMatch(0);
+        // final String singleFile = new Regex(parameter, "/v/(\\d+)").getMatch(0);
+        final String folderid = new Regex(parameter, "ge\\.tt/([A-Za-z0-9]+)(/v/\\d+)?").getMatch(0);
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        br.getPage("//api.ge.tt/1/shares/" + fid);
+        br.getPage("//api.ge.tt/1/shares/" + folderid);
 
-        if (br.containsHTML("\"error\":\"share not found\"") || br.containsHTML(">404 Not Found<")) {
-            final DownloadLink dlink = createDownloadlink("http://open.ge.tt/1/files/" + fid + "/0/blob");
-            dlink.setAvailable(false);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String error = (String) entries.get("error");
+
+        if (error != null || br.containsHTML(">404 Not Found<")) {
+            final DownloadLink dlink = this.createOfflinelink(parameter);
             decryptedLinks.add(dlink);
             return decryptedLinks;
         }
 
-        for (String id : br.getRegex("\"fileid\":\"(\\d+)\"").getColumn(0)) {
-            if (singleFile != null) {
-                id = singleFile;
-            }
-            decryptedLinks.add(createDownloadlink("http://api.ge.tt/1/files/" + fid + "/" + id + "/blob?download"));
-            if (singleFile != null) {
-                break;
-            }
+        final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
+
+        for (final Object fileo : files) {
+            entries = (LinkedHashMap<String, Object>) fileo;
+            final String filename = (String) entries.get("filename");
+            final String fileid = (String) entries.get("fileid");
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            final DownloadLink dl = createDownloadlink("http://api.ge.tt/1/files/" + folderid + "/" + fileid + "/blob?download");
+            dl.setName(filename);
+            dl.setDownloadSize(filesize);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
         }
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            if (br.getHttpConnection().getResponseCode() == 200) {
-                logger.info("ge.tt: Share is empty! Link: " + parameter);
-                return decryptedLinks;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("ge.tt: Folder is empty! Link: " + parameter);
+            final DownloadLink dlink = this.createOfflinelink(parameter);
+            decryptedLinks.add(dlink);
+            return decryptedLinks;
         }
         return decryptedLinks;
     }

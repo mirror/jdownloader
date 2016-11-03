@@ -36,11 +36,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com" }, urls = { "http://(?:www\\.)?sufile\\.com/(?:file|vip)/[a-z0-9]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com" }, urls = { "http://(?:www\\.)?sufile\\.com/(?:file|vip)/[a-z0-9]+\\.html" })
 public class SuFileCom extends PluginForHost {
 
     public SuFileCom(PluginWrapper wrapper) {
@@ -297,6 +298,11 @@ public class SuFileCom extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_ChineseFileHosting;
     }
 
     @Override

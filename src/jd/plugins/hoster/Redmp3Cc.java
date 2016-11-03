@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(www\\.)?redmp3\\.(cc|su)/\\d+/[a-z0-9\\-]+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redmp3.cc" }, urls = { "https?://(?:www\\.)?redmp3\\.(?:cc|su)/\\d+/[a-z0-9\\-]+\\.html" })
 public class Redmp3Cc extends PluginForHost {
 
     public Redmp3Cc(PluginWrapper wrapper) {
@@ -46,6 +46,16 @@ public class Redmp3Cc extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace(".cc", ".su"));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("redmp3.cc".equals(getHost())) {
+            if (host == null || "redmp3.cc".equals(host)) {
+                return "redmp3.su";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")

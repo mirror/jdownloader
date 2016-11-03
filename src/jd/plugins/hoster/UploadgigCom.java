@@ -108,7 +108,13 @@ public class UploadgigCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String csrf_tester = this.br.getCookie(this.getHost(), "firewall");
+            String csrf_tester = this.br.getCookie(this.getHost(), "firewall");
+            if (csrf_tester == null) {
+                csrf_tester = this.br.getRegex("name=\"csrf_tester\"\\s*?value=\"([^<>\"]+)\"").getMatch(0);
+                if (csrf_tester != null) {
+                    this.br.setCookie(this.br.getHost(), "firewall", csrf_tester);
+                }
+            }
             final String fid = getFID(downloadLink);
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             String postData = "file_id=" + fid + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
@@ -117,6 +123,10 @@ public class UploadgigCom extends PluginForHost {
             }
             this.br.postPage("/file/free_dl", postData);
             errorhandlingFree();
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                /* Usually only happpens with wrong POST values */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+            }
             dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(this.br, "cd");
