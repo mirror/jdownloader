@@ -21,6 +21,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -260,7 +261,11 @@ public class Property implements Serializable {
     }
 
     public void setPropertiesUnsafe(final HashMap<String, Object> properties) {
-        this.properties = properties;
+        if (properties != null && properties instanceof LinkedHashMap) {
+            this.properties = new HashMap<String, Object>(properties);
+        } else {
+            this.properties = properties;
+        }
     }
 
     private static String deDuplicateString(String string) {
