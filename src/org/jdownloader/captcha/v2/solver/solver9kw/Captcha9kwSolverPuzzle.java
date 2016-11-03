@@ -2,11 +2,11 @@ package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import jd.http.Browser;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.parser.UrlQuery;
@@ -18,8 +18,7 @@ import org.jdownloader.captcha.v2.solver.jac.SolverException;
 
 public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
 
-    private LinkedList<Integer>           mouseArray = new LinkedList<Integer>();
-    private static Captcha9kwSolverPuzzle INSTANCE   = new Captcha9kwSolverPuzzle();
+    private static Captcha9kwSolverPuzzle INSTANCE = new Captcha9kwSolverPuzzle();
 
     public static Captcha9kwSolverPuzzle getInstance() {
         return INSTANCE;
@@ -95,29 +94,14 @@ public class Captcha9kwSolverPuzzle extends AbstractCaptcha9kwSolver<String> {
 
     @Override
     protected void parseResponse(CESSolverJob<String> solverJob, Challenge<String> challenge, String captchaID, String ret) throws IOException {
-        // Special answer (x + 465? y + 264?)
-        // Example: 622.289.683.351.705.331.734.351.713.264.734.281.488.275.784.281 (4 coordinates like x1,y1 to x2,y2)
-        mouseArray.clear();
-
-        // boolean changemousexy9kw = true;
-        ArrayList<Integer> marray = new ArrayList<Integer>();
-        // marray.addAll(mouseArray);
-        // for (String s : ret.substring("OK-answered-".length()).split("\\|")) {
-        // if (changemousexy9kw == true) {
-        // mouseArray.add(Integer.parseInt(s));// x+465?
-        // changemousexy9kw = false;
-        // } else {
-        // mouseArray.add(Integer.parseInt(s));// y+264?
-        // changemousexy9kw = true;
-        // }
-        // }
-        // mouseArray.clear();
-
-        String token;
-        token = ((KeyCaptchaPuzzleChallenge) challenge).getHelper().sendPuzzleResult(marray, ret.substring("OK-answered-".length()));
-
+        final String points;
+        if (StringUtils.startsWithCaseInsensitive(ret, "OK-answered-")) {
+            points = ret.substring("OK-answered-".length());
+        } else {
+            points = ret;
+        }
+        final String token = ((KeyCaptchaPuzzleChallenge) challenge).getHelper().sendPuzzleResult(null, points);
         counterSolved.incrementAndGet();
         solverJob.setAnswer(new Captcha9kwPuzzleResponse((challenge), this, token, 95, captchaID));
     }
-
 }
