@@ -180,11 +180,8 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
         Checkbox puzzlecaptchas = new Checkbox(CFG_9KWCAPTCHA.PUZZLE);
         puzzlecaptchas.setToolTipText(_GUI.T.NinekwService_createPanel_puzzlecaptchas_tooltiptext());
-        if (config.ispuzzle()) {
-            puzzlecaptchas.setEnabled(true);
-        } else {
-            puzzlecaptchas.setEnabled(false);// TODO: Puzzle Captchas for 9kw.eu (Test possible?)
-        }
+        puzzlecaptchas.setEnabled(true);
+
         toolbar3.add(puzzlecaptchas);
         toolbar3.add(label(_GUI.T.NinekwService_createPanel_puzzlecaptchas()));
         Tab1_9kw.add(toolbar3, "gapleft 33,spanx,pushx,growx");
