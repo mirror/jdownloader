@@ -150,8 +150,22 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     String getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%2C%22add_pin_rep_with_place%22%3Afalse%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22add_vase%22%3Atrue%2C%22access%22%3A%5B%5D%2C%22board_layout%22%3A%22default%22%2C%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22prepend%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D" + module + "&_=" + System.currentTimeMillis();
                     // referrer should always be of the first request!
                     final Browser ajax = br.cloneBrowser();
+                    ajax.setAllowedResponseCodes(new int[] { 503, 504 });
+                    int failcounter_http_504 = 0;
                     prepAPIBR(ajax);
-                    ajax.getPage(getpage);
+                    /* 2016-11-03: Added retries on HTTP/1.1 503 first byte timeout | HTTP/1.1 504 GATEWAY_TIMEOUT */
+                    do {
+                        if (this.isAbort()) {
+                            logger.info("Decryption aborted by user: " + parameter);
+                            return decryptedLinks;
+                        }
+                        if (failcounter_http_504 > 0) {
+                            logger.info("503/504 error retry " + failcounter_http_504);
+                            this.sleep(5000, param);
+                        }
+                        ajax.getPage(getpage);
+                        failcounter_http_504++;
+                    } while (ajax.getHttpConnection().getResponseCode() == 504 && failcounter_http_504 <= 4);
                     json_source = ajax.toString();
                 }
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);

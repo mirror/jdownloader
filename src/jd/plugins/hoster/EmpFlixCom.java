@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)|https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+|https?://player\\.empflix\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "https?://(?:www\\.)?empflix\\.com/(?:view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html|.+/video\\d+)|https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+|https?://player\\.empflix\\.com/video/\\d+" })
 public class EmpFlixCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -88,9 +88,14 @@ public class EmpFlixCom extends PluginForHost {
         if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        boolean directURL = false;
         String filename = br.getRegex("<title>(.*?), Free Streaming Porn</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"title\" name=\"title\" value=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            /* 2016-11-03 */
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>]+)\"").getMatch(0);
         }
         DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
         if (DLLINK == null) {
@@ -108,18 +113,26 @@ public class EmpFlixCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("config\\s*=\\s*('|\")(.*?)\1").getMatch(1);
         }
+        if (DLLINK == null) {
+            /* 2016-11-03 */
+            DLLINK = br.getRegex("itemprop=\"contentUrl\" content=\"(http[^<>\"]+)\"").getMatch(0);
+            directURL = true;
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<res>480p</res>\\s+<videoLink><\\!\\[CDATA\\[(.*?)\\]\\]></videoLink>").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<(file|videoLink)><?(\\!\\[CDATA\\[)?(.*?)(\\]\\])?>?</(file|videoLink)>").getMatch(2);
+        if (!directURL) {
+            br.getPage(Encoding.htmlDecode(DLLINK));
+            DLLINK = br.getRegex("<res>480p</res>\\s+<videoLink><\\!\\[CDATA\\[(.*?)\\]\\]></videoLink>").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<(file|videoLink)><?(\\!\\[CDATA\\[)?(.*?)(\\]\\])?>?</(file|videoLink)>").getMatch(2);
+            }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            DLLINK = Encoding.htmlDecode(DLLINK);
+            directURL = true;
         }
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();

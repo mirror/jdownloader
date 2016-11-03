@@ -262,7 +262,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
@@ -568,8 +568,14 @@ public class VKontakteRuHoster extends PluginForHost {
             downloadLink.setLivePlugin(this);
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
-            if (!dl.getConnection().getContentType().contains("html")) {
+            final URLConnectionAdapter con;
+            if (!isDownload) {
+                con = br2.openGetConnection(finalUrl);
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
+                con = dl.getConnection();
+            }
+            if (!con.getContentType().contains("html")) {
                 if (finalfilename == null) {
                     downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(dl.getConnection())));
                 } else {
@@ -578,12 +584,12 @@ public class VKontakteRuHoster extends PluginForHost {
                 return 1;
             } else {
                 // request range fucked
-                if (dl.getConnection().getResponseCode() == 416) {
+                if (con.getResponseCode() == 416) {
                     logger.info("Resume failed --> Retrying from zero");
                     downloadLink.setChunksProgress(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                if (dl.getConnection().getResponseCode() == 404) {
+                if (con.getResponseCode() == 404) {
                     return 404;
                 }
                 return 0;
