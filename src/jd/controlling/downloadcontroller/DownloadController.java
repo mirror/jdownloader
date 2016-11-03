@@ -1060,6 +1060,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
                         @Override
                         public void close() throws IOException {
+                            finalZos.flush();
                         }
 
                         @Override
@@ -1137,12 +1138,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             }
                         }
                     } catch (final Throwable e) {
+                        e.printStackTrace();
                         logger.log(e);
                     } finally {
                         downloadLists.add(0, file);
                     }
                     return true;
                 } catch (final Throwable e) {
+                    e.printStackTrace();
                     logger.log(e);
                 } finally {
                     try {
@@ -1152,6 +1155,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             fos.close();
                         }
                     } catch (final Throwable e) {
+                        e.printStackTrace();
                         logger.log(e);
                     }
                     if (deleteFile && file.exists()) {

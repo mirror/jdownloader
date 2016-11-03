@@ -2328,6 +2328,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                             @Override
                             public void close() throws IOException {
+                                finalZos.flush();
                             }
 
                             @Override
@@ -2424,19 +2425,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                         } catch (final Throwable e) {
+                            e.printStackTrace();
                             logger.log(e);
                         } finally {
                             linkcollectorLists.add(0, file);
                         }
                         return null;
                     } catch (final Throwable e) {
+                        e.printStackTrace();
                         logger.log(e);
                     } finally {
                         try {
-                            if (fos != null) {
+                            if (zos != null) {
+                                zos.close();
+                            } else if (fos != null) {
                                 fos.close();
                             }
                         } catch (final Throwable e) {
+                            e.printStackTrace();
+                            logger.log(e);
                         }
                         if (deleteFile && file.exists()) {
                             FileCreationManager.getInstance().delete(file, null);
