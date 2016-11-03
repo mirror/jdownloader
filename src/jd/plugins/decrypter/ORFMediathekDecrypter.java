@@ -17,12 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -36,7 +36,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
@@ -107,6 +109,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         final String nicehost = new Regex(data, "http://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         String id_episode = null;
+        String date_formatted = null;
+        final String date = PluginJSonUtils.getJsonValue(this.br, "date");
+        if (date != null) {
+            date_formatted = formatDate(date);
+        }
 
         try {
             String json = this.br.getRegex("class=\"jsb_ jsb_VideoPlaylist\" data\\-jsb=\"([^<>\"]+)\"").getMatch(0);
@@ -117,7 +124,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 json = Encoding.htmlDecode(json);
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 entries = (LinkedHashMap<String, Object>) entries.get("playlist");
-                String fpName = (String) entries.get("title");
+                String fpName = "";
+                title = (String) entries.get("title");
                 id_episode = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
                 if (id_episode.equals("0")) {
                     return null;
@@ -125,10 +133,13 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 ArrayList<Object> video = (ArrayList) entries.get("videos");
                 ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
 
-                if (fpName == null) {
-                    fpName = getTitle(br);
+                if (title == null) {
+                    title = getTitle(br);
                 }
-                fpName += "_" + id_episode;
+                if (date_formatted != null) {
+                    fpName = date_formatted + "_";
+                }
+                fpName += title + "_" + id_episode;
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
@@ -410,14 +421,30 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         return true;
     }
 
-    private String decodeUnicode(String s) {
-        Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+    private String formatDate(String input) {
+        if (input.contains(":")) {
+            input = input.substring(0, input.lastIndexOf(":"));
         }
-        return res;
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm", Locale.GERMAN);
+        // if (input.matches("\\d+T\\d{2}\\d{2}")) {
+        // date = TimeFormatter.getMilliSeconds(input, "yyyyMMdd'T'HHmm", Locale.GERMAN);
+        // } else {
+        // if (input.contains(":")) {
+        // input = input.substring(0, input.lastIndexOf(":")) + "00";
+        // }
+        // date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
+        // }
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /* NO OVERRIDE!! */
