@@ -10,12 +10,8 @@ public class LinkCollectingInformation {
 
     private final JobLinkCrawler jobLinkCrawler;
 
-    public long getCollectingID() {
-        return jobLinkCrawler.getCollectingID();
-    }
-
-    public boolean isCollectingIDValid() {
-        return getCollectingID() == getLinkCrawler().getLinkCollector().getCollectingID();
+    public boolean isAborted() {
+        return jobLinkCrawler.isAborted();
     }
 
     public LinkCollectingInformation(final JobLinkCrawler jobLinkCrawler) {
