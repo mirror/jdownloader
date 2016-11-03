@@ -420,6 +420,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private transient LinkCollectorEventSender                                  eventsender        = new LinkCollectorEventSender();
     public final ScheduledExecutorService                                       TIMINGQUEUE        = DelayedRunnable.getNewScheduledExecutorService();
     public static SingleReachableState                                          CRAWLERLIST_LOADED = new SingleReachableState("CRAWLERLIST_COMPLETE");
+
     private static LinkCollector                                                INSTANCE           = new LinkCollector();
 
     private volatile LinkChecker<CrawledLink>                                   defaultLinkChecker = null;
@@ -470,7 +471,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        saveLinkCollectorLinks();
+                        saveLinkCollectorLinks(true);
                         return null;
                     }
                 });
@@ -505,7 +506,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public void delayedrun() {
-                saveLinkCollectorLinks();
+                if (allowSaving()) {
+                    QUEUE.addWait(new QueueAction<Void, RuntimeException>() {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            saveLinkCollectorLinks();
+                            return null;
+                        }
+                    });
+                }
             }
 
         };
@@ -2456,21 +2466,24 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private boolean allowSaving() {
-        return CRAWLERLIST_LOADED.isReached() && JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled();
+        return !ShutdownController.getInstance().isShuttingDown() && CRAWLERLIST_LOADED.isReached() && JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled();
+    }
+
+    public void saveLinkCollectorLinks() {
+        saveLinkCollectorLinks(false);
     }
 
     /**
      * save the current CrawledPackages/CrawledLinks controlled by this LinkCollector
      */
-    public void saveLinkCollectorLinks() {
-        if (!allowSaving()) {
-            return;
-        }
-        /* save as new Json ZipFile */
-        try {
-            save(getPackagesCopy(), null);
-        } catch (final Throwable e) {
-            logger.log(e);
+    public void saveLinkCollectorLinks(final boolean force) {
+        if (allowSaving() || force) {
+            /* save as new Json ZipFile */
+            try {
+                save(getPackagesCopy(), null);
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
         }
     }
 
