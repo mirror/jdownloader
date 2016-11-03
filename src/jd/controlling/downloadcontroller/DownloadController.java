@@ -1119,7 +1119,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     zos.putNextEntry(downloadControllerEntry);
                     JSonStorage.getMapper().writeObject(entryOutputStream, dcs);
                     zos.closeEntry();
-
                     zos.close();
                     zos = null;
                     fos = null;
