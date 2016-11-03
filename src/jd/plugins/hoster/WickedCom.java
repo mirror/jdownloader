@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "http://wickeddecrypted.+" })
@@ -125,7 +126,7 @@ public class WickedCom extends PluginForHost {
     }
 
     private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
-        final String fid = link.getStringProperty("fid", null);
+        final String fid = getFID(link);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -162,6 +163,10 @@ public class WickedCom extends PluginForHost {
         if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return dl.getStringProperty("fid", null);
     }
 
     @Override
@@ -280,6 +285,26 @@ public class WickedCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        if (is_this_plugin) {
+            /* The original brazzers plugin is always allowed to download. */
+            return true;
+        } else {
+            /* Multihosts should not be tried for picture-downloads! */
+            return !downloadLink.getDownloadURL().matches(type_pic);
+        }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        if (StringUtils.equals("premiumize.me", buildForThisPlugin.getHost())) {
+            return jd.plugins.decrypter.WickedCom.getVideoUrlFree(getFID(downloadLink));
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        }
     }
 
     @Override
