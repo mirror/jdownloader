@@ -861,12 +861,10 @@ public class KeyCaptcha {
     }
 
     public String sendPuzzleResult(ArrayList<Integer> marray, String out) throws IOException {
-
         String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
         if (key == null) {
             key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
         }
-
         if (marray == null || marray.size() == 0) {
             marray = new ArrayList<Integer>();
             String[] points = out.split("\\.");
