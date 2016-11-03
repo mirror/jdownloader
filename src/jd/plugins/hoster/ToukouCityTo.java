@@ -51,7 +51,7 @@ public class ToukouCityTo extends PluginForHost {
         if (br.getURL().equals("http://toukoucity.to/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"titles\">([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("span>([^<>\"]*?)</h2>").getMatch(0);
         dllink = br.getRegex("\\(\\'file\\',\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("").getMatch(0);
@@ -61,6 +61,7 @@ public class ToukouCityTo extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
+        filename = filename.replaceFirst("\\s+(mp4|flv)$", "");
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
