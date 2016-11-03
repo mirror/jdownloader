@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -151,7 +152,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     // referrer should always be of the first request!
                     final Browser ajax = br.cloneBrowser();
                     ajax.setAllowedResponseCodes(new int[] { 503, 504 });
-                    int failcounter_http_504 = 0;
+                    int failcounter_http_5034 = 0;
                     prepAPIBR(ajax);
                     /* 2016-11-03: Added retries on HTTP/1.1 503 first byte timeout | HTTP/1.1 504 GATEWAY_TIMEOUT */
                     do {
@@ -159,13 +160,16 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             logger.info("Decryption aborted by user: " + parameter);
                             return decryptedLinks;
                         }
-                        if (failcounter_http_504 > 0) {
-                            logger.info("503/504 error retry " + failcounter_http_504);
+                        if (failcounter_http_5034 > 0) {
+                            logger.info("503/504 error retry " + failcounter_http_5034);
                             this.sleep(5000, param);
                         }
                         ajax.getPage(getpage);
-                        failcounter_http_504++;
-                    } while (ajax.getHttpConnection().getResponseCode() == 504 && failcounter_http_504 <= 4);
+                        failcounter_http_5034++;
+                    } while ((ajax.getHttpConnection().getResponseCode() == 504 || ajax.getHttpConnection().getResponseCode() == 503) && failcounter_http_5034 <= 4);
+                    if (!ajax.getRequest().getHttpConnection().isOK()) {
+                        throw new IOException("Invalid responseCode " + ajax.getRequest().getHttpConnection().getResponseCode());
+                    }
                     json_source = ajax.toString();
                 }
                 LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
