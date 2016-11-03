@@ -80,7 +80,10 @@ public class SiteType {
          * <a href="https://mfscripts.com/wurlie/overview.html">Wurlie - PHP Short Url Script</a>
          */
         MFScripts_Wurlie,
-
+        /**
+         * <a href="http://ouo.io/">ouo.io</a> linkcryptor script, usually with reCaptchaV2 as protection. <a
+         */
+        OuoIoCryptor,
         /**
          * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by <a
          * href="http://pimproll.com/">pimproll.com</a>

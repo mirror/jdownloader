@@ -13,6 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -21,7 +22,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+" })
 public class VideoGoogle extends PluginForHost {
 
     private String       dllink = null;
@@ -95,6 +96,17 @@ public class VideoGoogle extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
+            if (con.getResponseCode() == 404) {
+                logger.info("Directurl seems to have expired - trying to refresh it");
+                dllink = refreshDirectlink(downloadLink);
+                if (dllink == null) {
+                    /* Plugin broken or offline --> Most likely offline */
+                    logger.info("Failed to refresh directurl");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                logger.info("Successfully refreshed directurl");
+                con = br2.openGetConnection(dllink);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 String fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
@@ -125,6 +137,30 @@ public class VideoGoogle extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    /**
+     * Refresh directurls from external providers
+     *
+     * @throws Exception
+     */
+    private String refreshDirectlink(final DownloadLink dl) throws Exception {
+        final String directlink;
+        if (dl.getDownloadURL().matches(embed)) {
+            final String source_plugin_b64 = dl.getStringProperty("source_plugin_b64", null);
+            if (source_plugin_b64 != null) {
+                if (source_plugin_b64.equalsIgnoreCase("a2lzc2FuaW1lLmNvbQ==")) {
+                    directlink = ((jd.plugins.decrypter.KisAmeCm) JDUtilities.getPluginForDecrypt(Encoding.Base64Decode(source_plugin_b64))).refreshDirecturl(dl, this.br);
+                } else {
+                    directlink = null;
+                }
+            } else {
+                directlink = null;
+            }
+        } else {
+            directlink = null;
+        }
+        return directlink;
     }
 
     @Override
