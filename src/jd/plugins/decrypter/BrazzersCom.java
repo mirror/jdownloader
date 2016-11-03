@@ -173,6 +173,20 @@ public class BrazzersCom extends PluginForDecrypt {
         return br.getRegex("var\\s*?gallerySource\\s*?=\\s*?(\\{.*?\\});").getMatch(0);
     }
 
+    public static String getVideoJson(final Browser br) {
+        return br.getRegex("\\.addVideoInfo\\((.*?)\\)").getMatch(0);
+    }
+
+    public static LinkedHashMap<String, Object> getVideoMap(final String json_source) {
+        LinkedHashMap<String, Object> entries = null;
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "player/stream_info/http/paths");
+        } catch (final Throwable e) {
+        }
+        return entries;
+    }
+
     public static String getPicFormatString(final Browser br) {
         String pic_format_string = null;
         try {

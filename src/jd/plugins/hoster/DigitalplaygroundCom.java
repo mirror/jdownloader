@@ -17,8 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,21 +37,23 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babes.com" }, urls = { "https?://members\\.babes\\.com/download/\\d+/mp4_\\d+_\\d+/|https?://babesdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
-public class BabesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "http://digitalplaygrounddecrypted.+" })
+public class DigitalplaygroundCom extends PluginForHost {
 
-    public BabesCom(PluginWrapper wrapper) {
+    public DigitalplaygroundCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://enter.babes.com/signup/signup.php");
+        this.enablePremium("http://join.digitalplayground.com/signup/signup.php");
+        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.babes.com/policy/ipp.php?site=bb";
+        return "http://www.dpincsupport.com/terms-of-service/";
     }
 
     /* Connection stuff */
@@ -59,21 +64,19 @@ public class BabesCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private final String         type_premium_pic             = "https?://(?:babesdecrypted\\.)?photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+";
+    private final String         type_premium_pic             = ".+\\.jpg.*?";
 
-    public static final String   html_loggedin                = "data\\-membership";
+    public static final String   html_loggedin                = "class=\"member\\-nav\"";
 
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "members.babes.com");
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.WickedCom.DOMAIN_BASE);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(type_premium_pic)) {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://babesdecrypted\\.photos\\.", "http://photos."));
-        }
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://digitalplaygrounddecrypted", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -90,51 +93,22 @@ public class BabesCom extends PluginForHost {
         }
         this.login(this.br, aa, false);
         dllink = link.getDownloadURL();
-        final String fid = link.getStringProperty("fid", null);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            } else {
-                if (link.getDownloadURL().matches(type_premium_pic)) {
-                    /* Refresh directurl */
-                    final String number_formatted = link.getStringProperty("picnumber_formatted", null);
-                    if (fid == null || number_formatted == null) {
-                        /* User added url without decrypter --> Impossible to refresh this directurl! */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    this.br.getPage(jd.plugins.decrypter.BabesComDecrypter.getPicUrl(fid));
-                    if (jd.plugins.decrypter.BabesComDecrypter.isOffline(this.br)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final String pictures[] = jd.plugins.decrypter.BabesComDecrypter.getPictureArray(this.br);
-                    for (final String finallink : pictures) {
-                        if (finallink.contains(number_formatted + ".jpg")) {
-                            dllink = finallink;
-                            break;
-                        }
-                    }
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-
-                    /* ... new URL should work! */
-                    con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        /* Set new url */
-                        link.setUrlDownload(dllink);
-                        /* If user copies url he should always get a valid one too :) */
-                        link.setContentUrl(dllink);
-                        link.setDownloadSize(con.getLongContentLength());
-                    } else {
-                        server_issues = true;
-                    }
-                } else {
+            if (con.getContentType().contains("html")) {
+                /* Refresh directurl */
+                refreshDirecturl(link);
+                con = br.openHeadConnection(dllink);
+                if (con.getContentType().contains("html")) {
                     server_issues = true;
+                    return AvailableStatus.TRUE;
                 }
+                /* If user copies url he should always get a valid one too :) */
+                link.setContentUrl(dllink);
             }
+            link.setDownloadSize(con.getLongContentLength());
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
         } finally {
             try {
                 con.disconnect();
@@ -142,6 +116,43 @@ public class BabesCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
+        final String fid = link.getStringProperty("fid", null);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (link.getDownloadURL().matches(type_premium_pic)) {
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(fid));
+            final String number_formatted = link.getStringProperty("picnumber_formatted", null);
+            if (fid == null || number_formatted == null) {
+                /* User added url without decrypter --> Impossible to refresh this directurl! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String pictures[] = jd.plugins.decrypter.DigitalplaygroundCom.getPictureArray(this.br);
+            for (final String finallink : pictures) {
+                if (finallink.contains(number_formatted + ".jpg")) {
+                    dllink = finallink;
+                    break;
+                }
+            }
+        } else {
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getVideoUrlPremium(fid));
+            final String quality = link.getStringProperty("quality", null);
+            if (quality == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* We don't need the exact json source for that but we have to make sure to grab the http source, not the rtmp source! */
+            final String json_src_http = PluginJSonUtils.getJsonNested(this.br, "http");
+            dllink = PluginJSonUtils.getJsonValue(json_src_http, quality);
+        }
+        if (dllink == null || !dllink.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override
@@ -159,8 +170,7 @@ public class BabesCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://members.babes.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -174,7 +184,7 @@ public class BabesCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://members." + account.getHoster() + "/");
+                    br.getPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
                         return;
@@ -182,24 +192,24 @@ public class BabesCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://members." + account.getHoster() + "/access/login/");
-                String postdata = "rememberme=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (this.br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
+                br.getPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
+                String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://members." + account.getHoster() + "/", true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
                     final String code = getCaptchaCode("recaptcha", cf, dummyLink);
                     postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
                 }
-                br.postPage("http://members." + account.getHoster() + "/access/submit/", postdata);
+                br.postPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (br.getCookie(MAINPAGE, "loginremember") == null || !this.br.containsHTML(html_loggedin) || br.getURL().contains("/banned")) {
+                if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -222,14 +232,6 @@ public class BabesCom extends PluginForHost {
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
-        }
-        br.getPage("/account/");
-        if (!br.containsHTML("<span>Status: </span>Paying Membership</li>")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
@@ -256,6 +258,18 @@ public class BabesCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public String getDescription() {
+        return "Download videos- and pictures with the digitalplayground.com plugin.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080p_6000", "Grab 1080p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720p_4000", "Grab 720p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_480p_1500", "Grab 480p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_320p_500", "Grab 320p (mp4)?").setDefaultValue(true));
     }
 
     @Override

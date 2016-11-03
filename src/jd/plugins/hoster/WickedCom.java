@@ -18,16 +18,12 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.config.Property;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -41,66 +37,130 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wicked.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.wicked\\.com/download/\\d+/[a-z0-9_\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "http://wickeddecrypted.+" })
 public class WickedCom extends PluginForHost {
 
     public WickedCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://join.wicked.com/signup/signup.php");
+        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.wicked.com/docs/terms/";
+        return "http://ma.wicked.com/docs/terms/";
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 0;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 0;
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private final String         type_pic                     = ".+\\.jpg.*?";
+
+    public static final String   html_loggedin                = "class=\"account\\-info\"";
+
+    private String               dllink                       = null;
+    private boolean              server_issues                = false;
+    private boolean              logged_in                    = false;
+
+    public static Browser prepBR(final Browser br) {
+        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "ma.wicked.com");
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://wickeddecrypted", "http://"));
+    }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
+        br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Cannot check these links without account");
+        if (aa == null && !link.getDownloadURL().matches(type_pic)) {
+            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        login(aa, false);
+        if (aa != null) {
+            this.login(this.br, aa, false);
+            logged_in = true;
+        } else {
+            logged_in = false;
+        }
+        dllink = link.getDownloadURL();
+        URLConnectionAdapter con = null;
         try {
-            try {
-                con = openConnection(this.br, link.getDownloadURL());
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            con = br.openHeadConnection(dllink);
+            if (con.getContentType().contains("html")) {
+                /* Refresh directurl */
+                refreshDirecturl(link);
+                con = br.openHeadConnection(dllink);
+                if (con.getContentType().contains("html")) {
+                    server_issues = true;
+                    return AvailableStatus.TRUE;
+                }
+                /* If user copies url he should always get a valid one too :) */
+                link.setContentUrl(dllink);
             }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
+            link.setDownloadSize(con.getLongContentLength());
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
+        final String fid = link.getStringProperty("fid", null);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (link.getDownloadURL().matches(type_pic)) {
+            if (logged_in) {
+                this.br.getPage(jd.plugins.decrypter.WickedCom.getPicUrl(fid));
+            } else {
+                this.br.getPage(jd.plugins.decrypter.WickedCom.getVideoUrlFree(fid));
+            }
+            final String number_formatted = link.getStringProperty("picnumber_formatted", null);
+            if (fid == null || number_formatted == null) {
+                /* User added url without decrypter --> Impossible to refresh this directurl! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (jd.plugins.decrypter.WickedCom.isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String pictures[] = jd.plugins.decrypter.WickedCom.getPictureArray(this.br);
+            for (final String finallink : pictures) {
+                if (finallink.contains(number_formatted + ".jpg")) {
+                    dllink = finallink;
+                    break;
+                }
+            }
+        } else {
+            this.br.getPage(jd.plugins.decrypter.WickedCom.getVideoUrlPremium(fid));
+            final String quality = link.getStringProperty("quality", null);
+            if (quality == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* We don't need the exact json source for that! */
+            dllink = PluginJSonUtils.getJsonValue(this.br, quality);
+        }
+        if (dllink == null || !dllink.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -111,18 +171,20 @@ public class WickedCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        try {
+        /* 2016-11-03: Free Users can download image galleries (only). */
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setProperty("premium_directlink", dllink);
+        dl.startDownload();
     }
 
     @Override
@@ -130,165 +192,120 @@ public class WickedCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://wicked.com";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
-                this.br.setAllowedResponseCodes(413);
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        if (!force) {
-                            return;
-                        }
+                prepBR(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /*
+                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
+                     * when the user logs in via browser.
+                     */
+                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("http://" + jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
+                    if (br.containsHTML(html_loggedin)) {
+                        logger.info("Cookie login successful");
+                        return;
                     }
+                    logger.info("Cookie login failed --> Performing full login");
+                    br = prepBR(new Browser());
                 }
-                /* Always try to avoid login captcha, even on full login! */
-                this.br.getPage("http://ma.wicked.com/postlogin/");
-                if (!this.br.getURL().contains("wicked.com/access/")) {
-                    return;
-                }
-
-                /* Remove old cookies & Headers */
-                this.br = prepBR(new Browser());
-
-                br.setFollowRedirects(true);
-                br.getPage("http://ma.wicked.com/access/login/");
+                br.getPage("http://" + jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
                 String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("for=\"recaptcha_response_field\"")) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "wicked.com", MAINPAGE, true);
+                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
+                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
+                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
                 }
-                br.postPage("http://ma.wicked.com/access/submit/", postdata);
-                final Form postafter = this.br.getFormbyProperty("id", "form");
-                if (postafter == null) {
+                br.postPage("/access/submit/", postdata);
+                final Form continueform = br.getFormbyKey("response");
+                if (continueform != null) {
+                    /* Redirect from probiller.com to main website --> Login complete */
+                    br.submitForm(continueform);
+                }
+                if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                this.br.submitForm(postafter);
-                // br.getPage("http://ma.wicked.com/postlogin/");
-                if (br.getCookie(MAINPAGE, "loginremember") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(this.br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
-        /* Until now, all accounts are premium */
         account.setType(AccountType.PREMIUM);
-        if (account.getBooleanProperty("free", false)) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
-        } else {
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium account");
-        }
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Premium Account");
         account.setValid(true);
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        /* We're already logged in via requestFileInformation */
-        if (account.getBooleanProperty("free", false)) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premium_directlink", dllink);
+        dl.startDownload();
     }
 
-    private Browser prepBR(final Browser br) {
-        br.setAllowedResponseCodes(413);
-        return br;
+    @Override
+    public String getDescription() {
+        return "Download videos- and pictures with the wicked.com plugin.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__1080p_6000", "Grab 1080p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__720p_2500", "Grab 720p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__400p_1300", "Grab 400p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__256p_600", "Grab 256p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-128x96_H263", "Grab 128x96 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-176x144_H263", "Grab 176x144 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-640x368_H264", "Grab 640x368 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-480x272_H264", "Grab 480x272 (mp4)?").setDefaultValue(true));
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.PornPortal;
     }
 
     @Override
