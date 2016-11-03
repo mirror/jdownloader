@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Random;
@@ -33,10 +34,11 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
 
     public DropboxCom(PluginWrapper wrapper) {
@@ -231,6 +233,7 @@ public class DropboxCom extends PluginForHost {
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
+                pwform.put("t", br.getCookie(getHost(), "t"));
                 pwform.put("password", passCode);
                 this.br.submitForm(pwform);
                 if (this.br.getURL().contains("/password") || PluginJSonUtils.getJsonValue(br, "error") != null) {
@@ -239,10 +242,9 @@ public class DropboxCom extends PluginForHost {
                 }
                 this.br.getPage(link.getPluginPatternMatcher());
                 link.setProperty("pass", passCode);
-                url = this.br.getURL() + "?dl=1";
+                url = br.getURL("?dl=1").toString();
             } else {
-
-                url = link.getPluginPatternMatcher() + "?dl=1";
+                url = URLHelper.parseLocation(new URL(link.getPluginPatternMatcher()), "?dl=1");
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {

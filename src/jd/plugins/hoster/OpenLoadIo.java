@@ -27,17 +27,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -54,6 +43,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co" }, urls = { "https?://(?:www\\.)?(?:openload\\.(?:io|co)|oload\\.co)/(?:f|embed)/[A-Za-z0-9_\\-]+|https?://(?:www\\.)?openload\\.co/stream/[A-Za-z0-9_\\-]+~.+" })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -247,7 +247,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             String captcha_response = "null";
             try {
                 if ((account == null && enable_api_free) || (account != null && isAPIAccount(account))) {
-                    getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
+                    getPageAPI(account, api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
                     final long timestampBeforeCaptcha = System.currentTimeMillis();
                     api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                     api_data = (LinkedHashMap<String, Object>) api_data.get("result");
@@ -274,7 +274,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                     api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                     dllink = (String) api_data.get("url");
                     if (dllink == null) {
-                        handleAPIErrors();
+                        handleAPIErrors(account);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
@@ -323,6 +323,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                 logger.info("directurl seems to have expired");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            downloadLink.removeProperty(directlinkproperty);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -330,7 +331,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             }
             br.followConnection();
             this.updatestatuscode();
-            this.handleAPIErrors();
+            this.handleAPIErrors(account);
             /* We usually use their API so no matter what goes wrong here - a retry should help! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
         }
@@ -447,7 +448,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     private void loginAPI(final Account account) throws Exception {
         synchronized (LOCK) {
             prepBRAPI(this.br);
-            getPageAPI(api_base + "/account/info?" + getAPILoginString(account));
+            getPageAPI(account, api_base + "/account/info?" + getAPILoginString(account));
         }
     }
 
@@ -638,13 +639,13 @@ public class OpenLoadIo extends antiDDoSForHost {
         this.api_msg = PluginJSonUtils.getJsonValue(br, "msg");
     }
 
-    private void getPageAPI(final String url) throws Exception {
+    private void getPageAPI(final Account account, final String url) throws Exception {
         super.getPage(url);
         this.updatestatuscode();
-        handleAPIErrors();
+        handleAPIErrors(account);
     }
 
-    private void handleAPIErrors() throws PluginException {
+    private void handleAPIErrors(final Account account) throws PluginException {
         final String status = PluginJSonUtils.getJsonValue(br, "status");
         switch (api_responsecode) {
         case 0:
@@ -656,6 +657,9 @@ public class OpenLoadIo extends antiDDoSForHost {
         case 400:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error 400");
         case 403:
+            if (br.containsHTML("wrong IP")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wrong IP");
+            }
             /* E.g. "msg":"Download Ticket not valid any more" */
             if (br.containsHTML("the owner of this file doesn't allow API downloads")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "The owner of this file doesn't allow API downloads");
@@ -663,10 +667,14 @@ public class OpenLoadIo extends antiDDoSForHost {
             if ("Download Ticket not valid any more".equals(this.api_msg)) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API error 403 '" + this.api_msg + "'", 5 * 60 * 1000l);
             }
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (account != null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         case 404:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
