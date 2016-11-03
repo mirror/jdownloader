@@ -39,7 +39,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "https?://bato\\.to/reader#[a-z0-9]+" })
 public class BatoTo extends PluginForDecrypt {
 
     public BatoTo(PluginWrapper wrapper) {
@@ -95,7 +95,10 @@ public class BatoTo extends PluginForDecrypt {
         // We get the title
         String title_tag = br.getRegex("value=\"https?://bato\\.to/reader#[a-z0-9]+\" selected=\"selected\">([^<>\"]*?)</option>").getMatch(0);
         // group
-        String title_group = br.getRegex("<select name=\"group_select\"[^>]*>\\s*<option[^>]*>(.*?)</option>").getMatch(0);
+        String title_group = br.getRegex("<select name=\"group_select\"[^>]*>\\s*.*?<option[^>]*\"selected\"\\s*>(.*?)</option>").getMatch(0);
+        if (title_group == null) {
+            title_group = br.getRegex("<select name=\"group_select\"[^>]*>\\s*<option[^>]*>(.*?)</option>").getMatch(0);
+        }
         // final String
         if (title_tag == null) {
             /* Fallback if everything else fails! */
