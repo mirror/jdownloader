@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(/\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(/\\d+)?" })
 public class HentaiFoundryComGallery extends PluginForDecrypt {
 
     public HentaiFoundryComGallery(PluginWrapper wrapper) {
@@ -87,7 +89,8 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                 title = Encoding.htmlDecode(title).trim();
                 title = encodeUnicode(title);
                 final DownloadLink dl = createDownloadlink("http://www.hentai-foundrydecrypted.com" + url);
-                dl.setName(title + ".png");
+                dl.setName(title);
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
