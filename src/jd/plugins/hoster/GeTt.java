@@ -32,7 +32,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://((www|open|api)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://((www|open|api|proxy)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" })
 public class GeTt extends PluginForHost {
 
     private String              dllink               = null;
@@ -61,9 +61,12 @@ public class GeTt extends PluginForHost {
         br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        final Browser brc = br.cloneBrowser();
-        if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?api(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+")) {
+        if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?(api|proxy)(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+")) {
             br.getPage("http://ge.tt");
+            if (downloadLink.getContentUrl() != null) {
+                br.getPage(downloadLink.getContentUrl());
+            }
+            final Browser brc = br.cloneBrowser();
             brc.getPage(downloadLink.getDownloadURL());
             if (brc.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,6 +87,7 @@ public class GeTt extends PluginForHost {
             }
         }
         // In case the link redirects to the finallink
+        final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
