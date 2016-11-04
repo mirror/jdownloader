@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -60,6 +61,7 @@ public class BrazzersCom extends PluginForDecrypt {
         final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(plg);
         final String fid = new Regex(parameter, "^.+/(\\d+)/?").getMatch(0);
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         if (aa != null) {
             ((jd.plugins.hoster.BrazzersCom) plg).login(this.br, aa, false);
         }
@@ -106,7 +108,11 @@ public class BrazzersCom extends PluginForDecrypt {
                 final String dlurl = new Regex(video, "(/download/[^<>\"]+/)\"").getMatch(0);
                 final String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
                 final String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
-                if (dlurl == null || quality == null || filesize == null) {
+                final String quality_url = dlurl != null ? new Regex(dlurl, "/([^/]+)/?$").getMatch(0) : null;
+                if (dlurl == null || quality == null || filesize == null || quality_url == null) {
+                    continue;
+                } else if (!cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
+                    /* Skip unwanted qualities - only add what the user wants to have. */
                     continue;
                 }
                 final DownloadLink dl = this.createDownloadlink(base_url + dlurl);

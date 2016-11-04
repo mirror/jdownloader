@@ -64,6 +64,7 @@ public class PornHubCom extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
         if (aa != null) {
             jd.plugins.hoster.PornHubCom.login(this.br, aa, false);
+            // jd.plugins.hoster.PornHubCom.login(this.br, aa, true);
         }
         /* Convert embed links to normal links */
         if (parameter.matches("http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+")) {
