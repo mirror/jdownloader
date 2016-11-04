@@ -22,34 +22,33 @@ public class JDServUtils {
         return uploadLog(zip, "", id);
     }
 
-    public static String uploadLog(File zip, String name, String id) throws IOException {
-        //
+    public static String uploadLog(File zip, String name, String id) throws IOException { //
         return upload(IO.readFile(zip), name, id);
     }
 
     public static String upload(byte[] bytes, String name, String id) {
-
-        Browser br = new Browser();
+        final Browser br = new Browser();
         String url = BASE + "UploadInterface/upload";
         br.setProxySelector(ProxyController.getInstance());
-
+        URLConnectionAdapter con = null;
         try {
-
-            PostFormDataRequest req = (PostFormDataRequest) br.createPostFormDataRequest(url);
-
+            final PostFormDataRequest req = br.createPostFormDataRequest(url);
             req.addFormData(new FormData("0", "Data", bytes));
             req.addFormData(new FormData("1", Encoding.urlEncode(JSonStorage.serializeToJson(name))));
             req.addFormData(new FormData("2", Encoding.urlEncode(JSonStorage.serializeToJson(id))));
-            System.out.println("Length: " + bytes.length);
-            URLConnectionAdapter con = br.openRequestConnection(req);
-            String red = br.loadConnection(con).getHtmlCode();
-            red = JSonStorage.restoreFromString(red, TypeRef.STRING);
-            return red;
+            con = br.openRequestConnection(req);
+            final String response = br.loadConnection(con).getHtmlCode();
+            final String string = JSonStorage.restoreFromString(response, TypeRef.STRING);
+            return string;
         } catch (final Exception e) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             }
             throw new RuntimeException(e);
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
         }
 
     }

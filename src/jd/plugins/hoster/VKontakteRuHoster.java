@@ -119,8 +119,8 @@ public class VKontakteRuHoster extends PluginForHost {
         this.setConfigElements();
         // need this twice, because hoster plugin might not be loaded yet
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 334, 20, 30000);
-            Browser.setRequestIntervalLimitGlobal("vk.me", 334, 20, 30000);
+            Browser.setRequestIntervalLimitGlobal("vk.com", 750, 20, 30000);
+            Browser.setRequestIntervalLimitGlobal("vk.me", 750, 20, 30000);
         } catch (final Throwable e) {
         }
     }
@@ -269,7 +269,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
