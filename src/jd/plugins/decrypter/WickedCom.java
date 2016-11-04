@@ -71,7 +71,7 @@ public class WickedCom extends PluginForDecrypt {
         if (!this.br.containsHTML("class=\"galleryui\\-container\"")) {
             /* 2016-11-03: Videos are not officially downloadable --> Download http streams */
             if (!is_logged_in && redirect != null && redirect.contains("/access/login")) {
-                /* No gtotle available */
+                /* No title available */
             } else {
                 if (title == null) {
                     if (is_logged_in) {
