@@ -13,6 +13,15 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.View;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
@@ -57,15 +66,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncomplete
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.View;
 
 public class ConfirmLinksContextAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
 
@@ -253,8 +253,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     private static final long  serialVersionUID = -3937346180905569896L;
 
     public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
-
-        Thread thread = new Thread() {
+        final Thread thread = new Thread() {
 
             public void run() {
                 OnOfflineLinksAction handleOfflineLoc = handleOfflineLinks;
@@ -601,14 +600,16 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
                         @Override
                         protected Void run() throws RuntimeException {
-                            new EDTRunner() {
+                            if (!Application.isHeadless()) {
+                                new EDTRunner() {
 
-                                @Override
-                                protected void runInEDT() {
-                                    LinkgrabberSearchField.getInstance().setText("");
-                                    LinkgrabberSearchField.getInstance().onChanged();
-                                }
-                            };
+                                    @Override
+                                    protected void runInEDT() {
+                                        LinkgrabberSearchField.getInstance().setText("");
+                                        LinkgrabberSearchField.getInstance().onChanged();
+                                    }
+                                };
+                            }
                             LinkCollector.getInstance().clear();
                             return null;
                         }

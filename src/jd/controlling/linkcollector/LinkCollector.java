@@ -492,9 +492,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
         asyncSaving = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
 
+            private final boolean ignoreShutDown = false;
+
             @Override
             public void run() {
-                if (allowSaving()) {
+                if (isSavingAllowed(ignoreShutDown)) {
                     super.run();
                 }
             }
@@ -506,12 +508,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public void delayedrun() {
-                if (allowSaving()) {
+                if (isSavingAllowed(ignoreShutDown)) {
                     QUEUE.addWait(new QueueAction<Void, RuntimeException>() {
 
                         @Override
                         protected Void run() throws RuntimeException {
-                            saveLinkCollectorLinks();
+                            saveLinkCollectorLinks(ignoreShutDown);
                             return null;
                         }
                     });
@@ -2435,14 +2437,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                         } catch (final Throwable e) {
-                            e.printStackTrace();
                             logger.log(e);
                         } finally {
                             linkcollectorLists.add(0, file);
                         }
                         return null;
                     } catch (final Throwable e) {
-                        e.printStackTrace();
                         logger.log(e);
                     } finally {
                         try {
@@ -2452,7 +2452,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 fos.close();
                             }
                         } catch (final Throwable e) {
-                            e.printStackTrace();
                             logger.log(e);
                         }
                         if (deleteFile && file.exists()) {
@@ -2465,19 +2464,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
     }
 
-    private boolean allowSaving() {
-        return !ShutdownController.getInstance().isShuttingDown() && CRAWLERLIST_LOADED.isReached() && JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled();
-    }
-
-    public void saveLinkCollectorLinks() {
-        saveLinkCollectorLinks(false);
+    private boolean isSavingAllowed(final boolean ignoreShutDown) {
+        return CRAWLERLIST_LOADED.isReached() && (ignoreShutDown || !ShutdownController.getInstance().isShuttingDown()) && JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled();
     }
 
     /**
      * save the current CrawledPackages/CrawledLinks controlled by this LinkCollector
      */
-    public void saveLinkCollectorLinks(final boolean force) {
-        if (allowSaving() || force) {
+    private void saveLinkCollectorLinks(final boolean ignoreShutdown) {
+        if (isSavingAllowed(ignoreShutdown)) {
             /* save as new Json ZipFile */
             try {
                 save(getPackagesCopy(), null);
@@ -2840,24 +2835,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public static void requestDeleteLinks(final List<CrawledLink> nodesToDelete, final boolean containsOnline, final String string, final boolean byPassDialog, final boolean isCancelLinkcrawlerJobs, final boolean isResetTableSorter, final boolean isClearSearchFilter, final boolean isClearFilteredLinks) {
-
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
-
                 boolean taskToDo = false;
                 taskToDo = taskToDo || (nodesToDelete.size() > 0);
-                taskToDo = taskToDo || ((isClearSearchFilter) && !LinkgrabberSearchField.getInstance().isEmpty());
+                if (!Application.isHeadless()) {
+                    taskToDo = taskToDo || ((isClearSearchFilter) && !LinkgrabberSearchField.getInstance().isEmpty());
+                }
                 taskToDo = taskToDo || ((isResetTableSorter) && LinkGrabberTableModel.getInstance().getSortColumn() != null);
                 taskToDo = taskToDo || ((isClearFilteredLinks) && LinkCollector.getInstance().isCollecting());
                 taskToDo = taskToDo || ((isCancelLinkcrawlerJobs) && LinkCollector.getInstance().getfilteredStuffSize() > 0);
-
                 if (!taskToDo) {
-
-                    Toolkit.getDefaultToolkit().beep();
+                    if (!Application.isHeadless()) {
+                        Toolkit.getDefaultToolkit().beep();
+                    }
                     return null;
-
                 }
                 final WarnLevel level;
                 if (containsOnline) {
