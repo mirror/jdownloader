@@ -7,6 +7,15 @@ public class ErrorDetails implements Storable {
     private String stacktrace;
     private String id;
     private long   buildTime = 0;
+    private String logName   = null;
+
+    public String _getLogName() {
+        return logName;
+    }
+
+    public void _setLogName(String logName) {
+        this.logName = logName;
+    }
 
     public long getBuildTime() {
         return buildTime;
