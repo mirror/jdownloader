@@ -132,6 +132,13 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
+    public void onPluginAssigned(DownloadLink link) throws Exception {
+        if (link != null) {
+            link.removeProperty("directlinks");// remove, never used but requires a lot of memory
+        }
+    }
+
+    @Override
     public CrawledLink convert(DownloadLink link) {
         final CrawledLink ret = super.convert(link);
         final String url = link.getDownloadURL();
@@ -262,7 +269,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);

@@ -1137,7 +1137,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setProperty("postID", id);
                     dl.setProperty("albumid", album_id);
                     dl.setProperty("owner_id", owner_id);
-                    dl.setProperty("directlinks", typeObject);
+                    // dl.setProperty("directlinks", typeObject); //requires a lot of memory but not used at all?
                     dl.setProperty("photo_list_id", wall_list_id);
                     dl.setProperty("photo_module", "wall");
                 } else if (type.equals(wallpost_type_doc) && vkwall_grabdocs) {

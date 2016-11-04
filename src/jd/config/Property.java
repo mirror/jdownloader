@@ -228,15 +228,40 @@ public class Property implements Serializable {
     public boolean hasProperty(final String key) {
         if (key == null) {
             throw new WTFException("key ==null is forbidden!");
-        }
-        final HashMap<String, Object> lInternal = properties;
-        if (lInternal == null || lInternal.size() == 0) {
-            return false;
         } else {
-            synchronized (lInternal) {
-                return lInternal.containsKey(key);
+            final HashMap<String, Object> lInternal = properties;
+            if (lInternal == null || lInternal.size() == 0) {
+                return false;
+            } else {
+                synchronized (lInternal) {
+                    return lInternal.containsKey(key);
+                }
             }
         }
+    }
+
+    // convert LinkedHashMap to HashMap, reduces memory
+    private final HashMap<String, Object> optimizeHashMap(final HashMap<String, Object> map) {
+        if (map != null) {
+            if (map instanceof LinkedHashMap) {
+                final HashMap<String, Object> ret = new HashMap<String, Object>();
+                final Iterator<Entry<String, Object>> it = map.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Object> next = it.next();
+                    if (next.getKey() == null || next.getValue() == null) {
+                        continue;
+                    } else {
+                        if (next.getValue() instanceof HashMap) {
+                            ret.put(next.getKey(), optimizeHashMap((HashMap<String, Object>) next.getValue()));
+                        } else {
+                            ret.put(next.getKey(), next.getValue());
+                        }
+                    }
+                }
+                return ret;
+            }
+        }
+        return map;
     }
 
     public void setProperties(final Map<String, Object> properties) {
@@ -262,7 +287,7 @@ public class Property implements Serializable {
 
     public void setPropertiesUnsafe(final HashMap<String, Object> properties) {
         if (properties != null && properties instanceof LinkedHashMap) {
-            this.properties = new HashMap<String, Object>(properties);
+            this.properties = optimizeHashMap(properties);
         } else {
             this.properties = properties;
         }
