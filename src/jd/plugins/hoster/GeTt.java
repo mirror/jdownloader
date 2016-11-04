@@ -92,7 +92,7 @@ public class GeTt extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = brc.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (!con.getContentType().contains("html") && con.isOK()) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 // contains redirects
