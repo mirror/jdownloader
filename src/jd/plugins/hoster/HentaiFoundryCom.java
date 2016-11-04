@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -88,7 +89,7 @@ public class HentaiFoundryCom extends PluginForHost {
             if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http:" + Encoding.htmlDecode(dllink);
+            dllink = Request.getLocation(Encoding.htmlDecode(dllink), br.getRequest());
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
