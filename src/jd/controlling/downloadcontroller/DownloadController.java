@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -143,6 +144,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     private DownloadController() {
         dupeController = new DupeManager();
+        final AtomicBoolean saveFlag = new AtomicBoolean(false);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -153,7 +155,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 final boolean idle = DownloadWatchDog.getInstance().isIdle();
-                saveDownloadLinks();
+                saveDownloadLinks(true);
                 if (!idle) {
                     int retry = 10;
                     while (retry > 0) {
@@ -170,7 +172,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         }
                         retry--;
                     }
-                    saveDownloadLinks();
+                    saveDownloadLinks(true);
                 }
             }
 
@@ -180,10 +182,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         });
         changesSaver = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {
+            private final boolean ignoreShutDown = false;
 
             @Override
             public void run() {
-                if (allowSaving()) {
+                if (isSavingAllowed(ignoreShutDown)) {
                     super.run();
                 }
             }
@@ -195,13 +198,21 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public void delayedrun() {
-                saveDownloadLinks();
+                if (saveFlag.compareAndSet(false, true)) {
+                    try {
+                        saveDownloadLinks(ignoreShutDown);
+                    } finally {
+                        saveFlag.set(false);
+                    }
+                }
             }
         };
         downloadSaver = new DelayedRunnable(TIMINGQUEUE, 60 * 1000l, 5 * 60 * 1000l) {
+            private final boolean ignoreShutDown = false;
+
             @Override
             public void run() {
-                if (allowSaving()) {
+                if (isSavingAllowed(ignoreShutDown)) {
                     super.run();
                 }
             }
@@ -213,7 +224,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public void delayedrun() {
-                saveDownloadLinks();
+                if (saveFlag.compareAndSet(false, true)) {
+                    try {
+                        saveDownloadLinks(ignoreShutDown);
+                    } finally {
+                        saveFlag.set(false);
+                    }
+                }
             }
 
         };
@@ -1137,14 +1154,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             }
                         }
                     } catch (final Throwable e) {
-                        e.printStackTrace();
                         logger.log(e);
                     } finally {
                         downloadLists.add(0, file);
                     }
                     return true;
                 } catch (final Throwable e) {
-                    e.printStackTrace();
                     logger.log(e);
                 } finally {
                     try {
@@ -1154,7 +1169,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             fos.close();
                         }
                     } catch (final Throwable e) {
-                        e.printStackTrace();
                         logger.log(e);
                     }
                     if (deleteFile && file.exists()) {
@@ -1166,15 +1180,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         }
     }
 
-    private boolean allowSaving() {
-        return DOWNLOADLIST_LOADED.isReached();
+    private boolean isSavingAllowed(final boolean ignoreShutDown) {
+        return DOWNLOADLIST_LOADED.isReached() && (ignoreShutDown || !ShutdownController.getInstance().isShuttingDown());
     }
 
-    /**
-     * save the current FilePackages/DownloadLinks controlled by this DownloadController
-     */
-    public void saveDownloadLinks() {
-        if (allowSaving()) {
+    private void saveDownloadLinks(final boolean ignoreShutDown) {
+        if (isSavingAllowed(ignoreShutDown)) {
             /* save as new Json ZipFile */
             try {
                 save(getPackagesCopy(), null);
