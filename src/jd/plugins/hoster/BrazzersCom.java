@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -48,6 +50,7 @@ public class BrazzersCom extends antiDDoSForHost {
     public BrazzersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://enter.brazzers.com/signup/signup.php");
+        setConfigElements();
     }
 
     @Override
@@ -126,6 +129,7 @@ public class BrazzersCom extends antiDDoSForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
+                    link.setFinalFileName(getFileNameFromHeader(con));
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
                     if (link.getDownloadURL().matches(type_premium_pic)) {
@@ -437,6 +441,19 @@ public class BrazzersCom extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
+    }
+
+    @Override
+    public String getDescription() {
+        return "Download videos- and pictures with the brazzers.com plugin.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_1080_12000", "Grab 1080p HD MP4 1080P (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_720_8000", "Grab 720p HD MP4 720P (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_480_2000", "Grab 480p SD MP4 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_480_1000", "Grab 480p MPEG4 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mp4_272_650", "Grab 270p IPHONE/MOBILE (mp4)?").setDefaultValue(true));
     }
 
     @Override

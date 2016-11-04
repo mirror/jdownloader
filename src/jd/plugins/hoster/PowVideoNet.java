@@ -72,7 +72,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(www\\.)?powvideo\\.net/((vid)?embed-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "powvideo.net" }, urls = { "https?://(www\\.)?powvideo\\.net/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class PowVideoNet extends antiDDoSForHost {
     // Site Setters
@@ -82,7 +82,7 @@ public class PowVideoNet extends antiDDoSForHost {
     private final String               DOMAINS                      = "(powvideo\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(?:ideo)?\\.mp4)";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{50,}/v(?:ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useAltLinkCheck              = false;
@@ -330,7 +330,6 @@ public class PowVideoNet extends antiDDoSForHost {
         return fileInfo;
     }
 
-    @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         if (account != null) {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
@@ -429,57 +428,78 @@ public class PowVideoNet extends antiDDoSForHost {
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        } catch (UnknownHostException e) {
-            // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-            // dump the saved host from directlinkproperty
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            // remove usedHost slot from hostMap
-            controlHost(account, downloadLink, false);
-            logger.warning("DNS issue has occured!");
-            e.printStackTrace();
-            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
-            // TODO: remove when retry issues are resolved!
-            int retry = downloadLink.getIntegerProperty("retry", 0);
-            if (retry == 3) {
-                downloadLink.setProperty("retry", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
-            } else {
-                retry++;
-                downloadLink.setProperty("retry", retry);
-                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+        if (dllink.startsWith("rtmp")) {
+            final String playpath = new Regex(this.dllink, "(mp4:.+)").getMatch(0);
+            final String tcurl = new Regex(this.dllink, "(rtmpe?://[^/]+/[^/]+/)").getMatch(0);
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+            if (playpath != null) {
+                rtmp.setPlayPath(playpath);
             }
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
-                controlSimHost(account);
-                controlHost(account, downloadLink, false);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
-            } else {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            if (tcurl != null) {
+                rtmp.setTcUrl("rtmp://46.105.110.12:19350/vod/");
             }
+            rtmp.setApp("vod/");
+            rtmp.setSwfUrl("http://powvideo.net/player6/jwplayer.flash.swf");
+            rtmp.setFlashVer("WIN 23,0,0,205");
+            rtmp.setUrl(dllink);
+            rtmp.setResume(false);
+            rtmp.setLive(true);
         } else {
-            // we can not 'rename' filename once the download started, could be problematic!
-            if (downloadLink.getDownloadCurrent() == 0) {
-                fixFilename(downloadLink);
-            }
             try {
-                // add a download slot
-                controlSlot(+1, account);
-                // start the dl
-                dl.startDownload();
-            } finally {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+            } catch (UnknownHostException e) {
+                // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
+                // dump the saved host from directlinkproperty
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
                 // remove usedHost slot from hostMap
                 controlHost(account, downloadLink, false);
-                // remove download slot
-                controlSlot(-1, account);
+                logger.warning("DNS issue has occured!");
+                e.printStackTrace();
+                // int value of plugin property, as core error in current JD2 prevents proper retry handling.
+                // TODO: remove when retry issues are resolved!
+                int retry = downloadLink.getIntegerProperty("retry", 0);
+                if (retry == 3) {
+                    downloadLink.setProperty("retry", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
+                } else {
+                    retry++;
+                    downloadLink.setProperty("retry", retry);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+                }
+            }
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+                    controlSimHost(account);
+                    controlHost(account, downloadLink, false);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
+                } else {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    correctBR();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
+        // we can not 'rename' filename once the download started, could be problematic!
+        if (downloadLink.getDownloadCurrent() == 0) {
+            fixFilename(downloadLink);
+        }
+        try {
+            // add a download slot
+            controlSlot(+1, account);
+            // start the dl
+            dl.startDownload();
+        } finally {
+            // remove usedHost slot from hostMap
+            controlHost(account, downloadLink, false);
+            // remove download slot
+            controlSlot(-1, account);
+        }
+
     }
 
     /**
@@ -708,9 +728,10 @@ public class PowVideoNet extends antiDDoSForHost {
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        }
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
+        } else if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        } else if (cbr.containsHTML("Wrong IP")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 30 * 60 * 1000l);
         }
     }
 
@@ -1175,7 +1196,7 @@ public class PowVideoNet extends antiDDoSForHost {
             orgName = orgNameExt;
         }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
-        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String servNameExt = dllink.startsWith("rtmp") ? null : Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
             servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
@@ -1367,7 +1388,13 @@ public class PowVideoNet extends antiDDoSForHost {
                 }
             }
         }
+        /* 2016-11-04: Prefer rtmp as hls and http urls seem to be broken/disabled! */
+        final String url_rtmp = new Regex(source, "src:\\s*?\\'(rtmp://[^<>\"\\']+mp4:[^<>\"\\']+)\\'").getMatch(0);
+        if (url_rtmp != null) {
+            result = url_rtmp;
+        }
         if (inValidate(result)) {
+            /* 2016-11-04: Special */
             result = new Regex(source, "(\"|')(" + dllinkRegex + ")\\1").getMatch(1);
         }
         return result;
@@ -1480,7 +1507,7 @@ public class PowVideoNet extends antiDDoSForHost {
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
         synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
-            usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
+            usedHost = new Regex(dllink, "^(https?|rtmpe?)://([^/\\:]+)").getMatch(0);
             if (inValidate(dllink) || usedHost == null) {
                 if (inValidate(dllink)) {
                     logger.warning("Invalid URL given to controlHost");

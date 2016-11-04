@@ -21,7 +21,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
-import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -45,34 +44,36 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class PornHubCom extends PluginForHost {
 
     /* Connection stuff */
-    private static final boolean                  FREE_RESUME               = true;
-    private static final int                      FREE_MAXCHUNKS            = 0;
+    // private static final boolean FREE_RESUME = true;
+    // private static final int FREE_MAXCHUNKS = 0;
     private static final int                      FREE_MAXDOWNLOADS         = 20;
     private static final boolean                  ACCOUNT_FREE_RESUME       = true;
     private static final int                      ACCOUNT_FREE_MAXCHUNKS    = 0;
     private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 20;
+
+    public static final long                      trust_cookie_age          = 300000l;
 
     private static final String                   type_photo                = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
     public static final String                    html_privatevideo         = "id=\"iconLocked\"";
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    /*
-                                                                                     * Format-name:videoCodec, videoBitrate,
-                                                                                     * videoResolution, audioCodec, audioBitrate
-                                                                                     */
-                                                                                    /*
-                                                                                     * Video-bitrates and resultions here are not exact as
-                                                                                     * they vary.
-                                                                                     */
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video-bitrates and resultions here are not exact as
+             * they vary.
+             */
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-                                                                                }
-                                                                            });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -330,7 +331,6 @@ public class PornHubCom extends PluginForHost {
     private static final String PORNHUB_PREMIUM = "http://pornhubpremium.com";
     private static Object       LOCK            = new Object();
 
-    @SuppressWarnings("unchecked")
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -339,8 +339,17 @@ public class PornHubCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(account.getHoster(), cookies);
-                    br.setCookies("pornhubpremium.com", cookies);
-                    return;
+                    br.setCookies(PORNHUB_PREMIUM, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    br.getPage("http://www." + account.getHoster());
+                    if (br.containsHTML("class=\"signOut\"")) {
+                        /* Refresh timestamp */
+                        saveCookies(br, account);
+                        return;
+                    }
                 }
                 br.setFollowRedirects(false);
                 br.getPage("http://www." + account.getHoster() + "/login");
@@ -368,23 +377,39 @@ public class PornHubCom extends PluginForHost {
                     /* Sometimes needed to get the (premium) cookies. */
                     br.getPage(redirect);
                 }
-                final String cookie_loggedin_free = br.getCookie(MAINPAGE, "gateway_security_key");
-                final String cookie_loggedin_premium = br.getCookie(PORNHUB_PREMIUM, "gateway_security_key");
-                if (cookie_loggedin_free == null && cookie_loggedin_premium == null) {
+                if (!isCookieLoggedIn(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies("pornhubpremium.com"), "");
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                saveCookies(br, account);
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
             }
+        }
+    }
+
+    public static boolean isCookieLoggedIn(final Browser br) {
+        final String cookie_loggedin_free = br.getCookie(MAINPAGE, "gateway_security_key");
+        final String cookie_loggedin_premium = getPremiumCookie(br);
+        return cookie_loggedin_free != null || cookie_loggedin_premium != null;
+    }
+
+    public static String getPremiumCookie(final Browser br) {
+        return br.getCookie(PORNHUB_PREMIUM, "gateway_security_key");
+    }
+
+    public static void saveCookies(final Browser br, final Account acc) {
+        final String cookie_loggedin_premium = getPremiumCookie(br);
+        if (cookie_loggedin_premium != null) {
+            /* Premium account --> Premium cookies */
+            acc.saveCookies(br.getCookies(PORNHUB_PREMIUM), "");
+        } else {
+            /* Free account --> Free cookies */
+            acc.saveCookies(br.getCookies(acc.getHoster()), "");
         }
     }
 
