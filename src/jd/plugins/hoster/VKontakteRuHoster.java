@@ -574,19 +574,23 @@ public class VKontakteRuHoster extends PluginForHost {
         if (!isDownload) {
             downloadLink.setLivePlugin(this);
         }
+        URLConnectionAdapter con = null;
+        boolean closeConnection = true;
         try {
-            final URLConnectionAdapter con;
-            if (!isDownload) {
-                con = br2.openGetConnection(finalUrl);
-            } else {
+            if (isDownload) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, finalUrl, true, MAXCHUNKS);
                 con = dl.getConnection();
+            } else {
+                con = br2.openGetConnection(finalUrl);
             }
             if (!con.getContentType().contains("html")) {
                 if (finalfilename == null) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(dl.getConnection())));
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
                 } else {
                     downloadLink.setFinalFileName(finalfilename);
+                }
+                if (isDownload) {
+                    closeConnection = false;
                 }
                 return 1;
             } else {
@@ -607,9 +611,11 @@ public class VKontakteRuHoster extends PluginForHost {
         } catch (final Exception e) {
             return 0;
         } finally {
-            if (!isDownload) {
+            if (closeConnection) {
                 try {
-                    dl.getConnection().disconnect();
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 } catch (final Throwable t) {
                 }
                 downloadLink.setLivePlugin(orginalPlugin);
