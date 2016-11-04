@@ -21,6 +21,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://\\w+\\.googleusercontent\\.com/.+" })
 public class VideoGoogle extends PluginForHost {
@@ -147,20 +148,12 @@ public class VideoGoogle extends PluginForHost {
     private String refreshDirectlink(final DownloadLink dl) throws Exception {
         final String directlink;
         if (dl.getDownloadURL().matches(embed)) {
-            final String source_plugin_b64 = dl.getStringProperty("source_plugin_b64", null);
-            if (source_plugin_b64 != null) {
-                if (source_plugin_b64.equalsIgnoreCase("a2lzc2FuaW1lLmNvbQ==")) {
-                    directlink = ((jd.plugins.decrypter.KisAmeCm) JDUtilities.getPluginForDecrypt(Encoding.Base64Decode(source_plugin_b64))).refreshDirecturl(dl, this.br);
-                } else {
-                    directlink = null;
-                }
-            } else {
-                directlink = null;
+            final String refresh_url_plugin = dl.getStringProperty("refresh_url_plugin", null);
+            if (refresh_url_plugin != null) {
+                return ((GoogleVideoRefresh) JDUtilities.getPluginForDecrypt(refresh_url_plugin)).refreshVideoDirectUrl(dl, this.br);
             }
-        } else {
-            directlink = null;
         }
-        return directlink;
+        return null;
     }
 
     @Override

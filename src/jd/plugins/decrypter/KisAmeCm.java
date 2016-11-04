@@ -36,6 +36,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
 
 /**
  *
@@ -43,7 +44,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  */
 @DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.com", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kisscartoon\\.me/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
-public class KisAmeCm extends antiDDoSForDecrypt {
+public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +75,7 @@ public class KisAmeCm extends antiDDoSForDecrypt {
                 final String quality = qual[2];
                 final DownloadLink dl = createDownloadlink(decode);
                 /* md5 of "kissanime.com" */
-                dl.setProperty("source_plugin_b64", "a2lzc2FuaW1lLmNvbQ==");
+                dl.setProperty("refresh_url_plugin", getHost());
                 dl.setProperty("source_url", parameter);
                 dl.setProperty("source_quality", quality);
                 dl.setFinalFileName(title + "-" + quality + ".mp4");
@@ -130,7 +131,7 @@ public class KisAmeCm extends antiDDoSForDecrypt {
         }
     }
 
-    public final String refreshDirecturl(final DownloadLink dl, final Browser br) throws Exception {
+    public String refreshVideoDirectUrl(final DownloadLink dl, final Browser br) throws Exception {
         String directlink = null;
         final String source_url = dl.getStringProperty("source_url", null);
         final String source_quality = dl.getStringProperty("source_quality", null);
