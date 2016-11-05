@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.4chan\\.org/([0-9a-z]{1,3}|trash)/(thread/[0-9]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.4chan\\.org/([0-9a-z]{1,3}|trash)/(thread/[0-9]+)?" })
 public class Brds4Chnrg extends PluginForDecrypt {
 
     public Brds4Chnrg(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            final String IMAGERDOMAINS = "(i\\.4cdn\\.org|images\\.4chan\\.org)";
+            final String IMAGERDOMAINS = "(i\\.4cdn\\.org|is\\.4chan\\.org|images\\.4chan\\.org)";
             String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/(?:[0-9a-z]{1,4}|trash)/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
 
             if (br.containsHTML("404 - Not Found")) {
