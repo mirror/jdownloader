@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,6 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Earn money sharing shrinked links<br />
@@ -67,7 +67,7 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
         br.setCookie(getHost(), "s32", "1");
         br.setCookie(getHost(), "AABE2", "1");
         getPage(parameter);
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid))) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid)) || br.containsHTML(">Link does not exist")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (this.br.getRedirectLocation() == null && this.br.toString().length() < 100) {
