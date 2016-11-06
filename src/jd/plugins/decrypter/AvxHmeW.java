@@ -20,7 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.in" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -45,9 +47,9 @@ public class AvxHmeW extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
-        br.clearCookies(getHost());
+        br = new Browser();
         // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.se)", "avxhome.in");
+        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -77,10 +79,10 @@ public class AvxHmeW extends PluginForDecrypt {
                     }
                 }
             }
-            final String[] covers = br.getRegex("\"(http://pi?xhst\\.(com|co)[^<>\"]*?)\"").getColumn(0);
+            final String[] covers = br.getRegex("\"(//pi?xhst\\.(com|co)[^<>\"]*?)\"").getColumn(0);
             if (covers != null && covers.length != 0) {
                 for (final String coverlink : covers) {
-                    decryptedLinks.add(createDownloadlink(coverlink));
+                    decryptedLinks.add(createDownloadlink(Request.getLocation(coverlink, br.getRequest())));
                 }
             }
             String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
