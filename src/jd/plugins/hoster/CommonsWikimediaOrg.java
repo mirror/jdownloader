@@ -76,9 +76,10 @@ public class CommonsWikimediaOrg extends PluginForHost {
         if (url_filename == null) {
             url_filename = new Regex(link.getDownloadURL(), "/(File:.+)").getMatch(0);
         }
+        url_filename = Encoding.urlDecode(url_filename, false);
         if (use_api) {
             br.getPage("https://" + host + "/w/api.php?action=query&format=json&prop=imageinfo&titles=" + Encoding.urlEncode(url_filename) + "&iiprop=timestamp%7Curl%7Csize%7Cmime%7Cmediatype%7Cextmetadata&iiextmetadatafilter=DateTime%7CDateTimeOriginal%7CObjectName%7CImageDescription%7CLicense%7CLicenseShortName%7CUsageTerms%7CLicenseUrl%7CCredit%7CArtist%7CAuthorCount%7CGPSLatitude%7CGPSLongitude%7CPermission%7CAttribution%7CAttributionRequired%7CNonFree%7CRestrictions&iiextmetadatalanguage=en&uselang=content&smaxage=300&maxage=300");
-            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"missing\"|\"invalid\"")) {
+            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"invalid\"")) { // ""missing" too?
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = new Regex(url_filename, "[A-Za-z]+:(.+)").getMatch(0);
