@@ -85,12 +85,16 @@ public class VikiCom extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         if (br.containsHTML("\"geo\":true")) {
+            geoblocked = true;
+        } else {
+            br.getPage("http://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
+            geoblocked = this.br.containsHTML("Sorry, this content is( currently)? not available in your region|\"geo\":true");
+        }
+        if (geoblocked) {
             downloadLink.getLinkStatus().setStatusText("Not available in your country (geo block)");
-            downloadLink.setName(filename + default_Extension);
+            downloadLink.setName("Geo blocked! " + filename + default_Extension);
             return AvailableStatus.TRUE;
         }
-        br.getPage("http://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
-        geoblocked = this.br.containsHTML("We are sorry, this content is currently not available in your region|\"geo\":true");
         server_issues = this.br.containsHTML("Video playback for this video is not supported by your browser");
         /* Should never happen */
         if (br.containsHTML("Video is Unavailable")) {
