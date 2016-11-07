@@ -112,9 +112,9 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
         if (plg != null) {
             hasCaptcha = Boolean.TRUE.equals(plg.expectCaptcha(dlink, null));
             if (hasCaptcha) {
-                List<Account> accs = AccountController.getInstance().getMultiHostAccounts(plg.getHost());
+                final List<Account> accs = AccountController.getInstance().getMultiHostAccounts(plg.getHost());
                 if (accs != null) {
-                    for (Account acc : accs) {
+                    for (final Account acc : accs) {
                         if (acc.getPlugin() != null && acc.isValid() && !acc.isTempDisabled() && acc.isEnabled()) {
                             hasCaptcha = Boolean.TRUE.equals(acc.getPlugin().expectCaptcha(dlink, acc));
                         }
@@ -126,9 +126,9 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
                 }
             }
             if (hasCaptcha) {
-                ArrayList<Account> accs = AccountController.getInstance().list(plg.getHost());
+                final ArrayList<Account> accs = AccountController.getInstance().list(plg.getHost());
                 if (accs != null) {
-                    for (Account acc : accs) {
+                    for (final Account acc : accs) {
                         if (acc.getPlugin() != null && acc.isValid() && !acc.isTempDisabled() && acc.isEnabled()) {
                             hasCaptcha = Boolean.TRUE.equals(acc.getPlugin().expectCaptcha(dlink, acc));
                         }
@@ -144,18 +144,15 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-
         if (value instanceof DownloadLink) {
-            DownloadLink dlink = ((DownloadLink) value);
+            final DownloadLink dlink = ((DownloadLink) value);
             if (hasCaptcha(dlink)) {
                 return iconYes;
             } else {
                 return iconNo;
             }
-
         } else if (value instanceof CrawledLink) {
-            DownloadLink dlink = ((CrawledLink) value).getDownloadLink();
-
+            final DownloadLink dlink = ((CrawledLink) value).getDownloadLink();
             if (hasCaptcha(dlink)) {
                 return iconYes;
             } else {
@@ -164,13 +161,12 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
         } else {
             return null;
         }
-
     }
 
     @Override
     protected String getTooltipText(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            DownloadLink dlink = ((DownloadLink) value);
+            final DownloadLink dlink = ((DownloadLink) value);
             if (hasCaptcha(dlink)) {
                 return _GUI.T.HasCaptchaColumn_getTooltipText_yes();
             } else {
@@ -178,8 +174,7 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
             }
 
         } else if (value instanceof CrawledLink) {
-            DownloadLink dlink = ((CrawledLink) value).getDownloadLink();
-
+            final DownloadLink dlink = ((CrawledLink) value).getDownloadLink();
             if (hasCaptcha(dlink)) {
                 return _GUI.T.HasCaptchaColumn_getTooltipText_yes();
             } else {
