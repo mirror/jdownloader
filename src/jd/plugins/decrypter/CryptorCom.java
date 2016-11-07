@@ -124,7 +124,7 @@ public class CryptorCom extends PluginForDecrypt {
             }
             decryptedLinks.add(DummyCNL.createDummyCNL(cnlCrypted, cnlJk.replaceAll("\\\\", ""), null, cnlSource));
         }
-        final String[] links = br.getRegex("\"(/dl/[A-Za-z0-9]+\\-)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(/(link|dl)/[A-Za-z0-9]+\\-)\"").getRow(0);
         if (links != null) {
             for (final String singleLink : links) {
                 if (this.isAbort()) {

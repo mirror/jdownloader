@@ -113,13 +113,14 @@ public class BrazzersCom extends antiDDoSForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         Account moch_account = null;
         final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
-        for (final Account moch_account_temp : moch_accounts) {
-            if (moch_account_temp.isValid() && moch_account_temp.isEnabled()) {
-                moch_account = moch_account_temp;
-                break;
+        if (moch_accounts != null) {
+            for (final Account moch_account_temp : moch_accounts) {
+                if (moch_account_temp.isValid() && moch_account_temp.isEnabled()) {
+                    moch_account = moch_account_temp;
+                    break;
+                }
             }
         }
-
         final String fid;
         if (link.getDownloadURL().matches(type_premium_video) || link.getDownloadURL().matches(type_premium_pic)) {
             fid = link.getStringProperty("fid", null);
