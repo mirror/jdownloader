@@ -1357,9 +1357,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2351,53 +2351,55 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         };
                         int packageIndex = 0;
                         for (final CrawledPackage pkg : packages) {
-                            final String packageEntryID = String.format(packageFormat, packageIndex++);
-                            {
-                                /* convert FilePackage to JSon */
-                                final CrawledPackageStorable packageStorable = new CrawledPackageStorable(pkg, false);
-                                /* save packageID */
-                                final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
-                                if (crawledPackageMappingID != null) {
-                                    packageStorable.setPackageID(crawledPackageMappingID.getMappingID());
-                                }
-                                final ZipEntry packageEntry = new ZipEntry(packageEntryID);
-                                packageEntry.setMethod(ZipEntry.DEFLATED);
-                                zos.putNextEntry(packageEntry);
-                                JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
-                                zos.closeEntry();
-                            }
                             final boolean readL = pkg.getModifyLock().readLock();
                             try {
                                 final int childrenSize = pkg.getChildren().size();
-                                final String childFormat;
-                                if (childrenSize >= 10) {
-                                    childFormat = String.format("%%0%dd", (int) Math.log10(childrenSize) + 1);
-                                } else {
-                                    childFormat = "%02d";
-                                }
-                                int childIndex = 0;
-                                for (final CrawledLink link : pkg.getChildren()) {
-                                    final CrawledLinkStorable linkStorable = new CrawledLinkStorable(link);
-                                    CrawledPackageMappingID id = null;
-                                    switch (pkg.getType()) {
-                                    case VARIOUS:
-                                        id = getIDFromMap(variousMap, link);
-                                        break;
-                                    case OFFLINE:
-                                        id = getIDFromMap(offlineMap, link);
-                                        break;
-                                    default:
-                                        break;
+                                if (childrenSize > 0) {
+                                    final String packageEntryID = String.format(packageFormat, packageIndex++);
+                                    {
+                                        /* convert FilePackage to JSon */
+                                        final CrawledPackageStorable packageStorable = new CrawledPackageStorable(pkg, false);
+                                        /* save packageID */
+                                        final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
+                                        if (crawledPackageMappingID != null) {
+                                            packageStorable.setPackageID(crawledPackageMappingID.getMappingID());
+                                        }
+                                        final ZipEntry packageEntry = new ZipEntry(packageEntryID);
+                                        packageEntry.setMethod(ZipEntry.DEFLATED);
+                                        zos.putNextEntry(packageEntry);
+                                        JSonStorage.getMapper().writeObject(entryOutputStream, packageStorable);
+                                        zos.closeEntry();
                                     }
-                                    if (id != null) {
-                                        linkStorable.setID(id.getMappingID());
+                                    final String childFormat;
+                                    if (childrenSize >= 10) {
+                                        childFormat = String.format("%%0%dd", (int) Math.log10(childrenSize) + 1);
+                                    } else {
+                                        childFormat = "%02d";
                                     }
-                                    final String childEntryID = String.format(childFormat, childIndex++);
-                                    final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
-                                    linkEntry.setMethod(ZipEntry.DEFLATED);
-                                    zos.putNextEntry(linkEntry);
-                                    JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
-                                    zos.closeEntry();
+                                    int childIndex = 0;
+                                    for (final CrawledLink link : pkg.getChildren()) {
+                                        final CrawledLinkStorable linkStorable = new CrawledLinkStorable(link);
+                                        CrawledPackageMappingID id = null;
+                                        switch (pkg.getType()) {
+                                        case VARIOUS:
+                                            id = getIDFromMap(variousMap, link);
+                                            break;
+                                        case OFFLINE:
+                                            id = getIDFromMap(offlineMap, link);
+                                            break;
+                                        default:
+                                            break;
+                                        }
+                                        if (id != null) {
+                                            linkStorable.setID(id.getMappingID());
+                                        }
+                                        final String childEntryID = String.format(childFormat, childIndex++);
+                                        final ZipEntry linkEntry = new ZipEntry(packageEntryID + "_" + childEntryID);
+                                        linkEntry.setMethod(ZipEntry.DEFLATED);
+                                        zos.putNextEntry(linkEntry);
+                                        JSonStorage.getMapper().writeObject(entryOutputStream, linkStorable);
+                                        zos.closeEntry();
+                                    }
                                 }
                             } finally {
                                 pkg.getModifyLock().readUnlock(readL);

@@ -141,17 +141,20 @@ public class ServustvCom extends PluginForHost {
             /* Use http as fallback. */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, httpstream, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                br.followConnection();
                 try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    }
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } finally {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
