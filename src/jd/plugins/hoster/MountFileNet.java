@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "http://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
 
     private final String                   MAINPAGE                   = "http://mountfile.net";
@@ -178,7 +178,7 @@ public class MountFileNet extends antiDDoSForHost {
         if (br.containsHTML("Recaptcha\\.create\\(\\'")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String dllink = br.getRegex("\"(http://d\\d+\\.mountfile.net/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://d\\d+\\.mountfile.net/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
