@@ -200,25 +200,15 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                 final long createdTime = jlc.getCreated();
                 final int listQueueSize = jlc.getQueueSize();
                 if (listQueue != null) {
-                    if (listQueueSize > 0) {
-                        final String string = String.valueOf(listQueueSize);
-                        listQueue.setVisible(true);
-                        listQueue.setText(string);
-                        maxStringLength = Math.max(maxStringLength, string.length());
-                    } else {
-                        listQueue.setVisible(false);
-                    }
+                    final String string = String.valueOf(listQueueSize);
+                    listQueue.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 final long statusQueueSize = jlc.getLinkChecker().checksRequested();
                 if (statusQueue != null) {
-                    if (statusQueueSize > 0) {
-                        statusQueue.setVisible(true);
-                        final String string = String.valueOf(statusQueueSize);
-                        statusQueue.setText(string);
-                        maxStringLength = Math.max(maxStringLength, string.length());
-                    } else {
-                        statusQueue.setVisible(false);
-                    }
+                    final String string = String.valueOf(statusQueueSize);
+                    statusQueue.setText(string);
+                    maxStringLength = Math.max(maxStringLength, string.length());
                 }
                 if (status != null) {
                     final String string;
