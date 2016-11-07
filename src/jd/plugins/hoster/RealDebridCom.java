@@ -354,9 +354,9 @@ public class RealDebridCom extends PluginForHost {
         this.account = account;
         try {
             synchronized (hostUnavailableMap) {
-                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
                 if (unavailableMap != null) {
-                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    final Long lastUnavailable = unavailableMap.get(link.getHost());
                     if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                         final long wait = lastUnavailable - System.currentTimeMillis();
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
@@ -374,7 +374,7 @@ public class RealDebridCom extends PluginForHost {
             /* request Download */
             final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             final String password = link.getStringProperty("pass", null);
-            UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
+            final UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
             });
             final String genLnk = linkresp.getDownload();
             if (StringUtils.isEmpty(genLnk) || !genLnk.startsWith("http")) {
@@ -442,63 +442,50 @@ public class RealDebridCom extends PluginForHost {
     }
 
     public ClientSecret checkCredentials(CodeResponse code) throws IOException, APIException {
-
         return callRestAPIInternal(API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
-
     }
 
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
-
             // first try to use the stored token
             if (!force) {
-                String tokenJSon = account.getStringProperty(TOKEN);
+                final String tokenJSon = account.getStringProperty(TOKEN);
                 if (StringUtils.isNotEmpty(tokenJSon)) {
-                    TokenResponse token = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
+                    final TokenResponse token = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
                     });
                     // ensure that the token is at elast 5 minutes valid
-                    long expireTime = token.getExpires_in() * 1000 + token.getCreateTime();
-                    long now = System.currentTimeMillis();
+                    final long expireTime = token.getExpires_in() * 1000 + token.getCreateTime();
+                    final long now = System.currentTimeMillis();
                     if ((expireTime - 5 * 60 * 1000l) > now) {
-
                         this.token = token;
-
                         return;
                     }
                 }
             }
-
             // token invalid, forcerefresh active or token expired.
             // Try to refresh the token
-            String tokenJSon = account.getStringProperty(TOKEN);
-            String clientSecretJson = account.getStringProperty(CLIENT_SECRET);
+            final String tokenJSon = account.getStringProperty(TOKEN);
+            final String clientSecretJson = account.getStringProperty(CLIENT_SECRET);
             if (StringUtils.isNotEmpty(tokenJSon) && StringUtils.isNotEmpty(clientSecretJson)) {
-                TokenResponse token = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
-                ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
-
-                String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", token.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
-                TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
+                final TokenResponse token = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
+                final ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
+                final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", token.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+                final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
                 if (newToken.validate()) {
                     this.token = newToken;
-
                     account.setProperty(TOKEN, JSonStorage.serializeToJson(newToken));
                     return;
                 }
-
             }
-
             this.token = null;
             // Could not refresh the token. login using username and password
             br.setCookiesExclusive(true);
-
             prepBrowser(br);
             br.clearCookies(API);
             final Browser autoSolveBr = br.cloneBrowser();
             final CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
             });
-
             ensureAPIBrowser();
-
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
 
                 private long lastValidation;
@@ -512,10 +499,8 @@ public class RealDebridCom extends PluginForHost {
                 public void poll(SolverJob<Boolean> job) {
                     if (System.currentTimeMillis() - lastValidation >= code.getInterval() * 1000) {
                         lastValidation = System.currentTimeMillis();
-
                         try {
                             clientSecret = checkCredentials(code);
-
                             if (clientSecret != null) {
                                 job.addAnswer(new AbstractResponse<Boolean>(this, ChallengeSolver.EXTERN, 100, true));
                             }
@@ -523,13 +508,11 @@ public class RealDebridCom extends PluginForHost {
                             logger.log(e);
                         }
                     }
-
                 }
 
                 @Override
                 public boolean autoSolveChallenge() {
                     try {
-
                         String verificationUrl = getUrl();
                         autoSolveBr.clearCookies(verificationUrl);
                         autoSolveBr.getPage(verificationUrl);
@@ -541,37 +524,26 @@ public class RealDebridCom extends PluginForHost {
                         allow.setPreferredSubmit("Allow");
                         autoSolveBr.submitForm(allow);
                         clientSecret = checkCredentials(code);
-
                         if (clientSecret != null) {
                             return true;
                         }
                     } catch (Throwable e) {
                         logger.log(e);
-
                     }
                     return false;
                 }
-
             };
             challenge.setTimeout(5 * 60 * 1000);
-
             ChallengeResponseController.getInstance().handle(challenge);
-
-            //
             if (clientSecret == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "OAuth Failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-
-            //
-
-            String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
-            TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
+            final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
+            final TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
             });
-
             if (token.validate()) {
-
                 this.token = token;
-                UserResponse user = callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);
+                final UserResponse user = callRestAPIInternal("https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);
                 if (!StringUtils.equalsIgnoreCase(account.getUser(), user.getEmail()) && !StringUtils.equalsIgnoreCase(account.getUser(), user.getUsername())) {
                     this.token = null;
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "User Mismatch. You try to add the account " + account.getUser() + "\r\nBut in your browser you are logged in as " + user.getUsername() + "\r\nPlease make sure that there is no username mismatch!", PluginException.VALUE_ID_PREMIUM_DISABLE);
