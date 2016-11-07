@@ -192,7 +192,7 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (isDirectLink(downloadLink)) {
+        if (isDirectRealDBUrl(downloadLink)) {
             // generated links do not require an account to download
             return true;
         } else if (account == null) {
@@ -368,7 +368,6 @@ public class RealDebridCom extends PluginForHost {
                     }
                 }
             }
-
             prepBrowser(br);
             login(account, false);
             showMessage(link, "Task 1: Generating Link");
@@ -377,7 +376,6 @@ public class RealDebridCom extends PluginForHost {
             final String password = link.getStringProperty("pass", null);
             UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
             });
-
             final String genLnk = linkresp.getDownload();
             if (StringUtils.isEmpty(genLnk) || !genLnk.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
@@ -425,24 +423,21 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        showMessage(link, "Task 1: Check URL validity!");
-        final AvailableStatus status = requestFileInformation(link);
-        if (AvailableStatus.UNCHECKABLE.equals(status)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+        if (isDirectRealDBUrl(link)) {
+            showMessage(link, "Task 1: Check URL validity!");
+            final AvailableStatus status = requestFileInformation(link);
+            if (AvailableStatus.UNCHECKABLE.equals(status)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+            }
+            showMessage(link, "Task 2: Download begins!");
+            handleDL(account, link, link.getPluginPatternMatcher(), null);
+        } else {
+            handleMultiHost(link, account);
         }
-        showMessage(link, "Task 2: Download begins!");
-        handleDL(account, link, link.getPluginPatternMatcher(), null);
     }
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        return false;
-    }
-
-    private boolean isDirectLink(final DownloadLink downloadLink) {
-        if (downloadLink.getPluginPatternMatcher().matches(this.getLazyP().getPatternSource())) {
-            return true;
-        }
         return false;
     }
 
@@ -603,32 +598,46 @@ public class RealDebridCom extends PluginForHost {
         return prepBr;
     }
 
+    private boolean isDirectRealDBUrl(DownloadLink dl) {
+        final String url = dl.getDownloadURL();
+        if (url.contains("download.")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
         prepBrowser(br);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(dl.getDownloadURL());
-            if (con.isContentDisposition() && con.isOK()) {
-                if (dl.getFinalFileName() == null) {
-                    dl.setFinalFileName(getFileNameFromHeader(con));
-                }
-                dl.setVerifiedFileSize(con.getLongContentLength());
-                dl.setAvailable(true);
-                return AvailableStatus.TRUE;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } catch (final PluginException e) {
-            throw e;
-        } catch (final Throwable e) {
-            return AvailableStatus.UNCHECKABLE;
-        } finally {
+        if (isDirectRealDBUrl(dl)) {
+            URLConnectionAdapter con = null;
             try {
-                /* make sure we close connection */
-                con.disconnect();
+                con = br.openGetConnection(dl.getDownloadURL());
+                if (con.isContentDisposition() && con.isOK()) {
+                    if (dl.getFinalFileName() == null) {
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                    }
+                    dl.setVerifiedFileSize(con.getLongContentLength());
+                    dl.setAvailable(true);
+                    return AvailableStatus.TRUE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } catch (final PluginException e) {
+                throw e;
             } catch (final Throwable e) {
+                logger.log(e);
+                return AvailableStatus.UNCHECKABLE;
+            } finally {
+                try {
+                    /* make sure we close connection */
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
+        } else {
+            return AvailableStatus.UNCHECKABLE;
         }
     }
 
