@@ -46,6 +46,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,7 +64,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" })
 public class DataFileCom extends antiDDoSForHost {
 
     public DataFileCom(PluginWrapper wrapper) {
@@ -84,7 +85,7 @@ public class DataFileCom extends antiDDoSForHost {
      * How multiple free downloads are possible: Start first download & save timestamp of downloadstart. Next download can be started one
      * hour later - does not matter if the first one still runs. Tested up to 4 but more must be possible ;)
      */
-    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
 
@@ -563,13 +564,17 @@ public class DataFileCom extends antiDDoSForHost {
             if (expire == null) {
                 logger.info("JD could not detect account expire time, your account has been determined as a free account");
                 account.setProperty("free", true);
+                account.setType(AccountType.FREE);
                 account.setConcurrentUsePossible(true);
+                account.setMaxSimultanDownloads(1);
                 account.setProperty("totalMaxSim", 1);
                 ai.setStatus("Free Account");
             } else {
+                account.setType(AccountType.PREMIUM);
                 account.setProperty("free", false);
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy HH:mm", Locale.ENGLISH));
                 account.setConcurrentUsePossible(true);
+                account.setMaxSimultanDownloads(20);
                 account.setProperty("totalMaxSim", 20);
                 ai.setStatus("Premium Account");
             }
