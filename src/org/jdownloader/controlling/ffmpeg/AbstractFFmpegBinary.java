@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
@@ -108,7 +109,6 @@ public class AbstractFFmpegBinary {
             return new String[] { inputStream.toString(), errorStream.toString() };
         } else {
             logger.info("ExitCode2: " + process.waitFor());
-
             reader1.join();
             reader2.join();
             return new String[] { inputStream.toString(), errorStream.toString() };
@@ -250,7 +250,16 @@ public class AbstractFFmpegBinary {
         if (server != null) {
             server.stop();
         }
+    }
 
+    private final AtomicLong lastUpdateTimeStamp = new AtomicLong(0);
+
+    public void updateLastUpdateTimestamp() {
+        lastUpdateTimeStamp.set(System.currentTimeMillis());
+    }
+
+    public long getLastUpdateTimestamp() {
+        return lastUpdateTimeStamp.get();
     }
 
     protected void initPipe() throws IOException {
@@ -316,16 +325,15 @@ public class AbstractFFmpegBinary {
                     if (logger != null) {
                         logger.info(request.toString());
                     }
-                    String id = request.getParameterbyKey("id");
+                    final String id = request.getParameterbyKey("id");
                     if (id == null) {
-
                         return false;
                     }
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
                     if ("/download".equals(request.getRequestedPath())) {
-                        String url = request.getParameterbyKey("url");
+                        final String url = request.getParameterbyKey("url");
                         if (url == null) {
                             return false;
                         }
@@ -343,11 +351,13 @@ public class AbstractFFmpegBinary {
                             }
                             final URLConnectionAdapter connection;
                             try {
+                                updateLastUpdateTimestamp();
                                 connection = br.openRequestConnection(getRequest);
                             } catch (IOException e) {
                                 Thread.sleep(250);
                                 continue retryLoop;
                             }
+                            updateLastUpdateTimestamp();
                             byte[] readWriteBuffer = instanceBuffer.getAndSet(null);
                             final boolean instanceBuffer;
                             if (readWriteBuffer != null) {
@@ -389,6 +399,7 @@ public class AbstractFFmpegBinary {
                                         }
                                     }
                                     if (len > 0) {
+                                        updateLastUpdateTimestamp();
                                         outputStream.write(readWriteBuffer, 0, len);
                                         fileBytesMap.mark(position, len);
                                         position += len;
@@ -495,7 +506,7 @@ public class AbstractFFmpegBinary {
             }
             reader1.start();
             reader2.start();
-            long lastUpdate = System.currentTimeMillis();
+            updateLastUpdateTimestamp();
             long lastDuration = -1;
             while (true) {
                 final String errorStreamString;
@@ -504,7 +515,7 @@ public class AbstractFFmpegBinary {
                     errorStream.setLength(0);
                 }
                 if (StringUtils.isNotEmpty(errorStreamString)) {
-                    lastUpdate = System.currentTimeMillis();
+                    updateLastUpdateTimestamp();
                 }
                 final String duration = new Regex(errorStreamString, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
                 if (duration != null) {
@@ -514,7 +525,6 @@ public class AbstractFFmpegBinary {
                     final String[] times = new Regex(errorStreamString, "time=(.*?).?\\d*? ").getColumn(0);
                     if (times != null && times.length > 0) {
                         final long msDone = formatStringToMilliseconds(times[times.length - 1]);
-                        System.out.println(msDone + "/" + lastDuration);
                         if (progress != null) {
                             progress.updateValues(msDone, lastDuration);
                         }
@@ -539,7 +549,7 @@ public class AbstractFFmpegBinary {
                 } catch (IllegalThreadStateException e) {
                     // still running;
                 }
-                if (System.currentTimeMillis() - lastUpdate > 60000) {
+                if (System.currentTimeMillis() - getLastUpdateTimestamp() > getLastUpdateTimestampTimeout()) {
                     // 60 seconds without any ffmpeg update. interrupt
                     throw new InterruptedException("FFMPeg does not answer");
                 }
@@ -553,6 +563,10 @@ public class AbstractFFmpegBinary {
                 process.destroy();
             }
         }
+    }
+
+    protected long getLastUpdateTimestampTimeout() {
+        return 60000;
     }
 
     public static long formatStringToMilliseconds(final String text) {
