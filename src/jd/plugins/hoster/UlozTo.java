@@ -44,6 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -134,6 +135,9 @@ public class UlozTo extends PluginForHost {
             br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
             br.setFollowRedirects(false);
         }
+        if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         // Wrong links show the mainpage so here we check if we got the mainpage or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -213,9 +217,22 @@ public class UlozTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
-        requestFileInformation(downloadLink);
+        AvailableStatus status = requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            final Form form = br.getFormbyActionRegex("limit-exceeded");
+            if (form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(form);
+            status = requestFileInformation(downloadLink);
+        }
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         br.setFollowRedirects(true);
         String dllink = checkDirectLink(downloadLink, "directlink_free");
@@ -435,8 +452,8 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
-        requestFileInformation(parameter);
         br.getHeaders().put("Authorization", login(account, null));
+        requestFileInformation(parameter);
         // since login evaulates traffic left!
         if (account.getAccountInfo().getTrafficLeft() < parameter.getDownloadSize()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
@@ -457,9 +474,9 @@ public class UlozTo extends PluginForHost {
                     /*
                      * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                      * 1800542995541.log; 2422576; jdlog://1800542995541
-                     *
+                     * 
                      * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                     *
+                     * 
                      * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                      */
                     // logger.info("No traffic available!");
