@@ -34,6 +34,7 @@ import jd.config.ConfigEntry;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -48,7 +49,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" })
 public class Tube8Com extends PluginForHost {
 
     /* DEV NOTES */
@@ -312,8 +313,15 @@ public class Tube8Com extends PluginForHost {
         boolean follow = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            br.postPage("http://www.tube8.com/ajax/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) {
+            br.getPage("http://www.tube8.com");
+            final PostRequest postRequest = new PostRequest("http://www.tube8.com/ajax2/login/");
+            postRequest.addVariable("username", Encoding.urlEncode(account.getUser()));
+            postRequest.addVariable("password", Encoding.urlEncode(account.getPass()));
+            postRequest.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            postRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            postRequest.addVariable("rememberme", "NO");
+            br.getPage(postRequest);
+            if (br.containsHTML("invalid") || br.containsHTML("0\\|") || br.getCookie(getHost(), "ubl") == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } finally {
@@ -335,7 +343,7 @@ public class Tube8Com extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     * 
+     *
      * @see <a href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">
      *      "Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
