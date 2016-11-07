@@ -1,10 +1,8 @@
 package org.jdownloader.downloader.hls;
 
 import java.awt.Color;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +50,7 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
 import org.jdownloader.controlling.ffmpeg.FFMpegException;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
@@ -84,7 +83,7 @@ public class HLSDownloader extends DownloadInterface {
     private final String                            m3uUrl;
     private HttpServer                              server;
 
-    private final Browser                           obr;
+    private final Browser                           sourceBrowser;
 
     protected volatile long                         duration       = -1l;
     protected volatile int                          bitrate        = -1;
@@ -96,7 +95,7 @@ public class HLSDownloader extends DownloadInterface {
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
-        this.obr = br2.cloneBrowser();
+        this.sourceBrowser = br2.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
         isTwitch = "twitch.tv".equals(link.getHost());
@@ -135,13 +134,15 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     public StreamInfo getProbe() throws IOException {
-        initPipe();
         try {
-            final FFprobe ffmpeg = new FFprobe();
+            final FFprobe ffprobe = new FFprobe();
             this.processID = new UniqueAlltimeID().getID();
-            return ffmpeg.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+            initPipe(ffprobe);
+            return ffprobe.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
         } finally {
-            server.stop();
+            if (server != null) {
+                server.stop();
+            }
         }
     }
 
@@ -156,7 +157,7 @@ public class HLSDownloader extends DownloadInterface {
         return null;
     }
 
-    protected String getFFmpegFormat(FFmpeg ffmpeg) throws PluginException, IOException, InterruptedException, FFMpegException {
+    protected String getFFmpegFormat(final FFmpeg ffmpeg) throws PluginException, IOException, InterruptedException, FFMpegException {
         String name = link.getForcedFileName();
         if (StringUtils.isEmpty(name)) {
             name = link.getFinalFileName();
@@ -221,7 +222,6 @@ public class HLSDownloader extends DownloadInterface {
         try {
             final FFmpeg ffmpeg = new FFmpeg() {
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
-                    System.out.println(line);
                     try {
                         final String trimmedLine = line.trim();
                         if (trimmedLine.startsWith("Duration:")) {
@@ -266,8 +266,8 @@ public class HLSDownloader extends DownloadInterface {
             final String format = getFFmpegFormat(ffmpeg);
             final String out = outputPartFile.getAbsolutePath();
             try {
-                initPipe();
                 processID = new UniqueAlltimeID().getID();
+                initPipe(ffmpeg);
                 runFF(set, format, ffmpeg, out);
             } catch (FFMpegException e) {
                 // some systems have problems with special chars to find the in or out file.
@@ -295,7 +295,9 @@ public class HLSDownloader extends DownloadInterface {
                 connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
             }
             // link.removePluginProgress(set);
-            server.stop();
+            if (server != null) {
+                server.stop();
+            }
         }
     }
 
@@ -486,13 +488,21 @@ public class HLSDownloader extends DownloadInterface {
         return m3u8Playlists;
     }
 
-    private void initPipe() throws IOException {
+    protected Browser getRequestBrowser() {
+        final Browser ret = sourceBrowser.cloneBrowser();
+        ret.setConnectTimeout(30 * 1000);
+        ret.setReadTimeout(30 * 1000);
+        return ret;
+    }
+
+    private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
         server.start();
         instanceBuffer.set(new byte[512 * 1024]);
         finalServer.registerRequestHandler(new HttpRequestHandler() {
+            final byte[] readBuf = new byte[512];
 
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
@@ -504,29 +514,11 @@ public class HLSDownloader extends DownloadInterface {
                         return false;
                     }
                     if ("/progress".equals(request.getRequestedPath())) {
-                        BufferedReader f = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
-                        final StringBuilder ret = new StringBuilder();
-                        final String sep = System.getProperty("line.separator");
-                        String line;
-                        while ((line = f.readLine()) != null) {
-                            if (ret.length() > 0) {
-                                ret.append(sep);
-                            } else if (line.startsWith("\uFEFF")) {
-                                /*
-                                 * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
-                                 * http://bugs.sun.com/view_bug.do?bug_id=6378911
-                                 */
-
-                                line = line.substring(1);
-                            }
-
-                            ret.append(line);
+                        while (request.getInputStream().read(readBuf) != -1) {
                         }
                         response.setResponseCode(ResponseCode.SUCCESS_OK);
                         return true;
-
                     }
-
                 } catch (Exception e) {
                     if (logger != null) {
                         logger.log(e);
@@ -553,6 +545,7 @@ public class HLSDownloader extends DownloadInterface {
                         return false;
                     }
                     if ("/meta".equals(request.getRequestedPath())) {
+                        ffmpeg.updateLastUpdateTimestamp();
                         final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
                         final byte[] bytes;
                         if (ffMpegMetaData != null) {
@@ -576,9 +569,10 @@ public class HLSDownloader extends DownloadInterface {
                         requestOkay = true;
                         return true;
                     } else if ("/m3u8".equals(request.getRequestedPath())) {
-                        final Browser br = obr.cloneBrowser();
+                        ffmpeg.updateLastUpdateTimestamp();
+                        final Browser br = getRequestBrowser();
                         // work around for longggggg m3u pages
-                        final int was = obr.getLoadLimit();
+                        final int was = br.getLoadLimit();
                         // lets set the connection limit to our required request
                         br.setLoadLimit(Integer.MAX_VALUE);
                         final String playlist;
@@ -588,6 +582,7 @@ public class HLSDownloader extends DownloadInterface {
                             // set it back!
                             br.setLoadLimit(was);
                         }
+                        ffmpeg.updateLastUpdateTimestamp();
                         response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                         final StringBuilder sb = new StringBuilder();
                         boolean containsEndList = false;
@@ -680,7 +675,7 @@ public class HLSDownloader extends DownloadInterface {
                         }
                         OutputStream outputStream = null;
                         final FileBytesMap fileBytesMap = new FileBytesMap();
-                        final Browser br = obr.cloneBrowser();
+                        final Browser br = getRequestBrowser();
                         retryLoop: for (int retry = 0; retry < 10; retry++) {
                             try {
                                 br.disconnect();
@@ -696,6 +691,7 @@ public class HLSDownloader extends DownloadInterface {
                             }
                             URLConnectionAdapter connection = null;
                             try {
+                                ffmpeg.updateLastUpdateTimestamp();
                                 connection = br.openRequestConnection(getRequest);
                                 if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
                                     throw new IOException("ResponseCode must be 200 or 206!");
@@ -714,6 +710,7 @@ public class HLSDownloader extends DownloadInterface {
                                     return false;
                                 }
                             }
+                            ffmpeg.updateLastUpdateTimestamp();
                             byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
                             final boolean instanceBuffer;
                             if (readWriteBuffer != null) {
@@ -755,6 +752,7 @@ public class HLSDownloader extends DownloadInterface {
                                         }
                                     }
                                     if (len > 0) {
+                                        ffmpeg.updateLastUpdateTimestamp();
                                         outputStream.write(readWriteBuffer, 0, len);
                                         segment.setLoaded(true);
                                         fileBytesMap.mark(position, len);
