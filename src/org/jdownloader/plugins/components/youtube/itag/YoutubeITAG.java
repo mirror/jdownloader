@@ -69,6 +69,22 @@ public enum YoutubeITAG {
     // Handy/Portrait Format https://www.youtube.com/watch?v=kiZse2vZXfw
     DASH_VIDEO_ITAG315_VP9_1920P_60FPS(315, StreamContainer.DASH_VIDEO, VideoResolution.P_1920, VideoCodec.VP9, VideoFrameRate.FPS_60),
     DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.VP9, VideoFrameRate.FPS_60),
+    // HDR
+    // bitrate 20mb
+    DASH_VIDEO_VP9_2160P_60FPS(337, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    // br 11166389
+    DASH_VIDEO_VP9_1440P_60FPS(336, StreamContainer.DASH_VIDEO, VideoResolution.P_1440, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    // br 3201533
+    DASH_VIDEO_VP9_1080P_60FPS(335, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    // br 1991504
+    DASH_VIDEO_VP9_720P_60FPS(334, StreamContainer.DASH_VIDEO, VideoResolution.P_720, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    // br 909472
+    DASH_VIDEO_VP9_480P_60FPS(333, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    DASH_VIDEO_VP9_360P_60FPS(332, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    // br 256302
+    DASH_VIDEO_VP9_240P_60FPS(331, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
+    // br 156637
+    DASH_VIDEO_VP9_144P_60FPS(330, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.VP9_HDR, VideoFrameRate.FPS_60),
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
     DASH_VIDEO_ORIGINAL_H264_GENERIC_4K(138, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_ORIGINAL_H264_GENERIC_1080P(138, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30),
@@ -169,7 +185,6 @@ public enum YoutubeITAG {
     HLS_VIDEO_MP4_720P_AUDIO_AAC_300(300, StreamContainer.MP4, VideoResolution.P_720, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256),
     HLS_VIDEO_MP4_1080P_AUDIO_AAC(96, StreamContainer.MP4, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30, AudioCodec.AAC, AudioBitrate.KBIT_256);
     private static HashMap<Integer, List<YoutubeITAG>> TAG_MAP = new HashMap<Integer, List<YoutubeITAG>>();
-
     static {
         for (YoutubeITAG tag : values()) {
             List<YoutubeITAG> lst = TAG_MAP.get(tag.getITAG());
