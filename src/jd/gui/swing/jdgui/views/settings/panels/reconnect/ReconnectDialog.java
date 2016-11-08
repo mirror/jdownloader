@@ -101,13 +101,13 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         p.add(duration = new JLabel(), "width 50!");
 
         p.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_old()));
-        p.add(old = new JLabel("??.??.??.??"), "width 100!,alignx right");
+        p.add(old = new JLabel("???.???.???.???"), "width 100!,alignx right");
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
         p.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_currentip()));
         p.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
-        newIP.setText("??.??.??.??");
+        newIP.setText("???.???.???.???");
         //
 
         recThread = new Thread(getClass().getName()) {
