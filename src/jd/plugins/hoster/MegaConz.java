@@ -697,7 +697,7 @@ public class MegaConz extends PluginForHost {
                     }
                     checkServerBusy();
                     logger.info("Unhandled error code: " + error);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
                 }
                 /* mega does not like much connections! */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
