@@ -342,6 +342,9 @@ public class RealDebridCom extends PluginForHost {
             final String password = link.getStringProperty("pass", null);
             final CheckLinkResponse checkresp = callRestAPI(account, "/unrestrict/check", new UrlQuery().append("link", dllink, true).append("password", password, true), CheckLinkResponse.TYPE);
             if (checkresp != null) {
+                if (StringUtils.isEmpty(checkresp.getHost()) || (checkresp.getFilename() == null && checkresp.getFilesize() == 0)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (checkresp.getFilesize() > 0) {
                     link.setVerifiedFileSize(checkresp.getFilesize());
                 }
