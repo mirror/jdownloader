@@ -25,7 +25,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://(sexvidx.tv|beejp.net)/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" })
 public class SexvidxCom extends PluginForDecrypt {
@@ -35,7 +39,6 @@ public class SexvidxCom extends PluginForDecrypt {
     }
 
     private String filename = null;
-    private String externID = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
@@ -69,26 +72,31 @@ public class SexvidxCom extends PluginForDecrypt {
     }
 
     private void crawlWatchLink(final ArrayList<DownloadLink> crawledLinks, final String parameter) throws Exception {
+        String externID = null;
         if (br.containsHTML("<iframe")) {
             externID = br.getRegex("<iframe.*? src=(\"|\')(https?.*?)(\"|\')").getMatch(1);
         }
-        if (externID == null) {
-            if (!br.containsHTML("s1\\.addParam\\(\\'flashvars\\'")) {
-                logger.info("Link offline: " + parameter);
+        if (!StringUtils.endsWithCaseInsensitive(externID, "jpg")) {
+            if (externID == null) {
+                if (!br.containsHTML("s1\\.addParam\\(\\'flashvars\\'")) {
+                    logger.info("Link offline: " + parameter);
+                    return;
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
                 return;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return;
+            if (externID.contains("cloudtime.to/embed/")) {
+                final String vid = br.getRegex("https?://(www.)?cloudtime.to/embed/\\?v=(.*)").getMatch(1);
+                if (vid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                externID = "http://www.cloudtime.to/video/" + vid;
+            }
+            logger.info("externID: " + externID);
+            externID = Encoding.htmlDecode(externID);
+            final DownloadLink dl = createDownloadlink(externID);
+            dl.setFinalFileName(filename + ".mp4");
+            crawledLinks.add(dl);
         }
-        if (externID.contains("cloudtime.to/embed/")) {
-            String vid = br.getRegex("https?://(www.)?cloudtime.to/embed/\\?v=(.*)").getMatch(1);
-            externID = "http://www.cloudtime.to/video/" + vid;
-        }
-        logger.info("externID: " + externID);
-        externID = Encoding.htmlDecode(externID);
-        DownloadLink dl = createDownloadlink(externID);
-        dl.setFinalFileName(filename + ".mp4");
-        crawledLinks.add(dl);
-        return;
     }
 }
