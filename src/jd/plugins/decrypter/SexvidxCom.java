@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://sexvidx.tv/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvidx.tv" }, urls = { "http://(sexvidx.tv|beejp.net)/[a-z0-9\\-/]*?/\\d+/[a-z0-9\\-]+\\.html" })
 public class SexvidxCom extends PluginForDecrypt {
 
     public SexvidxCom(PluginWrapper wrapper) {
@@ -40,13 +40,15 @@ public class SexvidxCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             crawledLinks.add(createOfflinelink(parameter));
             return crawledLinks;
         }
         if (parameter.contains("/info-movie/")) {
-            String watchLink = br.getRegex("(https?://sexvidx.tv/watch/movie.*?)\"").getMatch(0);
+            String watchLink = br.getRegex("(https?://[^/]+/watch/movie.*?)\"").getMatch(0);
+            logger.info("watchLink: " + watchLink);
             br.getPage(watchLink);
         }
         filename = br.getRegex("top-title\">(?:Watch Online \\[Full Dvd\\] )?([^<>|]+)").getMatch(0);
@@ -61,7 +63,7 @@ public class SexvidxCom extends PluginForDecrypt {
             fp.addLinks(crawledLinks);
         }
         if (watchLinks.length == 0) {
-            crawlWatchLink(crawledLinks, parameter);
+            crawlWatchLink(crawledLinks, parameter); // For current watchlink?
         }
         return crawledLinks;
     }
