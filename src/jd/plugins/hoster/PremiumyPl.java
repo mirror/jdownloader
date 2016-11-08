@@ -119,9 +119,10 @@ public class PremiumyPl extends PluginForHost {
             /* Create downloadlink */
             this.postAPISafe("checkLink", "url=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = PluginJSonUtils.getJsonValue(this.br, "downloadLink");
-            if (dllink == null || this.statuscode != 1) {
+            String error = PluginJSonUtils.getJsonValue(this.br, "error");
+            if (dllink == null || this.statuscode != 1 || error != null) {
                 logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
+                handleErrorRetries((error == null) ? "dllinknull" : error, 10, 60 * 60 * 1000l);
             }
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
@@ -197,6 +198,15 @@ public class PremiumyPl extends PluginForHost {
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        if (br.containsHTML("<div class=\"contentTitle\">Błąd pobierania</div>")) {
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + "downloaderror", timesFailed);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link unavailable", 86400000l);
+        }
+        if ("limitExceeded".equals(error)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Limit Exceeded", 86400000l);
+        }
+
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
@@ -219,17 +229,24 @@ public class PremiumyPl extends PluginForHost {
         login(true);
         this.postAPISafe("accountInfo", "");
 
-        final String trafficleft_str = PluginJSonUtils.getJsonValue(this.br, "transfer");
+        final String trafficLeftStr = PluginJSonUtils.getJsonValue(this.br, "transfer");
 
         final String premium = PluginJSonUtils.getJsonValue(this.br, "premium");
+        if ("0".equals(premium) && "0".equals(trafficLeftStr)) {
+            ai.setTrafficLeft(0);
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free account");
+            return ai;
+        }
+
         long trafficleft = 0;
         long timestampValidUntil = 0;
 
         String hostsValidDates = PluginJSonUtils.getJsonNested(this.br, "hosts");
         String validDates[][] = null;
 
-        if (trafficleft_str != null) {
-            trafficleft = Long.parseLong(trafficleft_str);
+        if (trafficLeftStr != null) {
+            trafficleft = Long.parseLong(trafficLeftStr);
         }
         boolean isSingleHoster = false;
         try {
@@ -238,6 +255,8 @@ public class PremiumyPl extends PluginForHost {
             timestampValidUntil = 0;
         }
 
+        boolean isMulti = false;
+        boolean isTransfer = false;
         if (timestampValidUntil > 0l) {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account - Multi");
@@ -245,37 +264,48 @@ public class PremiumyPl extends PluginForHost {
             if (timestampValidUntil > System.currentTimeMillis()) {
                 ai.setValidUntil(timestampValidUntil);
             }
-        } else if (trafficleft > 0) {
+            isMulti = true;
+        }
+        if (trafficleft > 0) {
             ai.setTrafficLeft(trafficleft);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account - Transfer");
+            isTransfer = true;
+        }
+        if (isMulti && isTransfer) {
+            ai.setStatus("Premium account - Transfer/Multi");
+            ai.setUnlimitedTraffic();
+            ai.setValidUntil(-1l);
         } else {
-            // check if it is hoster plan
-            validDates = new Regex(hostsValidDates, "\"([^<>\"]+)\":(\\d+),?").getMatches();
+            if (isTransfer) {
+                // check if it is hoster plan
+                validDates = new Regex(hostsValidDates, "\"([^<>\"]+)\":(\\d+),?").getMatches();
 
-            for (String[] validDate : validDates) {
-                timestampValidUntil = Long.parseLong(validDate[1]);
+                for (String[] validDate : validDates) {
+                    timestampValidUntil = Long.parseLong(validDate[1]);
+                    if (timestampValidUntil > 0) {
+                        timestampValidUntil = timestampValidUntil * 1000l;
+                        if (timestampValidUntil > System.currentTimeMillis()) {
+                            ai.setValidUntil(timestampValidUntil);
+                            break;
+                        }
+                    }
+
+                }
                 if (timestampValidUntil > 0) {
-                    timestampValidUntil = timestampValidUntil * 1000l;
-                    if (timestampValidUntil > System.currentTimeMillis()) {
-                        ai.setValidUntil(timestampValidUntil);
-                        break;
+                    account.setType(AccountType.PREMIUM);
+                    ai.setStatus("Premium account - Hoster");
+                    isSingleHoster = true;
+                } else {
+                    if (!isTransfer) {
+                        ai.setTrafficLeft(0);
+                        account.setType(AccountType.FREE);
+                        ai.setStatus("Free account");
+                        return ai;
                     }
                 }
-
-            }
-            if (timestampValidUntil > 0) {
-                account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium account - Hoster");
-                isSingleHoster = true;
-            } else {
-                ai.setTrafficLeft(0);
-                account.setType(AccountType.FREE);
-                ai.setStatus("Free account");
-                return ai;
             }
         }
-
         this.postAPISafe("hosts", "");
         final String[] hosts = this.br.getRegex("\"domain\":\"([^<>\"]+)\"").getColumn(0);
 
