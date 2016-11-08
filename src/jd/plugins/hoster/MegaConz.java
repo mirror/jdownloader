@@ -552,14 +552,15 @@ public class MegaConz extends PluginForHost {
             final String error = getError(br);
             if ("-6".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 5 * 60 * 1000l);
             }
             if ("-9".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if ("-11".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             checkServerBusy();
-            logger.info("Unhandled error code: " + error);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
         }
         final String fileSize = valueOf(response.get("s"));
         if (fileSize == null) {
