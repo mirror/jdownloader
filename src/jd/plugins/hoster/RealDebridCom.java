@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -57,6 +58,7 @@ import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.components.realDebridCom.RealDebridComConfig;
 import org.jdownloader.plugins.components.realDebridCom.api.Error;
+import org.jdownloader.plugins.components.realDebridCom.api.json.CheckLinkResponse;
 import org.jdownloader.plugins.components.realDebridCom.api.json.ClientSecret;
 import org.jdownloader.plugins.components.realDebridCom.api.json.CodeResponse;
 import org.jdownloader.plugins.components.realDebridCom.api.json.ErrorResponse;
@@ -117,20 +119,20 @@ public class RealDebridCom extends PluginForHost {
     private Browser                                        apiBrowser;
 
     private TokenResponse                                  token;
-    private Account                                        account;
     protected ClientSecret                                 clientSecret;
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
-
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         Browser.setRequestIntervalLimitGlobal("rdb.so", 500);
         Browser.setRequestIntervalLimitGlobal("rdeb.io", 500);
     }
 
-    private <T> T callRestAPI(String method, UrlQuery query, TypeRef<T> type) throws Exception {
-        Request request;
+    private <T> T callRestAPI(final Account account, String method, UrlQuery query, TypeRef<T> type) throws Exception {
+        if (account == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         ensureAPIBrowser();
         login(account, false);
         try {
@@ -185,8 +187,8 @@ public class RealDebridCom extends PluginForHost {
         }
     }
 
-    private <T> T callRestAPI(String method, TypeRef<T> type) throws Exception {
-        return callRestAPI(method, null, type);
+    private <T> T callRestAPI(final Account account, String method, TypeRef<T> type) throws Exception {
+        return callRestAPI(account, method, null, type);
 
     }
 
@@ -205,40 +207,30 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        this.account = account;
-
+        final AccountInfo ai = new AccountInfo();
         account.setError(null, null);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-
-        UserResponse user = callRestAPI("/user", new TypeRef<UserResponse>(UserResponse.class) {
-        });
-
+        final UserResponse user = callRestAPI(account, "/user", UserResponse.TYPE);
         ai.setValidUntil(TimeFormatter.getTimestampByGregorianTime(user.getExpiration()));
-
         if ("premium".equalsIgnoreCase(user.getType())) {
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
-
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
             ai.setProperty("multiHostSupport", Property.NULL);
             return ai;
         }
-        HashMap<String, HostsResponse> hosts = callRestAPI("/hosts", new TypeRef<HashMap<String, HostsResponse>>() {
+        final HashMap<String, HostsResponse> hosts = callRestAPI(account, "/hosts", new TypeRef<HashMap<String, HostsResponse>>() {
         });
-
-        ArrayList<String> supportedHosts = new ArrayList<String>();
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (Entry<String, HostsResponse> es : hosts.entrySet()) {
             if (StringUtils.isNotEmpty(es.getKey())) {
                 supportedHosts.add(es.getKey());
             }
-
         }
         ai.setMultiHostSupport(this, supportedHosts);
-
         return ai;
     }
 
@@ -344,14 +336,36 @@ public class RealDebridCom extends PluginForHost {
         handleDL(null, link, link.getPluginPatternMatcher(), null);
     }
 
+    private AvailableStatus check(final Account account, DownloadLink link) throws Exception {
+        if (account != null && !isDirectRealDBUrl(link)) {
+            final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+            final String password = link.getStringProperty("pass", null);
+            final CheckLinkResponse checkresp = callRestAPI(account, "/unrestrict/check", new UrlQuery().append("link", dllink, true).append("password", password, true), CheckLinkResponse.TYPE);
+            if (checkresp != null) {
+                if (checkresp.getFilesize() > 0) {
+                    link.setVerifiedFileSize(checkresp.getFilesize());
+                }
+                if (checkresp.getFilename() != null) {
+                    link.setFinalFileName(checkresp.getFilename());
+                }
+                return AvailableStatus.TRUE;
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.UNCHECKABLE;
+    }
+
     @Override
     public boolean hasConfig() {
         return true;
     }
 
-    /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.account = account;
+        handleMultiHost(0, link, account);
+    }
+
+    /** no override to keep plugin compatible to old stable */
+    public void handleMultiHost(final int startTaskIndex, final DownloadLink link, final Account account) throws Exception {
         try {
             synchronized (hostUnavailableMap) {
                 final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -370,17 +384,16 @@ public class RealDebridCom extends PluginForHost {
             }
             prepBrowser(br);
             login(account, false);
-            showMessage(link, "Task 1: Generating Link");
+            showMessage(link, "Task " + (startTaskIndex + 1) + ": Generating Link");
             /* request Download */
             final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             final String password = link.getStringProperty("pass", null);
-            final UnrestrictLinkResponse linkresp = callRestAPI("/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), new TypeRef<UnrestrictLinkResponse>(UnrestrictLinkResponse.class) {
-            });
+            final UnrestrictLinkResponse linkresp = callRestAPI(account, "/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), UnrestrictLinkResponse.TYPE);
             final String genLnk = linkresp.getDownload();
             if (StringUtils.isEmpty(genLnk) || !genLnk.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
             }
-            showMessage(link, "Task 2: Download begins!");
+            showMessage(link, "Task " + (startTaskIndex + 2) + ": Download begins!");
             try {
                 handleDL(account, link, genLnk, linkresp);
             } catch (PluginException e1) {
@@ -423,16 +436,16 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        showMessage(link, "Task 1: Check URL validity!");
+        final AvailableStatus status = requestFileInformation(link);
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+        }
         if (isDirectRealDBUrl(link)) {
-            showMessage(link, "Task 1: Check URL validity!");
-            final AvailableStatus status = requestFileInformation(link);
-            if (AvailableStatus.UNCHECKABLE.equals(status)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
-            }
             showMessage(link, "Task 2: Download begins!");
             handleDL(account, link, link.getPluginPatternMatcher(), null);
         } else {
-            handleMultiHost(link, account);
+            handleMultiHost(2, link, account);
         }
     }
 
@@ -580,18 +593,18 @@ public class RealDebridCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser(br);
-        if (isDirectRealDBUrl(dl)) {
+        if (isDirectRealDBUrl(link)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(dl.getDownloadURL());
+                con = br.openGetConnection(link.getDownloadURL());
                 if (con.isContentDisposition() && con.isOK()) {
-                    if (dl.getFinalFileName() == null) {
-                        dl.setFinalFileName(getFileNameFromHeader(con));
+                    if (link.getFinalFileName() == null) {
+                        link.setFinalFileName(getFileNameFromHeader(con));
                     }
-                    dl.setVerifiedFileSize(con.getLongContentLength());
-                    dl.setAvailable(true);
+                    link.setVerifiedFileSize(con.getLongContentLength());
+                    link.setAvailable(true);
                     return AvailableStatus.TRUE;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -609,7 +622,11 @@ public class RealDebridCom extends PluginForHost {
                 }
             }
         } else {
-            return AvailableStatus.UNCHECKABLE;
+            final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
+            if (accounts != null && accounts.size() > 0) {
+                return check(accounts.get(0), link);
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 
