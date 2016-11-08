@@ -71,7 +71,12 @@ public class UpfilesNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        String downloadURL = link.getDownloadURL().replace("http:", "https:");
+        String downloadURL = link.getDownloadURL();
+        if (downloadURL.contains("http:")) {
+            downloadURL = link.getDownloadURL().replace("http:", "https:");
+            link.setUrlDownload(downloadURL);
+        }
+
         br.getPage(downloadURL);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
