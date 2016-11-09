@@ -247,8 +247,8 @@ public class FavIcons {
                             }
                             String tryHost = host;
                             int index = 0;
-                            /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
                             while (true) {
+                                /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
                                 if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
                                     tryHost = tryHost.substring(index + 1);
                                     if (domain != null && !tryHost.contains(domain) || tryHost.indexOf('.') == -1) {
