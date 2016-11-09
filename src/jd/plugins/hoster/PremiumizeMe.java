@@ -327,7 +327,6 @@ public class PremiumizeMe extends UseNet {
         return new FEATURE[] { FEATURE.MULTIHOST, FEATURE.USENET };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         if (isUsenetLink(link)) {
@@ -540,13 +539,13 @@ public class PremiumizeMe extends UseNet {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
                 break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
