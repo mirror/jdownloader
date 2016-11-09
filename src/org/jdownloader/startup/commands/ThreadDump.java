@@ -15,6 +15,7 @@ public class ThreadDump extends AbstractStartupCommand {
         while (it.hasNext()) {
             final Entry<Thread, StackTraceElement[]> next = it.next();
             final StringBuilder sb = new StringBuilder();
+            sb.append("Thread:" + next.getKey().getName() + "|" + next.getKey().getId() + "\r\n");
             for (final StackTraceElement stackTraceElement : next.getValue()) {
                 sb.append("\tat " + stackTraceElement + "\r\n");
             }

@@ -12,6 +12,18 @@ import javax.swing.JComponent;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import jd.config.SubConfiguration;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.UserIO;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -28,23 +40,12 @@ import org.jdownloader.container.D;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
-
-import jd.config.SubConfiguration;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.UserIO;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 public class DLCFactory extends D {
 
@@ -89,7 +90,7 @@ public class DLCFactory extends D {
     public void createDLC(final List<DownloadLink> links) {
         try {
             final String xml = createContainerString(links);
-            encryptAndWriteXML(xml, getPreSetFileName(links));
+            encryptAndWriteXML(xml, getPreSetFolder(links), getPreSetFileName(links));
         } catch (DialogCanceledException e) {
         } catch (DialogClosedException e) {
         } catch (IOException e) {
@@ -114,10 +115,22 @@ public class DLCFactory extends D {
         return null;
     }
 
+    private File getPreSetFolder(final List<? extends AbstractPackageChildrenNode<?>> nodes) {
+        if (nodes != null && nodes.size() > 0) {
+            for (final AbstractPackageChildrenNode node : nodes) {
+                final AbstractPackageNode parent = ((AbstractPackageNode) nodes.get(0).getParentNode());
+                if (parent != null) {
+                    return LinkTreeUtils.getDownloadDirectory(parent);
+                }
+            }
+        }
+        return null;
+    }
+
     public void createDLCByCrawledLinks(final List<CrawledLink> links) {
         try {
             final String xml = createContainerStringByCrawledLinks(links);
-            encryptAndWriteXML(xml, getPreSetFileName(links));
+            encryptAndWriteXML(xml, getPreSetFolder(links), getPreSetFileName(links));
         } catch (DialogCanceledException e) {
         } catch (DialogClosedException e) {
         } catch (Exception e) {
@@ -131,8 +144,14 @@ public class DLCFactory extends D {
      * @throws DialogCanceledException
      * @throws IOException
      */
-    protected void encryptAndWriteXML(String xml, final String preSetFilename) throws DialogClosedException, DialogCanceledException, IOException {
+    protected void encryptAndWriteXML(String xml, final File preSetFolder, final String preSetFilename) throws DialogClosedException, DialogCanceledException, IOException {
         ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.CreateDLCAction_actionPerformed_title_(), null, null) {
+
+            {
+                if (preSetFolder != null && preSetFolder.isDirectory()) {
+                    setPreSelection(preSetFolder);
+                }
+            }
 
             @Override
             public JComponent layoutDialogContent() {
