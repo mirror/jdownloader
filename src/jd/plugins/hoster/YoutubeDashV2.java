@@ -1202,7 +1202,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     @Override
     public FFmpeg getFFmpeg(final DownloadLink downloadLink) {
         final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData(downloadLink);
-        if (!ffMpegMetaData.isEmpty()) {
+        if (ffMpegMetaData != null && !ffMpegMetaData.isEmpty()) {
             return new FFmpeg() {
                 private final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
                 private HttpServer            httpServer        = null;
