@@ -184,6 +184,10 @@ public class DigitalplaygroundCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                        /* Trust cookies without verifying them. */
+                        return;
+                    }
                     br.getPage("http://" + jd.plugins.decrypter.DigitalplaygroundCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
@@ -266,6 +270,10 @@ public class DigitalplaygroundCom extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_FAST_LINKCHECK", "Enable fast linkcheck?\r\nFilesize will not be shown until downloadstart or manual linkcheck!").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "AUTO_PICTURES", "Grab picture galleries automatically when adding movie urls?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "AUTO_MOVIES", "Grab movies automatically when grabbing picture urls?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080p_6000", "Grab 1080p (mp4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720p_4000", "Grab 720p (mp4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_480p_1500", "Grab 480p (mp4)?").setDefaultValue(true));

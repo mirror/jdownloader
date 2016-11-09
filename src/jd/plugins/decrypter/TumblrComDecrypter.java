@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -44,12 +45,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.TumblrComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive(?:/.*?)?|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/?$|/archive.+|/(?:dashboard/)?blog/[^/]+)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -589,6 +591,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         }
         handlePassword();
         br.followRedirect(true);
+        final String maxAgeStrg = new Regex(parameter, "maxage=(\\d+[a-z])").getMatch(0);
+        final long maxAge = maxAgeStrg != null ? TimeFormatter.getMilliSeconds(maxAgeStrg) : 0;
+        final long maxAgeTimestamp = System.currentTimeMillis() + maxAge;
         final FilePackage fp = FilePackage.getInstance();
         String fpName = new Regex(parameter, "//(.+?)\\.tumblr").getMatch(0);
         fp.setName(fpName);
@@ -602,10 +607,30 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             if (parameter.contains("/archive")) {
                 // archive we will need todo things differently!
-                final String[] posts = br.getRegex("<a target=\"_blank\" class=\"hover\" title=\"[^\"]*\" href=\"(.*?)\"").getColumn(0);
-                if (posts != null) {
-                    for (final String post : posts) {
-                        final DownloadLink dl = createDownloadlink(post);
+                boolean urlsOnly = false;
+                String[] postSrcs = this.br.getRegex("<div class=\"post post_micro[^\"]+\".*?</span>").getColumn(-1);
+                if (postSrcs == null || postSrcs.length == 0) {
+                    urlsOnly = true;
+                    postSrcs = br.getRegex("<a target=\"_blank\" class=\"hover\" title=\"[^\"]*\" href=\"(http[^<>\"]+)\"").getColumn(0);
+                }
+                if (postSrcs != null) {
+                    for (String postSrc : postSrcs) {
+                        String postDate = urlsOnly ? null : new Regex(postSrc, "class=\"post_date\">([^<>\"]+)</span>").getMatch(0);
+                        final String postUrl = urlsOnly ? postSrc : new Regex(postSrc, "(https?://[A-Za-z0-9\\-_]+\\.tumblr\\.com/post/[^<>\"]+)").getMatch(0);
+                        if (postUrl == null) {
+                            return;
+                        } else if (maxAgeStrg != null && postDate == null) {
+                            logger.warning("User limited post age via maxage parameter but plugin failed to find source date");
+                            return;
+                        } else if (maxAgeStrg != null && postDate != null && maxAge > 0) {
+                            postDate = postDate.trim();
+                            final long postDateLong = TimeFormatter.getMilliSeconds(postDate, "MMMM dd, yyyy", Locale.ENGLISH);
+                            if (postDateLong > maxAgeTimestamp) {
+                                logger.info("Stopping as posts are older than what the user wants");
+                                return;
+                            }
+                        }
+                        final DownloadLink dl = createDownloadlink(postUrl);
                         fp.add(dl);
                         distribute(dl);
                         decryptedLinks.add(dl);
