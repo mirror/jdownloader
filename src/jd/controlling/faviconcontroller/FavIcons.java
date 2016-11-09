@@ -59,13 +59,16 @@ public class FavIcons {
     private static final ThreadPoolExecutor                                      THREAD_POOL;
     private static final AtomicInteger                                           THREADCOUNTER   = new AtomicInteger(0);
     private static final Object                                                  LOCK            = new Object();
-    private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE           = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
+    private static final LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE           = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
     private static final HashMap<String, ImageIcon>                              FAILED_ICONS    = new HashMap<String, ImageIcon>();
     private static final HashSet<String>                                         REFRESHED_ICONS = new HashSet<String>();
     private static final HashMap<String, ImageIcon>                              DEFAULT_ICONS   = new HashMap<String, ImageIcon>();
     private static final LogSource                                               LOGGER;
 
     private static final FavIconsConfig                                          CONFIG          = JsonConfig.create(FavIconsConfig.class);
+
+    private static final long                                                    REFRESH_TIMEOUT = 1000l * 60 * 60 * 24 * 7;
+    private static final long                                                    RETRY_TIMEOUT   = 1000l * 60 * 60 * 24 * 7;
 
     static {
         LOGGER = LogController.getInstance().getLogger("FavIcons.class");
@@ -104,14 +107,13 @@ public class FavIcons {
 
         };
         THREAD_POOL.allowCoreThreadTimeOut(true);
-
-        final long lastRefresh = CONFIG.getLastRefresh();
-        CONFIG.setLastRefresh(System.currentTimeMillis());
         /* load failed hosts list */
         ArrayList<String> FAILED_ARRAY_LIST = JsonConfig.create(FavIconsConfig.class).getFailedHosts();
-        if (FAILED_ARRAY_LIST == null || (System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
+        if (FAILED_ARRAY_LIST == null || (System.currentTimeMillis() - CONFIG.getLastRefresh()) > RETRY_TIMEOUT) {
+            CONFIG.setLastRefresh(System.currentTimeMillis());
             /* timeout is over, lets try again the failed ones */
             FAILED_ARRAY_LIST = new ArrayList<String>();
+            CONFIG.setFailedHosts(FAILED_ARRAY_LIST);
         }
         synchronized (LOCK) {
             for (String host : FAILED_ARRAY_LIST) {
@@ -132,12 +134,8 @@ public class FavIcons {
                 }
                 CONFIG.setFailedHosts(failedHosts);
             }
-
         });
-
     }
-
-    public static final long                                                     FAVICON_TIMEOUT = 1000l * 60 * 60 * 24 * 7;
 
     public static Icon getFavIcon(String host, FavIconRequestor requestor) {
         if (host == null) {
@@ -162,7 +160,7 @@ public class FavIcons {
                         if ("file".equalsIgnoreCase(url.getProtocol())) {
                             final File file = new File(url.toURI());
                             final long lastModified = file.lastModified();
-                            if ((lastModified > 0 && System.currentTimeMillis() - lastModified > FAVICON_TIMEOUT) && file.exists()) {
+                            if ((lastModified > 0 && System.currentTimeMillis() - lastModified > REFRESH_TIMEOUT) && file.exists()) {
                                 file.setLastModified(System.currentTimeMillis());// avoid retry before expired
                                 add(host, requestor);
                             }
@@ -232,20 +230,20 @@ public class FavIcons {
                         if (existingHostPlugin != null && ("jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassName()) || "jd.plugins.hoster.JdLog".equals(existingHostPlugin.getClassName()))) {
                             synchronized (LOCK) {
                                 QUEUE.remove(host);
-                                ImageIcon failedIcon = FAILED_ICONS.get(host);
-                                if (failedIcon == null) {
-                                    failedIcon = getDefaultIcon(host, true);
-                                    FAILED_ICONS.put(host, failedIcon);
+                                if (!REFRESHED_ICONS.contains(host) && FAILED_ICONS.get(host) == null) {
+                                    FAILED_ICONS.put(host, getDefaultIcon(host, true));
                                 }
                             }
                             return;
                         }
-                        final ArrayList<String> tryHosts = new ArrayList<String>();
+                        final List<String> tryHosts = new ArrayList<String>();
                         tryHosts.add(host);
                         if (!host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
-                            String domain = null;
+                            final String domain;
                             if (PublicSuffixList.getInstance() != null) {
                                 domain = PublicSuffixList.getInstance().getDomain(host);
+                            } else {
+                                domain = null;
                             }
                             String tryHost = host;
                             int index = 0;
@@ -262,35 +260,29 @@ public class FavIcons {
                                 }
                             }
                         }
-                        BufferedImage favicon = null;
-                        for (String tryHost2 : tryHosts) {
-                            favicon = downloadFavIcon(tryHost2);
-                            if (favicon != null) {
-                                break;
-                            }
-                        }
+                        final BufferedImage favicon = downloadFavIcon(tryHosts);
                         synchronized (LOCK) {
-                            final java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
+                            final List<FavIconRequestor> requestors = QUEUE.remove(host);
                             if (favicon == null) {
-                                ImageIcon failedIcon = FAILED_ICONS.get(host);
-                                if (failedIcon == null) {
-                                    failedIcon = getDefaultIcon(host, true);
-                                    FAILED_ICONS.put(host, failedIcon);
+                                if (!REFRESHED_ICONS.contains(host) && FAILED_ICONS.get(host) == null) {
+                                    FAILED_ICONS.put(host, getDefaultIcon(host, true));
                                 }
                             } else {
                                 FileOutputStream fos = null;
+                                File outputFile = null;
                                 try {
                                     /* buffer favicon to disk */
-                                    File imageFile = Application.getResource(NewTheme.I().getPath() + "/images/fav/" + host + ".png");
-                                    FileCreationManager.getInstance().mkdir(imageFile.getParentFile());
-                                    fos = new FileOutputStream(imageFile);
+                                    outputFile = Application.getResource(NewTheme.I().getPath() + "/images/fav/" + host + ".png");
+                                    FileCreationManager.getInstance().mkdir(outputFile.getParentFile());
+                                    fos = new FileOutputStream(outputFile);
                                     ImageIO.write(favicon, "png", fos);
+                                    outputFile = null;
                                     /* load and scale it again */
                                     if (requestors != null && requestors.size() > 0) {
                                         final Icon image = new AbstractIcon("fav/" + host, -1);
                                         if (image != null) {
                                             /* refresh icons for all queued plugins */
-                                            for (FavIconRequestor requestor : requestors) {
+                                            for (final FavIconRequestor requestor : requestors) {
                                                 requestor.setFavIcon(image);
                                             }
                                         }
@@ -303,6 +295,9 @@ public class FavIcons {
                                             fos.close();
                                         }
                                     } catch (final Throwable e) {
+                                    }
+                                    if (outputFile != null) {
+                                        outputFile.delete();
                                     }
                                 }
                             }
@@ -549,11 +544,21 @@ public class FavIcons {
         }
     }
 
+    public static BufferedImage downloadFavIcon(List<String> hosts) {
+        for (final String host : hosts) {
+            final BufferedImage ret = downloadFavIcon(host);
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return null;
+    }
+
     /**
      * downloads a favicon from the given host, icon must be bigger than 1x1, cause some hosts have fake favicon.ico with 1x1 size
      */
     public static BufferedImage downloadFavIcon(String host) {
-        LogSource logger = LogController.getFastPluginLogger("FavIcons");
+        final LogSource logger = LogController.getFastPluginLogger("FavIcons");
         logger.info("Download FavIcon for " + host);
         BufferedImage ret = null;
         try {
