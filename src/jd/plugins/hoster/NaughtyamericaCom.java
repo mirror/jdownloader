@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -27,6 +26,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -37,24 +37,22 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "http://wickeddecrypted.+" })
-public class WickedCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
+public class NaughtyamericaCom extends PluginForHost {
 
-    public WickedCom(PluginWrapper wrapper) {
+    public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://join.wicked.com/signup/signup.php");
+        this.enablePremium("http://natour.naughtyamerica.com/signup/signup.php");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://ma.wicked.com/docs/terms/";
+        return "http://www.naughtyamerica.com/terms-of-service.html";
     }
 
     /* Connection stuff */
@@ -67,18 +65,17 @@ public class WickedCom extends PluginForHost {
 
     private final String         type_pic                     = ".+\\.jpg.*?";
 
-    public static final String   html_loggedin                = "class=\"account\\-info\"";
+    public static final String   html_loggedin                = "class=\"my\\-settings\"";
 
     private String               dllink                       = null;
     private boolean              server_issues                = false;
-    private boolean              logged_in                    = false;
 
     public static Browser prepBR(final Browser br) {
-        return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, "ma.wicked.com");
+        return br;
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://wickeddecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://naughtyamericadecrypted", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -89,22 +86,16 @@ public class WickedCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null && !link.getDownloadURL().matches(type_pic)) {
+        if (aa == null) {
             link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        if (aa != null) {
-            this.login(this.br, aa, false);
-            logged_in = true;
-        } else {
-            logged_in = false;
-        }
+        login(this.br, aa, false);
         dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
             if (con.getContentType().contains("html")) {
-                /* Refresh directurl */
                 refreshDirecturl(link);
                 con = br.openHeadConnection(dllink);
                 if (con.getContentType().contains("html")) {
@@ -115,7 +106,9 @@ public class WickedCom extends PluginForHost {
                 link.setContentUrl(dllink);
             }
             link.setDownloadSize(con.getLongContentLength());
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+            if (link.getFinalFileName() == null) {
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+            }
         } finally {
             try {
                 con.disconnect();
@@ -126,25 +119,22 @@ public class WickedCom extends PluginForHost {
     }
 
     private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
-        final String fid = getFID(link);
-        if (fid == null) {
+        final String filename_url = getFilenameUrl(link);
+        if (filename_url == null) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getDownloadURL().matches(type_pic)) {
-            if (logged_in) {
-                this.br.getPage(jd.plugins.decrypter.WickedCom.getPicUrl(fid));
-            } else {
-                this.br.getPage(jd.plugins.decrypter.WickedCom.getVideoUrlFree(fid));
-            }
             final String number_formatted = link.getStringProperty("picnumber_formatted", null);
-            if (fid == null || number_formatted == null) {
-                /* User added url without decrypter --> Impossible to refresh this directurl! */
+            if (filename_url == null || number_formatted == null) {
+                /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (jd.plugins.decrypter.WickedCom.isOffline(this.br)) {
+            this.br.getPage(jd.plugins.decrypter.NaughtyamericaCom.getPicUrl(filename_url));
+            if (jd.plugins.decrypter.NaughtyamericaCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String pictures[] = jd.plugins.decrypter.WickedCom.getPictureArray(this.br);
+            final String pictures[] = jd.plugins.decrypter.NaughtyamericaCom.getPictureArray(this.br);
             for (final String finallink : pictures) {
                 if (finallink.contains(number_formatted + ".jpg")) {
                     dllink = finallink;
@@ -152,13 +142,35 @@ public class WickedCom extends PluginForHost {
                 }
             }
         } else {
-            this.br.getPage(jd.plugins.decrypter.WickedCom.getVideoUrlPremium(fid));
-            final String quality = link.getStringProperty("quality", null);
-            if (quality == null) {
+            final String quality_stored = link.getStringProperty("quality", null);
+            final String type_stored = link.getStringProperty("type", null);
+            final String type_target = type_stored != null ? "clip" : null;
+            if (quality_stored == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* We don't need the exact json source for that! */
-            dllink = PluginJSonUtils.getJsonValue(this.br, quality);
+            this.br.getPage(jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlPremium(filename_url));
+            /* The complicated process of finding a new directurl ... */
+            final String[] videoInfo = jd.plugins.decrypter.NaughtyamericaCom.getVideoInfoArray(this.br);
+            for (final String singleVideoInfo : videoInfo) {
+                final String directlink = jd.plugins.decrypter.NaughtyamericaCom.getDirecturlFromVideoInfo(singleVideoInfo);
+                final String[] videroInfoArray = jd.plugins.decrypter.NaughtyamericaCom.getVideoInfoDetailed(singleVideoInfo);
+                final String type = videroInfoArray[videroInfoArray.length - 2];
+                final String quality = videroInfoArray[videroInfoArray.length - 1];
+                final String quality_url = directlink != null ? new Regex(directlink, "([a-z0-9]+)\\.(?:wmv|mp4)").getMatch(0) : null;
+                if (directlink == null || quality_url == null) {
+                    continue;
+                }
+                final String type_for_property = jd.plugins.decrypter.NaughtyamericaCom.getTypeForProperty(type);
+                if (type_target != null && "clip".equalsIgnoreCase(type_target) && !"clip".equalsIgnoreCase(type_for_property)) {
+                    /* We're looking for a clip but this is not a clip --> Not what we want --> Skip it */
+                    continue;
+                } else if (!quality.equalsIgnoreCase(quality_stored)) {
+                    /* Not the quality we're looking for --> Skip it */
+                    continue;
+                }
+                dllink = directlink;
+                break;
+            }
         }
         if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -169,6 +181,10 @@ public class WickedCom extends PluginForHost {
         return dl.getStringProperty("fid", null);
     }
 
+    private String getFilenameUrl(final DownloadLink dl) {
+        return dl.getStringProperty("filename_url", null);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -176,20 +192,7 @@ public class WickedCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        /* 2016-11-03: Free Users can download image galleries (only). */
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty("premium_directlink", dllink);
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
@@ -211,7 +214,7 @@ public class WickedCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://" + jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");
+                    br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
                         return;
@@ -219,24 +222,30 @@ public class WickedCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://" + jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/access/login/");
-                String postdata = "rememberme=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("api\\.recaptcha\\.net|google\\.com/recaptcha/api/")) {
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + jd.plugins.decrypter.WickedCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/", true);
-                    final String code = getCaptchaCode("recaptcha", cf, dummyLink);
-                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
+                String postdata = "dest=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                if (br.containsHTML("g\\-recaptcha")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-                br.postPage("/access/submit/", postdata);
+                br.postPage("/login", postdata);
+                final String loginCookie = br.getCookie("nrc", jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
                 }
-                if (!br.containsHTML(html_loggedin)) {
+                if (br.getURL().contains("/postLogin")) {
+                    br.getPage("//" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + br.getHost());
+                }
+                if (!br.containsHTML(html_loggedin) && loginCookie == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -259,6 +268,13 @@ public class WickedCom extends PluginForHost {
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
+        }
+        final String user_type = br.getRegex("var\\s*?user_type\\s*?=\\s*?\\'([^<>\"\\']+)'\\s*?;").getMatch(0);
+        final boolean isExpired = user_type != null && user_type.equalsIgnoreCase("Expired Paid");
+        if (isExpired) {
+            /* Small failover - login is correct but account is expired! */
+            ai.setExpired(true);
+            return ai;
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
@@ -287,6 +303,11 @@ public class WickedCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+        return account != null;
+    }
+
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
         if (is_this_plugin) {
@@ -301,7 +322,7 @@ public class WickedCom extends PluginForHost {
     @Override
     public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
         if (StringUtils.equals("premiumize.me", buildForThisPlugin.getHost())) {
-            return jd.plugins.decrypter.WickedCom.getVideoUrlFree(getFID(downloadLink));
+            return jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlFree(getFID(downloadLink));
         } else {
             return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
@@ -309,28 +330,29 @@ public class WickedCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "Download videos- and pictures with the wicked.com plugin.";
+        return "Download videos- and pictures with the naughtyamerica.com plugin.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__1080p_6000", "Grab 1080p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__720p_2500", "Grab 720p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__400p_1300", "Grab 400p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB__256p_600", "Grab 256p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-128x96_H263", "Grab 128x96 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-176x144_H263", "Grab 176x144 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-640x368_H264", "Grab 640x368 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_-480x272_H264", "Grab 480x272 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_FAST_LINKCHECK", "Enable fast linkcheck?\r\nFilesize will not be shown until downloadstart or manual linkcheck!").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_CLIPS", "Grab clips (= full videos split in multiple parts/scenes)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_PICTURES", "Grab picture galleries?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_4K", "Grab 4K (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_HD 1080p", "Grab 1080p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_HD 720p", "Grab 720p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_HD 480p", "Grab 480p (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_Quicktime (Apple)", "Grab Quicktime (Apple) (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_DVD", "Grab DVD (wmv)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_mobile", "Grab Mobile (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_Quicktime On the go (5 Min version)", "Grab Quicktime On the go (5 Min version) (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_Quicktime 4k 5min", "Grab Quicktime 4k 5min (mp4)?").setDefaultValue(true));
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.PornPortal;
     }
 
     @Override
