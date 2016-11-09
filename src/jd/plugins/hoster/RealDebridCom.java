@@ -83,7 +83,7 @@ public class RealDebridCom extends PluginForHost {
 
     private static class APIException extends Exception {
 
-        private URLConnectionAdapter connection;
+        private final URLConnectionAdapter connection;
 
         public APIException(URLConnectionAdapter connection, Error error, String msg) {
             super(msg);
@@ -95,7 +95,7 @@ public class RealDebridCom extends PluginForHost {
             return connection;
         }
 
-        private Error error;
+        private final Error error;
 
         public Error getError() {
             return error;
