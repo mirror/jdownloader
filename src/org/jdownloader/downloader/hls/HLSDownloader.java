@@ -659,7 +659,7 @@ public class HLSDownloader extends DownloadInterface {
                                 throw new IndexOutOfBoundsException("Unknown segment:" + index);
                             } else {
                                 if (logger != null) {
-                                    logger.info("Forward segment:" + index + "/" + m3u8Playlists.size());
+                                    logger.info("Forward segment:" + (index + 1) + "/" + m3u8Playlists.size());
                                 }
                             }
                         } catch (final NumberFormatException e) {
