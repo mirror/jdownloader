@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -50,20 +51,25 @@ public class PanBaiduCom extends PluginForHost {
         return "http://pan.baidu.com/";
     }
 
-    private String              DLLINK                                     = null;
-    private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
-    private static final String USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
+    private String               DLLINK                                     = null;
+    private static final String  TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
+    private static final String  USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
     // private static final String USER_AGENT =
     // "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
-    private static final String APPID                                      = "250528";
+    private static final String  APPID                                      = "250528";
 
-    private static final String NICE_HOST                                  = "pan.baidu.com";
-    private static final String NICE_HOSTproperty                          = "panbaiducom";
+    private static final String  NICE_HOST                                  = "pan.baidu.com";
+    private static final String  NICE_HOSTproperty                          = "panbaiducom";
 
     /* Connection stuff */
-    private final boolean       FREE_RESUME                                = true;
-    private final int           FREE_MAXCHUNKS                             = 0;
-    private final int           FREE_MAXDOWNLOADS                          = -1;
+    private static final boolean FREE_RESUME                                = true;
+    private static final int     FREE_MAXCHUNKS                             = 0;
+    private static final int     FREE_MAXDOWNLOADS                          = 20;
+
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    private static AtomicInteger totalMaxSimultanFreeDownload               = new AtomicInteger(FREE_MAXDOWNLOADS);
+    // don't touch the following!
+    private static AtomicInteger maxFree                                    = new AtomicInteger(1);
 
     /** Known API errors/responses: -20 = Captcha needed / captcha wrong */
 
@@ -286,7 +292,34 @@ public class PanBaiduCom extends PluginForHost {
             downloadLink.setMD5Hash(md5);
         }
         downloadLink.setProperty(directlinkproperty, DLLINK);
-        this.dl.startDownload();
+        try {
+            // add a download slot
+            controlFree(+1);
+            // start the dl
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlFree(-1);
+        }
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     private String getMD5FromDispositionHeader(final URLConnectionAdapter urlConnection) {
@@ -452,7 +485,7 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return maxFree.get();
     }
 
     @Override
@@ -461,7 +494,7 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return maxFree.get();
     }
 
     @Override
