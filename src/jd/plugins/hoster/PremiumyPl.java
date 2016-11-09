@@ -230,13 +230,11 @@ public class PremiumyPl extends PluginForHost {
         this.postAPISafe("accountInfo", "");
 
         final String trafficLeftStr = PluginJSonUtils.getJsonValue(this.br, "transfer");
-
         final String premium = PluginJSonUtils.getJsonValue(this.br, "premium");
+        
+        boolean isFree = false;
         if ("0".equals(premium) && "0".equals(trafficLeftStr)) {
-            ai.setTrafficLeft(0);
-            account.setType(AccountType.FREE);
-            ai.setStatus("Free account");
-            return ai;
+            isFree = true;           
         }
 
         long trafficleft = 0;
@@ -248,13 +246,13 @@ public class PremiumyPl extends PluginForHost {
         if (trafficLeftStr != null) {
             trafficleft = Long.parseLong(trafficLeftStr);
         }
-        boolean isSingleHoster = false;
+
         try {
             timestampValidUntil = Long.parseLong(premium);
         } catch (Exception e) {
             timestampValidUntil = 0;
         }
-
+        boolean isSingleHoster = false;
         boolean isMulti = false;
         boolean isTransfer = false;
         if (timestampValidUntil > 0l) {
@@ -274,11 +272,19 @@ public class PremiumyPl extends PluginForHost {
         }
         if (isMulti && isTransfer) {
             ai.setStatus("Premium account - Transfer/Multi");
+            /*
+             * do not set traffic and valid date, 
+			 * because Transfer has traffic and no date,
+		     * Multi has data and no traffic
+             */
             ai.setUnlimitedTraffic();
             ai.setValidUntil(-1l);
+
         } else {
-            if (isTransfer) {
-                // check if it is hoster plan
+            if (isTransfer || isFree) {
+                // Free has premium="0" and transfer="0" the same as Hoster plan
+                // check if it is hoster plan - check for expire date for specyfic hoster
+
                 validDates = new Regex(hostsValidDates, "\"([^<>\"]+)\":(\\d+),?").getMatches();
 
                 for (String[] validDate : validDates) {
@@ -307,8 +313,10 @@ public class PremiumyPl extends PluginForHost {
             }
         }
         this.postAPISafe("hosts", "");
+
         final String[] hosts = this.br.getRegex("\"domain\":\"([^<>\"]+)\"").getColumn(0);
 
+        // * correct list of hosters for single hoster plan
         if (!hostsValidDates.isEmpty() && isSingleHoster) {
             final String[] hostsNames = this.br.getRegex("\"name\":\"([^<>\"]+)\",?").getColumn(0);
             List<String> hostersAvailable = new ArrayList<String>();
