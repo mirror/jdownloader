@@ -37,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
@@ -113,17 +114,29 @@ public class DailyMotionCom extends PluginForHost {
             /* Make sure to follow redirects! */
             this.br.setFollowRedirects(true);
             final String contentURL = downloadLink.getContentUrl();
+            final String videoURL;
             if (contentURL != null) {
-                br.getPage(contentURL);
+                videoURL = contentURL;
+            } else {
+                videoURL = downloadLink.getStringProperty("mainlink", null);
             }
-            dllink = getDirectlink(downloadLink);
-            this.br.getPage(this.dllink);
-            /* 2016-10-18: We cannot really check these urls. */
-            if (!this.br.getHttpConnection().isOK()) {
-                /* TODO: Check if refresh handling is possible/needed for hls urls. */
-                return AvailableStatus.FALSE;
+            if (videoURL != null) {
+                br.getPage(videoURL);
             }
-            return AvailableStatus.TRUE;
+            final String videoSource = DailyMotionComDecrypter.getVideosource(this.br);
+            if (videoSource != null) {
+                final LinkedHashMap<String, String[]> foundQualities = DailyMotionComDecrypter.findVideoQualities(this.br, videoURL, videoSource);
+                final String qualityValue = downloadLink.getStringProperty("qualityvalue", null);
+                if (foundQualities != null && foundQualities.containsKey(qualityValue)) {
+                    downloadLink.setProperty("qualityvalue", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
+                }
+                dllink = getDirectlink(downloadLink);
+                this.br.getPage(this.dllink);
+                if (this.br.getHttpConnection().isOK()) {
+                    return AvailableStatus.TRUE;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
         } else if (isSubtitle(downloadLink)) {
