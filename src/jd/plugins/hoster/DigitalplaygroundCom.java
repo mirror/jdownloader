@@ -65,6 +65,7 @@ public class DigitalplaygroundCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     private final String         type_premium_pic             = ".+\\.jpg.*?";
+    private final String         type_premium_pic_archive     = ".+\\.zip.*?";
 
     public static final String   html_loggedin                = "class=\"member\\-nav\"";
 
@@ -124,12 +125,12 @@ public class DigitalplaygroundCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getDownloadURL().matches(type_premium_pic)) {
-            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(fid));
             final String number_formatted = link.getStringProperty("picnumber_formatted", null);
             if (fid == null || number_formatted == null) {
                 /* User added url without decrypter --> Impossible to refresh this directurl! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(fid));
             if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -140,10 +141,24 @@ public class DigitalplaygroundCom extends PluginForHost {
                     break;
                 }
             }
+        } else if (link.getDownloadURL().matches(type_premium_pic_archive)) {
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getPicUrl(fid));
+            if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /*
+             * There is only one .zip downloadurl so we can use a simple RegEx as there is not really any possibility for us to fail and
+             * ppick the wrong url compared to the other linktypes.
+             */
+            dllink = jd.plugins.decrypter.DigitalplaygroundCom.getPicArchiveDownloadlink(this.br);
         } else {
-            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getVideoUrlPremium(fid));
             final String quality = link.getStringProperty("quality", null);
             if (quality == null) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            this.br.getPage(jd.plugins.decrypter.DigitalplaygroundCom.getVideoUrlPremium(fid));
+            if (jd.plugins.decrypter.DigitalplaygroundCom.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* We don't need the exact json source for that but we have to make sure to grab the http source, not the rtmp source! */
@@ -273,6 +288,7 @@ public class DigitalplaygroundCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ENABLE_FAST_LINKCHECK", "Enable fast linkcheck?\r\nFilesize will not be shown until downloadstart or manual linkcheck!").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "AUTO_PICTURES", "Grab picture galleries automatically when adding movie urls?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "AUTO_MOVIES", "Grab movies automatically when grabbing picture urls?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), "PREFERRED_PICTURE_FILE_TYPE", new String[] { "single zip file", "One by one" }, "Download images via: ").setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080p_6000", "Grab 1080p (mp4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720p_4000", "Grab 720p (mp4)?").setDefaultValue(true));

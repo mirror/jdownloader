@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "https?://ma\\.digitalplayground\\.com/movie/(?:(?:scenes|fullmovie)/\\d+(?:/[a-z0-9\\-_]+/?)?|galleries/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://ma\\.digitalplayground\\.com/series/episodes/\\d+(?:/[a-z0-9\\-_]+/?)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "https?://ma\\.digitalplayground\\.com/movie/(?:scenes|fullmovie)/\\d+(?:/[a-z0-9\\-_]+/?)?|https?://ma\\.digitalplayground\\.com/[^/]+/galleries/\\d+(?:/[a-z0-9\\-_]+/?)?|https?://ma\\.digitalplayground\\.com/series/episodes/\\d+(?:/[a-z0-9\\-_]+/?)?" })
 public class DigitalplaygroundCom extends PluginForDecrypt {
 
     public DigitalplaygroundCom(PluginWrapper wrapper) {
@@ -58,6 +58,7 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
         final String fid = new Regex(parameter, "/(\\d+)/?").getMatch(0);
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean fastlinkcheck = cfg.getBooleanProperty("ENABLE_FAST_LINKCHECK", true);
+        final String host_decrypted = "http://digitalplaygrounddecrypted";
         // Login if possible
         if (!getUserLogin(false)) {
             logger.info("No account present --> Cannot decrypt anything!");
@@ -66,6 +67,8 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
         final boolean grabMovies = parameter.matches(TYPE_VIDEO) || cfg.getBooleanProperty("AUTO_MOVIES", false);
         final boolean grabPictures = parameter.matches(TYPE_PHOTO) || cfg.getBooleanProperty("AUTO_PICTURES", false);
         String title = null;
+        String linkid = null;
+        String ext = null;
         if (grabMovies) {
             br.getPage(getVideoUrlPremium(fid));
             if (isOffline(this.br)) {
@@ -96,10 +99,11 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
                     /* Skip unwanted content */
                     continue;
                 }
-                final String ext = ".mp4";
+                ext = ".mp4";
                 final String filename_temp = title + "_" + quality_key + ext;
-                final DownloadLink dl = this.createDownloadlink(quality_url.replaceAll("https?://", "http://digitalplaygrounddecrypted"));
-                dl.setLinkID(filename_temp);
+                linkid = fid + "_" + quality_key + ext;
+                final DownloadLink dl = this.createDownloadlink(quality_url.replaceAll("https?://", host_decrypted));
+                dl.setLinkID(linkid);
                 dl.setName(filename_temp);
                 if (fastlinkcheck) {
                     dl.setAvailable(true);
@@ -116,20 +120,22 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-
+            String finallink;
             title = br.getRegex("class=\"icon icon\\-gallery\"></span>[\t\n\r ]*?<h1><span>([^<>\"]+)</span>").getMatch(0);
             if (title == null) {
                 /* Fallback to id from inside url */
                 title = fid;
             }
             title = Encoding.htmlDecode(title).trim();
-            final String pictures[] = getPictureArray(this.br);
-            for (String finallink : pictures) {
-                final String number_formatted = new Regex(finallink, "(\\d+)\\.jpg").getMatch(0);
-                finallink = finallink.replaceAll("https?://", "http://digitalplaygrounddecrypted");
-                final String filename_final = title + "_" + number_formatted + ".jpg";
+            if (cfg.getLongProperty("PREFERRED_PICTURE_FILE_TYPE", 0) == 0) {
+                ext = ".zip";
+                finallink = getPicArchiveDownloadlink(this.br);
+                final String number_formatted = new Regex(finallink, "(\\d+)\\.zip").getMatch(0);
+                finallink = finallink.replaceAll("https?://", host_decrypted);
+                final String filename_final = title + "_" + number_formatted + ext;
+                linkid = fid + "_" + number_formatted + ext;
                 final DownloadLink dl = this.createDownloadlink(finallink);
-                dl.setLinkID(filename_final);
+                dl.setLinkID(linkid);
                 dl.setFinalFileName(filename_final);
                 if (fastlinkcheck) {
                     dl.setAvailable(true);
@@ -137,6 +143,24 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
                 dl.setProperty("fid", fid);
                 dl.setProperty("picnumber_formatted", number_formatted);
                 decryptedLinks.add(dl);
+            } else {
+                ext = ".jpg";
+                final String pictures[] = getPictureArray(this.br);
+                for (final String final_link : pictures) {
+                    final String number_formatted = new Regex(final_link, "(\\d+)\\.jpg").getMatch(0);
+                    finallink = final_link.replaceAll("https?://", host_decrypted);
+                    final String filename_final = title + "_" + number_formatted + ext;
+                    linkid = fid + "_" + number_formatted + ext;
+                    final DownloadLink dl = this.createDownloadlink(finallink);
+                    dl.setLinkID(linkid);
+                    dl.setFinalFileName(filename_final);
+                    if (fastlinkcheck) {
+                        dl.setAvailable(true);
+                    }
+                    dl.setProperty("fid", fid);
+                    dl.setProperty("picnumber_formatted", number_formatted);
+                    decryptedLinks.add(dl);
+                }
             }
         }
 
@@ -185,6 +209,10 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
 
     public static boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404;
+    }
+
+    public static String getPicArchiveDownloadlink(final Browser br) {
+        return br.getRegex("\"(https?://[^<>\"]+\\d+\\.zip[^<>\"]*?)\"").getMatch(0);
     }
 
     /* NO OVERRIDE!! */
