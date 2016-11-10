@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.proxy.ProxyController;
@@ -49,6 +52,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 // DEV NOTES:
@@ -267,6 +271,16 @@ public class Ftp extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
+    }
+
+    @Override
+    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
+        if (pv.size() == 1) {
+            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
+            if (changeURLMenuItem != null) {
+                parent.add(changeURLMenuItem);
+            }
+        }
     }
 
     @Override

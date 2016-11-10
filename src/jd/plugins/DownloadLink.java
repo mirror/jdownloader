@@ -1985,10 +1985,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public DomainInfo getDomainInfo() {
+        DomainInfo domainInfo = this.domainInfo;
         if (domainInfo == null) {
             domainInfo = DomainInfo.getInstance(getServiceHost());
+            this.domainInfo = domainInfo;
         }
         return domainInfo;
+    }
+
+    public void setDomainInfo(DomainInfo domainInfo) {
+        this.domainInfo = domainInfo;
     }
 
     public String getServiceHost() {

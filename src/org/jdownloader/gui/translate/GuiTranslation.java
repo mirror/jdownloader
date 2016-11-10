@@ -6535,4 +6535,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Account(s) for %s1" })
     String lit_your_accounts(String host);
+
+    @Default(lngs = { "en" }, values = { "Change url" })
+    String lit_change_url();
 }

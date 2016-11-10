@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,6 +55,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -901,6 +905,16 @@ public class DirectHTTP extends antiDDoSForHost {
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
+        if (pv.size() == 1) {
+            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
+            if (changeURLMenuItem != null) {
+                parent.add(changeURLMenuItem);
+            }
+        }
     }
 
     @Override
