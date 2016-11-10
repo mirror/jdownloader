@@ -112,6 +112,10 @@ public class DailyMotionCom extends PluginForHost {
         } else if (isHLS(downloadLink)) {
             /* Make sure to follow redirects! */
             this.br.setFollowRedirects(true);
+            final String contentURL = downloadLink.getContentUrl();
+            if (contentURL != null) {
+                br.getPage(contentURL);
+            }
             dllink = getDirectlink(downloadLink);
             this.br.getPage(this.dllink);
             /* 2016-10-18: We cannot really check these urls. */
@@ -123,13 +127,19 @@ public class DailyMotionCom extends PluginForHost {
         } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
         } else if (isSubtitle(downloadLink)) {
+            final String contentURL = downloadLink.getContentUrl();
+            if (contentURL != null) {
+                br.getPage(contentURL);
+            }
             dllink = getDirectlink(downloadLink);
-
             if (!checkDirectLink(downloadLink) || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
         } else {
+            final String contentURL = downloadLink.getContentUrl();
+            if (contentURL != null) {
+                br.getPage(contentURL);
+            }
             String mainlink = downloadLink.getStringProperty("mainlink", null);
             logger.info("mainlink: " + mainlink);
             dllink = getDirectlink(downloadLink);
@@ -214,7 +224,6 @@ public class DailyMotionCom extends PluginForHost {
             /* Remove old cookies/Referer */
             this.br = new Browser();
             final String mainlink = dl.getStringProperty("mainlink", null);
-
             br.setFollowRedirects(true);
             br.getPage(mainlink);
             logger.info("findFreshDirectlink - getPage mainlink has been done, next: getVideosource");
@@ -241,7 +250,7 @@ public class DailyMotionCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         try {
             login(account, this.br);
         } catch (PluginException e) {
