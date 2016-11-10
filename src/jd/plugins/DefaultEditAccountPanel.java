@@ -17,7 +17,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
      */
     private static final long serialVersionUID = 1L;
 
-    private String getPassword() {
+    protected String getPassword() {
         if (this.pass == null) {
             return null;
         }
@@ -27,11 +27,15 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
         return new String(this.pass.getPassword());
     }
 
-    private String getUsername() {
-        if (_GUI.T.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) {
-            return null;
+    protected String getUsername() {
+        if (name == null) {
+            return "";
+        } else {
+            if (_GUI.T.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) {
+                return null;
+            }
+            return this.name.getText();
         }
-        return this.name.getText();
     }
 
     private final ExtTextField                  name;
@@ -55,30 +59,32 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
     }
 
     public DefaultEditAccountPanel(final InputChangedCallbackInterface callback) {
+        this(callback, true);
+    }
+
+    public DefaultEditAccountPanel(final InputChangedCallbackInterface callback, boolean requiresUserName) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.callback = callback;
-        add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
-        add(this.name = new ExtTextField() {
+        if (requiresUserName) {
+            add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
+            add(this.name = new ExtTextField() {
 
-            @Override
-            public void onChanged() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(name);
+                }
 
-                callback.onChangedInput(name);
-
-            }
-
-        });
-
-        name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
-
+            });
+            name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
+        } else {
+            name = null;
+        }
         add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
         add(this.pass = new ExtPasswordField() {
 
             @Override
             public void onChanged() {
-
-                callback.onChangedInput(name);
-
+                callback.onChangedInput(pass);
             }
 
         }, "");
@@ -91,7 +97,9 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
 
     public void setAccount(Account defaultAccount) {
         if (defaultAccount != null) {
-            name.setText(defaultAccount.getUser());
+            if (name != null) {
+                name.setText(defaultAccount.getUser());
+            }
             pass.setText(defaultAccount.getPass());
         }
 
@@ -99,7 +107,11 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
 
     @Override
     public boolean validateInputs() {
-        return StringUtils.isAllNotEmpty(getPassword(), getUsername());
+        if (name == null) {
+            return StringUtils.isAllNotEmpty(getPassword());
+        } else {
+            return StringUtils.isAllNotEmpty(getPassword(), getUsername());
+        }
     }
 
     @Override
