@@ -41,6 +41,7 @@ import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
@@ -399,7 +400,8 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private boolean isHLS(final DownloadLink dl) {
-        return this.getDirectlink(dl).contains(".m3u8");
+        final String directLink = getDirectlink(dl);
+        return StringUtils.contains(directLink, ".m3u8");
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
