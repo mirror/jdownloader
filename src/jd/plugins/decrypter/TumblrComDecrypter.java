@@ -582,7 +582,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private void decryptUser() throws Exception {
         String nextPage = "";
         int counter = 1;
-        boolean decryptSingle = parameter.matches("/page/\\d+");
+        final boolean decryptSingle = parameter.matches("/page/\\d+");
         br.getPage(parameter);
         br.followRedirect(true);
         if (br.containsHTML(GENERALOFFLINE)) {
@@ -591,9 +591,18 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         }
         handlePassword();
         br.followRedirect(true);
-        final String maxAgeStrg = new Regex(parameter, "maxage=(\\d+[a-z])").getMatch(0);
-        final long maxAge = maxAgeStrg != null ? TimeFormatter.getMilliSeconds(maxAgeStrg) : 0;
-        final long maxAgeTimestamp = System.currentTimeMillis() + maxAge;
+        final String maxAgeParam = new Regex(parameter, "(#|%23)maxage=(\\d+(d|w)?)").getMatch(1);
+        final long maxAgeTimestamp;
+        if (maxAgeParam != null) {
+            final String number = new Regex(maxAgeParam, "(\\d+)").getMatch(0);
+            if (maxAgeParam.contains("w")) {
+                maxAgeTimestamp = System.currentTimeMillis() - Integer.parseInt(number) * 7 * 24 * 60 * 60 * 1000l;
+            } else {
+                maxAgeTimestamp = System.currentTimeMillis() - Integer.parseInt(number) * 24 * 60 * 60 * 1000l;
+            }
+        } else {
+            maxAgeTimestamp = -1;
+        }
         final FilePackage fp = FilePackage.getInstance();
         String fpName = new Regex(parameter, "//(.+?)\\.tumblr").getMatch(0);
         fp.setName(fpName);
@@ -607,27 +616,31 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             if (parameter.contains("/archive")) {
                 // archive we will need todo things differently!
-                boolean urlsOnly = false;
+                final boolean urlsOnly;
                 String[] postSrcs = this.br.getRegex("<div class=\"post post_micro[^\"]+\".*?</span>").getColumn(-1);
                 if (postSrcs == null || postSrcs.length == 0) {
                     urlsOnly = true;
                     postSrcs = br.getRegex("<a target=\"_blank\" class=\"hover\" title=\"[^\"]*\" href=\"(http[^<>\"]+)\"").getColumn(0);
+                } else {
+                    urlsOnly = false;
                 }
                 if (postSrcs != null) {
                     for (String postSrc : postSrcs) {
                         String postDate = urlsOnly ? null : new Regex(postSrc, "class=\"post_date\">([^<>\"]+)</span>").getMatch(0);
                         final String postUrl = urlsOnly ? postSrc : new Regex(postSrc, "(https?://[A-Za-z0-9\\-_]+\\.tumblr\\.com/post/[^<>\"]+)").getMatch(0);
                         if (postUrl == null) {
-                            return;
-                        } else if (maxAgeStrg != null && postDate == null) {
-                            logger.warning("User limited post age via maxage parameter but plugin failed to find source date");
-                            return;
-                        } else if (maxAgeStrg != null && postDate != null && maxAge > 0) {
-                            postDate = postDate.trim();
-                            final long postDateLong = TimeFormatter.getMilliSeconds(postDate, "MMMM dd, yyyy", Locale.ENGLISH);
-                            if (postDateLong > maxAgeTimestamp) {
-                                logger.info("Stopping as posts are older than what the user wants");
+                            continue;
+                        } else if (maxAgeTimestamp > 0) {
+                            if (postDate == null) {
+                                logger.warning("User limited post age via maxage parameter but plugin failed to find source date");
                                 return;
+                            } else {
+                                postDate = postDate.trim();
+                                final long postDateLong = TimeFormatter.getMilliSeconds(postDate, "MMMM dd, yyyy", Locale.ENGLISH);
+                                if (postDateLong != -1 && postDateLong < maxAgeTimestamp) {
+                                    logger.info("Stopping as posts are older than what the user wants");
+                                    return;
+                                }
                             }
                         }
                         final DownloadLink dl = createDownloadlink(postUrl);
