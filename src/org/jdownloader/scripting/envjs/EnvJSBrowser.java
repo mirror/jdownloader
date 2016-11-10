@@ -17,16 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.SwingUtilities;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.scripting.ContextCallback;
-import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
-
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -53,6 +43,16 @@ import net.sourceforge.htmlunit.corejs.javascript.debug.Debugger;
 import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main;
 import net.sourceforge.htmlunit.corejs.javascript.tools.debugger.SourceProvider;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.scripting.ContextCallback;
+import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 
 public class EnvJSBrowser implements ContextCallback {
     static {
@@ -452,8 +452,8 @@ public class EnvJSBrowser implements ContextCallback {
 
                 /**
                  * Returns the name of the function corresponding to this frame, if it is a function and it has a name. If the function does
-                 * not have a name, this method will try to return the name under which it was referenced. See
-                 * <a href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
+                 * not have a name, this method will try to return the name under which it was referenced. See <a
+                 * href="http://www.digital-web.com/articles/scope_in_javascript/">this page</a> for a good explanation of how the
                  * <tt>thisObj</tt> plays into this guess.
                  *
                  * @param thisObj
@@ -859,14 +859,29 @@ public class EnvJSBrowser implements ContextCallback {
     }
 
     public void getPage(String parameter) {
+        getPage(parameter, 5 * 60 * 1000);
+    }
+
+    public void getPage(String parameter, int timeout) {
         ensureInit();
         eval("var loading=true");
         eval("window.addEventListener(\"load\",function(){loading=false})");
         eval("document.location = '" + parameter + "';");
 
-        Script script = cx.compileString("loading", "loading", 1, null);
-
-        while (true) {
+        final Script script = cx.compileString("loading", "loading", 1, null);
+        final long until;
+        if (timeout > 0) {
+            until = System.currentTimeMillis() + timeout;
+        } else {
+            until = -1;
+        }
+        while (until == -1 || System.currentTimeMillis() < until) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                break;
+            }
             tick();
             if (Boolean.FALSE.equals(script.exec(cx, scope))) {
                 break;
