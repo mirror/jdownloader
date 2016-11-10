@@ -128,7 +128,7 @@ public class DailyMotionCom extends PluginForHost {
                 final LinkedHashMap<String, String[]> foundQualities = DailyMotionComDecrypter.findVideoQualities(this.br, videoURL, videoSource);
                 final String qualityValue = downloadLink.getStringProperty("qualityvalue", null);
                 if (foundQualities != null && foundQualities.containsKey(qualityValue)) {
-                    downloadLink.setProperty("qualityvalue", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
+                    downloadLink.setProperty("directlink", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
                 }
                 dllink = getDirectlink(downloadLink);
                 this.br.getPage(this.dllink);
