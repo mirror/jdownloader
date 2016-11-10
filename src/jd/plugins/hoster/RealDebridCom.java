@@ -20,13 +20,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
+import jd.controlling.captcha.SkipException;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -119,7 +122,6 @@ public class RealDebridCom extends PluginForHost {
     private Browser                                        apiBrowser;
 
     private TokenResponse                                  token;
-    protected ClientSecret                                 clientSecret;
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -502,6 +504,8 @@ public class RealDebridCom extends PluginForHost {
             final CodeResponse code = JSonStorage.restoreFromString(br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes"), new TypeRef<CodeResponse>(CodeResponse.class) {
             });
             ensureAPIBrowser();
+            final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
+            final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
 
                 private long lastValidation;
@@ -516,8 +520,9 @@ public class RealDebridCom extends PluginForHost {
                     if (System.currentTimeMillis() - lastValidation >= code.getInterval() * 1000) {
                         lastValidation = System.currentTimeMillis();
                         try {
-                            clientSecret = checkCredentials(code);
+                            final ClientSecret clientSecret = checkCredentials(code);
                             if (clientSecret != null) {
+                                clientSecretResult.set(clientSecret);
                                 job.addAnswer(new AbstractResponse<Boolean>(this, ChallengeSolver.EXTERN, 100, true));
                             }
                         } catch (Throwable e) {
@@ -536,11 +541,16 @@ public class RealDebridCom extends PluginForHost {
                         loginForm.getInputField("p").setValue(getAccount().getPass());
                         loginForm.getInputField("u").setValue(getAccount().getUser());
                         autoSolveBr.submitForm(loginForm);
+                        if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
+                            loginsInvalid.set(true);
+                            return false;
+                        }
                         Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
                         allow.setPreferredSubmit("Allow");
                         autoSolveBr.submitForm(allow);
-                        clientSecret = checkCredentials(code);
+                        final ClientSecret clientSecret = checkCredentials(code);
                         if (clientSecret != null) {
+                            clientSecretResult.set(clientSecret);
                             return true;
                         }
                     } catch (Throwable e) {
@@ -550,9 +560,18 @@ public class RealDebridCom extends PluginForHost {
                 }
             };
             challenge.setTimeout(5 * 60 * 1000);
-            ChallengeResponseController.getInstance().handle(challenge);
+            try {
+                ChallengeResponseController.getInstance().handle(challenge);
+            } catch (SkipException e) {
+                logger.log(e);
+            }
+            final ClientSecret clientSecret = clientSecretResult.get();
             if (clientSecret == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "OAuth Failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (loginsInvalid.get()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your login informations are incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "OAuth Failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
             final TokenResponse token = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
