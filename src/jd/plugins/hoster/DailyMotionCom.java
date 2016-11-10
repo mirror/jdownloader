@@ -21,7 +21,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -30,7 +29,6 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -40,33 +38,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
-    private static String getQuality(final String quality, final String videosource) {
-        return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
-    }
-
-    /* Sync the following functions in hoster- and decrypterplugin */
-
-    private static AtomicBoolean hostplg_loaded = new AtomicBoolean(false);
 
     public static String getVideosource(final Browser br) {
-        if (!hostplg_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForDecrypt("dailymotion.com");
-        }
         return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(br);
     }
 
     public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
-        if (!hostplg_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForDecrypt("dailymotion.com");
-        }
         return jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(br, parameter, videosource);
     }
 
@@ -360,7 +344,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void getRTMPlink() throws IOException, PluginException {
-        final String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
+        final String[] values = br.getRegex("new SWFObject\\(\"(https?://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
         if (values == null || values.length != 2) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -83,7 +83,7 @@ public class DeviceAPIImpl implements DeviceAPI {
     }
 
     @Override
-    public String getSessionPublicKey(RemoteAPIRequest request) {
+    public String getSessionPublicKey(final RemoteAPIRequest request) {
         final MyJDownloaderHttpConnection connection = MyJDownloaderHttpConnection.getMyJDownloaderHttpConnection(request);
         if (connection != null) {
             final KeyPair keyPair = connection.getRSAKeyPair();
