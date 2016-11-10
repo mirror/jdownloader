@@ -466,12 +466,12 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         for (final Object audioDataSingle : audioData) {
             final ArrayList<Object> singleAudioDataAsArray = (ArrayList<Object>) audioDataSingle;
-            final String owner_id = (String) singleAudioDataAsArray.get(0);
-            final String content_id = (String) singleAudioDataAsArray.get(1);
+            final String content_id = (String) singleAudioDataAsArray.get(0);
+            final String owner_id = (String) singleAudioDataAsArray.get(1);
             final String directlink = (String) singleAudioDataAsArray.get(2);
             final String artist = (String) singleAudioDataAsArray.get(4);
             final String title = (String) singleAudioDataAsArray.get(3);
-            if (owner_id == null || content_id == null || artist == null || title == null) {
+            if (owner_id == null || owner_id.equals("") || content_id == null || content_id.equals("") || artist == null || artist.equals("") || title == null || title.equals("")) {
                 decryptedLinks = null;
                 return;
             }
@@ -1257,18 +1257,31 @@ public class VKontakteRu extends PluginForDecrypt {
 
     }
 
+    /** Decrypts media of single API wall-post json objects. */
+    @SuppressWarnings({ "unchecked" })
+    private void decryptWallPostComments(final String wall_ID, final Map<String, Object> entry, final FilePackage fp) throws IOException {
+        final ArrayList<Object> postList = (ArrayList<Object>) entry.get("response");
+        for (final Object post : postList) {
+            final String postText = "";
+            /* TODO */
+        }
+    }
+
     /** Using API, finds and adds contents of a single wall post. */
     @SuppressWarnings("unchecked")
     private void decryptWallPost_API() throws Exception {
-        final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+_\\d+)").getMatch(0);
-        final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall(\\-)?\\d+)_\\d+").getMatch(0);
+        final Regex wallRegex = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((?:\\-)?\\d+)_(\\d+)");
+        final String ownerID = wallRegex.getMatch(0);
+        final String postID = wallRegex.getMatch(1);
+        final String postIDWithOwnerID = ownerID + "_" + postID;
+        final String wallID = "wall" + ownerID;
 
-        apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postID + "&extended=0&copy_history_depth=2");
+        apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postIDWithOwnerID + "&extended=0&copy_history_depth=2");
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
         try {
             /* Access original url as we sometimes need the listID for videos (see decryptWallPost). */
-            this.apiGetPageSafe("https://vk.com/wall" + postID);
+            this.apiGetPageSafe("https://vk.com/wall" + postIDWithOwnerID);
         } catch (final Throwable e) {
         }
 
@@ -1277,12 +1290,25 @@ public class VKontakteRu extends PluginForDecrypt {
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(postID);
+        fp.setName(postIDWithOwnerID);
         List<Object> response = (List<Object>) map.get("response");
         for (Object entry : response) {
             if (entry instanceof Map) {
                 decryptWallPost(wallID, (Map<String, Object>) entry, fp);
             }
+        }
+
+        if (!true) {
+            /* TODO */
+            /* User has the chance to abort crawl process here. */
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return;
+            }
+            logger.info("Decrypting posts of ");
+            apiGetPageSafe("https://api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID);
+            map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            decryptWallPostComments(wallID, map, fp);
         }
         logger.info("Found " + decryptedLinks.size() + " links");
     }
