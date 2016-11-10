@@ -22,7 +22,9 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +55,9 @@ import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
@@ -81,6 +85,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
+import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
@@ -100,6 +105,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
@@ -171,14 +178,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[] PATTERNS       = new Pattern[] {
 
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin         lazyP          = null;
     /**
@@ -1012,16 +1019,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1807,6 +1814,81 @@ public abstract class PluginForHost extends Plugin {
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
         final List<? extends LinkVariant> variants = getVariantsByLink(downloadLink);
         return variants != null && variants.size() > 0;
+    }
+
+    protected JMenuItem createChangeURLMenuItem(final DownloadLink downloadLink) {
+        if (downloadLink != null && !UrlProtection.PROTECTED_CONTAINER.equals(downloadLink.getUrlProtection())) {
+            return new JMenuItem(new BasicAction() {
+                private final BadgeIcon icon;
+                {
+                    icon = new BadgeIcon(downloadLink.getDomainInfo().getFavIcon(), new AbstractIcon(IconKey.ICON_URL, 16), 4, 4);
+                    setName(_GUI.T.lit_change_url());
+                    setSmallIcon(icon);
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final InputDialogInterface ret = UIOManager.I().show(InputDialogInterface.class, new InputDialog(0, " " + downloadLink.getName(), _GUI.T.lit_change_url(), downloadLink.getPluginPatternMatcher(), icon, null, null));
+                    try {
+                        ret.throwCloseExceptions();
+                        final String newURLText = ret.getText();
+                        if (!StringUtils.equals(downloadLink.getPluginPatternMatcher(), newURLText)) {
+                            final URL newURL = new URL(newURLText);
+                            final boolean isOldFTP = StringUtils.startsWithCaseInsensitive(downloadLink.getPluginPatternMatcher(), "ftp");
+                            final boolean isNewFTP = StringUtils.startsWithCaseInsensitive(newURLText, "ftp");
+                            if (isOldFTP == isNewFTP) {
+                                DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+
+                                    @Override
+                                    public boolean isHighPriority() {
+                                        return false;
+                                    }
+
+                                    @Override
+                                    public void interrupt() {
+                                    }
+
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        final SingleDownloadController con = downloadLink.getDownloadLinkController();
+                                        if (con == null) {
+                                            /* link has no/no alive singleDownloadController, so reset it now */
+                                            downloadLink.setPluginPatternMatcher(newURL.toString());
+                                            downloadLink.setDomainInfo(null);
+                                            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+                                        } else {
+                                            /* link has a running singleDownloadController, abort it and reset it after */
+                                            con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                                                @Override
+                                                public void execute(DownloadSession currentSession) {
+                                                    downloadLink.setPluginPatternMatcher(newURL.toString());
+                                                    downloadLink.setDomainInfo(null);
+                                                    downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+                                                }
+
+                                                @Override
+                                                public void interrupt() {
+                                                }
+
+                                                @Override
+                                                public boolean isHighPriority() {
+                                                    return false;
+                                                }
+
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    } catch (DialogNoAnswerException ignore) {
+                    } catch (MalformedURLException e1) {
+                    }
+                }
+            });
+        }
+        return null;
     }
 
     public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {

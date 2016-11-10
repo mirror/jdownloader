@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileflyer.com" }, urls = { "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileflyer.com" }, urls = { "https?://[\\w\\.]*?fileflyer\\.com/view/[\\w]+" })
 public class FileFlyerCom extends PluginForHost {
 
     private static Object       LOCK         = new Object();
@@ -62,7 +62,7 @@ public class FileFlyerCom extends PluginForHost {
     private String getDllink() {
         String linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_(img|file)\".*href=\"([^\"\\'<>]+)\"")).getMatch(1);
         if (linkurl == null) {
-            linkurl = br.getRegex(Pattern.compile("\"(http://dsa?\\d+\\.fileflyer\\.com/d/[a-z0-9\\-]+/[^\"\\'<>]+)\"")).getMatch(0);
+            linkurl = br.getRegex(Pattern.compile("\"(https?://dsa?\\d+\\.fileflyer\\.com/d/[a-z0-9\\-]+/[^\"\\'<>]+)\"")).getMatch(0);
         }
         return linkurl;
     }
