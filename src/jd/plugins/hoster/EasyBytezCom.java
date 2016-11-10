@@ -607,13 +607,16 @@ public class EasyBytezCom extends PluginForHost {
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
              * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
-            if (account != null) {
-                logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
-                account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, 60 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "You've reached the download session limit!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
-            }
+            // if (account != null) {
+            // logger.warning("Your account ( " + account.getUser() + " @ " + acctype +
+            // " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with "
+            // + this.getHost());
+            // account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, 60 * 60 * 1000l);
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "You've reached the download session limit!",
+            // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            // } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
+            // }
         }
         /** Wait time reconnect handling */
         if (cbr.containsHTML("You have to wait")) {
