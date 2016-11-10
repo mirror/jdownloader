@@ -322,6 +322,9 @@ public class VidloxTv extends PluginForHost {
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<title>\\s*?Watch ([^<>\"]*?)<").getMatch(0);
+        }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
