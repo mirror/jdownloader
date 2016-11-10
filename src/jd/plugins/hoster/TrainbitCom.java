@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "http://(?:www\\.)?trainbit\\.com/files/\\d+/[^/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "http://(?:www\\.)?trainbit\\.com/files/\\d+/[^/]+" })
 public class TrainbitCom extends PluginForHost {
 
     public TrainbitCom(PluginWrapper wrapper) {
@@ -69,7 +69,8 @@ public class TrainbitCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Desired file is removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = br.getRegex("class=\"en ltr\">([^<>\"]*?) \\( *?(\\d+(?:\\.\\d+)? [A-Za-z]+) *?\\)</");
+        // final Regex finfo = br.getRegex("class=\"en ltr\">([^<>\"]*?) \\( *?(\\d+(?:\\.\\d+)? [A-Za-z]+) *?\\)</");
+        final Regex finfo = br.getRegex("<h5[^<>]*?>\\s*?([^<>]*?)\\s*?</h5>\\s*?<h6[^<>]*?>\\( *?(\\d+(?:\\.\\d+)? [A-Za-z]+) *?\\)</");
         final String filename = finfo.getMatch(0);
         final String filesize = finfo.getMatch(1);
         if (filename == null || filesize == null) {
