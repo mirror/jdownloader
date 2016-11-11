@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?winporn\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com" }, urls = { "http://(?:(?:www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?winporn\\.com/video/\\d+" })
 public class WinpornCom extends PluginForHost {
 
     public WinpornCom(PluginWrapper wrapper) {
@@ -67,21 +67,13 @@ public class WinpornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"contain\"><div.*?<h2 class=\"box\\-mt\\-output\">([^<>\"]*?)</h2>").getMatch(0);
-        dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-            }
-        }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext = dllink != null ? getFileNameExtensionFromString(dllink, ".mp4") : ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -93,6 +85,33 @@ public class WinpornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+            }
+        }
+        if (this.dllink == null) {
+            /* 2016-11-11 */
+            String videoid = this.br.getRegex("var\\s*?video_id\\s*?=\\s*?\"(\\d+)\"").getMatch(0);
+            if (videoid == null) {
+                videoid = this.br.getRegex("vid\\s*?:\\s*?(\\d+)").getMatch(0);
+            }
+            if (videoid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.br.getPage("http://de.winporn.com/player_config_json/?vid=" + videoid + "&aid=&domain_id=&embed=0&ref=&check_speed=0");
+            /* Prefer highest quality */
+            dllink = br.getRegex("\"hq\":\"(http[^<>\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"lq\":\"(http[^<>\"]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.unescape(dllink);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
