@@ -113,7 +113,11 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties<CrawledLin
     protected boolean isDifferent(AbstractNode node) {
         if (node != null && node instanceof AbstractPackageChildrenNode) {
             final AbstractPackageChildrenNode child = (AbstractPackageChildrenNode) node;
-            return currentLink != child || child.getParentNode() != currentPackage;
+            if (node == currentLink.getDownloadLink()) {
+                return false;
+            } else {
+                return currentLink != child || child.getParentNode() != currentPackage;
+            }
         }
         return true;
     }
