@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
@@ -33,18 +32,25 @@ import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
-import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
 public class AbstractFFmpegBinary {
 
-    protected FFmpegSetup config;
-    private Browser       obr;
+    protected FFmpegSetup   config;
+    protected final Browser sourceBrowser;
 
     public AbstractFFmpegBinary(Browser br) {
-        this.obr = br;
+        this.sourceBrowser = br;
+    }
+
+    protected Browser getRequestBrowser() {
+        final Browser ret = sourceBrowser.cloneBrowser();
+        ret.setConnectTimeout(30 * 1000);
+        ret.setReadTimeout(30 * 1000);
+        return ret;
     }
 
     protected String[] execute(final int timeout, PluginProgress progess, File runin, String... cmds) throws InterruptedException, IOException {
@@ -221,7 +227,6 @@ public class AbstractFFmpegBinary {
             param = param.replace("%video", videoIn == null ? "" : videoIn);
             param = param.replace("%audio", audioIn == null ? "" : audioIn);
             param = param.replace("%out", out);
-
             if (map != null) {
                 for (Entry<String, String[]> es : map.entrySet()) {
                     if (param.equals(es.getKey())) {
@@ -230,23 +235,18 @@ public class AbstractFFmpegBinary {
                         }
                         continue main;
                     }
-
                 }
             }
-
             commandLine.add(param);
-
         }
-
         return commandLine;
     }
 
-    protected long                            processID;
-    protected final AtomicReference<byte[]>   instanceBuffer = new AtomicReference<byte[]>();
-    protected MeteredThrottledInputStream     meteredThrottledInputStream;
-    private ManagedThrottledConnectionHandler connectionHandler;
+    protected long processID;
 
     protected void closePipe() {
+        final HttpServer server = this.server;
+        this.server = null;
         if (server != null) {
             server.stop();
         }
@@ -262,16 +262,19 @@ public class AbstractFFmpegBinary {
         return lastUpdateTimeStamp.get();
     }
 
-    protected void initPipe() throws IOException {
-        if (obr == null) {
+    protected void initPipe(final String m3u8URL) throws IOException {
+        if (sourceBrowser == null) {
             return;
         }
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
         server.start();
-        instanceBuffer.set(new byte[512 * 1024]);
+        final AtomicReference<byte[]> sharedBuffer = new AtomicReference<byte[]>();
+        sharedBuffer.set(new byte[512 * 1024]);
+        final AtomicReference<M3U8Playlist> m3u8 = new AtomicReference<M3U8Playlist>();
         finalServer.registerRequestHandler(new HttpRequestHandler() {
+            final byte[] readBuf = new byte[512];
 
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
@@ -282,31 +285,12 @@ public class AbstractFFmpegBinary {
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
-
                     if ("/progress".equals(request.getRequestedPath())) {
-                        BufferedReader f = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
-                        final StringBuilder ret = new StringBuilder();
-                        final String sep = System.getProperty("line.separator");
-                        String line;
-                        while ((line = f.readLine()) != null) {
-                            if (ret.length() > 0) {
-                                ret.append(sep);
-                            } else if (line.startsWith("\uFEFF")) {
-                                /*
-                                 * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
-                                 * http://bugs.sun.com/view_bug.do?bug_id=6378911
-                                 */
-
-                                line = line.substring(1);
-                            }
-
-                            ret.append(line);
+                        while (request.getInputStream().read(readBuf) != -1) {
                         }
                         response.setResponseCode(ResponseCode.SUCCESS_OK);
                         return true;
-
                     }
-
                 } catch (Exception e) {
                     if (logger != null) {
                         logger.log(e);
@@ -332,16 +316,126 @@ public class AbstractFFmpegBinary {
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
-                    if ("/download".equals(request.getRequestedPath())) {
+                    if ("/meta".equals(request.getRequestedPath())) {
+                        updateLastUpdateTimestamp();
+                        final Browser br = getRequestBrowser();
+                        // work around for longggggg m3u pages
+                        final int was = br.getLoadLimit();
+                        // lets set the connection limit to our required request
+                        br.setLoadLimit(Integer.MAX_VALUE);
+                        final String playlist;
+                        try {
+                            playlist = br.getPage(m3u8URL);
+                        } finally {
+                            // set it back!
+                            br.setLoadLimit(was);
+                        }
+                        updateLastUpdateTimestamp();
+                        response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
+                        final StringBuilder sb = new StringBuilder();
+                        boolean containsEndList = false;
+                        final M3U8Playlist m3u8Playlists = new M3U8Playlist();
+                        long lastSegmentDuration = -1;
+                        for (final String line : Regex.getLines(playlist)) {
+                            if (StringUtils.isEmpty(line)) {
+                                continue;
+                            }
+                            if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
+                                // http://habrahabr.ru/company/mailru/blog/274855/
+                                logger.severe("possibly malicious: " + line);
+                            } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
+                                final String segmentURL = br.getURL(line).toString();
+                                if (!m3u8Playlists.containsSegmentURL(segmentURL)) {
+                                    final int index = m3u8Playlists.addSegment(segmentURL, lastSegmentDuration);
+                                    if (sb.length() > 0) {
+                                        sb.append("\n");
+                                    }
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                                }
+                                lastSegmentDuration = -1;
+                            } else {
+                                if (line.startsWith("#EXTINF:")) {
+                                    final String duration = new Regex(line, "#EXTINF:(\\d+(\\.\\d+)?)").getMatch(0);
+                                    if (duration != null) {
+                                        if (duration.contains(".")) {
+                                            lastSegmentDuration = Long.parseLong(duration.replace(".", ""));
+                                        } else {
+                                            lastSegmentDuration = Long.parseLong(duration) * 1000;
+                                        }
+                                    }
+                                } else if ("#EXT-X-ENDLIST".equals(line)) {
+                                    containsEndList = true;
+                                }
+                                if (sb.length() > 0) {
+                                    sb.append("\n");
+                                }
+                                sb.append(line);
+                            }
+                        }
+                        if (!containsEndList) {
+                            if (sb.length() > 0) {
+                                sb.append("\n");
+                            }
+                            sb.append("#EXT-X-ENDLIST");
+                            sb.append("\n\n");
+                        }
+                        m3u8.set(m3u8Playlists);
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
+                        byte[] bytes = sb.toString().getBytes("UTF-8");
+                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
+                        OutputStream out = response.getOutputStream(true);
+                        out.write(bytes);
+                        out.flush();
+                        requestOkay = true;
+                        return true;
+                    } else if ("/download".equals(request.getRequestedPath())) {
                         final String url = request.getParameterbyKey("url");
-                        if (url == null) {
+                        final String indexString = request.getParameterbyKey("ts_index");
+                        if (indexString == null && url == null) {
                             return false;
+                        }
+                        final String downloadURL;
+                        final M3U8Segment segment;
+                        if (url != null) {
+                            segment = null;
+                            downloadURL = url;
+                        } else {
+                            final M3U8Playlist m3u8Playlists = m3u8.get();
+                            if (m3u8Playlists == null) {
+                                return false;
+                            }
+                            try {
+                                final int index = Integer.parseInt(indexString);
+                                segment = m3u8Playlists.getSegment(index);
+                                if (segment == null) {
+                                    throw new IndexOutOfBoundsException("Unknown segment:" + index);
+                                } else {
+                                    if (logger != null) {
+                                        logger.info("Forward segment:" + (index + 1) + "/" + m3u8Playlists.size());
+                                    }
+                                    downloadURL = segment.getUrl();
+                                }
+                            } catch (final NumberFormatException e) {
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                                return false;
+                            } catch (final IndexOutOfBoundsException e) {
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                                return false;
+                            }
                         }
                         OutputStream outputStream = null;
                         final FileBytesMap fileBytesMap = new FileBytesMap();
+                        final Browser br = getRequestBrowser();
                         retryLoop: for (int retry = 0; retry < 10; retry++) {
-                            final Browser br = obr.cloneBrowser();
-                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(url);
+                            try {
+                                br.disconnect();
+                            } catch (final Throwable e) {
+                            }
+                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(downloadURL);
                             if (fileBytesMap.getFinalSize() > 0) {
                                 if (logger != null) {
                                     logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
@@ -349,27 +443,37 @@ public class AbstractFFmpegBinary {
                                 final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
                                 getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
                             }
-                            final URLConnectionAdapter connection;
+                            URLConnectionAdapter connection = null;
                             try {
                                 updateLastUpdateTimestamp();
                                 connection = br.openRequestConnection(getRequest);
+                                if (connection.getResponseCode() != 200 && connection.getResponseCode() != 206) {
+                                    throw new IOException("ResponseCode must be 200 or 206!");
+                                }
                             } catch (IOException e) {
-                                Thread.sleep(250);
-                                continue retryLoop;
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                                if (connection == null || connection.getResponseCode() == 504) {
+                                    Thread.sleep(250 + (retry * 50));
+                                    continue retryLoop;
+                                } else {
+                                    return false;
+                                }
                             }
                             updateLastUpdateTimestamp();
-                            byte[] readWriteBuffer = instanceBuffer.getAndSet(null);
-                            final boolean instanceBuffer;
+                            byte[] readWriteBuffer = sharedBuffer.getAndSet(null);
+                            final boolean isSharedBuffer;
                             if (readWriteBuffer != null) {
-                                instanceBuffer = true;
+                                isSharedBuffer = true;
                             } else {
-                                instanceBuffer = false;
+                                isSharedBuffer = false;
                                 readWriteBuffer = new byte[32 * 1024];
                             }
+                            final long length = connection.getCompleteContentLength();
                             try {
                                 if (outputStream == null) {
                                     response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
-                                    final long length = connection.getCompleteContentLength();
                                     if (length > 0) {
                                         fileBytesMap.setFinalSize(length);
                                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
@@ -377,22 +481,15 @@ public class AbstractFFmpegBinary {
                                     response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
                                     outputStream = response.getOutputStream(true);
                                 }
-                                if (meteredThrottledInputStream == null) {
-                                    meteredThrottledInputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
-                                    if (connectionHandler != null) {
-                                        connectionHandler.addThrottledConnection(meteredThrottledInputStream);
-                                    }
-                                } else {
-                                    meteredThrottledInputStream.setInputStream(connection.getInputStream());
-                                }
                                 long position = fileBytesMap.getMarkedBytes();
+                                final InputStream is = connection.getInputStream();
                                 while (true) {
                                     int len = -1;
                                     try {
-                                        len = meteredThrottledInputStream.read(readWriteBuffer);
+                                        len = is.read(readWriteBuffer);
                                     } catch (IOException e) {
                                         if (fileBytesMap.getFinalSize() > 0) {
-                                            Thread.sleep(250);
+                                            Thread.sleep(250 + (retry * 50));
                                             continue retryLoop;
                                         } else {
                                             throw e;
@@ -401,6 +498,9 @@ public class AbstractFFmpegBinary {
                                     if (len > 0) {
                                         updateLastUpdateTimestamp();
                                         outputStream.write(readWriteBuffer, 0, len);
+                                        if (segment != null) {
+                                            segment.setLoaded(true);
+                                        }
                                         fileBytesMap.mark(position, len);
                                         position += len;
                                     } else if (len == -1) {
@@ -416,11 +516,15 @@ public class AbstractFFmpegBinary {
                                 }
                                 return true;
                             } finally {
-                                if (instanceBuffer) {
-                                    AbstractFFmpegBinary.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
+                                if (segment != null && (connection.getResponseCode() == 200 || connection.getResponseCode() == 206)) {
+                                    segment.setSize(Math.max(connection.getCompleteContentLength(), fileBytesMap.getSize()));
+                                }
+                                if (isSharedBuffer) {
+                                    sharedBuffer.compareAndSet(null, readWriteBuffer);
                                 }
                                 connection.disconnect();
                             }
+
                         }
                     }
                 } catch (InterruptedException e) {
@@ -574,10 +678,9 @@ public class AbstractFFmpegBinary {
         if (found == null) {
             return 0;
         }
-        int hours = Integer.parseInt(found[0]);
-        int minutes = Integer.parseInt(found[1]);
-        int seconds = Integer.parseInt(found[2]);
-
+        final int hours = Integer.parseInt(found[0]);
+        final int minutes = Integer.parseInt(found[1]);
+        final int seconds = Integer.parseInt(found[2]);
         return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
 

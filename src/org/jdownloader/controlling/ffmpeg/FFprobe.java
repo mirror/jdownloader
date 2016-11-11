@@ -33,12 +33,12 @@ public class FFprobe extends AbstractFFmpegBinary {
     }
 
     private boolean validatePaths() {
-        File root = Application.getResource("");
-        String relative = Files.getRelativePath(root, new File(path));
+        final File root = Application.getResource("");
+        final String relative = Files.getRelativePath(root, new File(path));
         logger.info("Validate Relative Path: " + relative);
         if (relative != null) {
-            File correctPath = FFMpegInstallThread.getFFmpegPath("ffprobe");
-            String relativeCorrect = Files.getRelativePath(root, correctPath);
+            final File correctPath = FFMpegInstallThread.getFFmpegPath("ffprobe");
+            final String relativeCorrect = Files.getRelativePath(root, correctPath);
             logger.info("Validate Relative Correct Path: " + relativeCorrect);
             if (relativeCorrect != null) {
                 if (!StringUtils.equals(relative, relativeCorrect)) {
@@ -59,7 +59,11 @@ public class FFprobe extends AbstractFFmpegBinary {
 
     public StreamInfo getStreamInfo(String url) {
         try {
-            initPipe();
+            if (StringUtils.endsWithCaseInsensitive(url, ".m3u8")) {
+                initPipe(url);
+            } else {
+                initPipe(null);
+            }
             this.processID = new UniqueAlltimeID().getID();
             final ArrayList<String> commandLine = new ArrayList<String>();
             commandLine.add(getFullPath());
@@ -73,7 +77,11 @@ public class FFprobe extends AbstractFFmpegBinary {
             commandLine.add("json");
             commandLine.add("-i");
             if (server != null && server.isRunning()) {
-                commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
+                if (StringUtils.endsWithCaseInsensitive(url, ".m3u8")) {
+                    commandLine.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+                } else {
+                    commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
+                }
             } else {
                 commandLine.add(url);
             }

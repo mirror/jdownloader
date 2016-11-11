@@ -291,17 +291,22 @@ public class HLSDownloader extends DownloadInterface {
                 logger.log(e);
             }
         } finally {
-            if (meteredThrottledInputStream != null) {
-                connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
-            }
-            // link.removePluginProgress(set);
-            if (server != null) {
-                server.stop();
+            try {
+                if (meteredThrottledInputStream != null) {
+                    connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
+                }
+            } finally {
+                // link.removePluginProgress(set);
+                final HttpServer server = this.server;
+                this.server = null;
+                if (server != null) {
+                    server.stop();
+                }
             }
         }
     }
 
-    protected boolean isValidSegment(final String segment) {
+    protected boolean isValidM3u8Segment(final String segment) {
         if (StringUtils.isNotEmpty(segment)) {
             if (isTwitch && StringUtils.endsWithCaseInsensitive(segment, "end_offset=-1")) {
                 return false;
@@ -598,7 +603,7 @@ public class HLSDownloader extends DownloadInterface {
                             } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
                                 final String segmentURL = br.getURL(line).toString();
                                 if (!m3u8Playlists.containsSegmentURL(segmentURL)) {
-                                    if (isValidSegment(line)) {
+                                    if (isValidM3u8Segment(line)) {
                                         final int index = m3u8Playlists.addSegment(segmentURL, lastSegmentDuration);
                                         if (sb.length() > 0) {
                                             sb.append("\n");
@@ -647,31 +652,40 @@ public class HLSDownloader extends DownloadInterface {
                         requestOkay = true;
                         return true;
                     } else if ("/download".equals(request.getRequestedPath())) {
+                        final String url = request.getParameterbyKey("url");
                         final String indexString = request.getParameterbyKey("ts_index");
-                        if (indexString == null) {
+                        if (indexString == null && url == null) {
                             return false;
                         }
-                        M3U8Segment segment = null;
-                        try {
-                            final int index = Integer.parseInt(indexString);
-                            segment = m3u8Playlists.getSegment(index);
-                            if (segment == null) {
-                                throw new IndexOutOfBoundsException("Unknown segment:" + index);
-                            } else {
-                                if (logger != null) {
-                                    logger.info("Forward segment:" + (index + 1) + "/" + m3u8Playlists.size());
+                        final String downloadURL;
+                        final M3U8Segment segment;
+                        if (url != null) {
+                            segment = null;
+                            downloadURL = url;
+                            return false;// disabled in HLSDownloader! do not allow access to other urls than hls segments
+                        } else {
+                            try {
+                                final int index = Integer.parseInt(indexString);
+                                segment = m3u8Playlists.getSegment(index);
+                                if (segment == null) {
+                                    throw new IndexOutOfBoundsException("Unknown segment:" + index);
+                                } else {
+                                    if (logger != null) {
+                                        logger.info("Forward segment:" + (index + 1) + "/" + m3u8Playlists.size());
+                                    }
+                                    downloadURL = segment.getUrl();
                                 }
+                            } catch (final NumberFormatException e) {
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                                return false;
+                            } catch (final IndexOutOfBoundsException e) {
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
+                                return false;
                             }
-                        } catch (final NumberFormatException e) {
-                            if (logger != null) {
-                                logger.log(e);
-                            }
-                            return false;
-                        } catch (final IndexOutOfBoundsException e) {
-                            if (logger != null) {
-                                logger.log(e);
-                            }
-                            return false;
                         }
                         OutputStream outputStream = null;
                         final FileBytesMap fileBytesMap = new FileBytesMap();
@@ -681,7 +695,7 @@ public class HLSDownloader extends DownloadInterface {
                                 br.disconnect();
                             } catch (final Throwable e) {
                             }
-                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(segment.getUrl());
+                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(downloadURL);
                             if (fileBytesMap.getFinalSize() > 0) {
                                 if (logger != null) {
                                     logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
@@ -754,7 +768,9 @@ public class HLSDownloader extends DownloadInterface {
                                     if (len > 0) {
                                         ffmpeg.updateLastUpdateTimestamp();
                                         outputStream.write(readWriteBuffer, 0, len);
-                                        segment.setLoaded(true);
+                                        if (segment != null) {
+                                            segment.setLoaded(true);
+                                        }
                                         fileBytesMap.mark(position, len);
                                         position += len;
                                     } else if (len == -1) {
