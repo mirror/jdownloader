@@ -669,7 +669,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     };
                     job.setCrawledLinkModifierPostPackagizer(postModifier);
                 }
-
                 final UnknownCrawledLinkHandler unknownCrawledLinkHandler = new UnknownCrawledLinkHandler() {
 
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
