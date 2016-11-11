@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" })
 public class EightTracksCom extends antiDDoSForHost {
 
     public EightTracksCom(PluginWrapper wrapper) {
@@ -94,13 +94,11 @@ public class EightTracksCom extends antiDDoSForHost {
         prepBr(link);
         MAIN_LINK = link.getStringProperty("mainlink", null);
         br.getPage(MAIN_LINK);
-        if (br.containsHTML(">Sorry, that page doesn\\'t exist")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Sorry, that page doesn\\'t exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.getURL().contains("/explore/")) {
+        } else if (br.getURL().contains("/explore/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML(">The mix you\\'re looking for is currently in private mode")) {
+        } else if (br.containsHTML(">The mix you\\'re looking for is currently in private mode")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setName(link.getStringProperty("tempname_with_ext", null));
@@ -183,7 +181,7 @@ public class EightTracksCom extends antiDDoSForHost {
                     final String tracklist_text = PluginJSonUtils.getJsonArray(clipData, "tracks");
                     final String[] ids = PluginJSonUtils.getJsonResultsFromArray(tracklist_text);
                     /* Check how many tracks we already unlocked and if our token still works */
-                    if (ids != null && ids.length != 0) {
+                    if (ids != null && ids.length > 0) {
                         final int list_length = ids.length;
                         synchronized (LOCK) {
                             final int old_list_length = this.getPluginConfig().getIntegerProperty("tracks_played_list_length", -1);
@@ -367,6 +365,20 @@ public class EightTracksCom extends antiDDoSForHost {
 
     private void startPlaylist(final String playToken, final String mixid) throws IOException, PluginException {
         clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            /*
+             * GEO-blocked e.g.
+             * {"errors":["Due to international streaming restrictions, this playlist may have limited playback in your region."
+             * ],"status":"403 Forbidden"
+             * ,"notices":"Due to international streaming restrictions, this playlist may have limited playback in your region."
+             * ,"logged_in":false,"api_version":3}
+             */
+            /*
+             * 2016-11-11: They GEO-blocked everyone outside US and Canada:
+             * https://blog.8tracks.com/2016/02/12/a-change-in-our-international-streaming/
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+        }
         currenttrackid = updateTrackID();
     }
 

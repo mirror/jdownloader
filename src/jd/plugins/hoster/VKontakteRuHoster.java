@@ -66,10 +66,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                                          = "vk.com";
-    private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/(?:\\-)?\\d+_\\d+";
+    private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                  = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]";
-    private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/(?:\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                                       = 1;
     public static final long    trust_cookie_age                                = 300000l;
@@ -89,6 +89,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKWALL_GRAB_AUDIO                               = "VKWALL_GRAB_AUDIO";
     private static final String VKWALL_GRAB_VIDEO                               = "VKWALL_GRAB_VIDEO";
     private static final String VKWALL_GRAB_LINK                                = "VKWALL_GRAB_LINK";
+    public static final String  VKWALL_GRAB_COMMENTS                            = "VKWALL_GRAB_COMMENTS";
     public static final String  VKWALL_GRAB_DOCS                                = "VKWALL_GRAB_DOCS";
     public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS                   = "VKWALL_GRAB_URLS_INSIDE_POSTS";
     public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX             = "VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX";
@@ -143,7 +144,7 @@ public class VKontakteRuHoster extends PluginForHost {
         final CrawledLink ret = super.convert(link);
         final String url = link.getDownloadURL();
         if (url != null && url.matches(TYPE_DIRECT)) {
-            final String filename = new Regex(url, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
+            final String filename = getFilenameFromDirecturl(url);
             if (filename != null) {
                 try {
                     final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
@@ -182,7 +183,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_DIRECT)) {
             finalUrl = link.getDownloadURL();
             /* Prefer filename inside url */
-            filename = new Regex(finalUrl, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
+            filename = getFilenameFromDirecturl(finalUrl);
             checkstatus = linkOk(link, filename, isDownload);
             if (checkstatus != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -480,6 +481,10 @@ public class VKontakteRuHoster extends PluginForHost {
         ai.setUnlimitedTraffic();
         ai.setStatus("Free Account");
         return ai;
+    }
+
+    private String getFilenameFromDirecturl(final String directurl) {
+        return new Regex(directurl, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
     }
 
     /* Same function in hoster and decrypterplugin, sync it!! */
@@ -1094,11 +1099,21 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private String getOwnerID(final DownloadLink dl) {
-        return dl.getStringProperty("owner_id", null);
+        String ownerID = dl.getStringProperty("owner_id", null);
+        if (ownerID == null && dl.getDownloadURL().matches(TYPE_AUDIOLINK)) {
+            /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
+            ownerID = new Regex(dl.getDownloadURL(), TYPE_AUDIOLINK).getMatch(0);
+        }
+        return ownerID;
     }
 
     private String getContentID(final DownloadLink dl) {
-        return dl.getStringProperty("content_id", null);
+        String contentID = dl.getStringProperty("content_id", null);
+        if (contentID == null && dl.getDownloadURL().matches(TYPE_AUDIOLINK)) {
+            /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
+            contentID = new Regex(dl.getDownloadURL(), TYPE_AUDIOLINK).getMatch(1);
+        }
+        return contentID;
     }
 
     public static String getProtocol() {
@@ -1140,6 +1155,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_WALL_ALLOW_audio                                = true;
     private static final boolean default_WALL_ALLOW_video                                = true;
     private static final boolean default_WALL_ALLOW_links                                = false;
+    public static final boolean  default_WALL_ALLOW_comments                             = false;
     private static final boolean default_WALL_ALLOW_documents                            = true;
     public static final boolean  default_WALL_ALLOW_lookforurlsinsidewallposts           = false;
     public static final String   default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX             = ".+";
@@ -1180,6 +1196,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckaudio", "Grab audio links (.mp3 directlinks)?")).setDefaultValue(default_WALL_ALLOW_audio));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(default_WALL_ALLOW_video));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_LINK, JDL.L("plugins.hoster.vkontakteruhoster.wallchecklink", "Grab links?\r\nA link is e.g. a hyperlink inside a users' wall post.")).setDefaultValue(default_WALL_ALLOW_links));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckcomment", "Grab comments below single wall posts?\r\nA comment can e.g. contain one or multiple hyperlinks to more content.")).setDefaultValue(default_WALL_ALLOW_comments));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_DOCS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckdocs", "Grab documents?")).setDefaultValue(default_WALL_ALLOW_documents));
         final ConfigEntry cfg_graburlsinsideposts = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheck_look_for_urls_inside_posts", "Grab URLs inside wall posts?")).setDefaultValue(default_WALL_ALLOW_lookforurlsinsidewallposts);
         this.getConfig().addEntry(cfg_graburlsinsideposts);

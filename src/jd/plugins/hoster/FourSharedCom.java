@@ -225,6 +225,10 @@ public class FourSharedCom extends PluginForHost {
             DLLINK = checkDirectLink(downloadLink, "direct_link");
             if (DLLINK == null) {
                 DLLINK = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                /* 2016-11-11: Make sure not to use wrong urls as final urls here!! */
+                if (DLLINK != null && DLLINK.matches(".+/get/.+\\.html$")) {
+                    DLLINK = null;
+                }
             }
             /* Not always needed */
             boolean wait = true;
