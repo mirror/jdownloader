@@ -36,18 +36,26 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
 import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.com", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kisscartoon\\.me/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kisscartoon\\.me/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return KissanimeToConfig.class;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -60,6 +68,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String selectedQualities = PluginJsonConfig.get(KissanimeToConfig.class).getQualities();
         handleHumanCheck(this.br);
         String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
         if (title == null) {
@@ -73,6 +82,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             for (final String qual[] : quals) {
                 String decode = decodeSingleURL(qual[1]);
                 final String quality = qual[2];
+                if (!selectedQualities.contains(quality)) {
+                    continue;
+                }
                 final DownloadLink dl = createDownloadlink(decode);
                 /* md5 of "kissanime.com" */
                 dl.setProperty("refresh_url_plugin", getHost());

@@ -69,6 +69,8 @@ public class EmpFlixCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        /* Offline urls should have ok-filenames too. */
+        downloadLink.setName(getFid(downloadLink));
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
             /* Convert embed urls --> Original urls */
@@ -85,7 +87,7 @@ public class EmpFlixCom extends PluginForHost {
             downloadLink.setUrlDownload(newlink);
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)")) {
+        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)") || this.br.containsHTML("We\\'re sorry, but the video you want to play") || this.br.getURL().matches(".+\\.com/?$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean directURL = false;
@@ -115,9 +117,13 @@ public class EmpFlixCom extends PluginForHost {
         }
         if (DLLINK == null) {
             /* 2016-11-03 */
-            DLLINK = br.getRegex("itemprop=\"contentUrl\" content=\"(http[^<>\"]+)\"").getMatch(0);
+            DLLINK = br.getRegex("itemprop=\"contentUrl\" content=\"(https?[^<>\"]+)\"").getMatch(0);
             directURL = true;
         }
+        // if (DLLINK == null) {
+        // /* 2016-11-11 */
+        // this.br.getPage("https://dyn.empflix.com/ajax/info.php?action=video&vid=123456789");
+        // }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -164,6 +170,16 @@ public class EmpFlixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFid(final DownloadLink dl) {
+        final String fid;
+        if (dl.getDownloadURL().endsWith(".html")) {
+            fid = new Regex(dl.getDownloadURL(), "([a-z0-9]+)\\.html$").getMatch(0);
+        } else {
+            fid = new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        }
+        return fid;
     }
 
     @Override
