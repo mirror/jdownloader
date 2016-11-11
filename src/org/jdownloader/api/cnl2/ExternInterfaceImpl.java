@@ -693,6 +693,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         downloadLink.setProperty("post", post);
                     }
                     final CrawledLink crawledLink = new CrawledLink(downloadLink);
+                    crawledLink.setOrigin(job.getOrigin());
+                    crawledLink.setSourceJob(job);
                     if (StringUtils.isNotEmpty(referer)) {
                         crawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
 
