@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -42,7 +43,9 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
@@ -131,9 +134,38 @@ public class DailyMotionCom extends PluginForHost {
                 if (foundQualities != null && foundQualities.containsKey(qualityValue)) {
                     downloadLink.setProperty("directlink", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
                 }
-                dllink = getDirectlink(downloadLink);
-                this.br.getPage(this.dllink);
+                final String dllink = getDirectlink(downloadLink);
+                this.br.getPage(dllink);
                 if (this.br.getHttpConnection().isOK()) {
+                    final HlsContainer hlsBest;
+                    try {
+                        hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                    } catch (final Exception e) {
+                        logger.log(e);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (hlsBest == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        this.dllink = hlsBest.getDownloadurl();
+                    }
+                    if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                        final HLSDownloader downloader = new HLSDownloader(downloadLink, br, this.dllink);
+                        final StreamInfo streamInfo = downloader.getProbe();
+                        if (downloadLink.getBooleanProperty("encrypted")) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+                        }
+                        if (streamInfo == null) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
+                        final long estimatedSize = m3u8PlayList.getEstimatedSize();
+                        if (downloadLink.getKnownDownloadSize() == -1) {
+                            downloadLink.setDownloadSize(estimatedSize);
+                        } else {
+                            downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                        }
+                    }
                     return AvailableStatus.TRUE;
                 }
             }
@@ -187,11 +219,9 @@ public class DailyMotionCom extends PluginForHost {
         if (isHDS(downloadLink)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
         } else if (isHLS(downloadLink)) {
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
+            if (this.dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.dllink = hlsbest.downloadurl;
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, this.dllink);
             dl.startDownload();
@@ -356,7 +386,7 @@ public class DailyMotionCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        br.postPage("http://www.dailymotion.com/signin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
+        br.postPage("https://www.dailymotion.com/signin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
         if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "sdx") == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
