@@ -1,7 +1,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,6 +36,15 @@ public class MetacafeCom extends PluginForHost {
         return -1;
     }
 
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(400);
+        br.setAcceptLanguage("en-us,en;q=0.5");
+        /* Important! */
+        br.setCookie("metacafe.com", "user", "%7B%22ffilter%22%3Afalse%7D");
+        return br;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -43,20 +52,10 @@ public class MetacafeCom extends PluginForHost {
         final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)/.{1}$").getMatch(0);
         link.setName(url_filename + ".mp4");
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setAcceptLanguage("en-us,en;q=0.5");
-        /* Important! */
-        br.setCookie(this.getHost(), "user", "%7B%22ffilter%22%3Afalse%7D");
+        prepBR(this.br);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getRequest().getHttpConnection().getResponseCode() == 400) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw e;
-        }
-        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/video-removed") || br.containsHTML(">This content is temporarily not available\\.<|>Page '.' is temporarily unavailable\\.<")) {
+        br.getPage(link.getDownloadURL());
+        if (jd.plugins.decrypter.MetaCafeComDecrypter.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().contains("metacafe.com/family_filter/")) {

@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class UsersCloudCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -159,6 +159,9 @@ public class UsersCloudCom extends PluginForHost {
         }
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|>This could be due to the following reasons)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("File Server Problem")) {
+            /* 2016-11-11 e.g.: "<Center>File Server Problem, Please Re-Upload the file.." */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
