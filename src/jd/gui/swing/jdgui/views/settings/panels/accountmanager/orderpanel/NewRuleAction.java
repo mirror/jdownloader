@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -10,7 +11,6 @@ import java.util.List;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -62,7 +62,7 @@ public class NewRuleAction extends AbstractAddAction {
             if (ai != null) {
                 final List<String> supportedHosts = ai.getMultiHostSupport();
                 if (supportedHosts != null) {
-                    for (String supportedHost : supportedHosts) {
+                    for (final String supportedHost : supportedHosts) {
                         final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
                         if (plg != null) {
                             domains.add(DomainInfo.getInstance(plg.getHost()));
@@ -70,8 +70,11 @@ public class NewRuleAction extends AbstractAddAction {
                     }
                 }
             }
-            if (PluginForHost.implementsHandlePremium(acc.getPlugin())) {
-                domains.add(DomainInfo.getInstance(acc.getHoster()));
+        }
+        final Collection<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+        for (final LazyHostPlugin plugin : plugins) {
+            if (plugin.isPremium()) {
+                domains.add(DomainInfo.getInstance(plugin.getHost()));
             }
         }
         final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(domains);
