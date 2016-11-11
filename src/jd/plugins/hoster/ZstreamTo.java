@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zstream.to" }, urls = { "https?://(www\\.)?zstream\\.to/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zstream.to" }, urls = { "https?://(www\\.)?zstream\\.to/(embed\\-)?[a-z0-9]{12}" })
 public class ZstreamTo extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -218,7 +218,7 @@ public class ZstreamTo extends PluginForHost {
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());
         }
-        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "") + ".mp4";
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
@@ -230,7 +230,7 @@ public class ZstreamTo extends PluginForHost {
             }
         }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
-            link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+            // link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return AvailableStatus.TRUE;
     }
@@ -263,6 +263,9 @@ public class ZstreamTo extends PluginForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "file_title\">\\s*?([^<>]*?)\\s*?</").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
