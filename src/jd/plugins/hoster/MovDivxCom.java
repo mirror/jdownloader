@@ -44,15 +44,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movdivx.com" }, urls = { "https?://(www\\.)?movdivx\\.com/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movdivx.com" }, urls = { "https?://(www\\.)?movdivx\\.com/[a-z0-9]{12}" })
 public class MovDivxCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://movdivx.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private String              correctedBR              = "";
+    private static final String PASSWORDTEXT             = "<br><b>Passwor(d|t):</b> <input";
+    private static final String COOKIE_HOST              = "http://movdivx.com";
+    private static final String MAINTENANCE              = ">This server is in maintenance mode";
+    private static final String MAINTENANCEUSERTEXT      = "This server is under Maintenance";
+    private static final String ALLWAIT_SHORT            = "Waiting till new downloads can be started";
+
+    /* New 2016-11-11 */
+    private final boolean       enableRiskyFilesizeRegex = false;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.3-raz
@@ -114,7 +117,7 @@ public class MovDivxCom extends PluginForHost {
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
+            if (filesize == null && enableRiskyFilesizeRegex) {
                 // generic regex picks up false positives (premium ads above
                 // filesize)
                 // adjust accordingly to make work with COOKIE_HOST

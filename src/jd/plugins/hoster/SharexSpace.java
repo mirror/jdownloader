@@ -50,8 +50,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharerepo.com" }, urls = { "https?://(www\\.)?sharerepo\\.com/(embed\\-)?[a-z0-9]{12}" }) 
-public class SharerepoCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.space" }, urls = { "https?://(?:www\\.)?(?:sharerepo\\.com|sharex\\.space)/(?:embed\\-)?[a-z0-9]{12}" })
+public class SharexSpace extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
@@ -61,7 +61,7 @@ public class SharerepoCom extends PluginForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(sharerepo\\.com)";
+    private static final String            DOMAINS                      = "(sharerepo\\.com|sharex\\.space)";
     /* Linktypes */
     private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
@@ -74,6 +74,8 @@ public class SharerepoCom extends PluginForHost {
     private static final boolean           AUDIOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
+
+    private static final boolean           SPECIAL_2016_11_11           = true;
 
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
@@ -137,11 +139,21 @@ public class SharerepoCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("sharerepo.com".equals(getHost())) {
+            if (host == null || "sharerepo.com".equals(host)) {
+                return "sharex.space";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public SharerepoCom(PluginWrapper wrapper) {
+    public SharexSpace(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -157,7 +169,7 @@ public class SharerepoCom extends PluginForHost {
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|Error: not found|find this file in database)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -266,28 +278,35 @@ public class SharerepoCom extends PluginForHost {
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "class=\"title\">([^<>\"]*?)</strong>").getMatch(0);
         }
-        /* Filesize is never given for this host */
-        // if (fileInfo[1] == null) {
-        // fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        // if (fileInfo[1] == null) {
-        // fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-        // // next two are details from sharing box
-        // if (fileInfo[1] == null) {
-        // fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
-        // if (fileInfo[1] == null) {
-        // fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-        // // generic failover#1
-        // if (fileInfo[1] == null) {
-        // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-        // }
-        // // generic failover#2
-        // if (fileInfo[1] == null) {
-        // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-        // }
-        // }
-        // }
-        // }
-        // }
+        if (fileInfo[0] == null) {
+            /* New 2016-11-11 */
+            fileInfo[0] = new Regex(correctedBR, "<title>Sharex\\.space\\s*?\\-([^<>\"]+)</title>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            /* New 2016-11-11 */
+            fileInfo[0] = new Regex(correctedBR, "class=\"lead\">([^<>\"]+)<").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                // next two are details from sharing box
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                    if (fileInfo[1] == null) {
+                        fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                        // generic failover#1
+                        if (fileInfo[1] == null) {
+                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                        }
+                        // generic failover#2
+                        if (fileInfo[1] == null) {
+                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
@@ -314,6 +333,13 @@ public class SharerepoCom extends PluginForHost {
         /* Second, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
+        }
+        if (dllink == null && SPECIAL_2016_11_11) {
+            getPage(this.br.getURL() + "/download");
+            if (correctedBR.contains(">File not found")) {
+                /* Loading animation which, once completed, shows this offline message. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         /* Third, do they provide video/audio hosting? */
         if (dllink == null && AUDIOHOSTER && downloadLink.getName().endsWith(".mp3")) {
