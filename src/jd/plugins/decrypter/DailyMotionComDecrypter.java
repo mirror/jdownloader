@@ -105,7 +105,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        parameter = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/");
+        parameter = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("http://", "https://");
         br.setFollowRedirects(true);
 
         synchronized (ctrlLock) {
@@ -269,7 +269,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final int pagesNum = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
         int currentPage = Integer.parseInt(desiredPage);
-        final String base_link = "http://www.dailymotion.com/playlist/" + new Regex(parameter, "/playlist/([^/]+)").getMatch(0);
+        final String base_link = "https://www.dailymotion.com/playlist/" + new Regex(parameter, "/playlist/([^/]+)").getMatch(0);
         do {
             if (this.isAbort()) {
                 logger.info("Decrypt process aborted by user on page " + currentPage + " of " + pagesNum);
@@ -602,22 +602,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            // if (FOUNDQUALITIES.isEmpty()) {
-            // String[] values =
-            // br.getRegex("new
-            // SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
-            // if (values == null || values.length != 2) {
-            // /** RTMP */
-            // final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new
-            // Random(10000));
-            // dl.setProperty("isrtmp", true);
-            // dl.setProperty("mainlink", PARAMETER);
-            // dl.setFinalFileName(FILENAME + "_RTMP.mp4");
-            // fp.add(dl);
-            // decryptedLinks.add(dl);
-            // return decryptedLinks;
-            // }
-            // }
         }
         return QUALITIES;
     }

@@ -75,10 +75,15 @@ public class HlsContainer {
     public static final String ext = ".mp4";
     public String              codecs;
     public String              downloadurl;
-    public String              type;
-    public int                 width;
-    public int                 height;
-    public long                bandwidth;
+
+    public String getDownloadurl() {
+        return downloadurl;
+    }
+
+    public String type;
+    public int    width;
+    public int    height;
+    public long   bandwidth;
 
     public String getResolution() {
         return width + "x" + height;
