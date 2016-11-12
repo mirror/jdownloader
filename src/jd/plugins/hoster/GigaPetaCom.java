@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "http://[\\w\\.]*?gigapeta\\.com/dl/\\w+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "http://[\\w\\.]*?gigapeta\\.com/dl/\\w+" })
 public class GigaPetaCom extends PluginForHost {
 
     // Gehört zu tenfiles.com/tenfiles.info
@@ -52,7 +52,7 @@ public class GigaPetaCom extends PluginForHost {
         if (br.containsHTML("All threads for IP")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
         }
-        if (br.containsHTML("<div id=\"page_error\">")) {
+        if (br.containsHTML("<div id=\"page_error\">") && !br.containsHTML("To download this file please <a")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />\\-\\->(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
