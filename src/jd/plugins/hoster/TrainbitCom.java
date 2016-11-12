@@ -50,6 +50,7 @@ public class TrainbitCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
+    private String               free_directlink   = null;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -66,6 +67,13 @@ public class TrainbitCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation().contains(":8080/")) {
+            free_directlink = br.getRedirectLocation();
+            return AvailableStatus.TRUE;
+        }
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Desired file is removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -120,6 +128,9 @@ public class TrainbitCom extends PluginForHost {
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
+        if (dllink == null) {
+            dllink = free_directlink;
+        }
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -127,7 +138,7 @@ public class TrainbitCom extends PluginForHost {
                 if (isJDStable()) {
                     con = br2.openGetConnection(dllink);
                 } else {
-                    con = br2.openHeadConnection(dllink);
+                    con = br2.openGetConnection(dllink); // openHeadConnection is not allowed
                 }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
