@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(www\\.)?security\\-links\\.com/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "security-links.com" }, urls = { "http://(www\\.)?security\\-links\\.com/(?:\\d+/[A-Za-z0-9:;]+/[A-Za-z0-9:;]+|[A-Za-z0-9]+)" })
 public class SecurityLinksCom extends PluginForDecrypt {
 
     public SecurityLinksCom(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class SecurityLinksCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -73,7 +73,14 @@ public class SecurityLinksCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        final String[] links = br.getRegex("\\d+\\| <a href=\\'(http[^<>\"]*?)\\'").getColumn(0);
+        String[] links = br.getRegex("\\d+\\| <a href=\\'(http[^<>\"]*?)\\'").getColumn(0);
+        if (links == null || links.length == 0) {
+            // for /\\d+/[A-Za-z0-9:;]+/[A-Za-z0-9:;]+
+            final String filter = br.getRegex("<div id=\"hideshow\".*?</div>").getMatch(-1);
+            if (filter != null) {
+                links = new Regex(filter, "href=('|\")(.*?)\\1").getColumn(1);
+            }
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
