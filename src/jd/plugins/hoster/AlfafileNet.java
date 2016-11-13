@@ -163,6 +163,8 @@ public class AlfafileNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(reconnect_wait) * 60 * 1001l);
             } else if (br.containsHTML("You can't download not more than \\d+ file at a time")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many max sim dls", 20 * 60 * 1000l);
+            } else if (br.containsHTML("You have reached your daily downloads limit. Please try again later\\.")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit.", 3 * 60 * 60 * 1000l);
             }
             int wait = 45;
             String wait_str = br.getRegex(">(\\d+) <span>s<").getMatch(0);
