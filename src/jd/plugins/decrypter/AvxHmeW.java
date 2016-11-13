@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -91,7 +92,7 @@ public class AvxHmeW extends PluginForDecrypt {
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
+                fp.setName(Encoding.htmlOnlyDecode(fpName.trim()));
                 fp.addLinks(decryptedLinks);
             }
         } else {
