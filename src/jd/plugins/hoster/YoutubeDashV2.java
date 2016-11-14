@@ -740,20 +740,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return updateUrls(downloadLink);
     }
 
-    private String[] getStringArrayFromDownloadlinkProperty(DownloadLink downloadLink, String key) {
-        String json = downloadLink.getStringProperty(key);
-        if (json == null) {
-            return null;
-        }
-        return JSonStorage.restoreFromString(json, String[].class);
-    }
-
-    protected AbstractVariant getVariant(DownloadLink downloadLink) throws PluginException {
-        Object alternative = downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
+    protected AbstractVariant getVariant(final DownloadLink downloadLink) throws PluginException {
+        final Object alternative = downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
         if (alternative != null && alternative instanceof AbstractVariant) {
             return (AbstractVariant) alternative;
         }
-        AbstractVariant ret = AbstractVariant.get(downloadLink);
+        final AbstractVariant ret = AbstractVariant.get(downloadLink);
         if (ret == null) {
             getLogger().warning("Invalid Variant: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
             throw new PluginException(LinkStatus.ERROR_FATAL, "INVALID VARIANT: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
@@ -762,8 +754,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     private VariantInfo updateUrls(DownloadLink downloadLink) throws Exception {
-        AbstractVariant variant = getVariant(downloadLink);
-        YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(br, getLogger()), downloadLink);
+        final AbstractVariant variant = getVariant(downloadLink);
+        final YoutubeClipData clipData = ClipDataCache.get(new YoutubeHelper(br, getLogger()), downloadLink);
         if (variant instanceof SubtitleVariant) {
             SubtitleVariant stVariant = ((SubtitleVariant) variant);
             for (YoutubeSubtitleStorable si : clipData.subtitles) {
@@ -784,9 +776,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
             return null;
         }
-        StreamCollection audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
-        StreamCollection videoStreams = clipData.getStreams(variant.getiTagVideo());
-        StreamCollection dataStreams = clipData.getStreams(variant.getiTagData());
+        final StreamCollection audioStreams = clipData.getStreams(variant.getBaseVariant().getiTagAudio());
+        final StreamCollection videoStreams = clipData.getStreams(variant.getiTagVideo());
+        final StreamCollection dataStreams = clipData.getStreams(variant.getiTagData());
         if (variant.getBaseVariant().getiTagAudio() != null && audioStreams == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid Audio Stream");
             // return null;

@@ -6,10 +6,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.http.Request;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.Log;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.plugins.components.youtube.Projection;
 import org.jdownloader.plugins.components.youtube.YT_STATICS;
@@ -19,11 +24,6 @@ import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.itag.QualitySortIdentifier;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.generics.AbstractGenericVariantInfo;
-
-import org.appwork.utils.parser.UrlQuery;
-import jd.http.Request;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 
 public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> implements LinkVariant, Comparable {
     private static ArrayList<AbstractVariant> VARIANTS_LIST;
@@ -52,14 +52,13 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         return ret;
     }
 
-    public static AbstractVariant get(String ytv) {
+    public static AbstractVariant get(final String ytv) {
         try {
             if (ytv.matches("[A-Z0-9_]+")) {
                 // old youtubevariant+try{
-                VariantBase base = VariantBase.get(ytv);
+                final VariantBase base = VariantBase.get(ytv);
                 if (base != null) {
-
-                    AbstractVariant ret = null;
+                    final AbstractVariant ret;
                     switch (base.getGroup()) {
                     case AUDIO:
                         ret = new AudioVariant(base);
@@ -75,44 +74,36 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                         break;
                     case SUBTITLES:
                         ret = new SubtitleVariant();
-
                         ret.setJson("{}");
                         break;
                     case VIDEO:
                         ret = new VideoVariant(base);
                         ret.setJson("{}");
                         break;
-
+                    default:
+                        ret = null;
+                        break;
                     }
-
                     return ret;
                 }
-
             }
             if (!ytv.contains("{")) {
                 return null;
             }
-            YoutubeBasicVariantStorable storable = JSonStorage.restoreFromString(ytv, YoutubeBasicVariantStorable.TYPE);
-
+            final YoutubeBasicVariantStorable storable = JSonStorage.restoreFromString(ytv, YoutubeBasicVariantStorable.TYPE);
             AbstractVariant ret = null;
             VariantBase base = null;
             try {
                 base = VariantBase.valueOf(storable.getId());
-                ;
-
             } catch (Throwable e) {
                 try {
                     base = VariantBase.COMPATIBILITY_MAP.get(storable.getId());
-                    ;
-
                 } catch (Throwable e2) {
-
                 }
             }
             if (base == null) {
                 return null;
             }
-
             switch (base.getGroup()) {
             case AUDIO:
                 ret = new AudioVariant(base);
@@ -126,14 +117,11 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             case SUBTITLES:
                 ret = new SubtitleVariant();
                 break;
-
             case VIDEO:
                 ret = new VideoVariant(base);
                 break;
-
             }
             ret.setJson(storable.getData());
-
             return ret;
         } catch (Throwable e) {
             Log.log(e);
@@ -247,13 +235,13 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public static AbstractVariant get(DownloadLink downloadLink) {
-        Object tmp = downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT, null);
+        final Object tmp = downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT, null);
         if (tmp != null && tmp instanceof AbstractVariant) {
             return (AbstractVariant) tmp;
         }
-        AbstractVariant ret = get(downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
+        final AbstractVariant ret = get(downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
         if (ret instanceof SubtitleVariant) {
-            String old = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
+            final String old = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE);
             if (old != null) {
                 if (old.length() == 2) {
                     ((SubtitleVariant) ret).getGenericInfo().setLanguage(old);
@@ -261,22 +249,19 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                     YoutubeHelper.writeVariantToDownloadLink(downloadLink, ret);
                 } else {
                     try {
-                        UrlQuery q = Request.parseQuery(old);
+                        final UrlQuery q = Request.parseQuery(old);
                         ((SubtitleVariant) ret).getGenericInfo().setBase(null);
                         ((SubtitleVariant) ret).getGenericInfo().setLanguage(q.get("lng"));
                         ((SubtitleVariant) ret).getGenericInfo().setSourceLanguage(q.get("src"));
                         ((SubtitleVariant) ret).getGenericInfo().setKind(q.get("kind"));
                         downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE);
                         YoutubeHelper.writeVariantToDownloadLink(downloadLink, ret);
-
                     } catch (Throwable e) {
                         throw new WTFException(e);
                     }
                 }
-
             }
         }
-
         if (ret != null) {
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, ret);
         }
@@ -284,6 +269,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public abstract String getFileNamePattern();
+
     //
     //
     // YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);

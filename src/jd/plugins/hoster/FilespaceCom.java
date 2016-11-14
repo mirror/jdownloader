@@ -57,8 +57,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spaceforfiles.com" }, urls = { "https?://(www\\.)?(spaceforfiles|filespace)\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
-public class SpaceForFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filespace.com" }, urls = { "https?://(www\\.)?(spaceforfiles|filespace)\\.com/(vidembed\\-)?[a-z0-9]{12}" })
+public class FilespaceCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
@@ -113,8 +113,8 @@ public class SpaceForFilesCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "filespace.com".equals(host)) {
-            return "spaceforfiles.com";
+        if (host == null || "spaceforfiles.com".equals(host)) {
+            return "filespace.com";
         }
         return super.rewriteHost(host);
     }
@@ -138,7 +138,7 @@ public class SpaceForFilesCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public SpaceForFilesCom(PluginWrapper wrapper) {
+    public FilespaceCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
         this.setStartIntervall(2 * 1000l);
