@@ -108,6 +108,7 @@ public class DataFileHostCom extends PluginForHost {
         br.setRequest(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (downloadLink.getDownloadSize() > 0 && dl.getConnection().getLongContentLength() == 0) {
+            dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Server sends empty file", 5 * 60 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {

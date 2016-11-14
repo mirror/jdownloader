@@ -452,8 +452,8 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
-        br.getHeaders().put("Authorization", login(account, null));
         requestFileInformation(parameter);
+        br.getHeaders().put("Authorization", login(account, null));
         // since login evaulates traffic left!
         if (account.getAccountInfo().getTrafficLeft() < parameter.getDownloadSize()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
@@ -474,9 +474,9 @@ public class UlozTo extends PluginForHost {
                     /*
                      * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                      * 1800542995541.log; 2422576; jdlog://1800542995541
-                     * 
+                     *
                      * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                     * 
+                     *
                      * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                      */
                     // logger.info("No traffic available!");
@@ -485,6 +485,7 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
