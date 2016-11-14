@@ -673,6 +673,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             pkg.getModifyLock().writeUnlock();
                             pkg.nodeUpdated(pkg, NOTIFY.STRUCTURE_CHANCE, null);
                         }
+                        final boolean readL = pkg.getModifyLock().readLock();
+                        try {
+                            autoFileNameCorrection(pkg.getChildren(), pkg);
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        } finally {
+                            pkg.getModifyLock().readUnlock(readL);
+                        }
                         getMapLock().writeLock();
                         try {
                             for (final ChildType moveChild : moveChildren) {
