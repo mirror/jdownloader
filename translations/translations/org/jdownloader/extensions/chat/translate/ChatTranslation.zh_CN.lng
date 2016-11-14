@@ -1,4 +1,5 @@
 ChatExtensionGuiToggleAction_deselected=打开聊天
+ChatExtensionGuiToggleAction_deselected_tt=打开聊天面板
 ChatExtensionGuiToggleAction_selected=关闭聊天
 ChatExtensionGuiToggleAction_selected_tt=关闭聊天面板
 gui_tab_title=%s1 通道
