@@ -30,7 +30,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?(sh\\.st|viid\\.me)/[^<>\r\n\t]+" })
 public class ShorteSt extends antiDDoSForDecrypt {
 
     public ShorteSt(PluginWrapper wrapper) {
