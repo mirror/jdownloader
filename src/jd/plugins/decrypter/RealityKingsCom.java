@@ -104,13 +104,13 @@ public class RealityKingsCom extends PluginForDecrypt {
                         continue;
                     }
                     final String ext;
-                    if (quality_url.equalsIgnoreCase("3gp")) {
+                    if ("3gp".equalsIgnoreCase(quality_url)) {
                         /* Special case */
                         ext = ".3gp";
                     } else {
                         ext = ".mp4";
                     }
-                    final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
+                    final DownloadLink dl = this.createDownloadlink(br.getURL(dlurl).toString());
                     if (filesize != null) {
                         dl.setDownloadSize(SizeFormatter.getSize(filesize));
                         dl.setAvailable(true);
