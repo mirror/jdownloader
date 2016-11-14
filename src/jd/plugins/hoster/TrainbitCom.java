@@ -67,7 +67,7 @@ public class TrainbitCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation().contains(":8080/")) {
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(":8080/")) {
             free_directlink = br.getRedirectLocation();
             return AvailableStatus.TRUE;
         }
