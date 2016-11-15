@@ -118,7 +118,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             }
             final String[] result = br.getRegex("(\\d+)\\|(.*)").getRow(0);
             if (result != null) {
-                final AbstractResponse<String> answer = challenge.parseAPIAnswer(result[1], this);
+                final AbstractResponse<String> answer = challenge.parseAPIAnswer(result[1], null, this);
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + response);
                 job.setAnswer(new ImageTyperzResponse(challenge, this, result[0], answer.getValue(), answer.getPriority()));
             } else {

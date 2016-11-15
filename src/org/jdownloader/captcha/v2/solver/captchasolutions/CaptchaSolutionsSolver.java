@@ -166,7 +166,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
                     throw new SolverException(error);
                 }
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + decaptcha.trim());
-                AbstractResponse<String> answer = challenge.parseAPIAnswer(decaptcha.trim(), this);
+                AbstractResponse<String> answer = challenge.parseAPIAnswer(decaptcha.trim(), null, this);
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
                 job.setAnswer(new CaptchaSolutionsResponse(challenge, this, null, answer.getValue(), answer.getPriority()));
                 return;
@@ -194,7 +194,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
                     throw new SolverException(error);
                 }
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + decaptcha.trim());
-                AbstractResponse<String> answer = challenge.parseAPIAnswer(decaptcha.trim(), this);
+                AbstractResponse<String> answer = challenge.parseAPIAnswer(decaptcha.trim(), null, this);
                 job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + br.toString());
                 job.setAnswer(new CaptchaSolutionsResponse(challenge, this, null, answer.getValue(), answer.getPriority()));
                 return;

@@ -100,7 +100,7 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
 
     @Override
     protected void parseResponse(CESSolverJob<String> solverJob, Challenge<String> captchaChallenge, String captchaID, String ret) {
-        final AbstractResponse<String> answer = captchaChallenge.parseAPIAnswer(ret, this);
+        final AbstractResponse<String> answer = captchaChallenge.parseAPIAnswer(ret, null, this);
         solverJob.setAnswer(new Captcha9kwResponse(captchaChallenge, this, answer.getValue(), answer.getPriority(), captchaID));
     }
 

@@ -16,9 +16,9 @@ public class BasicCaptchaChallenge extends ImageCaptchaChallenge<String> {
     }
 
     @Override
-    public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
+    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
         // String res = JSonStorage.restoreFromString("\"" + json + "\"", TypeRef.STRING);
-        return new CaptchaResponse(this, solver, json, 100);
+        return new CaptchaResponse(this, solver, result, 100);
 
     }
 

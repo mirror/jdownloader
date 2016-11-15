@@ -311,16 +311,16 @@ public abstract class AbstractRecaptcha2FallbackChallenge extends BasicCaptchaCh
     }
 
     @Override
-    public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
+    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
         try {
-            if ("-".equals(json) || "".equals(json) || "0".equals(json)) {
+            if ("-".equals(result) || "".equals(result) || "0".equals(result)) {
                 CaptchaResponse r = new CaptchaResponse(this, solver, "0", 100);
                 return r;
             }
             HashSet<Integer> ret = new HashSet<Integer>();
-            String clean = json.replaceAll("[^\\d,]", "");
+            String clean = result.replaceAll("[^\\d,]", "");
             clean = clean.replaceAll("[,]+$", "");
-            boolean bad = !clean.equals(json);
+            boolean bad = !clean.equals(result);
             final StringBuilder sb = new StringBuilder();
             final HashSet<String> dupe = new HashSet<String>();
             while (clean.length() > 0) {

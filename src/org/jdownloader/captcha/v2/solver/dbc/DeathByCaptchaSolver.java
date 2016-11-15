@@ -185,7 +185,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 if (status != null && status.isSolved()) {
                     job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + status.getText());
 
-                    AbstractResponse<String> answer = challenge.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), this);
+                    AbstractResponse<String> answer = challenge.parseAPIAnswer(status.getText().replace("[", "").replace("]", ""), null, this);
 
                     DeathByCaptchaResponse response = new DeathByCaptchaResponse(challenge, this, status, answer.getValue(), answer.getPriority());
 

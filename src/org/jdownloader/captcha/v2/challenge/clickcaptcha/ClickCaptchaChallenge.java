@@ -19,8 +19,8 @@ public class ClickCaptchaChallenge extends ImageCaptchaChallenge<ClickedPoint> {
     }
 
     @Override
-    public AbstractResponse<ClickedPoint> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
-        ClickedPoint res = JSonStorage.restoreFromString(json, new TypeRef<ClickedPoint>() {
+    public AbstractResponse<ClickedPoint> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
+        ClickedPoint res = JSonStorage.restoreFromString(result, new TypeRef<ClickedPoint>() {
         });
 
         return new ClickCaptchaResponse(this, solver, res, 100);

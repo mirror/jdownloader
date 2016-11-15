@@ -259,7 +259,7 @@ public abstract class Challenge<T> {
         return null;
     }
 
-    public AbstractResponse<T> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
+    public AbstractResponse<T> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
         return null;
     }
 

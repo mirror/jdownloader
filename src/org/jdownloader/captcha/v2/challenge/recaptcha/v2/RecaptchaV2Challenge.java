@@ -8,14 +8,17 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.storage.Storable;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.phantomjs.Recaptcha2FallbackChallengeViaPhantomJS;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
@@ -28,15 +31,87 @@ import jd.http.Browser;
 import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
+    public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
     private final String                   siteKey;
     private volatile BasicCaptchaChallenge basicChallenge;
     private final String                   siteDomain;
     private final String                   siteUrl;
     private final String                   secureToken;
+    private String                         contextUrl;
+
+    public String getContextUrl() {
+        return contextUrl;
+    }
+
+    public void setContextUrl(String contextUrl) {
+        this.contextUrl = contextUrl;
+    }
 
     public String getSiteKey() {
         return siteKey;
+    }
+
+    public static class RecaptchaV2APIStorable implements Storable {
+        public RecaptchaV2APIStorable() {
+        }
+
+        private String stoken;
+
+        public String getStoken() {
+            return stoken;
+        }
+
+        public void setStoken(String stoken) {
+            this.stoken = stoken;
+        }
+
+        public String getSiteKey() {
+            return siteKey;
+        }
+
+        public void setSiteKey(String siteKey) {
+            this.siteKey = siteKey;
+        }
+
+        public String getContextUrl() {
+            return contextUrl;
+        }
+
+        public void setContextUrl(String contextUrl) {
+            this.contextUrl = contextUrl;
+        }
+
+        private String siteKey;
+        private String contextUrl;
+    }
+
+    @Override
+    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
+        if (RAWTOKEN.equals(resultFormat)) {
+            return new CaptchaResponse(this, solver, result, 100);
+        }
+        BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
+        if (basic != null) {
+            return basic.parseAPIAnswer(result, resultFormat, solver);
+        }
+        return super.parseAPIAnswer(result, resultFormat, solver);
+    }
+
+    @Override
+    public Object getAPIStorable(String format) throws Exception {
+        if (RAWTOKEN.equals(format)) {
+            RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
+            ret.setSiteKey(getSiteKey());
+            ret.setContextUrl(contextUrl);
+            ret.setStoken(getSecureToken());
+            return ret;
+        }
+        BasicCaptchaChallenge basic = createBasicCaptchaChallenge();
+        if (basic != null) {
+            return basic.getAPIStorable(format);
+        }
+        return super.getAPIStorable(format);
     }
 
     @Override
@@ -74,6 +149,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         this.pluginBrowser = br;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
+        contextUrl = "http://" + siteDomain + "/";
         this.siteUrl = siteUrl;
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
@@ -165,10 +241,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (basicChallenge != null) {
             return basicChallenge;
         }
-        // if (Recaptcha2FallbackChallengeViaBrowserExtension.canHandle(this)) {
-        // basicChallenge = new Recaptcha2FallbackChallengeViaBrowserExtension(this); //
-        // return basicChallenge;
-        // }
         final PhantomJS binding = new PhantomJS();
         if (!binding.isAvailable()) {
             try {
