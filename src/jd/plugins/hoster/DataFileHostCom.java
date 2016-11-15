@@ -118,6 +118,7 @@ public class DataFileHostCom extends PluginForHost {
         dummyLoad("//img.datafilehost.com/menu.gif");
         dummyLoad("//img.datafilehost.com/download.png");
         dummyLoad("//img.datafilehost.com/check.png");
+        sleep(2000, downloadLink);
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         final String dllink = br.getURL("/get.php?file=" + fid).toString();
         br.getHeaders().put("Upgrade-Insecure-Requests", "1");
