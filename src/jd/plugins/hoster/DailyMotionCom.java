@@ -151,20 +151,20 @@ public class DailyMotionCom extends PluginForHost {
                         this.dllink = hlsBest.getDownloadurl();
                     }
                     if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+                        // checkFFProbe(downloadLink, "File Checking a HLS Stream");
                         final HLSDownloader downloader = new HLSDownloader(downloadLink, br, this.dllink);
                         final StreamInfo streamInfo = downloader.getProbe();
                         if (downloadLink.getBooleanProperty("encrypted")) {
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
                         }
-                        if (streamInfo == null) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
-                        final long estimatedSize = m3u8PlayList.getEstimatedSize();
-                        if (downloadLink.getKnownDownloadSize() == -1) {
-                            downloadLink.setDownloadSize(estimatedSize);
-                        } else {
-                            downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                        if (streamInfo != null) {
+                            final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
+                            final long estimatedSize = m3u8PlayList.getEstimatedSize();
+                            if (downloadLink.getKnownDownloadSize() == -1) {
+                                downloadLink.setDownloadSize(estimatedSize);
+                            } else {
+                                downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                            }
                         }
                     }
                     return AvailableStatus.TRUE;

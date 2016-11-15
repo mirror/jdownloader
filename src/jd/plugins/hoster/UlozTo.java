@@ -96,6 +96,8 @@ public class UlozTo extends PluginForHost {
         return br;
     }
 
+    private String finalDirectDownloadURL = null;
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -108,7 +110,10 @@ public class UlozTo extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        handleDownloadUrl(downloadLink);
+        finalDirectDownloadURL = handleDownloadUrl(downloadLink);
+        if (finalDirectDownloadURL != null) {
+            return AvailableStatus.TRUE;
+        }
         /* For age restricted links */
         final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (ageFormToken != null) {
@@ -184,7 +189,7 @@ public class UlozTo extends PluginForHost {
         return filename;
     }
 
-    private void handleDownloadUrl(final DownloadLink downloadLink) throws IOException, PluginException {
+    private String handleDownloadUrl(final DownloadLink downloadLink) throws IOException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         int i = 0;
         while (br.getRedirectLocation() != null) {
@@ -192,12 +197,26 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Redirect loop");
             }
             logger.info("Getting redirect-page");
-            br.getPage(br.getRedirectLocation());
+            final URLConnectionAdapter con = br.openRequestConnection(br.createRedirectFollowingRequest(br.getRequest()));
+            if (con.isContentDisposition() && con.isOK()) {
+                con.disconnect();
+                if (con.getLongContentLength() > 0) {
+                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                }
+                final String fileName = getFileNameFromDispositionHeader(con);
+                if (fileName != null) {
+                    downloadLink.setFinalFileName(fileName);
+                }
+                downloadLink.setAvailable(true);
+                return con.getRequest().getUrl();
+            }
+            br.followConnection();
             i++;
         }
         if (br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        return null;
     }
 
     @SuppressWarnings("deprecation")
@@ -346,7 +365,11 @@ public class UlozTo extends PluginForHost {
                         }
                         br.clearCookies("//ulozto.net/");
                         br.clearCookies("//uloz.to/");
-                        handleDownloadUrl(downloadLink);
+                        dllink = handleDownloadUrl(downloadLink);
+                        if (dllink != null) {
+                            failed = false;
+                            break;
+                        }
                         continue;
                     }
                 } finally {
@@ -452,37 +475,39 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
-        requestFileInformation(parameter);
         br.getHeaders().put("Authorization", login(account, null));
-        // since login evaulates traffic left!
-        if (account.getAccountInfo().getTrafficLeft() < parameter.getDownloadSize()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
-        }
-        br.setFollowRedirects(false);
-        String dllink = null;
-        if (parameter.getDownloadURL().matches(QUICKDOWNLOAD)) {
-            dllink = parameter.getDownloadURL();
-        } else {
-            if (passwordProtected) {
-                handlePassword(parameter);
-            } else {
-                br.getPage(parameter.getDownloadURL());
+        requestFileInformation(parameter);
+        String dllink = finalDirectDownloadURL;
+        if (dllink == null) {
+            // since login evaulates traffic left!
+            if (account.getAccountInfo().getTrafficLeft() < parameter.getDownloadSize()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
             }
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                if (br.toString().equals("No htmlCode read")) {
-                    /*
-                     * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
-                     * 1800542995541.log; 2422576; jdlog://1800542995541
-                     *
-                     * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                     *
-                     * I suspect that its caused by the predownload password? or referer? -raztoki20160304
-                     */
-                    // logger.info("No traffic available!");
-                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            br.setFollowRedirects(false);
+            if (parameter.getDownloadURL().matches(QUICKDOWNLOAD)) {
+                dllink = parameter.getDownloadURL();
+            } else {
+                if (passwordProtected) {
+                    handlePassword(parameter);
+                } else {
+                    br.getPage(parameter.getDownloadURL());
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    if (br.toString().equals("No htmlCode read")) {
+                        /*
+                         * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
+                         * 1800542995541.log; 2422576; jdlog://1800542995541
+                         *
+                         * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
+                         *
+                         * I suspect that its caused by the predownload password? or referer? -raztoki20160304
+                         */
+                        // logger.info("No traffic available!");
+                        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         br.setFollowRedirects(true);

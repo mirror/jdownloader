@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.org/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" })
 public class MultiupOrg extends antiDDoSForDecrypt {
 
     // DEV NOTES:
@@ -55,7 +55,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         parameter = parameter.replaceFirst("org/en/", "org/");
         parameter = parameter.replaceFirst("org/fr/", "org/");
         // link structure parser!
-        String reg = "org/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|mirror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
+        String reg = "(?:org|eu)/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|mirror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
         String[][] matches = new Regex(parameter, reg).getMatches();
         String uid = matches[0][1];
         if (uid == null) {
