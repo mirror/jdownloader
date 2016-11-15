@@ -91,10 +91,10 @@ public class KeyCaptchaCategoryChallenge extends Challenge<String> {
     }
 
     @Override
-    public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
+    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
         final String token;
         try {
-            token = helper.sendCategoryResult(JSonStorage.restoreFromString(json, TypeRef.STRING));
+            token = helper.sendCategoryResult(JSonStorage.restoreFromString(result, TypeRef.STRING));
         } catch (Exception e) {
             throw new WTFException(e);
         }

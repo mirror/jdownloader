@@ -55,6 +55,9 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     @APIParameterNames({ "id", "result" })
     public boolean solve(final long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException;
 
+    @APIParameterNames({ "id", "result", "resultFormat" })
+    public boolean solve(final long id, String result, String resultFormat) throws InvalidCaptchaIDException, InvalidChallengeTypeException;
+
     @Deprecated
     /**
      * @deprecated use #skip(id,type) instead

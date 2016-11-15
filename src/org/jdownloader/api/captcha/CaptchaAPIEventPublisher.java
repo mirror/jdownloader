@@ -6,10 +6,10 @@ import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.RemoteAPIEventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public class CaptchaAPIEventPublisher implements EventPublisher {
-
     private enum EVENTID {
         NEW,
         DONE;
@@ -58,9 +58,9 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
         }
     }
 
-    public void fireNewJobEvent(SolverJob<?> job) {
+    public void fireNewJobEvent(SolverJob<?> job, Challenge<?> challenge) {
         if (hasSubscriptionFor(EVENTID.NEW.name())) {
-            final EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW.name(), job.getChallenge().getId().getID());
+            final EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW.name(), challenge.getId().getID());
             for (final RemoteAPIEventsSender eventSender : eventSenders) {
                 eventSender.publishEvent(eventObject, null);
             }
@@ -76,5 +76,4 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
     public synchronized void unregister(RemoteAPIEventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
     }
-
 }

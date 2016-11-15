@@ -202,9 +202,9 @@ public class ChallengeResponseController {
         eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.JOB_DONE, job));
     }
 
-    private final List<ChallengeSolver<?>>               solverList = new CopyOnWriteArrayList<ChallengeSolver<?>>();
-    private final List<SolverJob<?>>                     activeJobs = new ArrayList<SolverJob<?>>();
-    private final HashMap<UniqueAlltimeID, SolverJob<?>> idToJobMap = new HashMap<UniqueAlltimeID, SolverJob<?>>();
+    private final List<ChallengeSolver<?>>               solverList          = new CopyOnWriteArrayList<ChallengeSolver<?>>();
+    private final List<SolverJob<?>>                     activeJobs          = new ArrayList<SolverJob<?>>();
+    private final HashMap<UniqueAlltimeID, SolverJob<?>> challengeIDToJobMap = new HashMap<UniqueAlltimeID, SolverJob<?>>();
 
     /**
      * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
@@ -242,10 +242,10 @@ public class ChallengeResponseController {
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
         c.initController(job);
-        final UniqueAlltimeID jobID = c.getId();
+        final UniqueAlltimeID challengeID = c.getId();
         synchronized (activeJobs) {
             activeJobs.add(job);
-            idToJobMap.put(jobID, job);
+            challengeIDToJobMap.put(challengeID, job);
         }
         try {
             for (final ChallengeSolver<T> cs : solver) {
@@ -293,7 +293,7 @@ public class ChallengeResponseController {
             try {
                 synchronized (activeJobs) {
                     activeJobs.remove(job);
-                    idToJobMap.remove(jobID);
+                    challengeIDToJobMap.remove(challengeID);
                 }
             } finally {
                 fireJobDone(job);
@@ -317,9 +317,9 @@ public class ChallengeResponseController {
         return ret;
     }
 
-    public SolverJob<?> getJobById(long id) {
-        synchronized (idToJobMap) {
-            return idToJobMap.get(new UniqueAlltimeID(id));
+    public SolverJob<?> getJobByChallengeId(long id) {
+        synchronized (challengeIDToJobMap) {
+            return challengeIDToJobMap.get(new UniqueAlltimeID(id));
         }
     }
 

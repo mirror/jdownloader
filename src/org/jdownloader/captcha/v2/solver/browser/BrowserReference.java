@@ -229,7 +229,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 }
                 return true;
             } else if ("canClose".equals(pDo)) {
-                SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(challenge.getId().getID());
+                SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
                 if (challenge.isSolved() || job == null || job.isDone() || BrowserSolver.getInstance().isJobDone(job)) {
                     response.getOutputStream(true).write("true".getBytes("UTF-8"));
                     return true;
@@ -237,7 +237,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     response.getOutputStream(true).write("false".getBytes("UTF-8"));
                 }
             } else if ("unload".equals(pDo)) {
-                SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(challenge.getId().getID());
+                SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
                 BrowserSolver.getInstance().kill((SolverJob<String>) job);
                 response.getOutputStream(true).write("true".getBytes("UTF-8"));
                 return true;

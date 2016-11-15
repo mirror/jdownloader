@@ -60,8 +60,8 @@ public class KeyCaptchaPuzzleChallenge extends Challenge<String> {
     }
 
     @Override
-    public AbstractResponse<String> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
-        final KeyCaptchaApiResponse response = JSonStorage.restoreFromString(json, new TypeRef<KeyCaptchaApiResponse>() {
+    public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
+        final KeyCaptchaApiResponse response = JSonStorage.restoreFromString(result, new TypeRef<KeyCaptchaApiResponse>() {
         });
         final String token;
         try {

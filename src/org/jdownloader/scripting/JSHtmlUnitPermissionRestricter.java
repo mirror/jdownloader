@@ -112,7 +112,6 @@ public class JSHtmlUnitPermissionRestricter {
 
     static public class SandboxContextFactory extends ContextFactory {
         public SandboxContextFactory() {
-
         }
 
         @Override
@@ -144,7 +143,6 @@ public class JSHtmlUnitPermissionRestricter {
                 protected Function compileFunction(Scriptable scope, String source, Evaluator compiler, ErrorReporter compilationErrorReporter, String sourceName, int lineno, Object securityDomain) {
                     return super.compileFunction(scope, source, compiler, compilationErrorReporter, sourceName, lineno, securityDomain);
                 }
-
             };
             try {
                 Field field = Context.class.getDeclaredField("factory");
@@ -168,55 +166,41 @@ public class JSHtmlUnitPermissionRestricter {
                         }
                     }
                     if (trusted) {
-
                         LOADED.add(className);
-
                         return true;
-
                     } else if (className.startsWith("adapter")) {
-
                         LOADED.add(className);
                         return true;
-
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
-
                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
-
                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
-
                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
-
                         org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                         LOADED.add(className);
                         return true;
                     } else {
                         EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
                         throw ret;
-
                     }
-
                 }
             });
             onContextCreated(cx);
             return cx;
         }
-
     }
 
     public static class SandboxWrapFactory extends WrapFactory {
-
         @Override
         public Scriptable wrapJavaClass(Context cx, Scriptable scope, Class javaClass) {
-
             Scriptable ret = new NativeJavaClass(scope, javaClass) {
                 @Override
                 public Object unwrap() {
@@ -225,7 +209,6 @@ public class JSHtmlUnitPermissionRestricter {
 
                 @Override
                 public Object get(String name, Scriptable start) {
-
                     Object ret = super.get(name, start);
                     // System.out.println("Access Static Member " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") "
                     // + ret);
@@ -247,9 +230,7 @@ public class JSHtmlUnitPermissionRestricter {
 
         @Override
         public Object wrap(Context cx, Scriptable scope, Object obj, Class<?> staticType) {
-
             Object ret = super.wrap(cx, scope, obj, staticType);
-
             if (obj instanceof String || obj instanceof Number || obj instanceof Boolean) {
                 return obj;
             } else if (obj instanceof Character) {
@@ -272,30 +253,24 @@ public class JSHtmlUnitPermissionRestricter {
             // System.out.println("Wrap Java Object Class:" + staticType + " Java Instance: " + str);
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
-
     }
 
     public static class SandboxNativeJavaObject extends NativeJavaObject {
-
         private static final long serialVersionUID = -2783084485265910840L;
 
         public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType) {
-
             super(scope, javaObject, staticType);
         }
 
         @Override
         public Object get(String name, Scriptable start) {
-
             if (name.equals("getClass")) {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
                 return NOT_FOUND;
             }
-
             Object ret = super.get(name, start);
             // System.out.println("Access " + this + "." + name + " = " + "(" + ret.getClass().getSimpleName() + ") " + ret);
             return ret;
-
         }
     }
 
@@ -317,11 +292,8 @@ public class JSHtmlUnitPermissionRestricter {
     public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
         try {
             TRUSTED_THREAD.put(Thread.currentThread(), true);
-
             return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
-
         } finally {
-
             TRUSTED_THREAD.remove(Thread.currentThread());
         }
     }
@@ -334,13 +306,10 @@ public class JSHtmlUnitPermissionRestricter {
         try {
             TRUSTED_THREAD.put(Thread.currentThread(), true);
             return cx.compileString(source, sourceName, lineno, securityDomain);
-
         } finally {
-
             TRUSTED_THREAD.remove(Thread.currentThread());
         }
     }
-
     // public synchronized static String evalJavaObject(String json) {
     // // final ContextFactory factory = ContextFactory.getGlobal();
     // Global scope = new Global();
