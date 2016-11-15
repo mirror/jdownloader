@@ -184,7 +184,7 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name = decodeUnicode(hybrid_name);
 
         final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
-        final int possibleQualitiesNumber = possibleQualities.length;
+        final int possibleQualitiesCount = possibleQualities.length;
         final FFmpeg ffmpeg = new FFmpeg();
         int part_counter = 1;
         for (final Object parto : parts) {
@@ -213,6 +213,7 @@ public class AtvAt extends PluginForDecrypt {
                      */
                     /* E.g. Old url for part 1 only: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
                     /* E.g. old url for all parts: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
+                    /* Alternative. http://videos-fallback.atv.cdn.tvnext.tv */
                     src = "http://109.68.230.208/vod/fallback/" + linkpart_old_geo_block_workaround + "/index.m3u8";
                 } else {
                     /* Get around GEO-block - for new content */
@@ -239,12 +240,13 @@ public class AtvAt extends PluginForDecrypt {
                     this.br.getPage(src);
                     final String[] qualities = this.br.getRegex("BANDWIDTH=").getColumn(-1);
                     final int qualitiesNum = qualities.length;
-                    if (!this.br.containsHTML("#EXT-X-STREAM-INF")) {
+                    if (!this.br.containsHTML("#EXT-X-STREAM-INF") && !this.br.containsHTML("#EXTINF")) {
                         if (is_geo_ip_blocked) {
                             logger.info("Possible GEO-unlock fail: " + src);
                         }
                         continue;
                     }
+                    boolean stop = false;
                     int qualityIndex = 0;
                     for (String line : Regex.getLines(this.br.toString())) {
                         if (!line.startsWith("#")) {
@@ -256,7 +258,12 @@ public class AtvAt extends PluginForDecrypt {
                             /* Reset quality value */
                             quality = null;
                             line = line.replaceAll("http(s?)://blocked(\\.|-)", "http$1://");
-                            link = createDownloadlink(br.getURL(line).toString());
+                            if (qualitiesNum == 0) {
+                                stop = true;
+                                link = createDownloadlink(this.br.getURL());
+                            } else {
+                                link = createDownloadlink(br.getURL(line).toString());
+                            }
                             link.setContainerUrl(parameter);
                             try {
                                 /* try to get the video quality */
@@ -283,12 +290,15 @@ public class AtvAt extends PluginForDecrypt {
                             finalname = hybrid_name + "_";
                             finalname += "hls_part_";
                             finalname += part_formatted + "_";
-                            if (quality == null && qualitiesNum <= possibleQualitiesNumber) {
+                            if (quality == null && qualitiesNum > 0 && qualitiesNum <= possibleQualitiesCount) {
                                 /*
                                  * Workaround for possible Ffmpeg issue. We know that the bitrates go from highest to lowest so we can
                                  * assume which quality we have here in case the Ffmpeg method fails!
                                  */
-                                quality = possibleQualities[possibleQualitiesNumber - qualitiesNum + qualityIndex] + "p";
+                                quality = possibleQualities[possibleQualitiesCount - qualitiesNum + qualityIndex] + "p";
+                            } else if (quality == null) {
+                                /* Should never happen! */
+                                quality = "unknownp";
                             }
                             if (quality != null) {
                                 finalname += quality;
@@ -306,7 +316,9 @@ public class AtvAt extends PluginForDecrypt {
                             distribute(link);
                             qualityIndex++;
                         }
-
+                        if (stop) {
+                            break;
+                        }
                     }
                 } else {
                     /* delivery:progressive --> http url */

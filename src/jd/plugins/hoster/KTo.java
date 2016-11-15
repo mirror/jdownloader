@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keek.com" }, urls = { "https?://(?:www\\.)?keek\\.com/keek/[A-Za-z0-9]+" })
-public class KeekCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "k.to" }, urls = { "https?://(?:www\\.)?(?:keek\\.com|k\\.to)/keek/[A-Za-z0-9]+" })
+public class KTo extends PluginForHost {
 
-    public KeekCom(PluginWrapper wrapper) {
+    public KTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -51,7 +51,17 @@ public class KeekCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.keek.com/terms-of-use";
+        return "https://www.k.to/terms-of-use";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("keek.com".equals(getHost())) {
+            if (host == null || "keek.com".equals(host)) {
+                return "k.to";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @SuppressWarnings("deprecation")
@@ -62,7 +72,7 @@ public class KeekCom extends PluginForHost {
         downloadLink.setLinkID(fid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage("https://www." + this.getHost() + "/keek/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

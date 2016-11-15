@@ -28,10 +28,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keek.com" }, urls = { "https?://(?:www\\.)?keek\\.com/profile/[^/]+" }) 
-public class KeekCom extends PluginForDecrypt {
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
-    public KeekCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "k.to" }, urls = { "https?://(?:www\\.)?(?:keek\\.com|k\\.to)/profile/[^/]+" })
+public class KTo extends PluginForDecrypt {
+
+    public KTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -49,7 +51,7 @@ public class KeekCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        final String numberof_ids_s = this.br.getRegex("<li>([0-9\\.,]+) Keeks</li>").getMatch(0);
+        final String numberof_ids_s = this.br.getRegex("<li>([0-9\\.,]+) (?:Keeks|Videos)</li>").getMatch(0);
         final long numberof_ids = Long.parseLong(numberof_ids_s.replace(",", "").replace(".", ""));
         final int max_ids_per_page = 200;
         final int max_ids_per_page_first_page = 48;
@@ -68,13 +70,13 @@ public class KeekCom extends PluginForDecrypt {
                 break;
             }
             if (page == 1) {
-                loadmore_id = this.br.getRegex("data-load-more-keek-id=\"([^<>\"]*?)\"").getMatch(0);
+                loadmore_id = this.br.getRegex("data\\-load\\-more\\-keek\\-id=\"([^<>\"]*?)\"").getMatch(0);
             } else {
                 this.br.getPage("/profile/" + profilename + "/next?filter=keeks&page=" + page + "&keekId=" + Encoding.urlEncode(loadmore_id) + "&maxId=&size=500&instart_disable_injection=true");
                 this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
                 loadmore_id = PluginJSonUtils.getJsonValue(br, "keekId");
             }
-            String[] ids = br.getRegex("data-active=\"false\" data\\-keek\\-id=\"([^<>\"]*?)\"").getColumn(0);
+            String[] ids = br.getRegex("data\\-active=\"false\" data\\-keek\\-id=\"([^<>\"]*?)\"").getColumn(0);
             if (ids == null || ids.length == 0) {
                 ids = br.getRegex("data\\-keek\\-id=\"([^<>\"]*?)\"").getColumn(0);
             }
@@ -83,13 +85,14 @@ public class KeekCom extends PluginForDecrypt {
                 break;
             }
             for (final String singleID : ids) {
-                final String url_content = "https://www.keek.com/keek/" + singleID;
+                final String url_content = "https://www.k.to/keek/" + singleID;
                 final DownloadLink dl = createDownloadlink(url_content);
                 dl._setFilePackage(fp);
                 dl.setLinkID(singleID);
                 dl.setContentUrl(url_content);
                 dl.setName(singleID);
                 dl.setAvailable(true);
+                dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                 decryptedLinks.add(dl);
                 distribute(dl);
             }
