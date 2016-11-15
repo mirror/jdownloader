@@ -136,9 +136,13 @@ public class HLSDownloader extends DownloadInterface {
     public StreamInfo getProbe() throws IOException {
         try {
             final FFprobe ffprobe = new FFprobe();
-            this.processID = new UniqueAlltimeID().getID();
-            initPipe(ffprobe);
-            return ffprobe.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+            if (!ffprobe.isAvailable()) {
+                return null;
+            } else {
+                this.processID = new UniqueAlltimeID().getID();
+                initPipe(ffprobe);
+                return ffprobe.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+            }
         } finally {
             if (server != null) {
                 server.stop();

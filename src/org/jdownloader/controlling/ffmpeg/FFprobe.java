@@ -59,45 +59,51 @@ public class FFprobe extends AbstractFFmpegBinary {
 
     public StreamInfo getStreamInfo(String url) {
         try {
-            if (StringUtils.endsWithCaseInsensitive(url, ".m3u8")) {
-                initPipe(url);
+            if (!isAvailable()) {
+                return null;
             } else {
-                initPipe(null);
-            }
-            this.processID = new UniqueAlltimeID().getID();
-            final ArrayList<String> commandLine = new ArrayList<String>();
-            commandLine.add(getFullPath());
-            commandLine.add("-loglevel");
-            commandLine.add("48");
-            commandLine.add("-show_format");
-            commandLine.add("-show_streams");
-            commandLine.add("-analyzeduration");
-            commandLine.add("15000000");// 15 secs
-            commandLine.add("-of");
-            commandLine.add("json");
-            commandLine.add("-i");
-            if (server != null && server.isRunning()) {
                 if (StringUtils.endsWithCaseInsensitive(url, ".m3u8")) {
-                    commandLine.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+                    initPipe(url);
                 } else {
-                    commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
+                    initPipe(null);
                 }
-            } else {
-                commandLine.add(url);
+                this.processID = new UniqueAlltimeID().getID();
+                final ArrayList<String> commandLine = new ArrayList<String>();
+                commandLine.add(getFullPath());
+                commandLine.add("-loglevel");
+                commandLine.add("48");
+                commandLine.add("-show_format");
+                commandLine.add("-show_streams");
+                commandLine.add("-analyzeduration");
+                commandLine.add("15000000");// 15 secs
+                commandLine.add("-of");
+                commandLine.add("json");
+                commandLine.add("-i");
+                if (server != null && server.isRunning()) {
+                    if (StringUtils.endsWithCaseInsensitive(url, ".m3u8")) {
+                        commandLine.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+                    } else {
+                        commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
+                    }
+                } else {
+                    commandLine.add(url);
+                }
+                final String ret = runCommand(null, commandLine);
+                final StreamInfo data = JSonStorage.restoreFromString(ret, new TypeRef<StreamInfo>() {
+                });
+                return data;
             }
-            final String ret = runCommand(null, commandLine);
-            final StreamInfo data = JSonStorage.restoreFromString(ret, new TypeRef<StreamInfo>() {
-            });
-            return data;
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (logger != null) {
+                logger.log(e);
+            }
             return null;
         } finally {
             closePipe();
         }
     }
 
-    public StreamInfo getStreamInfo(File dummy) {
+    public StreamInfo getStreamInfo(final File dummy) {
         if (dummy != null) {
             return getStreamInfo(dummy.toString());
         } else {
