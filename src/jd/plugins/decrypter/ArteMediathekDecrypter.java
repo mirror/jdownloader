@@ -43,7 +43,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://info\\.arte\\.tv/.+", "" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
@@ -51,7 +51,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/(?:de|fr)/.+";
     private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
-    private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
+    private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/[a-z]{2}/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
     private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/[A-Za-z]{2}/embed/.+";
     private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/.+";
     private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/.+";
@@ -138,7 +138,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
             /* First we need to have some basic data - this part is link-specific. */
             if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
-                final String videoid_base = new Regex(this.parameter, "/guide/(?:de|fr)/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
+                final String videoid_base = new Regex(this.parameter, "/guide/[A-Za-z]{2}/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
                 int status = br.getHttpConnection().getResponseCode();
                 if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
@@ -161,8 +161,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 if (this.example_arte_vp_url.matches(API_TYPE_OTHER)) {
                     fid = videoid_base;
-                    hybridAPIUrl = API_HYBRID_URL_3;
-
+                    hybridAPIUrl = API_HYBRID_URL_1;
                 } else if (this.example_arte_vp_url.matches(API_TYPE_OEMBED)) {
                     /*
                      * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
@@ -478,10 +477,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
              * &amp;config=arte_tvguide
              */
             /* We actually don't necessarily use these urls but the existance of them is an indicator for us on which API-url to use. */
-            vp_url = new Regex(source, "(https?%3A%2F%2Fapi\\.arte\\.tv%2Fapi%2Fplayer%2Fv1%2Fconfig%2F(?:de|fr)%2F[A-Za-z0-9\\-_%]+)\\&amp;").getMatch(0);
-        }
-        if (vp_url != null) {
-            vp_url = Encoding.htmlDecode(vp_url);
+            vp_url = new Regex(source, "<iframe[^>]*?src=\"https?://(?:www\\.)arte\\.tv/player/v\\d+/index\\.php\\?json_url=(http[^<>\"]+)\">[^>]*?</iframe>").getMatch(0);
+            if (vp_url != null) {
+                vp_url = Encoding.htmlDecode(vp_url);
+            }
         }
         return vp_url;
     }
