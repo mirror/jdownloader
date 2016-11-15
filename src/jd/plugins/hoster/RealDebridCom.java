@@ -416,6 +416,9 @@ public class RealDebridCom extends PluginForHost {
                 if (br.containsHTML("Your code is not or no longer valid")) {
                     tempUnavailableHoster(account, link, 30 * 60 * 1000l);
                 }
+                if (br.containsHTML("You can not download this file because you have exceeded your traffic on this hoster")) {
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
                 throw e1;
             }
         } catch (APIException e) {
