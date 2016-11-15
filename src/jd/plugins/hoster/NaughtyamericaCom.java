@@ -322,7 +322,7 @@ public class NaughtyamericaCom extends PluginForHost {
     @Override
     public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
         if (StringUtils.equals("premiumize.me", buildForThisPlugin.getHost())) {
-            return jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlFree(getFID(downloadLink));
+            return jd.plugins.decrypter.NaughtyamericaCom.getVideoUrlFree(getFilenameUrl(downloadLink));
         } else {
             return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
