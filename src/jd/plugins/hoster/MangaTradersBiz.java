@@ -27,8 +27,8 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -42,17 +42,26 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.cryptojs.CryptoJS;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)*?mangatraders\\.org/(?:manga/download\\.php|read-online/dl\\.php)\\?id=[a-f0-9]{10,}" }) 
-public class MangaTradersOrg extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)*?mangatraders\\.biz/downloadlink/[A-Za-z0-9]+" })
+public class MangaTradersBiz extends antiDDoSForHost {
 
     private boolean      weAreAlreadyLoggedIn = false;
 
-    private final String mainPage             = "http://mangatraders.org";
-    private final String cookieName           = "username";
-    private final String blockedAccess        = "<p>You have attempted to download this file within the last 10 seconds.</p>";
-    private final String offlineFile          = ">Download Manager Error - Invalid Fileid";
+    private final String mainPage             = "http://mangatraders.biz";
+    private final String type_2016_11_15      = ".+/downloadlink/([A-Za-z0-9]+)";
+    private final String cookieName           = "UserSession";
 
     public static Object ACCLOCK              = new Object();
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("mangatraders.org".equals(getHost())) {
+            if (host == null || "mangatraders.org".equals(host)) {
+                return "mangatraders.biz";
+            }
+        }
+        return super.rewriteHost(host);
+    }
 
     @Override
     protected boolean useRUA() {
@@ -70,56 +79,44 @@ public class MangaTradersOrg extends antiDDoSForHost {
         super.getPage(page);
     }
 
-    public MangaTradersOrg(PluginWrapper wrapper) {
+    public MangaTradersBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.mangatraders.org/register/");
+        this.enablePremium("http://www.mangatraders.biz/register/");
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("/view/file/", "/download/file/"));
+        final String linkpart = new Regex(link.getDownloadURL(), "https?://[^/]+(/.+)").getMatch(0);
+        link.setUrlDownload("http://" + this.getHost() + linkpart);
     }
 
-    public boolean checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(final DownloadLink[] urls) {
         br.setFollowRedirects(false);
         if (urls == null || urls.length == 0) {
             return false;
         }
         try {
-            Account aa = AccountController.getInstance().getValidAccount(this);
+            String mainlink;
+            final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null || !aa.isValid()) {
                 logger.info("The user didn't enter account data even if they're needed to check the links for this host.");
                 return false;
             }
-            for (DownloadLink dl : urls) {
+            for (final DownloadLink dl : urls) {
                 br = new Browser();
                 login(aa, false);
-                getPage(dl.getDownloadURL());
-                String dllink = null;
-                if (br.getHttpConnection().getContentType().equals("text/html")) {
-                    // some other bullshit task.
-                    dllink = processJS();
-                } else {
-                    dllink = br.getRedirectLocation();
+                if (!dl.getDownloadURL().matches(type_2016_11_15)) {
+                    /* Old urls are not supported anymore */
+                    dl.setAvailable(false);
+                    continue;
                 }
-                if (dllink == null) {
+                mainlink = dl.getStringProperty("mainlink", null);
+                getPage(mainlink);
+                if (jd.plugins.decrypter.MangaTradersBiz.isOffline(this.br)) {
                     dl.setAvailable(false);
                 } else {
-                    br.setFollowRedirects(true);
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                        dl.setVerifiedFileSize(con.getLongContentLength());
-                        dl.setFinalFileName(getFileNameFromHeader(con));
-                        dl.setAvailable(true);
-                    } finally {
-                        try {
-                            if (con != null) {
-                                con.disconnect();
-                            }
-                        } catch (final Throwable t) {
-                        }
-                    }
+                    /* 2016-11-15: We cannot check filesize anymore as (registered) users can only start new downloads every 20 seconds. */
+                    dl.setAvailable(true);
                 }
             }
         } catch (Exception e) {
@@ -128,6 +125,7 @@ public class MangaTradersOrg extends antiDDoSForHost {
         return true;
     }
 
+    /* 2016-11-15: From now on this is not necessary anymore. */
     private String processJS() {
         String result = null;
         try {
@@ -168,7 +166,7 @@ public class MangaTradersOrg extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.mangatraders.org/register/";
+        return "http://www.mangatraders.biz/register/";
     }
 
     @Override
@@ -182,9 +180,9 @@ public class MangaTradersOrg extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Download does only work with account");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     /**
@@ -195,39 +193,40 @@ public class MangaTradersOrg extends antiDDoSForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         // Don't check the links because the download will then fail ;)
         // requestFileInformation(downloadLink);
         // Usually JD is already logged in after the linkcheck so if JD is logged in we don't have to log in again here
-        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.org/", cookieName) == null) {
+        if (!weAreAlreadyLoggedIn || br.getCookie(mainPage, cookieName) == null) {
             login(account, false);
         }
-        getPage(downloadLink.getDownloadURL());
-        String dllink = null;
-        if (br.getHttpConnection().getContentType().equals("text/html")) {
-            // some other bullshit task.
-            dllink = processJS();
-        } else {
-            dllink = br.getRedirectLocation();
-        }
-        if (dllink == null) {
-            if (br.containsHTML(offlineFile)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML(blockedAccess)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String dllink = getDllink(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(blockedAccess)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1000l);
-            }
+            handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleErrors() throws PluginException {
+        final String waitseconds = this.br.getRegex("Error\\s*?:\\s*?You may only download once every (\\d+) seconds").getMatch(0);
+        if (waitseconds != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some seconds", Long.parseLong(waitseconds) * 1001l);
+        }
+    }
+
+    private String getDllink(final DownloadLink dl) throws Exception {
+        final String linkid = new Regex(dl.getDownloadURL(), type_2016_11_15).getMatch(0);
+        postPage("http://" + this.getHost() + "/_standard/php/volume.download.php", "linkValue=" + Encoding.urlEncode(linkid));
+        handleErrors();
+        final String dllink = this.br.toString();
+        if (dllink == null || !dllink.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dllink;
     }
 
     public void login(final Account account, final boolean force) throws Exception {
@@ -245,10 +244,9 @@ public class MangaTradersOrg extends antiDDoSForHost {
                 // Clear the Referer or the download could start here which then causes an exception
                 br = new Browser();
                 br.setFollowRedirects(true);
-                getPage("http://mangatraders.org/");
-                postPage("/login/process.php", "redirect_Login=%2F&email_Login=" + Encoding.urlEncode(account.getUser()) + "&password_Login=" + Encoding.urlEncode(account.getPass()) + "&rememberMe=checked");
-                final String userNameCookie = br.getCookie(mainPage, cookieName);
-                if (userNameCookie == null || "deleted".equalsIgnoreCase(userNameCookie)) {
+                getPage("http://" + this.getHost());
+                postPage("/auth/process.login.php", "EmailAddress=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberMe=1");
+                if (!this.br.toString().equalsIgnoreCase("ok")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));

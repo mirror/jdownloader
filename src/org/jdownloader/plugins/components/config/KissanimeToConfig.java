@@ -19,7 +19,7 @@ public interface KissanimeToConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Select the qualities you like")
+    @DescriptionForConfigEntry("Select the qualities you like: 1080p,720p,480p,360p OR BEST")
     @DefaultStringValue("1080p,720p,480p,360p")
     String getQualities();
 

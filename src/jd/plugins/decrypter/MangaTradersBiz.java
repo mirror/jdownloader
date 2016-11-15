@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -32,74 +33,76 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.org" }, urls = { "http://(www\\.)?mangatraders\\.org/manga/\\?series=\\w+" }) 
-public class MngTrdOg extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.biz/series/\\w+" })
+public class MangaTradersBiz extends PluginForDecrypt {
 
     private PluginForHost plugin = null;
 
-    private Browser prepBrowser(Browser prepBr) {
+    private Browser prepBrowser(final Browser prepBr) {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("mangatraders.org");
+            plugin = JDUtilities.getPluginForHost("mangatraders.biz");
             if (plugin == null) {
-                throw new IllegalStateException("mangatraders.org hoster plugin not found!");
+                throw new IllegalStateException("mangatraders hoster plugin not found!");
             }
         }
         // set cross browser support
-        ((jd.plugins.hoster.MangaTradersOrg) plugin).setBrowser(br);
+        ((jd.plugins.hoster.MangaTradersBiz) plugin).setBrowser(br);
         return prepBr;
     }
 
     private void getPage(final String page) throws Exception {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("mangatraders.org");
+            plugin = JDUtilities.getPluginForHost("mangatraders.biz");
             if (plugin == null) {
-                throw new IllegalStateException("mangatraders.org hoster plugin not found!");
+                throw new IllegalStateException("mangatraders hoster plugin not found!");
             }
         }
         // set cross browser support
-        ((jd.plugins.hoster.MangaTradersOrg) plugin).getPage(page);
+        ((jd.plugins.hoster.MangaTradersBiz) plugin).getPage(page);
     }
 
-    public MngTrdOg(PluginWrapper wrapper) {
+    public MangaTradersBiz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(false);
+        final String parameter = param.toString().replaceAll("http(s?)://[^/]+(/.+)", "http$1://" + this.getHost() + "$2");
         prepBrowser(br);
         // pages now are just links to download files. We need to be logged in to get this information.
         if (!login()) {
             decryptedLinks.add(createOfflinelink(parameter, "In order to use this website you need an Account!"));
             return decryptedLinks;
         }
+        br.setFollowRedirects(true);
 
         getPage(parameter);
-        // return error message for invalid url
-        if (br.containsHTML(">Error - Page Not Found<|This series is on our <a") || br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
 
-        // Set package name and prevent null field from creating plugin errors
-        String fpName = br.getRegex("<title>(.*?) - MangaTraders</title>").getMatch(0);
+        final String seriesNameUrl = new Regex(parameter, "series/(.+)").getMatch(0);
+        String fpName = br.getRegex("class=\"SeriesName\">([^<>]+)<").getMatch(0);
         if (fpName == null) {
-            fpName = "Untitled";
+            /* Fallback */
+            fpName = seriesNameUrl;
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
-        // First getPage listening regex
-        String[] links = br.getRegex("href=\"[^\"]*(/manga/download\\.php\\?id=[a-f0-9]{10,})\">").getColumn(0);
+        final String[] links = br.getRegex("linkValue=\"([A-Za-z0-9]+)\"").getColumn(0);
 
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         if (links != null && links.length != 0) {
-            for (String dl : links) {
-                decryptedLinks.add(createDownloadlink("http://mangatraders.org" + dl));
+            for (final String dl : links) {
+                final DownloadLink dlink = createDownloadlink("http://" + this.getHost() + "/downloadlink/" + dl);
+                dlink.setProperty("mainlink", parameter);
+                dlink.setAvailable(true);
+                decryptedLinks.add(dlink);
             }
         }
 
@@ -115,8 +118,8 @@ public class MngTrdOg extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(plugin);
         if (aa != null) {
             try {
-                synchronized (jd.plugins.hoster.MangaTradersOrg.ACCLOCK) {
-                    ((jd.plugins.hoster.MangaTradersOrg) plugin).login(aa, false);
+                synchronized (jd.plugins.hoster.MangaTradersBiz.ACCLOCK) {
+                    ((jd.plugins.hoster.MangaTradersBiz) plugin).login(aa, false);
                 }
             } catch (final PluginException e) {
                 aa.setValid(false);
@@ -127,6 +130,10 @@ public class MngTrdOg extends PluginForDecrypt {
         } else {
             return false;
         }
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     /* NO OVERRIDE!! */

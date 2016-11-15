@@ -69,6 +69,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             return decryptedLinks;
         }
         final String selectedQualities = PluginJsonConfig.get(KissanimeToConfig.class).getQualities();
+        final boolean grabBEST = selectedQualities.equalsIgnoreCase("best");
         handleHumanCheck(this.br);
         String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
         if (title == null) {
@@ -82,7 +83,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             for (final String qual[] : quals) {
                 String decode = decodeSingleURL(qual[1]);
                 final String quality = qual[2];
-                if (!selectedQualities.contains(quality)) {
+                if (!selectedQualities.contains(quality) && !grabBEST) {
                     continue;
                 }
                 final DownloadLink dl = createDownloadlink(decode);
@@ -93,6 +94,10 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 dl.setFinalFileName(title + "-" + quality + ".mp4");
                 dl.setAvailableStatus(AvailableStatus.TRUE);
                 decryptedLinks.add(dl);
+                /* Best comes first --> Simply quit the loop if user wants best quality. */
+                if (grabBEST) {
+                    break;
+                }
             }
         } else {
             // iframed.. seen openload.. but maybe others
