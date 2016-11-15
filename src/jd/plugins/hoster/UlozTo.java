@@ -140,6 +140,9 @@ public class UlozTo extends PluginForHost {
             br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
             br.setFollowRedirects(false);
         }
+        if (br.containsHTML("The file is not available at this moment, please, try it later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
+        }
         if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
             return AvailableStatus.UNCHECKABLE;
         }
@@ -498,9 +501,9 @@ public class UlozTo extends PluginForHost {
                         /*
                          * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                          * 1800542995541.log; 2422576; jdlog://1800542995541
-                         *
+                         * 
                          * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                         *
+                         * 
                          * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                          */
                         // logger.info("No traffic available!");
