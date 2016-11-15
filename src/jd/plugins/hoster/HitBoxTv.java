@@ -16,10 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitbox.tv" }, urls = { "https?://(?:www\\.)?hitbox\\.tv/video/(\\d+)" })
 public class HitBoxTv extends PluginForHost {
@@ -162,14 +162,12 @@ public class HitBoxTv extends PluginForHost {
             // without this it will fail.
             br.getPage(url);
             url = br.getRegex("https?://[^\r\n]+\\.m3u8").getMatch(-1);
-            HLSDownloader downloader = new HLSDownloader(downloadLink, br, url);
-            StreamInfo streamInfo = downloader.getProbe();
+            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, url);
+            final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
-                return AvailableStatus.FALSE;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
             String extension = ".m4a";
-
             for (Stream s : streamInfo.getStreams()) {
                 if ("video".equalsIgnoreCase(s.getCodec_type())) {
                     extension = ".mp4";
