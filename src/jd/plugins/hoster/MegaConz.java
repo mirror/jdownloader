@@ -294,12 +294,12 @@ public class MegaConz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (request.getHtmlCode().contains("-16")) {
+        if (request.getHtmlCode().contains("-16") && "us".equalsIgnoreCase(action)) {
             // API_EBLOCKED (-16): User blocked
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "User blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (request.getHtmlCode().contains("-9") && "us".equalsIgnoreCase(action)) {
             // API_EOENT (-9): Object (typically, node or user) not found
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "User not found", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (request.getHtmlCode().contains("-15")) {
             // API_ESID (-15): Invalid or expired user session, please relogin
             if (sid != null && account != null) {
@@ -311,7 +311,7 @@ public class MegaConz extends PluginForHost {
                 if ("us".equalsIgnoreCase(action)) {
                     return null;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid or expired user session,please relogin", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -559,6 +559,9 @@ public class MegaConz extends PluginForHost {
             if ("-11".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if ("-16".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             checkServerBusy();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
         }
@@ -688,6 +691,9 @@ public class MegaConz extends PluginForHost {
                     }
                     if ("-11".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
+                    }
+                    if ("-16".equals(error)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "User blocked");
                     }
                     if ("-17".equals(error)) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Request over quota", 60 * 60 * 1000l);
