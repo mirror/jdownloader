@@ -28,13 +28,13 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9]+)?/\\d+.{2,}" }) 
-public class GldSlTo extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9]+)?/\\d+.{2,}" })
+public class GldSlTo extends antiDDoSForDecrypt {
 
     public GldSlTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +47,7 @@ public class GldSlTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (!br.containsHTML("<h2>DDL\\-Links</h2>") && !br.containsHTML("<h2>Stream\\-Links</h2>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -88,7 +88,7 @@ public class GldSlTo extends PluginForDecrypt {
             // br.setCookie("goldesel.to", "__utmc", "222304525");
             /* IMPORTANT */
             br.setCookie("goldesel.to", "__utmt", "1");
-            br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
+            postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
             if (br.containsHTML(HTML_CAPTCHA)) {
                 for (int i = 1; i <= 3; i++) {
                     try {
@@ -113,7 +113,7 @@ public class GldSlTo extends PluginForDecrypt {
                         click_on = "Click in the dashed circle!";
                     }
                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Goldesel.to\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, click_on);
-                    br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
+                    postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
                     if (br.containsHTML(HTML_LIMIT_REACHED)) {
                         logger.info("We have to wait because the user entered too many wrong captchas...");
                         int wait = 60;
@@ -141,7 +141,7 @@ public class GldSlTo extends PluginForDecrypt {
                 }
             } else if (br.containsHTML("\"g\\-recaptcha\"")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
+                postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
             }
             if (br.containsHTML(HTML_LIMIT_REACHED)) {
                 logger.info("Probably hourly limit is reached --> Stopping decryption");
