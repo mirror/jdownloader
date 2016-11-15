@@ -17,8 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -95,13 +97,27 @@ public class DataFileHostCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void dummyLoad(final String url) throws IOException {
+        final URLConnectionAdapter con = br.cloneBrowser().openGetConnection(url);
+        try {
+            if (con.isOK()) {
+                final byte[] buf = new byte[32];
+                final InputStream is = con.getInputStream();
+                while (is.read(buf) != -1) {
+                }
+            }
+        } finally {
+            con.disconnect();
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/bg.jpg").disconnect();
-        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/menu.gif").disconnect();
-        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/download.png").disconnect();
-        br.cloneBrowser().openGetConnection("http://img.datafilehost.com/check.png").disconnect();
+        dummyLoad("//img.datafilehost.com/bg.jpg");
+        dummyLoad("//img.datafilehost.com/menu.gif");
+        dummyLoad("//img.datafilehost.com/download.png");
+        dummyLoad("//img.datafilehost.com/check.png");
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         final String dllink = br.getURL("/get.php?file=" + fid).toString();
         br.getHeaders().put("Upgrade-Insecure-Requests", "1");
