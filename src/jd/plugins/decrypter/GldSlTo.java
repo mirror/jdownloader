@@ -33,7 +33,7 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9]+)?/\\d+.{2,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{2,}" })
 public class GldSlTo extends antiDDoSForDecrypt {
 
     public GldSlTo(PluginWrapper wrapper) {
@@ -172,19 +172,6 @@ public class GldSlTo extends antiDDoSForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
-
-    // private String[] getAjaxPost(final Browser br) {
-    // String[] postInfo = new String[2];
-    // final Regex postInfoRegex = br.getRegex("function [A-Za-z0-9\\-_]+\\(([A-Z0-9]+)\\) \\{ \\$\\.post\\(\"(ajax[^<>\"]*?)\"");
-    // if (postInfoRegex.getMatches().length != 0) {
-    // postInfo[0] = "http://goldesel.to/" + postInfoRegex.getMatch(1);
-    // postInfo[1] = postInfoRegex.getMatch(0);
-    // } else {
-    // postInfo[0] = "http://goldesel.to/ajax/jDL.php";
-    // postInfo[1] = "LNK";
-    // }
-    // return postInfo;
-    // }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
