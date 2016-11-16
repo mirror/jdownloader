@@ -7,6 +7,9 @@ import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -19,9 +22,6 @@ import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
-
-import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDownloaderListener {
     private ConnectedDevicesTable table;
@@ -109,6 +109,7 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
                 switch (latestError) {
                 case IO:
                 case SERVER_DOWN:
+                case SERVER_MAINTENANCE:
                 case NO_INTERNET_CONNECTION:
                     return false;
                 default:
@@ -151,15 +152,14 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
                     error.setVisible(true);
                     error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
                     break;
-                case IO:
-                case SERVER_DOWN:
-                case NO_INTERNET_CONNECTION:
+                case SERVER_MAINTENANCE:
                     error.setVisible(true);
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_maintenance_());
                     break;
                 default:
                     error.setVisible(true);
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unknown(latestError.toString()));
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
+                    break;
                 }
             }
         };
@@ -185,6 +185,8 @@ public class MyJDownloaderAccount extends AbstractConfigPanel implements MyJDown
                         switch (latestError) {
                         case IO:
                         case SERVER_DOWN:
+                        case SERVER_OVERLOAD:
+                        case SERVER_MAINTENANCE:
                         case NO_INTERNET_CONNECTION:
                             status.setForeground(Color.YELLOW.darker());
                             status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));

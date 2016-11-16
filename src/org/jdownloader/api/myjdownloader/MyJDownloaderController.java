@@ -356,6 +356,10 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             break;
         case SERVER_DOWN:
             break;
+        case SERVER_OVERLOAD:
+            break;
+        case SERVER_MAINTENANCE:
+            break;
         case UNKNOWN:
             break;
         default:

@@ -20,10 +20,14 @@ import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 public interface MyJDownloaderSettings extends ConfigInterface {
 
     public static enum DIRECTMODE {
-        @EnumLabel("Disable direct connections") NONE,
-        @EnumLabel("Only allow direct connections from lan") LAN,
-        @EnumLabel("Allow lan/wan connections with manual port forwarding") LAN_WAN_MANUAL,
-        @EnumLabel("Allow lan/wan connections with automatic port forwarding via upnp") LAN_WAN_UPNP
+        @EnumLabel("Disable direct connections")
+        NONE,
+        @EnumLabel("Only allow direct connections from lan")
+        LAN,
+        @EnumLabel("Allow lan/wan connections with manual port forwarding")
+        LAN_WAN_MANUAL,
+        @EnumLabel("Allow lan/wan connections with automatic port forwarding via upnp")
+        LAN_WAN_UPNP
     }
 
     @DefaultStringValue("api.jdownloader.org")
@@ -131,15 +135,28 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public void setManualRemotePort(int port);
 
     public static enum MyJDownloaderError {
-        @EnumLabel("Outdated, please update your JDownloader") OUTDATED,
-        @EnumLabel("No Error -  everything is fine") NONE,
-        @EnumLabel("Username/email is unknown") EMAIL_INVALID,
-        @EnumLabel("Please confirm your account(Click the link in the Confirmal Email)") ACCOUNT_UNCONFIRMED,
-        @EnumLabel("Wrong Username or Password") BAD_LOGINS,
-        @EnumLabel("Service is down for Maintenance") SERVER_DOWN,
-        @EnumLabel("Connection problem to the MyJDownloader Service") IO,
-        @EnumLabel("Unknown error") UNKNOWN,
-        @EnumLabel("No Internet Connection") NO_INTERNET_CONNECTION,
+        @EnumLabel("Outdated, please update your JDownloader")
+        OUTDATED,
+        @EnumLabel("No Error -  everything is fine")
+        NONE,
+        @EnumLabel("Username/email is unknown")
+        EMAIL_INVALID,
+        @EnumLabel("Please confirm your account(Click the link in the Confirmal Email)")
+        ACCOUNT_UNCONFIRMED,
+        @EnumLabel("Wrong Username or Password")
+        BAD_LOGINS,
+        @EnumLabel("Service is overloaded")
+        SERVER_OVERLOAD,
+        @EnumLabel("Service is down for Maintenance")
+        SERVER_MAINTENANCE,
+        @EnumLabel("Service is down")
+        SERVER_DOWN,
+        @EnumLabel("Connection problem to the MyJDownloader Service")
+        IO,
+        @EnumLabel("Unknown error")
+        UNKNOWN,
+        @EnumLabel("No Internet Connection")
+        NO_INTERNET_CONNECTION,
 
     }
 

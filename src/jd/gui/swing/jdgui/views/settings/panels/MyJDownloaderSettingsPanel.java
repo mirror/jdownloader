@@ -24,6 +24,11 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 
+import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+
 import org.appwork.storage.StorageException;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -45,11 +50,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
-
-import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements GenericConfigEventListener<Enum>, MyJDownloaderListener {
 
@@ -233,22 +233,30 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     break;
                 case ACCOUNT_UNCONFIRMED:
                     error.setVisible(true);
+                    error.setForeground(Color.RED);
                     error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_());
                     break;
                 case BAD_LOGINS:
                 case EMAIL_INVALID:
                     error.setVisible(true);
+                    error.setForeground(Color.RED);
                     error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
                     break;
-                case IO:
-                case SERVER_DOWN:
-                case NO_INTERNET_CONNECTION:
+                case SERVER_MAINTENANCE:
                     error.setVisible(true);
+                    error.setForeground(Color.YELLOW.darker());
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_maintenance_());
+                    break;
+                case SERVER_OVERLOAD:
+                    error.setVisible(true);
+                    error.setForeground(Color.YELLOW.darker());
                     error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
                     break;
                 default:
                     error.setVisible(true);
-                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_account_unknown(latestError.toString()));
+                    error.setForeground(Color.RED);
+                    error.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_disconnected_2(latestError.toString()));
+                    break;
                 }
             }
         };
@@ -293,10 +301,15 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     case PENDING:
                         MyJDownloaderError latestError = CFG_MYJD.CFG.getLatestError();
                         switch (latestError) {
+                        case SERVER_MAINTENANCE:
+                        case SERVER_OVERLOAD:
+                            status.setForeground(Color.YELLOW.darker());
+                            status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                            break;
                         case IO:
                         case SERVER_DOWN:
                         case NO_INTERNET_CONNECTION:
-                            status.setForeground(Color.YELLOW.darker());
+                            status.setForeground(Color.RED);
                             status.setText(_GUI.T.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
                             break;
                         default:

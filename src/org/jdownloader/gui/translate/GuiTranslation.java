@@ -2541,9 +2541,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Your Account has been deactivated because your Email has not been confirmed yet. We sent you an Email to confirm your adress. Please click the Link in the Email." })
     String MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_();
 
-    @Default(lngs = { "en" }, values = { "Your Account has been deactivated because an error occured: %s1" })
-    String MyJDownloaderSettingsPanel_runInEDT_account_unknown(String string);
-
     @Default(lngs = { "en" }, values = { "Your Account has been deactivated because the entered Username/Email or Password is wrong." })
     String MyJDownloaderSettingsPanel_runInEDT_account_badlogins();
 
@@ -2555,6 +2552,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Not Connected!" })
     String MyJDownloaderSettingsPanel_runInEDT_disconnected_();
+
+    @Default(lngs = { "en" }, values = { "Not Connected! Server is down for maintenance!" })
+    String MyJDownloaderSettingsPanel_runInEDT_maintenance_();
 
     @Default(lngs = { "en" }, values = { "Not Connected! Reason: %s1" })
     String MyJDownloaderSettingsPanel_runInEDT_disconnected_2(String string);

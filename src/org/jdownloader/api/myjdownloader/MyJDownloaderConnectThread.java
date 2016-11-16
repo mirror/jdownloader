@@ -130,6 +130,11 @@ public class MyJDownloaderConnectThread extends Thread {
             backOff.set(true);
         }
 
+        public void requestbackoff(int backOffCounter) {
+            backOff.set(true);
+            backoffCounter.set(Math.max(1, Math.min(backOffCounter, 5)));
+        }
+
         public void backoff() throws InterruptedException {
             if (api == null) {
                 return;
@@ -319,6 +324,18 @@ public class MyJDownloaderConnectThread extends Thread {
         return connected.get() == MyJDownloaderConnectionStatus.CONNECTED && isAlive();
     }
 
+    private boolean isConnectionOffline(DeviceConnectionHelper connectionHelper) {
+        final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck();
+        try {
+            onlineCheck.getExternalIP();
+        } catch (final OfflineException e2) {
+            log("Could not connect! NO Internet!");
+            return true;
+        } catch (final IPCheckException e2) {
+        }
+        return false;
+    }
+
     private DeviceConnectionStatus handleResponse(final MyJDownloaderConnectionResponse response, final SessionInfoWrapper currentSession) {
         boolean closeSocket = true;
         DeviceConnectionHelper currentHelper = null;
@@ -330,13 +347,8 @@ public class MyJDownloaderConnectThread extends Thread {
             final DeviceConnectionStatus connectionStatus = response.getConnectionStatus();
             final Socket socket = response.getConnectionSocket();
             if (socket != null && connectionStatus != null) {
-                setConnected(MyJDownloaderConnectionStatus.CONNECTED);
+                setConnectionStatus(MyJDownloaderConnectionStatus.CONNECTED, MyJDownloaderError.NONE);
                 switch (connectionStatus) {
-                case OUTDATED:
-                    currentHelper.reset();
-                    log("Outdated session");
-                    response.getRequest().getSession().setState(SessionInfoWrapper.STATE.INVALID);
-                    return connectionStatus;
                 case UNBOUND:
                     currentHelper.reset();
                     log("Unbound");
@@ -404,9 +416,19 @@ public class MyJDownloaderConnectThread extends Thread {
                     closeSocket = false;
                     return connectionStatus;
                 case MAINTENANCE:
+                    log(connectionStatus.name());
+                    currentHelper.requestbackoff(5);
+                    setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_MAINTENANCE);
+                    return connectionStatus;
                 case OVERLOAD:
                     log(connectionStatus.name());
-                    currentHelper.requestbackoff();
+                    currentHelper.requestbackoff(2);
+                    setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_OVERLOAD);
+                    return connectionStatus;
+                case OUTDATED:
+                    currentHelper.reset();
+                    log("Outdated session");
+                    setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                     return connectionStatus;
                 }
             }
@@ -416,25 +438,34 @@ public class MyJDownloaderConnectThread extends Thread {
         } catch (ProxyEndpointConnectException e) {
             currentHelper.requestbackoff();
             log("Could not connect! Server down?", e);
-            setConnected(MyJDownloaderConnectionStatus.PENDING);
-            myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
+            setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_DOWN);
             return null;
         } catch (ConnectException e) {
             currentHelper.requestbackoff();
             log("Could not connect! Server down?", e);
-            setConnected(MyJDownloaderConnectionStatus.PENDING);
-            myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
+            if (isConnectionOffline(currentHelper)) {
+                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);
+            } else {
+                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_DOWN);
+            }
             return null;
         } catch (SocketTimeoutException e) {
             currentHelper.requestbackoff();
             log("ReadTimeout on server connect!", e);
-            setConnected(MyJDownloaderConnectionStatus.PENDING);
-            myJDownloaderController.onError(MyJDownloaderError.IO);
+            if (isConnectionOffline(currentHelper)) {
+                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);
+            } else {
+                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.IO);
+            }
             return null;
         } catch (Throwable e) {
             currentHelper.requestbackoff();
             log(e);
-            myJDownloaderController.onError(MyJDownloaderError.UNKNOWN);
+            if (isConnectionOffline(currentHelper)) {
+                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);
+            } else {
+                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.UNKNOWN);
+            }
             return null;
         } finally {
             if (closeSocket) {
@@ -446,6 +477,17 @@ public class MyJDownloaderConnectThread extends Thread {
                 } catch (final Throwable ignore) {
                 }
             }
+        }
+    }
+
+    private void setConnectionStatus(MyJDownloaderConnectionStatus status, MyJDownloaderError error) {
+        if (status != null && connected.getAndSet(status) != status) {
+            System.out.println(" set  " + status);
+            StatsManager.I().track(1000, "myjd/connection/" + status);
+            myJDownloaderController.fireConnectionStatusChanged(status, getEstablishedConnections());
+        }
+        if (error != null) {
+            myJDownloaderController.onError(error);
         }
     }
 
@@ -476,7 +518,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         }
                         final SessionInfoWrapper currentSession = ensureValidSession(currentHelper);
                         if (connected.get() == MyJDownloaderConnectionStatus.UNCONNECTED) {
-                            setConnected(MyJDownloaderConnectionStatus.PENDING);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, null);
                         }
                         if (syncMark.get() == Integer.MIN_VALUE) {
                             sync(0, currentSession);
@@ -524,64 +566,62 @@ public class MyJDownloaderConnectThread extends Thread {
                         }
                         unknownErrorSafeOff = 10;
                     } catch (final MyJDownloaderException e) {
-                        setConnected(MyJDownloaderConnectionStatus.PENDING);
                         if (e instanceof MaintenanceException) {
                             log("Maintenance!");
-                            currentHelper.requestbackoff();
+                            currentHelper.requestbackoff(5);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_MAINTENANCE);
                         } else if (e instanceof OverloadException) {
                             log("Overload!");
-                            currentHelper.requestbackoff();
+                            currentHelper.requestbackoff(2);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_OVERLOAD);
                         } else if (e instanceof OutdatedException) {
                             log("Outdated Version, Please update!");
-                            myJDownloaderController.onError(MyJDownloaderError.OUTDATED);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                             return;
                         } else if (e instanceof EmailInvalidException) {
                             log("Invalid email!");
-                            myJDownloaderController.onError(MyJDownloaderError.EMAIL_INVALID);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.EMAIL_INVALID);
                             return;
                         } else if (e instanceof EmailNotValidatedException) {
                             log("Account is not confirmed!");
-                            myJDownloaderController.onError(MyJDownloaderError.ACCOUNT_UNCONFIRMED);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.ACCOUNT_UNCONFIRMED);
                             return;
                         } else if (e instanceof AuthException) {
                             log("Wrong Username/Password!");
-                            myJDownloaderController.onError(MyJDownloaderError.BAD_LOGINS);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.BAD_LOGINS);
                             return;
                         } else if (Exceptions.containsInstanceOf(e, ConnectException.class, SocketTimeoutException.class)) {
                             log("Could not connect! Server down?", e);
-                            myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
                             currentHelper.requestbackoff();
+                            if (isConnectionOffline(currentHelper)) {
+                                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);
+                            } else {
+                                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_DOWN);
+                            }
                         } else {
-                            final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck();
                             currentHelper.requestbackoff();
-                            try {
-                                onlineCheck.getExternalIP();
-                            } catch (final OfflineException e2) {
-                                log("Could not connect! NO Internet!");
-
-                                continue;
-
-                            } catch (final IPCheckException e2) {
+                            if (isConnectionOffline(currentHelper)) {
+                                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);
+                            } else {
+                                log(e);
+                                if (unknownErrorSafeOff-- == 0) {
+                                    setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
+                                    log("Unknown Error, SafetyOff!");
+                                    return;
+                                }
+                                setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.UNKNOWN);
                             }
-                            log(e);
-                            if (unknownErrorSafeOff-- == 0) {
-                                myJDownloaderController.onError(MyJDownloaderError.OUTDATED);
-                                log("Unknown Error, SafetyOff!");
-                                return;
-                            }
-                            myJDownloaderController.onError(MyJDownloaderError.UNKNOWN);
                         }
                     } catch (final Throwable e) {
                         log(e);
-                        setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
+                        setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.UNKNOWN);
                         if (myJDownloaderController.getConnectThread() != this || api == null) {
                             // external disconnect
                             return;
                         }
-                        myJDownloaderController.onError(MyJDownloaderError.UNKNOWN);
                         currentHelper.requestbackoff();
                         if (unknownErrorSafeOff-- == 0) {
-                            myJDownloaderController.onError(MyJDownloaderError.OUTDATED);
+                            setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                             log("Unknown Error, SafetyOff!");
                             return;
                         }
@@ -598,16 +638,7 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
-    protected void setConnected(MyJDownloaderConnectionStatus set) {
-        if (connected.getAndSet(set) == set) {
-            return;
-        }
-        System.out.println(" set  " + set);
-        StatsManager.I().track(1000, "myjd/connection/" + set);
-        myJDownloaderController.fireConnectionStatusChanged(set, getEstablishedConnections());
-    }
-
-    protected void setEstablishedConnections(int connections) {
+    protected void setEstablishedConnections(final int connections) {
         myJDownloaderController.fireConnectionStatusChanged(connected.get(), connections);
     }
 
@@ -848,7 +879,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     }
                 }
             }
-            setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
+            setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.NONE);
             final ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
             THREADQUEUE = null;
             if (lTHREADQUEUE != null) {
