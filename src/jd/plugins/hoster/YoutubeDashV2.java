@@ -69,6 +69,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -1198,6 +1199,11 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             return new FFmpeg() {
                 private final UniqueAlltimeID metaDataProcessID = new UniqueAlltimeID();
                 private HttpServer            httpServer        = null;
+                private File                  metaFile          = null;
+
+                private final boolean isWriteFileEnabled() {
+                    return true;
+                }
 
                 @Override
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
@@ -1255,54 +1261,87 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     return null;
                 }
 
-                private void stopHttpServer() {
+                private File writeMetaFile() {
+                    final File ret = Application.getTempResource("ffmpeg_meta_" + UniqueAlltimeID.create());
+                    try {
+                        IO.writeStringToFile(ret, ffMpegMetaData.getFFmpegMetaData());
+                        return ret;
+                    } catch (final Throwable e) {
+                        ret.delete();
+                        logger.log(e);
+                    }
+                    return null;
+                }
+
+                private void stopMetaFileProvider() {
+                    final File metaFile = this.metaFile;
+                    if (metaFile != null) {
+                        this.metaFile = null;
+                        metaFile.delete();
+                    }
                     final HttpServer httpServer = this.httpServer;
                     if (httpServer != null) {
+                        this.httpServer = null;
                         httpServer.stop();
                     }
-                    this.httpServer = null;
                 }
 
                 @Override
                 public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
-                    httpServer = startHttpServer();
+                    if (isWriteFileEnabled()) {
+                        metaFile = writeMetaFile();
+                    } else {
+                        httpServer = startHttpServer();
+                    }
                     try {
                         return super.muxToMp4(progress, out, videoIn, audioIn);
                     } finally {
-                        stopHttpServer();
+                        stopMetaFileProvider();
                     }
                 }
 
                 @Override
                 public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-                    httpServer = startHttpServer();
+                    if (isWriteFileEnabled()) {
+                        metaFile = writeMetaFile();
+                    } else {
+                        httpServer = startHttpServer();
+                    }
                     try {
                         return super.generateM4a(progress, out, audioIn);
                     } finally {
-                        stopHttpServer();
+                        stopMetaFileProvider();
                     }
                 }
 
                 @Override
                 public boolean demuxM4a(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-                    httpServer = startHttpServer();
+                    if (isWriteFileEnabled()) {
+                        metaFile = writeMetaFile();
+                    } else {
+                        httpServer = startHttpServer();
+                    }
                     try {
                         return super.demuxM4a(progress, out, audioIn);
                     } finally {
-                        stopHttpServer();
+                        stopMetaFileProvider();
                     }
                 }
 
                 @Override
                 protected boolean demux(FFMpegProgress progress, String out, String audioIn, String[] demuxCommands) throws InterruptedException, IOException, FFMpegException {
-                    if (httpServer != null) {
+                    if (httpServer != null || metaFile != null) {
                         final ArrayList<String> newDemuxCommands = new ArrayList<String>();
                         boolean metaParamsAdded = false;
                         String lastDemuxCommand = null;
                         for (final String demuxCommand : demuxCommands) {
                             if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
                                 newDemuxCommands.add("-i");
-                                newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                if (httpServer != null) {
+                                    newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                } else {
+                                    newDemuxCommands.add(metaFile.getAbsolutePath());
+                                }
                                 newDemuxCommands.add("-map_metadata");
                                 newDemuxCommands.add("1");
                                 metaParamsAdded = true;
@@ -1312,7 +1351,11 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         }
                         if ("%audio".equals(lastDemuxCommand) && !metaParamsAdded) {
                             newDemuxCommands.add("-i");
-                            newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                            if (httpServer != null) {
+                                newDemuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                            } else {
+                                newDemuxCommands.add(metaFile.getAbsolutePath());
+                            }
                             newDemuxCommands.add("-map_metadata");
                             newDemuxCommands.add("1");
                             metaParamsAdded = true;
@@ -1325,13 +1368,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
                 @Override
                 protected boolean mux(FFMpegProgress progress, String out, String videoIn, String audioIn, String[] muxCommands) throws InterruptedException, IOException, FFMpegException {
-                    if (httpServer != null) {
+                    if (httpServer != null || metaFile != null) {
                         final ArrayList<String> newMuxCommands = new ArrayList<String>();
                         boolean metaParamsAdded = false;
                         for (final String muxCommand : muxCommands) {
                             if ("-map".equals(muxCommand) && !metaParamsAdded) {
                                 newMuxCommands.add("-i");
-                                newMuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                if (httpServer != null) {
+                                    newMuxCommands.add("http://127.0.0.1:" + httpServer.getPort() + "/meta?id=" + metaDataProcessID.getID());
+                                } else {
+                                    newMuxCommands.add(metaFile.getAbsolutePath());
+                                }
                                 newMuxCommands.add("-map_metadata");
                                 newMuxCommands.add("2");
                                 metaParamsAdded = true;
