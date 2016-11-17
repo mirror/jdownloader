@@ -113,7 +113,6 @@ literally_tebibyte=%s1 TB
 pathchooser_browselabel=Izaberi
 pathchooser_dialog_title=Izaberite putanju!
 pathchooser_helptext=Unesite putanju...
-please_wait=Molimo sačekajte dok se download završi
 progress=%s3% %s1/%s2
 proxy_direct=Direktno %s1
 proxy_http=%s1:%s2 (Http Proxy)
