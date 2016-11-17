@@ -9,15 +9,15 @@ import jd.http.URLConnectionAdapter;
 
 /**
  * http://svn.wordrider.net/svn/freerapid-plugins/trunk/src/adobehds/cz/vity/freerapid/plugins/services/adobehds/
- * 
- * 
+ *
+ *
  */
 public class F4vInputStream extends InputStream {
 
-    private final DataInputStream in;
-    private int                   dataAvailable = -1;
+    private final DataInputStream      in;
+    private int                        dataAvailable = -1;
 
-    private URLConnectionAdapter  urlConnectionAdapter;
+    private final URLConnectionAdapter urlConnectionAdapter;
 
     public F4vInputStream(final URLConnectionAdapter urlConnectionAdapter) throws IOException {
         this.urlConnectionAdapter = urlConnectionAdapter;
