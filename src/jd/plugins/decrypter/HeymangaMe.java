@@ -40,6 +40,7 @@ public class HeymangaMe extends PluginForDecrypt {
         final String parameter = param.toString();
         final String pagination_base = parameter;
         this.br.setFollowRedirects(true);
+        br.setCookie(getHost(), "heymanga_adult", "yes");
         br.getPage(parameter + "/1");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -74,7 +75,7 @@ public class HeymangaMe extends PluginForDecrypt {
             if (page > 1) {
                 this.br.getPage(pagination_base + "/" + page);
             }
-            final String[] urls = this.br.getRegex("src=\"(//[^<>\"\\']+\\d+\\.jpg)\" onerror=\"this\\.src=\\'(//[^<>\"\\']+\\d+\\.jpg)\\'").getColumn(0);
+            final String[] urls = this.br.getRegex("src=\"(//[^<>\"\\']+\\d+\\.jpe?g)\" onerror=\"this\\.src=\\'(//[^<>\"\\']+\\d+\\.jpe?g)\\'").getColumn(0);
             if (urls == null || urls.length == 0) {
                 if (!this.br.containsHTML("id=\"page_list\"")) {
                     /* Empty page --> Offline url */
@@ -84,8 +85,8 @@ public class HeymangaMe extends PluginForDecrypt {
                 break;
             }
             for (String finallink : urls) {
-                finallink = "directhttp://http:" + finallink;
-                final String realPageStr = new Regex(finallink, "(\\d+)\\.jpg$").getMatch(0);
+                finallink = "directhttp://" + br.getURL(finallink).toExternalForm();
+                final String realPageStr = new Regex(finallink, "(\\d+)\\.jpe?g$").getMatch(0);
                 /* They start from zero so we'll have to add 1 here. */
                 final short realPage = (short) (Short.parseShort(realPageStr) + 1);
                 final String chapter_formatted = df_chapter.format(chapter);
