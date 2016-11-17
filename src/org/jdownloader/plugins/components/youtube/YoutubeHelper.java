@@ -1061,14 +1061,16 @@ public class YoutubeHelper {
             if (StringUtils.isEmpty(vid.description)) {
                 // 04 Mai 2016
                 match = br.getRegex("<meta name=\"description\" content=\"([^\"]*)").getMatch(0);
-                match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
-                match = match.replaceAll("<a href=\"#\" onclick=\"[^\"]+\\((\\d+)\\*60 (\\d+)\\)[^\"]+\">(.*?)</a>", "\r\nJump to $3 https://youtu.be/" + vid.videoID + "?t=$1m$2s");
-                match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
-                vid.description = match;
-            }
-            if (StringUtils.isEmpty(vid.description)) {
-                // video has no description
-                vid.description = "";
+                if (match != null) {
+                    match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
+                    match = match.replaceAll("<a href=\"#\" onclick=\"[^\"]+\\((\\d+)\\*60 (\\d+)\\)[^\"]+\">(.*?)</a>", "\r\nJump to $3 https://youtu.be/" + vid.videoID + "?t=$1m$2s");
+                    match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
+                    vid.description = match;
+                }
+                if (StringUtils.isEmpty(vid.description)) {
+                    // video has no description
+                    vid.description = "";
+                }
             }
         }
         if (StringUtils.isEmpty(vid.title)) {
