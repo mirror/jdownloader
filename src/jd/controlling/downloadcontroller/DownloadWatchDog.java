@@ -3946,38 +3946,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return this.stateMachine;
     }
 
-    public void onShutdown(boolean silent) {
-        enqueueJob(new DownloadWatchDogJob() {
-
-            @Override
-            public void execute(DownloadSession currentSession) {
-                if (stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
-                    config.setClosedWithRunningDownloads(true);
-                } else {
-                    config.setClosedWithRunningDownloads(false);
-                }
-                stopDownloads();
-            }
-
-            @Override
-            public void interrupt() {
-            }
-
-            @Override
-            public boolean isHighPriority() {
-                return true;
-            }
-        });
-        while (isIdle() == false) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
-            }
-        }
-    }
-
     public void onNewFile(Object obj, final File[] list) {
         if (JsonConfig.create(GeneralSettings.class).isAutoOpenContainerAfterDownload() && list != null && list.length > 0) {
             /* check if extracted files are container files */
@@ -4461,6 +4429,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onShutdown(ShutdownRequest request) {
+        config.setClosedWithRunningDownloads(isRunning());
     }
 
     @Override
