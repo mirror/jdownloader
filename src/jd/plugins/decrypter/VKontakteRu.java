@@ -307,8 +307,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* We either have a public community or profile --> Get the owner_id and change the link to a wall-link */
                 final String ownerName = resolveScreenName_API(url_owner);
                 if (ownerName == null) {
-                    logger.warning("Decryption failed - unsupported link? --> " + CRYPTEDLINK_FUNCTIONAL);
-                    return null;
+                    logger.warning("Decryption failed - Most likely a unsupported URL pattern! --> " + CRYPTEDLINK_FUNCTIONAL + "");
+                    // do not return null, as this shows crawler error, and unsupported urls are not defects!
+                    return decryptedLinks;
                 }
                 final String type = PluginJSonUtils.getJsonValue(br, "type");
                 if (type == null) {
