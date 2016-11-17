@@ -47,7 +47,7 @@ public class GameOfScanlation extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)(\\s*\\|\\s*Game of Scanlation\\s*)?</title>").getMatch(0));
-        final String pages[][] = br.getRegex("src=\"(https?://gameofscanlation.moe/data/attachment-files/.*?)\".*?Page\\s*(\\d+)").getMatches();
+        final String pages[][] = br.getRegex("src=\"(https?://gameofscanlation.moe/data/attachment-files/.*?)\".*?-\\s*(?:Page\\s*)?(\\d+)").getMatches();
         if (pages != null) {
             int index = 0;
             final int padLength = padLength(pages.length);
