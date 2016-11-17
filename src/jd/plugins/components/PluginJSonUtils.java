@@ -231,9 +231,20 @@ public class PluginJSonUtils {
      * @param key
      * @return
      */
-    @Deprecated
     public static String getJson(final String source, final String key) {
         return getJson(source, key, true);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * @param ibr
+     * @param key
+     * @return
+     */
+    public static String getJson(final Browser ibr, final String key) {
+        return getJson(ibr.toString(), key, true);
     }
 
     public static String getJson(final Browser ibr, final String key, final boolean returnNullAsString) {
@@ -378,7 +389,7 @@ public class PluginJSonUtils {
                 if (bracketA.length == bracketB.length) {
                     break;
                 }
-                final String newi = new Regex(source, Pattern.quote(i) + "(?!\\\\\\})[^\\}]+\\}").getMatch(-1);
+                final String newi = new Regex(source, Pattern.quote(i) + "(?!\\\\\\})[^\\}]*\\}").getMatch(-1);
                 if (newi == null) {
                     return i;
                 }
@@ -395,7 +406,7 @@ public class PluginJSonUtils {
                 if (bracketC.length == bracketD.length) {
                     break;
                 }
-                final String newi = new Regex(source, Pattern.quote(i) + "(?!\\\\\\])[^\\]]+\\]").getMatch(-1);
+                final String newi = new Regex(source, Pattern.quote(i) + "(?!\\\\\\])[^\\]]*\\]").getMatch(-1);
                 if (newi == null) {
                     return i;
                 }

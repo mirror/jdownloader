@@ -21,9 +21,14 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,10 +53,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -672,6 +673,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
                 if ((br.containsHTML("<div class=\"message_page_title\">Error</div>") && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
                     throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
+                } else if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 String ajax = br.getRegex("ajax\\.preload\\('al_video\\.php',[^\r\n]+\\);[\r\n]+").getMatch(-1);
                 if (ajax != null) {
@@ -774,7 +777,10 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
+        } catch (final DecrypterException de) {
+            throw de;
         } catch (final Throwable e) {
+            // why do we do this??? -raztoki20161117
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
     }
@@ -919,18 +925,27 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?\\d+)$").getMatch(0);
-        String numberofentries = PluginJSonUtils.getJsonValue(br, "videoCount");
-        if (numberofentries == null) {
-            numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
+        final String videosCount = PluginJSonUtils.getJsonNested(br, "videosCount");
+        String numberofentries = null;
+        if (videosCount != null) {
+            numberofentries = PluginJSonUtils.getJson(videosCount, "all");
         }
         if (numberofentries == null) {
-            numberofentries = PluginJSonUtils.getJsonValue(br, "count");
-        }
-        if (numberofentries == null) {
-            numberofentries = PluginJSonUtils.getJsonValue(br, "playlistsCount");
+            numberofentries = PluginJSonUtils.getJsonValue(br, "videoCount");
+            if (numberofentries == null) {
+                numberofentries = br.getRegex("class=\"video_summary_count\">(\\d+)<").getMatch(0);
+                if (numberofentries == null) {
+                    numberofentries = PluginJSonUtils.getJsonValue(br, "count");
+                    if (numberofentries == null) {
+                        // THIS IS NOT ENTRY COUNT! THIS IS ALUBMS -raztoki20161117.
+                        // numberofentries = PluginJSonUtils.getJsonValue(br, "playlistsCount");
+                    }
+                }
+            }
         }
         final int numberOfEntrys = Integer.parseInt(numberofentries);
         int totalCounter = 0;
+        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         while (totalCounter < numberOfEntrys) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user, stopping...");
@@ -967,7 +982,10 @@ public class VKontakteRu extends PluginForDecrypt {
                     singleVideo = singleVideo.replace(",", "_");
                     singleVideo = singleVideo.replace(" ", "");
                     singleVideo = singleVideo.replace("\"", "");
-                    logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
+                    if (!dupe.add(singleVideo)) {
+                        continue;
+                    }
+                    logger.info("Decrypting video " + (totalCounter + 1) + " / " + numberOfEntrys);
                     final String completeVideolink = getProtocol() + "vk.com/video" + singleVideo;
                     this.decryptedLinks.add(createDownloadlink(completeVideolink));
                 } finally {
