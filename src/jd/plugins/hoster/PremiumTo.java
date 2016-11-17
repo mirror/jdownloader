@@ -41,13 +41,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.premium\\.to/file/[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.premium\\.to/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
     private static AtomicBoolean                               shareOnlineLocked              = new AtomicBoolean(false);
@@ -293,7 +294,35 @@ public class PremiumTo extends UseNet {
                 if (link.getBooleanProperty(noChunks, false)) {
                     connections = 1;
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, API_BASE + "getfile.php?link=" + url, true, connections);
+                String finalURL = API_BASE + "getfile.php?link=" + url;
+                final DownloadLinkDownloadable downloadable;
+                if (link.getName().matches(".*(rar|r\\d+)$")) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    final URLConnectionAdapter con = brc.openGetConnection(finalURL);
+                    try {
+                        if (con.isOK() && con.isContentDisposition() && con.getLongContentLength() > 0) {
+                            finalURL = con.getRequest().getUrl();
+                            if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getLongContentLength()) {
+                                logger.info("Workaround for size missmatch(rar padding?!)!");
+                                link.setVerifiedFileSize(con.getLongContentLength());
+                            }
+                        }
+                    } finally {
+                        con.disconnect();
+                    }
+                    downloadable = new DownloadLinkDownloadable(link) {
+
+                        @Override
+                        public boolean isHashCheckEnabled() {
+                            return false;
+                        }
+
+                    };
+                } else {
+                    downloadable = new DownloadLinkDownloadable(link);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(finalURL), true, connections);
                 if (dl.getConnection().getResponseCode() == 404) {
                     /* file offline */
                     dl.getConnection().disconnect();
@@ -338,6 +367,8 @@ public class PremiumTo extends UseNet {
                     String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
                     showMessage(link, msg);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
+                } else {
+
                 }
                 showMessage(link, "Phase 3/3: Download...");
                 try {
@@ -364,7 +395,7 @@ public class PremiumTo extends UseNet {
                     /* unknown error, we disable multiple chunks */
                     if (link.getBooleanProperty(noChunks, false) == false) {
                         link.setProperty(noChunks, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, ex);
                     }
                 }
             } finally {
