@@ -112,7 +112,6 @@ literally_tebibyte=%s1 TB
 pathchooser_browselabel=浏览
 pathchooser_dialog_title=选择路径!
 pathchooser_helptext=输入一个路径...
-please_wait=请稍候直至下载完成
 progress=%s3% %s1/%s2
 proxy_direct=直接 %s1
 proxy_http=%s1:%s2 (HTTP 代理)

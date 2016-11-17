@@ -1865,6 +1865,7 @@ lit_disable=禁用
 lit_disabled=禁用
 lit_disconnect=断开连接
 lit_download=下载
+lit_download_traffic=下载流量
 lit_duplicates_links=重复
 lit_edit=编辑
 lit_enable=启用

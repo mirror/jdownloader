@@ -19,4 +19,5 @@ editor_testcompile=测试编译
 editor_testrun=测试运行
 event_trigger=触发器
 example_script_name=范例
+loading_editor_title=正在载入编辑器……
 title=事件脚本器
