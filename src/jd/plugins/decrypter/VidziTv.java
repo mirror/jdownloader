@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,15 +35,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }) 
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" })
 public class VidziTv extends antiDDoSForDecrypt {
 
     public VidziTv(PluginWrapper wrapper) {
@@ -91,9 +91,13 @@ public class VidziTv extends antiDDoSForDecrypt {
                 }
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fileInfo[0]));
-        fp.addLinks(decryptedLinks);
+        // only add packagename when one isn't already set. otherwise you get multiple packages just because this provider has its own
+        // decrypter plugin.
+        if (this.getCurrentLink().getSourceLink().getDesiredPackageInfo() == null || this.getCurrentLink().getSourceLink().getDesiredPackageInfo().getName() == null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fileInfo[0]));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
