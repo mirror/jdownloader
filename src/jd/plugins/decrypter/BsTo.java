@@ -28,14 +28,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "http://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+(/[^/]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+(/[^/]+)?" })
 public class BsTo extends PluginForDecrypt {
 
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SINGLE = "http://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+/[^/]+";
+    private static final String TYPE_SINGLE = "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,7 +52,7 @@ public class BsTo extends PluginForDecrypt {
         }
         final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
         if (parameter.matches(TYPE_SINGLE)) {
-            final String finallink = br.getRegex("\"(http[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
+            final String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
             if (finallink == null) {
                 return null;
             }
