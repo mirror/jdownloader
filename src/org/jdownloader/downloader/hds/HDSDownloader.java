@@ -340,7 +340,7 @@ public class HDSDownloader extends DownloadInterface {
             final long secs = lastTimeStampMs.get() / 1000;
             if (secs > 0) {
                 final long sizePerSec = bytesWritten.get() / secs;
-                downloadable.setDownloadTotalBytes(sizePerSec * estimatedDurationSecs);
+                downloadable.setDownloadTotalBytes(Math.max(sizePerSec * estimatedDurationSecs, bytesWritten.get()));
             }
         }
     }
