@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -144,7 +145,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             postPage(br, br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + pssd);
         } else {
-            getPage(br, "/status.php?uid=" + id);
+            getPage(br, Request.getLocation("/status.php?uid=" + id, br.createGetRequest(parameter)));
         }
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
