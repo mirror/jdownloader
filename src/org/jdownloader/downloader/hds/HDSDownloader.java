@@ -180,7 +180,6 @@ public class HDSDownloader extends DownloadInterface {
             // StreamID UI24 Always 0.
             final int streamId = readInt24();
             int payloadToRead = dataSize + FLV_PACKET_HEADER_SIZE;
-
             payloadToRead -= write(type);
             payloadToRead -= writeInt24(dataSize);
             payloadToRead -= writeInt24(time & 0xffffff);
