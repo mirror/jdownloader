@@ -34,10 +34,8 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-/**
- * @author raztoki
- */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8?(\\?.+)?|$)" })
 public class GenericM3u8 extends PluginForHost {
 
@@ -59,6 +57,11 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
+    }
+
+    @Override
     public String getAGBLink() {
         return "";
     }
@@ -68,6 +71,7 @@ public class GenericM3u8 extends PluginForHost {
         return -1;
     }
 
+    @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         if (link.getPluginPatternMatcher().startsWith("m3u8")) {
             final String url = "http" + link.getPluginPatternMatcher().substring(4);

@@ -35,7 +35,6 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
-//Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8[^\\s<>\"']*" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
 
