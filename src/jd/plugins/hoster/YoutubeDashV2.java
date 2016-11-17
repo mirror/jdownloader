@@ -1252,6 +1252,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             }
                         });
                         httpServer.start();
+                        if (logger != null) {
+                            logger.info("Opened http server to serve meta on port " + httpServer.getPort());
+                        }
                         return httpServer;
                     } catch (final IOException e) {
                         if (logger != null) {
@@ -1265,10 +1268,15 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     final File ret = Application.getTempResource("ffmpeg_meta_" + UniqueAlltimeID.create());
                     try {
                         IO.writeStringToFile(ret, ffMpegMetaData.getFFmpegMetaData());
+                        if (logger != null) {
+                            logger.info("Wrote meta to " + ret);
+                        }
                         return ret;
                     } catch (final Throwable e) {
                         ret.delete();
-                        logger.log(e);
+                        if (logger != null) {
+                            logger.log(e);
+                        }
                     }
                     return null;
                 }
