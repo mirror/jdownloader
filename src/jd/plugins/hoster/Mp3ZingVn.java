@@ -21,6 +21,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,14 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  * @author noone2407
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/bai-hat/(\\S+)\\.html$" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.zing.vn" }, urls = { "http://mp3\\.zing\\.vn/bai-hat/(\\S+)\\.html$" })
 public class Mp3ZingVn extends PluginForHost {
 
     private String dllink = null;
@@ -56,7 +56,7 @@ public class Mp3ZingVn extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.getPage(url);
-        String filename = br.getRegex("<h1 class=\"txt-primary\">(.*?)<\\/h1>").getMatch(0);
+        String filename = br.getRegex("<s class=\"fn-name\">(.*?)<\\/s>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
