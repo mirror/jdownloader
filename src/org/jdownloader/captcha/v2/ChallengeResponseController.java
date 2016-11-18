@@ -39,6 +39,7 @@ import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverPuzzle;
+import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaSolver;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -125,6 +126,7 @@ public class ChallengeResponseController {
             if (StringUtils.isNotEmpty(JsonConfig.create(CaptchaSolutionsConfigInterface.class).getAPISecret())) {
                 addSolver(CaptchaSolutionsSolver.getInstance());
             }
+            //addSolver(TwoCaptchaSolver.getInstance());
             addSolver(EndCaptchaSolver.getInstance());
             // addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());

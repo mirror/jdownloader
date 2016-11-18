@@ -29,7 +29,6 @@ import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
 
 import jd.http.Browser;
@@ -70,8 +69,8 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (c instanceof RecaptchaV2Challenge || c instanceof AbstractRecaptcha2FallbackChallenge) {
-            return false;
+        if (c instanceof RecaptchaV2Challenge) {
+            return true;
         }
         if (c instanceof RecaptchaV1CaptchaChallenge) {
             return false;
@@ -87,46 +86,36 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
 
     protected <T> Challenge<T> getChallenge(CESSolverJob<T> job) throws SolverException {
         final Challenge<?> challenge = job.getChallenge();
-        if (challenge instanceof RecaptchaV2Challenge) {
-            Challenge<T> ret = (Challenge<T>) ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-            if (ret == null) {
-                throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
-            }
-            return ret;
-        } else {
-            return (Challenge<T>) challenge;
-        }
+        return (Challenge<T>) challenge;
     }
 
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
         Challenge<String> challenge = getChallenge(job);
-        // if (challenge instanceof RecaptchaV2Challenge) {
-        // if (false) {
-        // return;
-        // }
-        // RecaptchaV2Challenge rc2 = ((RecaptchaV2Challenge) challenge);
-        // ;
-        // Browser br = new Browser();
-        // try {
-        // br.setReadTimeout(5 * 60000);
-        // // Put your CAPTCHA image file, file object, input stream,
-        // // or vector of bytes here:
-        // job.setStatus(SolverStatus.SOLVING);
-        // long startTime = System.currentTimeMillis();
-        // PostFormDataRequest r = new PostFormDataRequest("http://api.captchasolutions.com/solve");
-        // ensureAPIKey();
-        // r.addFormData(new FormData("p", "nocaptcha"));
-        // r.addFormData(new FormData("googlekey", Encoding.urlEncode(rc2.getSiteKey())));
-        // r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
-        // r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
-        // br.getPage(r);
-        // System.out.println(br);
-        // } catch (Exception e) {
-        // job.getChallenge().sendStatsError(this, e);
-        // job.getLogger().log(e);
-        // }
-        // }
+        if (challenge instanceof RecaptchaV2Challenge) {
+            RecaptchaV2Challenge rc2 = ((RecaptchaV2Challenge) challenge);
+            ;
+            Browser br = new Browser();
+            try {
+                br.setReadTimeout(5 * 60000);
+                // Put your CAPTCHA image file, file object, input stream,
+                // or vector of bytes here:
+                job.setStatus(SolverStatus.SOLVING);
+                long startTime = System.currentTimeMillis();
+                PostFormDataRequest r = new PostFormDataRequest("http://api.captchasolutions.com/solve");
+                ensureAPIKey();
+                r.addFormData(new FormData("p", "nocaptcha"));
+                r.addFormData(new FormData("googlekey", Encoding.urlEncode(rc2.getSiteKey())));
+                r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
+                r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
+                r.addFormData(new FormData("pageurl", Encoding.urlEncode("http://" + rc2.getHost())));
+                br.getPage(r);
+                System.out.println(br);
+            } catch (Exception e) {
+                job.getChallenge().sendStatsError(this, e);
+                job.getLogger().log(e);
+            }
+        }
         super.solveCES(job);
     }
 

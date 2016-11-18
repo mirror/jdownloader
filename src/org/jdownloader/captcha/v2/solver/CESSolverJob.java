@@ -16,7 +16,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CESSolverJob<T> {
-
     private final SolverJob<T>    job;
     private volatile SolverStatus status;
     private CESBubble             bubble;
@@ -44,7 +43,6 @@ public class CESSolverJob<T> {
 
     public void setStatus(SolverStatus solverStatus) {
         this.status = solverStatus;
-
     }
 
     public SolverStatus getStatus() {
@@ -71,15 +69,19 @@ public class CESSolverJob<T> {
     }
 
     public void setAnswer(AbstractResponse<T> abstractResponse) {
-
         if (job.addAnswer(abstractResponse)) {
             answered = true;
-            setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer(abstractResponse.getValue() + ""), NewTheme.I().getIcon(IconKey.ICON_OK, 20));
+            setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer(abrev(abstractResponse.getValue() + "")), NewTheme.I().getIcon(IconKey.ICON_OK, 20));
         } else {
-            setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer_bad(abstractResponse.getValue() + ""), NewTheme.I().getIcon(IconKey.ICON_BAD, 20));
-
+            setStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer_bad(abrev(abstractResponse.getValue() + "")), NewTheme.I().getIcon(IconKey.ICON_BAD, 20));
         }
+    }
 
+    private String abrev(String string) {
+        if (string.length() <= 10) {
+            return string;
+        }
+        return string.substring(0, 10) + "...";
     }
 
     public void hideBubble() {
@@ -93,5 +95,4 @@ public class CESSolverJob<T> {
             bubble.hideBubble(5000);
         }
     }
-
 }
