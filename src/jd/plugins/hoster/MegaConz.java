@@ -75,6 +75,7 @@ public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
     private final String      USE_TMP   = "USE_TMP_V2";
+    private final String      HIDE_APP  = "HIDE_APP";
     private final String      encrypted = ".encrypted";
     private final String      API_URL   = "https://eu.api.mega.co.nz";
 
@@ -268,7 +269,9 @@ public class MegaConz extends PluginForHost {
             query.addAll(additionalUrlQuery.list());
         }
         final PostRequest request = new PostRequest(API_URL + "/cs?" + query);
-        request.getHeaders().put("APPID", "JDownloader");
+        if (!getPluginConfig().getBooleanProperty(HIDE_APP, false)) {
+            request.getHeaders().put("APPID", "JDownloader");
+        }
         request.setContentType("text/plain; charset=UTF-8");
         if (postParams != null) {
             final HashMap<String, Object> sendParams = new HashMap<String, Object>();
@@ -830,6 +833,7 @@ public class MegaConz extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Do not send application identifier?")).setDefaultValue(false));
     }
 
     private static Object DECRYPTLOCK = new Object();
