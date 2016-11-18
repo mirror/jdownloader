@@ -201,9 +201,16 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML("This document is available only to its owner\\.")) {
-                link.getLinkStatus().setStatusText("This document is available only to its owner");
-                link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-                return AvailableStatus.TRUE;
+                final Account acc = account != null ? account : AccountController.getInstance().getValidAccount(this);
+                login(br, acc);
+                br.setFollowRedirects(true);
+                br.getPage(link.getDownloadURL());
+                if (br.containsHTML("This document is available only to its owner\\.")) {
+                    logger.info("Log in done, still get \"This document is available only to its owner\"");
+                    link.getLinkStatus().setStatusText("This document is available only to its owner");
+                    link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                    return AvailableStatus.TRUE;
+                }
             }
             filename = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
             finalUrl = br.getRegex("var src = \\'(https?://[^<>\"]*?)\\';").getMatch(0);
