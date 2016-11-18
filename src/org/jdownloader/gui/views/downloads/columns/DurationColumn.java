@@ -20,9 +20,7 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     @Override
@@ -49,11 +47,13 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             long time = ((DownloadLink) value).getView().getDownloadTime();
-            PluginProgress progress = ((DownloadLink) value).getPluginProgress();
+            final PluginProgress progress = ((DownloadLink) value).getPluginProgress();
             if (progress instanceof DownloadPluginProgress) {
                 time = time + ((DownloadPluginProgress) progress).getDuration();
             }
-            if (time > 0) { return TimeFormatter.formatMilliSeconds(time, 0); }
+            if (time > 0) {
+                return TimeFormatter.formatMilliSeconds(time, 0);
+            }
         }
         return null;
     }
