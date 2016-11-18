@@ -9,18 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.NullInputStream;
-import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.translate._JDT;
-
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
@@ -38,13 +26,25 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.NullInputStream;
+import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.translate._JDT;
+
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class SegmentDownloader extends DownloadInterface {
 
-    private volatile long                     bytesWritten = 0l;
+    private volatile long                     bytesWritten   = 0l;
     private Downloadable                      downloadable;
     private final DownloadLink                link;
-    private long                              startTimeStamp;
+    private long                              startTimeStamp = -1;
     private final LogInterface                logger;
     private volatile URLConnectionAdapter     currentConnection;
     private ManagedThrottledConnectionHandler connectionHandler;
@@ -56,7 +56,7 @@ public class SegmentDownloader extends DownloadInterface {
 
     private final Browser                     obr;
 
-    private final List<Segment>               segments     = new ArrayList<Segment>();
+    private final List<Segment>               segments       = new ArrayList<Segment>();
 
     public SegmentDownloader(final DownloadLink link, Downloadable dashDownloadable, Browser br2, String baseUrl, String[] segments) {
         for (final String segment : segments) {
@@ -252,7 +252,10 @@ public class SegmentDownloader extends DownloadInterface {
                     LogSource.exception(logger, e);
                 }
                 try {
-                    downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    final long startTimeStamp = getStartTimeStamp();
+                    if (startTimeStamp > 0) {
+                        downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    }
                 } catch (final Throwable e) {
                 }
                 downloadable.removePluginProgress(downloadPluginProgress);
