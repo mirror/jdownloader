@@ -375,6 +375,10 @@ public class VipCocoleechCom extends PluginForHost {
         this.getAPISafe(API_ENDPOINT + "/login.php?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
         currLogintoken = PluginJSonUtils.getJsonValue(br, "token");
         if (currLogintoken == null) {
+            final String code = PluginJSonUtils.getJsonValue(br, "code");
+            if (br.containsHTML("Invalid username or password") || "102".equals(code)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
