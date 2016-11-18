@@ -590,7 +590,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 return this.requestFileInformation(downloadLink, retry + 1);
             }
-            if (this.contentType != null && this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
+            if (this.contentType != null && (this.contentType.startsWith("text/html") || this.contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 if (urlConnection.getRequest() instanceof HeadRequest) {
