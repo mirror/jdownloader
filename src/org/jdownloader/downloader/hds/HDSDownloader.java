@@ -74,7 +74,7 @@ public class HDSDownloader extends DownloadInterface {
     private final AtomicLong                        bytesWritten           = new AtomicLong(0);
     private final DownloadLinkDownloadable          downloadable;
 
-    private long                                    startTimeStamp;
+    private long                                    startTimeStamp         = -1;
     private final LogInterface                      logger;
     private URLConnectionAdapter                    currentConnection;
     private final ManagedThrottledConnectionHandler connectionHandler;
@@ -450,7 +450,10 @@ public class HDSDownloader extends DownloadInterface {
                     LogSource.exception(logger, e);
                 }
                 try {
-                    downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    final long startTimeStamp = getStartTimeStamp();
+                    if (startTimeStamp > 0) {
+                        downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    }
                 } catch (final Throwable e) {
                 }
                 downloadable.removePluginProgress(downloadPluginProgress);

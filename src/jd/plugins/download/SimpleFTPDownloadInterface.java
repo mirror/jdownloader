@@ -257,7 +257,10 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                     LogSource.exception(logger, e);
                 }
                 try {
-                    downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    final long startTimeStamp = getStartTimeStamp();
+                    if (startTimeStamp > 0) {
+                        downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    }
                 } catch (final Throwable e) {
                 }
                 downloadable.removePluginProgress(downloadPluginProgress);
