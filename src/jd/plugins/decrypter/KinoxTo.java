@@ -18,8 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:www\\.)?kinox\\.(?:to|tv|nu|me|pe)/Stream/[A-Za-z0-9\\-_]+\\.html" })
 public class KinoxTo extends antiDDoSForDecrypt {
 
@@ -41,11 +42,10 @@ public class KinoxTo extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    private String                  addr_id;
-    private Browser                 br2            = null;
+    private String addr_id;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -64,7 +64,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
         if (addr_id == null) {
             addr_id = url_name;
         }
-        br2 = br.cloneBrowser();
+        Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (this.br.containsHTML("id=\"SeasonSelection\"")) {
             if (series_id == null) {
@@ -85,18 +85,18 @@ public class KinoxTo extends antiDDoSForDecrypt {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     getPage(br2, "/aGET/MirrorByEpisode/?Addr=" + addr_id + "&SeriesID=" + series_id + "&Season=" + season_number + "&Episode=" + episode);
                     /* Crawl Episode --> Find mirrors */
-                    decryptMirrors(season_number, episode);
+                    decryptMirrors(decryptedLinks, br2, season_number, episode);
                 }
             }
         } else {
             /* Crawl all Mirrors of a movie */
-            decryptMirrors(null, null);
+            decryptMirrors(decryptedLinks, br2, null, null);
         }
 
         return decryptedLinks;
     }
 
-    private void decryptMirrors(final String season_number, final String episode) throws Exception {
+    private void decryptMirrors(List<DownloadLink> decryptedLinks, Browser br2, final String season_number, final String episode) throws Exception {
         final String[] mirrors = br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0);
         if (mirrors == null || mirrors.length == 0) {
             throw new DecrypterException("Decrypter broken");
@@ -128,7 +128,6 @@ public class KinoxTo extends antiDDoSForDecrypt {
                 }
             }
             if (hoster_id == null || mirror_id == null) {
-                decryptedLinks = null;
                 return;
             }
             String geturl = "/aGET/Mirror/" + addr_id + "&Hoster=" + hoster_id + "&Mirror=" + mirror_id;
@@ -140,7 +139,6 @@ public class KinoxTo extends antiDDoSForDecrypt {
             getPage(br3, geturl);
             String finallink = PluginJSonUtils.getJson(br3, "Stream");
             if (finallink == null) {
-                decryptedLinks = null;
                 return;
             }
             finallink = new Regex(finallink, "(?:href|src)\\s*=\\s*('|\"|)(.*?)\\1").getMatch(1);
