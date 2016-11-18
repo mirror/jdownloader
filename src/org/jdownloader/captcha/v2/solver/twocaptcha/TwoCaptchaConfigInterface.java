@@ -10,16 +10,10 @@ import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface TwoCaptchaConfigInterface extends ChallengeSolverConfig {
     @AboutConfig
-    @DescriptionForConfigEntry("Your CheapCaptcha.com Username")
-    String getUserName();
+    @DescriptionForConfigEntry("Your 2captcha.com apiKey (https://2captcha.com/setting)")
+    String getApiKey();
 
-    void setUserName(String jser);
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Your CheapCaptcha.com Password")
-    String getPassword();
-
-    void setPassword(String jser);
+    void setApiKey(String jser);
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is required after changes")
@@ -36,5 +30,4 @@ public interface TwoCaptchaConfigInterface extends ChallengeSolverConfig {
     boolean isFeedBackSendingEnabled();
 
     void setFeedBackSendingEnabled(boolean b);
-
 }
