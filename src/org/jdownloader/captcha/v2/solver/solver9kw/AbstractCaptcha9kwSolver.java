@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -22,7 +19,6 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.captcha.v2.SolverStatus;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
@@ -32,8 +28,10 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> {
     private String                     accountStatusString;
@@ -57,15 +55,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
 
     protected Challenge<T> getChallenge(SolverJob<?> job) throws SolverException {
         final Challenge<?> challenge = job.getChallenge();
-        if (challenge instanceof RecaptchaV2Challenge) {
-            Challenge<T> ret = (Challenge<T>) ((RecaptchaV2Challenge) challenge).createBasicCaptchaChallenge();
-            if (ret == null) {
-                throw new SolverException(SkipReason.PHANTOM_JS_MISSING.getExplanation(null));
-            }
-            return ret;
-        } else {
-            return (Challenge<T>) challenge;
-        }
+        return (Challenge<T>) challenge;
     }
 
     protected Challenge<T> getChallenge(CESSolverJob<?> solverJob) throws SolverException {
@@ -466,7 +456,6 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-
         boolean badfeedbackstemp = config.getbadfeedbacks();
         if (badfeedbackstemp == true && config.isfeedback() == true) {
             if (counterNotOK.get() > 10 && counterSend.get() > 10 && counterSolved.get() > 10 && counter.get() > 10 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {

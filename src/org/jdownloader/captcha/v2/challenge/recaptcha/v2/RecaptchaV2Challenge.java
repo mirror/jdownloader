@@ -88,7 +88,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     @Override
     public AbstractResponse<String> parseAPIAnswer(String result, String resultFormat, ChallengeSolver<?> solver) {
-        if (RAWTOKEN.equals(resultFormat)) {
+        if (RAWTOKEN.equals(resultFormat) || "extension".equals(resultFormat)) {
             return new CaptchaResponse(this, solver, result, 100);
         }
         BasicCaptchaChallenge basic = createBasicCaptchaChallenge();

@@ -137,7 +137,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                     cls = cls.getSuperclass();
                 }
                 job.setID(challenge.getId().getID());
-                job.setHoster(challenge.getPlugin().getHost());
+                job.setHoster(challenge.getHost());
                 job.setCaptchaCategory(challenge.getTypeID());
                 job.setTimeout(challenge.getTimeout());
                 job.setCreated(challenge.getCreated());
@@ -150,7 +150,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                     cls = cls.getSuperclass();
                 }
                 job.setID(challenge.getId().getID());
-                job.setHoster(challenge.getPlugin().getHost());
+                job.setHoster(challenge.getHost());
                 job.setCaptchaCategory(challenge.getTypeID());
                 job.setTimeout(challenge.getTimeout());
                 job.setCreated(challenge.getCreated());
@@ -163,7 +163,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                     cls = cls.getSuperclass();
                 }
                 job.setID(challenge.getId().getID());
-                job.setHoster(challenge.getPlugin().getHost());
+                job.setHoster(challenge.getHost());
                 job.setCaptchaCategory(challenge.getTypeID());
                 job.setTimeout(challenge.getTimeout());
                 job.setCreated(challenge.getCreated());

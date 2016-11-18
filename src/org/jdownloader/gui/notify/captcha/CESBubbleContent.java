@@ -34,31 +34,18 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 public class CESBubbleContent extends AbstractBubbleContentPanel {
-
     private JLabel                status;
-
     private long                  startTime;
-
     private JLabel                duration;
-
     private CESChallengeSolver<?> solver;
-
     private CESSolverJob<?>       job;
-
     private JLabel                statusLbl;
-
     private JLabel                timeoutLbl;
-
     private JLabel                durationLbl;
-
     private ExtButton             button;
-
     private CESBubble             bubble;
-
     private SolverStatus          latestStatus;
-
     private JLabel                creditsLabel;
-
     private JLabel                credits;
 
     public CESBubbleContent(final CESChallengeSolver<?> solver, final CESSolverJob<?> cesSolverJob, int timeoutms) {
@@ -74,29 +61,21 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         east.add(timeoutLbl = new JLabel(_GUI.T.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getService().getName())), "hidemode 3,spanx");
         timeoutLbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
         SwingUtils.toBold(timeoutLbl);
-
         east.add(durationLbl = createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_duration())), "hidemode 3");
         east.add(duration = new JLabel(""), "hidemode 3");
         east.add(creditsLabel = createHeaderLabel((_GUI.T.CESBubbleContent_CESBubbleContent_credits())), "hidemode 3");
         east.add(credits = new JLabel(""), "hidemode 3");
         east.add(statusLbl = createHeaderLabel((_GUI.T.CESBubbleContent_CESBubbleContent_status())), "hidemode 3");
-
         east.add(status = new JLabel(""), "hidemode 3");
         add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,aligny top");
         add(east);
-        if (CFG_BUBBLE.CFG.isCaptchaExchangeSolverBubbleImageVisible()) {
+        if (CFG_BUBBLE.CFG.isCaptchaExchangeSolverBubbleImageVisible() && !(cesSolverJob.getChallenge() instanceof RecaptchaV2Challenge)) {
             Challenge<?> ic = cesSolverJob.getChallenge();
-            if (ic instanceof RecaptchaV2Challenge) {
-                ic = ((RecaptchaV2Challenge) ic).createBasicCaptchaChallenge();
-            }
             if (ic instanceof ImageCaptchaChallenge) {
                 try {
                     ImageIcon icon = null;
-
                     icon = new ImageIcon(((ImageCaptchaChallenge) ic).getAnnotatedImage());
-
                     if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
-
                         icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));
                     }
                     add(new JSeparator(), "spanx,pushx,growx");
@@ -106,11 +85,9 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
                 }
             }
         }
-
         progressCircle.setIndeterminate(true);
         progressCircle.setValue(0);
         addMouseListener(new MouseListener() {
-
             @Override
             public void mouseReleased(MouseEvent e) {
             }
@@ -146,7 +123,6 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
                 if (bubble != null) {
                     bubble.hideBubble(0);
                 }
-
             }
         }), "hidemode 3,spanx,pushx,growx");
         updateTimer(timeoutms);
@@ -154,7 +130,6 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
     @Override
     protected void addProgress() {
-
     }
 
     @Override
@@ -169,7 +144,6 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         if (s != null) {
             latestStatus = s;
         }
-
         credits.setText(solver.getAccountStatusString());
         if (latestStatus == null) {
             status.setVisible(false);
@@ -181,7 +155,6 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
             status.setIcon(latestStatus.getIcon());
         }
         duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-
     }
 
     @Override
@@ -202,7 +175,6 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         status.setVisible(rest <= 0);
         creditsLabel.setVisible(StringUtils.isNotEmpty(credits.getText()));
         credits.setVisible(StringUtils.isNotEmpty(credits.getText()));
-
         if (bubble != null) {
             bubble.pack();
             BubbleNotify.getInstance().relayout();
@@ -212,5 +184,4 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
     public void setBubble(CESBubble cesBubble) {
         bubble = cesBubble;
     }
-
 }

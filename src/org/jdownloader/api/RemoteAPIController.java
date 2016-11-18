@@ -12,10 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.DefaultDocsPageFactory;
@@ -83,6 +79,7 @@ import org.jdownloader.api.system.SystemAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 import org.jdownloader.api.ui.UIAPIImpl;
 import org.jdownloader.api.useragent.UserAgentController;
+import org.jdownloader.captcha.api.CaptchaForwarder;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
 import org.jdownloader.myjdownloader.client.bindings.ClientApiNameSpace;
@@ -91,6 +88,10 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
+
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
 
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
@@ -304,6 +305,7 @@ public class RemoteAPIController {
         register(eventsapi = new EventsAPI());
         validateInterfaces(EventsAPIInterface.class, EventsInterface.class);
         register(CaptchaAPISolver.getInstance());
+        register(CaptchaForwarder.getInstance());
         register(CaptchaAPISolver.getInstance().getEventPublisher());
         register(new JDAPIImpl());
         DownloadWatchDogEventPublisher downloadWatchDogEventPublisher = new DownloadWatchDogEventPublisher();
