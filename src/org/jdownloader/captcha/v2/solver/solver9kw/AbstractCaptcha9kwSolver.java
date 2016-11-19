@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -29,9 +32,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 
 public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> {
     private String                     accountStatusString;
@@ -384,7 +384,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
         RequestOptions options = new RequestOptions(config);
         Challenge<T> captchaChallenge = getChallenge(solverJob);
         validateApiKey(solverJob);
-        setdebug(solverJob, "Config - Prio: " + options.getPriothing() + " - Timeout: " + options.getTimeoutthing() + "s/" + (config.getCaptchaOther9kwTimeout() / 1000) + "s - Parallel: " + config.getThreadpoolSize());
+        setdebug(solverJob, "Config - Prio: " + options.getPriothing() + " - Timeout: " + options.getTimeoutthing() + "s - Parallel: " + config.getThreadpoolSize());
         setdebug(solverJob, "Start Captcha - GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
@@ -432,69 +432,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
                 }
             }
         }
-        if (config.getwhitelisttimeoutcheck()) {
-            if (config.getwhitelisttimeout() != null) {
-                if (config.getwhitelisttimeout().length() > 5) {
-                    if (config.getwhitelisttimeout().contains(captchaChallenge.getTypeID())) {
-                        setdebug(solverJob, "Hoster on whitelist with other 9kw timeout - " + captchaChallenge.getTypeID());
-                        options.setPriothing((config.getCaptchaOther9kwTimeout() / 1000));
-                    } else {
-                        setdebug(solverJob, "Hoster not on whitelist with other 9kw timeout - " + captchaChallenge.getTypeID());
-                    }
-                }
-            }
-        }
-        if (config.getblacklisttimeoutcheck()) {
-            if (config.getblacklisttimeout() != null) {
-                if (config.getblacklisttimeout().length() > 5) {
-                    if (config.getblacklisttimeout().contains(captchaChallenge.getTypeID())) {
-                        setdebug(solverJob, "Hoster on blacklist with other 9kw timeout - " + captchaChallenge.getTypeID());
-                    } else {
-                        options.setTimeoutthing(config.getCaptchaOther9kwTimeout() / 1000);
-                        setdebug(solverJob, "Hoster not on blacklist with other 9kw timeout - " + captchaChallenge.getTypeID());
-                    }
-                }
-            }
-        }
-        boolean badfeedbackstemp = config.getbadfeedbacks();
-        if (badfeedbackstemp == true && config.isfeedback() == true) {
-            if (counterNotOK.get() > 10 && counterSend.get() > 10 && counterSolved.get() > 10 && counter.get() > 10 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
-                if ((counterNotOK.get() / counter.get() * 100) > 30 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
-                    setdebug(solverJob, "Too many bad feedbacks like 30% captchas with NotOK. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
-                    showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
-                }
-            }
-        }
-        boolean badnofeedbackstemp = config.getbadnofeedbacks();
-        if (badnofeedbackstemp == true && config.isfeedback() == true) {
-            if (counterSend.get() > 10 && counter.get() > 10) {
-                if (((counterOK.get() + counterNotOK.get() + counterInterrupted.get()) / counter.get() * 100) < 50) {
-                    setdebug(solverJob, "Too many captchas without feedbacks like OK or NotOK. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
-                    showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
-                }
-            }
-        }
-        boolean getbadtimeouttemp = config.getbadtimeout();
-        if (getbadtimeouttemp == true) {
-            if (counterSend.get() > 5 && counter.get() > 5 && counterSolved.get() > 5) {
-                if (options.getPriothing() == 0 && (config.getDefaultTimeout() / 1000) < 90) {
-                    setdebug(solverJob, "Your max. timeout for 9kw.eu is really low. - " + "Timeout: " + (config.getDefaultTimeout() / 1000) + "s");
-                    showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_badtimeout_errortext());
-                } else if ((config.getDefaultTimeout() / 1000) < (config.getCaptchaOther9kwTimeout() / 1000)) {
-                    setdebug(solverJob, "Othertimeout as second max. timeout from the black-/whitelist is higher than your default timeout. - " + "Timeout: " + (config.getDefaultTimeout() / 1000) + "s" + " - OtherTimeout: " + (config.getCaptchaOther9kwTimeout() / 1000) + "s");
-                    showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_baderrorsanduploads_errortext());
-                }
-            }
-        }
-        boolean getbaderrorsanduploadstemp = config.getbaderrorsanduploads();
-        if (getbaderrorsanduploadstemp == true) {
-            if (counterSendError.get() > 10 || counterInterrupted.get() > 10) {
-                if (((counterSendError.get() + counterInterrupted.get()) / counter.get() * 100) > 50 || counterOK.get() < 10 && counterNotOK.get() > 100) {
-                    setdebug(solverJob, "You have many send errors or interrupted captchas. - " + "OK: " + counterOK.get() + " NotOK: " + counterNotOK.get() + " Solved: " + counterSolved.get() + " All: " + counter.get());
-                    showMessageAndQuit(_GUI.T.NinekwService_createPanel_error9kwtitle(), _GUI.T.NinekwService_createPanel_notification_baderrorsanduploads_errortext());
-                }
-            }
-        }
+
         String hosterOptions = config.gethosteroptions();
         if (hosterOptions != null && hosterOptions.length() > 5) {
             String[] list = hosterOptions.split(";");
