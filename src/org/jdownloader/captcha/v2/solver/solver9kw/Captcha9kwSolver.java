@@ -2,6 +2,8 @@ package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
 
+import jd.http.Browser;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -11,8 +13,6 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-
-import jd.http.Browser;
 
 public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
     private static final Captcha9kwSolver INSTANCE = new Captcha9kwSolver();
@@ -111,7 +111,7 @@ public class Captcha9kwSolver extends AbstractCaptcha9kwSolver<String> {
             qi.appendEncoded("version", "1.2");
             qi.appendEncoded("data-sitekey", rcChallenge.getSiteKey());
             qi.appendEncoded("securetoken", rcChallenge.getSecureToken());
-            qi.appendEncoded("pageurl", rcChallenge.getHost());
+            qi.appendEncoded("pageurl", rcChallenge.getSiteDomain());
             qi.appendEncoded("interactive", 1 + "");
             UrlQuery queryPoll = createQueryForPolling();
             Browser br = new Browser();
