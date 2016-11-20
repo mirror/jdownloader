@@ -12,8 +12,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-
 @DecrypterPlugin(revision = "$Revision: 32651 $", interfaceVersion = 3, names = { "gameofscanlation.moe" }, urls = { "https?://(www\\.)?gameofscanlation\\.moe/(projects/[^/]+/|threads/[^/]+)chapter(-?\\d+(-\\d+)?)?\\.\\d+" })
 public class GameOfScanlation extends PluginForDecrypt {
 
@@ -47,25 +45,19 @@ public class GameOfScanlation extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)(\\s*\\|\\s*Game of Scanlation\\s*)?</title>").getMatch(0));
-        final String pages[][] = br.getRegex("src=\"(https?://gameofscanlation.moe/data/attachment-files/.*?)\".*?-\\s*(?:Page\\s*)?(\\d+)").getMatches();
+        final String pages[] = br.getRegex("src=\"(https?://gameofscanlation.moe/data/attachment-files/.*?)\"").getColumn(0);
         if (pages != null) {
             int index = 0;
             final int padLength = padLength(pages.length);
-            for (final String page[] : pages) {
+            for (final String page : pages) {
                 index++;
-                String url = page[0];
+                String url = page;
                 if (url.contains("pagespeed")) {
                     url = url.replaceFirst("\\.pagespeed.+$", "");
                     url = url.replaceFirst("/x", "/");
                 }
                 final String ext = getFileNameExtensionFromURL(url);
-                String pageIndex = page[1];
-                if (pageIndex == null) {
-                    pageIndex = new Regex(url, ".*?(\\d+)" + ext).getMatch(0);
-                }
-                if (pageIndex == null) {
-                    pageIndex = String.valueOf(index);
-                }
+                String pageIndex = String.valueOf(index);
                 pageIndex = String.format(Locale.US, "%0" + padLength + "d", Integer.parseInt(pageIndex));
                 final DownloadLink link = createDownloadlink("directhttp://" + url);
                 link.setAvailable(true);
