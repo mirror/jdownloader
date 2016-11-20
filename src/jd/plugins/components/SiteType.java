@@ -15,16 +15,19 @@ public class SiteType {
          * examples <a href="http:/palcomix.com/">palcomix.com</a>
          */
         ArlesImageWebPageCreator,
-        /**
-         * Open source image board: <a href="https://github.com/r888888888/danbooru">danbooru github project</a><br />
-         * example: <a href="http://danbooru.donmai.us/">danbooru.donmai.us</a>
-         */
-        DaddyScripts_FileHostV2,
+
         /**
          * File host script: <a href="http://www.daddyscripts.com/products.php?name=daddys_file_host">Daddy's File Host</a><br />
          * example: <a href="http://dosya.tc/">dosya.tc</a>
          */
+        DaddyScripts_FileHostV2,
+
+        /**
+         * Open source image board: <a href="https://github.com/r888888888/danbooru">danbooru github project</a><br />
+         * example: <a href="http://danbooru.donmai.us/">danbooru.donmai.us</a>
+         */
         Danbooru,
+
         /**
          * Porn website/script: <a href="http://www.evilangel.com/">evilangel.com</a><br />
          * example: <a href="http://analacrobats.com/">analacrobats.com</a>
@@ -48,11 +51,13 @@ public class SiteType {
 
         /**
          * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
-         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
-         * >http://codecanyon.net/item/imgshot-image-hosting- script/2558257</a>.<br />
+         * Can be bought e.g. from here:
+         * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
+         * script/2558257</a>.<br />
          * <b>Main decrypter class:</b> ImgShotDecrypt<br />
          * <b>Example that suits main decrypter class:</b> <a href="http:/imgshot.com/">imgshot.com</a><br />
-         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a> <br />
+         * <b>Example that does NOT suit main decrypter class (needs separate host class):</b> <a href="http:/imgbar.net/">imgbar.net</a>
+         * <br />
          * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
@@ -80,15 +85,18 @@ public class SiteType {
          * <a href="https://mfscripts.com/wurlie/overview.html">Wurlie - PHP Short Url Script</a>
          */
         MFScripts_Wurlie,
+
         /**
          * <a href="http://ouo.io/">ouo.io</a> linkcryptor script, usually with reCaptchaV2 as protection. <a
          */
         OuoIoCryptor,
+
         /**
-         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by <a
-         * href="http://pimproll.com/">pimproll.com</a>
+         * <a href="http://www.hostedtube.com/">hosted tube</a> porn script/template provided by
+         * <a href="http://pimproll.com/">pimproll.com</a>
          */
         PimpRoll_HostedTube,
+
         /**
          * <a href="http://www.brazzers.com/">brazzers.com</a> porn script/template used for a lot of porn paysites.<br />
          * Example#2: <a href="http://babes.com/">babes.com</a><br />
@@ -106,6 +114,7 @@ public class SiteType {
          * Script used by some chinese file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what to call this script.
          */
         Unknown_ChineseFileHosting,
+
         /**
          * Script used by some multihosters e.g. <a href="http://www.premiumax.net/">premiumax.net</a>. Not sure what to call this script.
          */
