@@ -72,7 +72,7 @@ public class RequestOptions {
         cph = config.gethour();
         cpm = config.getminute();
         priothing = config.getprio();
-        timeoutthing = (config.getDefaultTimeout() / 1000);
+        timeoutthing = (config.getDefaultMaxTimeout() / 1000);
         selfsolve = config.isSelfsolve();
         confirm = config.isconfirm();
     }

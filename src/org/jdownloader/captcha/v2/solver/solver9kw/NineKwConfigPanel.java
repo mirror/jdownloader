@@ -309,13 +309,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         MigPanel toolbar9a = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar9a.add(label(" "), "width 135!");
 
-        Spinner neunkwtimeoutcaptchas = new Spinner(CFG_9KWCAPTCHA.DEFAULT_TIMEOUT);
-        neunkwtimeoutcaptchas.setToolTipText(_GUI.T.NinekwService_createPanel_9kwtimeout_tooltiptext());
-        toolbar9a.add(neunkwtimeoutcaptchas);
-        toolbar9a.add(label(_GUI.T.NinekwService_createPanel_9kwtimeout()));
-        Tab1_9kw.add(toolbar9a, "gapleft 33,spanx,pushx,growx");
-        Tab1_9kw.add(addHelpText9kw(_GUI.T.NinekwService_createPanel_9kwtimeout_tooltiptext(), "105"), "gapleft 33,spanx,pushx,growx");
-
         tabbedPane.addTab(_GUI.T.NinekwService_createPanel_general_header(), Tab1_9kw);
 
         // Tab 2

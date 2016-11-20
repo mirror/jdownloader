@@ -164,7 +164,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the option selfsolve")
+    @DescriptionForConfigEntry("Activate the option selfsolve (sandbox)")
     boolean isSelfsolve();
 
     void setSelfsolve(boolean b);
@@ -172,19 +172,11 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is required after changes")
     @DefaultIntValue(1)
-    @SpinnerValidator(min = 0, max = 10)
+    @SpinnerValidator(min = 0, max = 20)
     @DescriptionForConfigEntry("Max. Captchas Parallel")
     int getThreadpoolSize();
 
     void setThreadpoolSize(int size);
-
-    @AboutConfig
-    @DefaultIntValue(600000)
-    @SpinnerValidator(min = 60000, max = 3999000)
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Other max. timeout only for 9kw Service")
-    int getCaptchaOther9kwTimeout();
-
-    void setCaptchaOther9kwTimeout(int ms);
 
     @AboutConfig
     @DefaultStringValue("")
@@ -229,40 +221,12 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void sethighqueue(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Activate the badfeedbacks dialog")
-    boolean getbadfeedbacks();
-
-    void setbadfeedbacks(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the badnofeedbacks dialog")
-    boolean getbadnofeedbacks();
-
-    void setbadnofeedbacks(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Activate the badtimeout dialog")
-    boolean getbadtimeout();
-
-    void setbadtimeout(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the errors/uploads dialog")
-    boolean getbaderrorsanduploads();
-
-    void setbaderrorsanduploads(boolean b);
-
-    @AboutConfig
     @DefaultIntValue(600000)
-    @SpinnerValidator(min = 60000, max = 3999000)
-    @DescriptionForConfigEntry("Default Timeout in ms")
-    int getDefaultTimeout();
+    @SpinnerValidator(min = 75000, max = 3999000)
+    @DescriptionForConfigEntry("Default max. Timeout in ms")
+    int getDefaultMaxTimeout();
 
-    void setDefaultTimeout(int ms);
+    void setDefaultMaxTimeout(int ms);
 
     @AboutConfig
     @DefaultJsonObject("{\"jdownloader.org\":60000}")
