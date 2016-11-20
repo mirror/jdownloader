@@ -45,8 +45,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
     public static enum CAPTCHA_SERVICE {
         NONE(T.T.action_captcha_none()),
         NINEKWEU("9kw.eu"),
-        DEATHBYCAPTCHA("deathbycaptcha.eu"),
-        CAPTCHABROTHERHOOD("captchabrotherhood.com");
+        DEATHBYCAPTCHA("deathbycaptcha.eu");
 
         private final String readableName;
 
