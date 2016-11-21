@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
@@ -34,15 +35,15 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(?:#dir/path=%2F.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#dir/path=%.+)";
-    private static final String TYPE_FOLDER_GENERAL                   = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
+    private static final String TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#(dir|list)/path=%.+)";
+    private static final String TYPE_FOLDER_GENERAL                   = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#(list|dir)/path=%2F.+))";
     private static final String TYPE_FOLDER_NORMAL                    = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "https?://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_SHORT                     = "https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
@@ -139,14 +140,12 @@ public class PanBaiduCom extends PluginForDecrypt {
         boolean is_subfolder = false;
         // Jump into folder or get content of the main link
         if (param.toString().matches(TYPE_FOLDER_SUBFOLDER) || param.toString().matches(TYPE_FOLDER_GENERAL)) {
-            dirName = new Regex(param.toString(), "(?:dir/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
+            dirName = new Regex(param.toString(), "(?:(?:dir|list)/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
             is_subfolder = true;
         }
         br.getHeaders().put("Accept", "Accept");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(Encoding.unescape(dirName)));
         int currentpage = 1;
         long errno = 0;
         final int maxpages = 10;
@@ -154,7 +153,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         int currentlinksnum = 0;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<Object> ressourcelist = null;
-
+        final HashMap<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
@@ -246,6 +245,19 @@ public class PanBaiduCom extends PluginForDecrypt {
                     } else {
                         dl.setAvailable(true);
                     }
+                    String path = (String) entries.get("path");
+                    if (path != null) {
+                        path = new Regex(path, "(/.+/)").getMatch(0);
+                        FilePackage fp = filePackages.get(path);
+                        if (fp == null) {
+                            fp = FilePackage.getInstance();
+                            final String name = new Regex(path, ".+/(.+)/").getMatch(0);
+                            fp.setName(name);
+                            filePackages.put(path, fp);
+                        }
+                        fp.add(dl);
+                    }
+
                     /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
                     // if (md5 != null) {
                     // they provide wrong md5 values
