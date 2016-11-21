@@ -12,6 +12,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.DefaultDocsPageFactory;
@@ -41,6 +45,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
@@ -88,10 +93,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
-
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
 
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
@@ -530,6 +531,11 @@ public class RemoteAPIController {
             @Override
             public String getRequestedPath() {
                 return "/" + namespace + "/" + methodName;
+            }
+
+            @Override
+            public HttpConnectionType getHttpConnectionType() {
+                return HttpConnectionType.GET;
             }
 
             @Override
