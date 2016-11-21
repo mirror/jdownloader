@@ -32,6 +32,22 @@ public class LinkgrabberSelectionSandbox {
         return ret;
     }
 
+    public boolean isLinkContext() {
+        if (selectionInfo != null) {
+            return selectionInfo.isLinkContext();
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isPackageContext() {
+        if (selectionInfo != null) {
+            return selectionInfo.isPackageContext();
+        } else {
+            return false;
+        }
+    }
+
     public CrawledPackageSandbox[] getPackages() {
         if (selectionInfo == null) {
             return null;
@@ -47,17 +63,23 @@ public class LinkgrabberSelectionSandbox {
     public CrawledPackageSandbox getContextPackage() {
         if (selectionInfo == null) {
             return new CrawledPackageSandbox();
+        } else if (isPackageContext()) {
+            final CrawledPackage cl = selectionInfo.getContextPackage();
+            return cl == null ? null : new CrawledPackageSandbox(cl);
+        } else {
+            return null;
         }
-        final CrawledPackage cl = selectionInfo.getContextPackage();
-        return cl == null ? null : new CrawledPackageSandbox(cl);
     }
 
     public CrawledLinkSandbox getContextLink() {
         if (selectionInfo == null) {
             return new CrawledLinkSandbox();
+        } else if (isLinkContext()) {
+            final CrawledLink cl = selectionInfo.getContextLink();
+            return cl == null ? null : new CrawledLinkSandbox(cl);
+        } else {
+            return null;
         }
-        final CrawledLink cl = selectionInfo.getContextLink();
-        return cl == null ? null : new CrawledLinkSandbox(cl);
     }
 
 }
