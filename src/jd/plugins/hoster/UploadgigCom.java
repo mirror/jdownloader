@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,15 +39,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
-public class UploadgigCom extends PluginForHost {
+public class UploadgigCom extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -74,12 +74,14 @@ public class UploadgigCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         this.setBrowserExclusive();
-        /* Set temp name */
         final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)$").getMatch(0);
-        link.setName(url_filename);
+        if (!link.isNameSet() && url_filename != null) {
+            /* Set temp name */
+            link.setName(url_filename);
+        }
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"filename\">([^<>\"]+)<").getMatch(0);
@@ -87,11 +89,14 @@ public class UploadgigCom extends PluginForHost {
             filename = br.getRegex("id=\"pg_title\">Download \"([^<>\"]+)\"").getMatch(0);
         }
         if (filename == null) {
-            /* Fallback */
-            filename = url_filename;
+            if (!link.isNameSet()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // we continue.
+        } else {
+            link.setName(Encoding.htmlDecode(filename.trim()));
         }
-        String filesize = br.getRegex("class=\"filesize\">\\[([^<>\"]+)\\]<").getMatch(0);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        final String filesize = br.getRegex("class=\"filesize\">\\[([^<>\"]+)\\]<").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -108,11 +113,11 @@ public class UploadgigCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            String csrf_tester = this.br.getCookie(this.getHost(), "firewall");
+            String csrf_tester = br.getCookie(this.getHost(), "firewall");
             if (csrf_tester == null) {
-                csrf_tester = this.br.getRegex("name=\"csrf_tester\"\\s*?value=\"([^<>\"]+)\"").getMatch(0);
+                csrf_tester = br.getRegex("name=\"csrf_tester\"\\s*?value=\"([^<>\"]+)\"").getMatch(0);
                 if (csrf_tester != null) {
-                    this.br.setCookie(this.br.getHost(), "firewall", csrf_tester);
+                    br.setCookie(this.br.getHost(), "firewall", csrf_tester);
                 }
             }
             final String fid = getFID(downloadLink);
@@ -121,15 +126,15 @@ public class UploadgigCom extends PluginForHost {
             if (csrf_tester != null) {
                 postData += "&csrf_tester=" + csrf_tester;
             }
-            this.br.postPage("/file/free_dl", postData);
+            postPage("/file/free_dl", postData);
             errorhandlingFree();
             if (this.br.getHttpConnection().getResponseCode() == 403) {
                 /* Usually only happpens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
-            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            dllink = PluginJSonUtils.getJsonValue(br, "url");
             int wait = 60;
-            final String waittime_str = PluginJSonUtils.getJsonValue(this.br, "cd");
+            final String waittime_str = PluginJSonUtils.getJsonValue(br, "cd");
             if (waittime_str != null) {
                 wait = Integer.parseInt(waittime_str);
             }
@@ -287,13 +292,17 @@ public class UploadgigCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                dllink = link.getDownloadURL();
+                // can be redirect
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = link.getDownloadURL();
+                }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
