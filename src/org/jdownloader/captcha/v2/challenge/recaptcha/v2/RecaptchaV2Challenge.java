@@ -36,17 +36,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     private final String                   siteKey;
     private volatile BasicCaptchaChallenge basicChallenge;
     private final String                   siteDomain;
-    private final String                   siteUrl;
     private final String                   secureToken;
-    private String                         contextUrl;
-
-    public String getContextUrl() {
-        return contextUrl;
-    }
-
-    public void setContextUrl(String contextUrl) {
-        this.contextUrl = contextUrl;
-    }
 
     public String getSiteKey() {
         return siteKey;
@@ -103,7 +93,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (RAWTOKEN.equals(format)) {
             RecaptchaV2APIStorable ret = new RecaptchaV2APIStorable();
             ret.setSiteKey(getSiteKey());
-            ret.setContextUrl(contextUrl);
+            ret.setContextUrl("http://" + siteDomain);
             ret.setStoken(getSecureToken());
             return ret;
         }
@@ -143,14 +133,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
-    public RecaptchaV2Challenge(String siteKey, String secureToken, Plugin pluginForHost, Browser br, String siteDomain, String siteUrl) {
+    public RecaptchaV2Challenge(String siteKey, String secureToken, Plugin pluginForHost, Browser br, String siteDomain) {
         super(RECAPTCHAV2, pluginForHost);
         this.secureToken = secureToken;
         this.pluginBrowser = br;
         this.siteKey = siteKey;
         this.siteDomain = siteDomain;
-        contextUrl = "http://" + siteDomain + "/";
-        this.siteUrl = siteUrl;
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
         }
@@ -162,10 +150,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     public String getSiteDomain() {
         return siteDomain;
-    }
-
-    public String getSiteUrl() {
-        return siteUrl;
     }
 
     @Override

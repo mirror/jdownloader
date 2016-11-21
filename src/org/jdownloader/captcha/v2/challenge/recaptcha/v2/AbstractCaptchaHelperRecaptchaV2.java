@@ -35,12 +35,6 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         this.secureToken = secureToken;
     }
 
-    private String siteUrl;
-
-    public String getSiteUrl() {
-        return siteUrl;
-    }
-
     public String getSiteDomain() {
         return siteDomain;
     }
@@ -50,8 +44,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     public AbstractCaptchaHelperRecaptchaV2(final T plugin, final Browser br, final String siteKey, final String secureToken) {
         this.plugin = plugin;
         this.br = br.cloneBrowser();
-        this.siteUrl = br.getURL();
-        this.siteDomain = Browser.getHost(siteUrl, true);
+        this.siteDomain = Browser.getHost(br.getURL(), true);
         logger = plugin == null ? null : plugin.getLogger();
         if (logger == null) {
             createFallbackLogger();

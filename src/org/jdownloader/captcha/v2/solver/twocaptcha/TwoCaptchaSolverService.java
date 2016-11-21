@@ -113,7 +113,7 @@ public class TwoCaptchaSolverService extends AbstractSolverService implements Se
 
     @Override
     public String getName() {
-        return "2captcha.com";
+        return "2captcha.com (RC2 Only)";
     }
 
     @Override
