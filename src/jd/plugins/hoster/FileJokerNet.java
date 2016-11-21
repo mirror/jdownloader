@@ -292,6 +292,7 @@ public class FileJokerNet extends antiDDoSForHost {
                 dlForm = br.getFormByInputFieldKeyValue("op", "download2");
             }
             if (dlForm == null) {
+                // THIS IS BAD IDEA! -raztoki20161121
                 dlForm = allForms[allForms.length - 1];
             }
             if (dlForm == null) {
@@ -750,7 +751,7 @@ public class FileJokerNet extends antiDDoSForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached (the|your) download(-| )limit|You have to wait|until the next download becomes available<)").matches()) {
+        if (new Regex(correctedBR, "(You have reached (the|your) download(-| )limit|You have to wait|until the next download becomes available<|>\\s*No free download slots are available at this time\\.\\s*<|>\\s*Please try again later or upgrade to Premium and download right now!)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String WAIT = new Regex(correctedBR, "(You have reached (the|your) download(-| )limit|You have to wait)[^<>]+").getMatch(-1);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
