@@ -1100,7 +1100,7 @@ public class RapidGatorNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private final int maxPremChunks = -5; // 17.10.16, max seems highest that can be handled without server issues
+    private final int maxPremChunks = -8; // 21.11.16, check highest that can be handled without server issues
 
     @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
