@@ -296,7 +296,7 @@ public class PremiumTo extends UseNet {
                 }
                 String finalURL = API_BASE + "getfile.php?link=" + url;
                 final DownloadLinkDownloadable downloadable;
-                if (link.getName().matches(".*(rar|r\\d+)$")) {
+                if (link.getName().matches(".+(rar|r\\d+)$")) {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
                     final URLConnectionAdapter con = brc.openGetConnection(finalURL);

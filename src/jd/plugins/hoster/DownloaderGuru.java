@@ -178,7 +178,7 @@ public class DownloaderGuru extends PluginForHost {
         }
 
         final DownloadLinkDownloadable downloadable;
-        if (link.getName().matches(".*(rar|r\\d+)$")) {
+        if (link.getName().matches(".+(rar|r\\d+)$")) {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
             final URLConnectionAdapter con = brc.openGetConnection(dllink);

@@ -32,6 +32,22 @@ public class DownloadlistSelectionSandbox {
         return ret;
     }
 
+    public boolean isLinkContext() {
+        if (selectionInfo != null) {
+            return selectionInfo.isLinkContext();
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isPackageContext() {
+        if (selectionInfo != null) {
+            return selectionInfo.isPackageContext();
+        } else {
+            return false;
+        }
+    }
+
     public FilePackageSandBox[] getPackages() {
         if (selectionInfo == null) {
             return null;
@@ -47,16 +63,22 @@ public class DownloadlistSelectionSandbox {
     public FilePackageSandBox getContextPackage() {
         if (selectionInfo == null) {
             return new FilePackageSandBox();
+        } else if (isPackageContext()) {
+            final FilePackage cl = selectionInfo.getContextPackage();
+            return cl == null ? null : new FilePackageSandBox(cl);
+        } else {
+            return null;
         }
-        final FilePackage cl = selectionInfo.getContextPackage();
-        return cl == null ? null : new FilePackageSandBox(cl);
     }
 
     public DownloadLinkSandBox getContextLink() {
         if (selectionInfo == null) {
             return new DownloadLinkSandBox();
+        } else if (isLinkContext()) {
+            final DownloadLink cl = selectionInfo.getContextLink();
+            return cl == null ? null : new DownloadLinkSandBox(cl);
+        } else {
+            return null;
         }
-        final DownloadLink cl = selectionInfo.getContextLink();
-        return cl == null ? null : new DownloadLinkSandBox(cl);
     }
 }
