@@ -95,7 +95,7 @@ public class TwoCaptchaSolver extends CESChallengeSolver<String> {
             q.appendEncoded("key", config.getApiKey());
             q.appendEncoded("method", "userrecaptcha");
             q.appendEncoded("googlekey", challenge.getSiteKey());
-            q.appendEncoded("pageurl", challenge.getHost());
+            q.appendEncoded("pageurl", challenge.getSiteDomain());
             q.appendEncoded("soft_id", "1396142");
             q.appendEncoded("json", "1");
             String json = br.getPage("http://2captcha.com/in.php?" + q.toString());

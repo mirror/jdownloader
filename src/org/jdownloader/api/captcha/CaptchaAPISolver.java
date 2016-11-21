@@ -137,6 +137,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                     cls = cls.getSuperclass();
                 }
                 job.setID(challenge.getId().getID());
+                // we send the host, not the site domain. the site domain will be sent on /get
                 job.setHoster(challenge.getHost());
                 job.setCaptchaCategory(challenge.getTypeID());
                 job.setTimeout(challenge.getTimeout());
