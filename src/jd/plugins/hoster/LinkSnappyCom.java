@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
  * @author psp
  * @author bilalghouri
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class LinkSnappyCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -207,7 +207,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 supportedHosts.add(host);
             }
         }
-        supportedHosts.remove("mega.co.nz");// buggy support
         currentAcc.setProperty("accountProperties", con);
         ac.setMultiHostSupport(this, supportedHosts);
         return ac;
