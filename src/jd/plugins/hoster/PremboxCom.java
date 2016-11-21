@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,11 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class PremboxCom extends PluginForHost {
 
     private static final String                            CLEAR_DOWNLOAD_HISTORY                    = "CLEAR_DOWNLOAD_HISTORY_COMPLETE";
@@ -632,7 +632,7 @@ public class PremboxCom extends PluginForHost {
      *
      * @param controlSlot
      *            (+1|-1)
-     * */
+     */
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
             final String currentHost = this.currDownloadLink.getHost();

@@ -23,6 +23,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,10 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com", "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com|bz|cc|net)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com", "restfile.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com|bz|cc|net)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" })
 public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -65,8 +65,8 @@ public class RestFileCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("restfile.ws".equals(getHost()) || "restfile.com".equals(getHost())) {
-            if (host == null || "restfile.ws".equals(host) || "restfile.com".equals(host)) {
+        if ("restfile.com".equals(getHost())) {
+            if (host == null || "restfile.com".equals(host)) {
                 return "restfilee.com";
             }
         }
