@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -31,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(?:www\\.)?((?:open|api|proxy)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" })
 public class GeTt extends PluginForHost {
@@ -61,12 +61,12 @@ public class GeTt extends PluginForHost {
         br = new Browser();
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?(api|proxy|proxy)(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+")) {
+        if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?(open|api|proxy)(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+")) {
             br.getPage("http://ge.tt");
             if (downloadLink.getContentUrl() != null) {
                 br.getPage(downloadLink.getContentUrl());
             }
-        final Browser brc = br.cloneBrowser();
+            final Browser brc = br.cloneBrowser();
             brc.getPage(downloadLink.getDownloadURL());
             if (brc.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -116,7 +116,7 @@ public class GeTt extends PluginForHost {
         } finally {
             try {
                 if (con != null) {
-                con.disconnect();
+                    con.disconnect();
                 }
             } catch (Throwable e) {
             }
@@ -131,7 +131,7 @@ public class GeTt extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dllink.contains(LIMITREACHED)) {
-        // Limit is on the file, reconnect doesn't remove it
+            // Limit is on the file, reconnect doesn't remove it
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
