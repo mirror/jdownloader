@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.download.DownloadLinkDownloadable;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -175,8 +176,35 @@ public class DownloaderGuru extends PluginForHost {
         if (!resume) {
             maxChunks = 1;
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+
+        final DownloadLinkDownloadable downloadable;
+        if (link.getName().matches(".*(rar|r\\d+)$")) {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            final URLConnectionAdapter con = brc.openGetConnection(dllink);
+            try {
+                if (con.isOK() && con.isContentDisposition() && con.getLongContentLength() > 0) {
+                    dllink = con.getRequest().getUrl();
+                    if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getLongContentLength()) {
+                        logger.info("Workaround for size missmatch(rar padding?!)!");
+                        link.setVerifiedFileSize(con.getLongContentLength());
+                    }
+                }
+            } finally {
+                con.disconnect();
+            }
+            downloadable = new DownloadLinkDownloadable(link) {
+
+                @Override
+                public boolean isHashCheckEnabled() {
+                    return false;
+                }
+
+            };
+        } else {
+            downloadable = new DownloadLinkDownloadable(link);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(dllink), resume, maxChunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
@@ -189,6 +217,7 @@ public class DownloaderGuru extends PluginForHost {
             handleAPIErrors(this.br);
             handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
         }
+        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         this.dl.startDownload();
     }
 
