@@ -61,8 +61,8 @@ public class VideoPremiumNet extends antiDDoSForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "videopremium.tv", "videopremium.me" };
-        // note: .net is parked
+        return new String[] { "videopremium.tv" };
+        // note: .net and .me is parked
     }
 
     private String               passCode                     = null;
@@ -108,10 +108,8 @@ public class VideoPremiumNet extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("videopremium.net".equals(getHost())) {
-            if (host == null || "videopremium.net".equals(host)) {
-                return "videopremium.tv";
-            }
+        if (host == null || "videopremium.net".equals(host) || "videopremium.me".equals(host)) {
+            return "videopremium.tv";
         }
         return super.rewriteHost(host);
     }

@@ -24,6 +24,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.simplejson.JSonArray;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.ParserException;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -36,15 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.simplejson.JSonArray;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.storage.simplejson.JSonValue;
-import org.appwork.storage.simplejson.ParserException;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" })
 /**
  * Hoster plugin for the account-pool.de beta.
  *

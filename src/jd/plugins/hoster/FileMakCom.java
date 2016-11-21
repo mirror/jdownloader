@@ -23,6 +23,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,10 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemac.com", "filekom.com" }, urls = { "https?://(www\\.)?(filemac|filekom)\\.com/[a-z0-9]{12}", "redhgz58opjgfr9cnfmj8gfvDELETEMEfvcjehgonvdqsxwdczjli8" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemac.com" }, urls = { "https?://(www\\.)?(filemac|filekom)\\.com/[a-z0-9]{12}" })
 public class FileMakCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
