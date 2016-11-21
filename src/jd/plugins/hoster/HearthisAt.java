@@ -96,11 +96,9 @@ public class HearthisAt extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (!downloadLink.isNameSet()) {
+            downloadLink.setFinalFileName(filename);
         }
-        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -114,6 +112,8 @@ public class HearthisAt extends PluginForHost {
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+                final String ext = getFileNameExtensionFromString(getFileNameFromHeader(con), ".mp3");
+                downloadLink.setFinalFileName(filename + ext);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
