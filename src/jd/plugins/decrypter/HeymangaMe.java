@@ -87,22 +87,12 @@ public class HeymangaMe extends PluginForDecrypt {
             for (String finallink : urls) {
                 finallink = "directhttp://" + br.getURL(finallink).toExternalForm();
                 final String realPageStr = new Regex(finallink, "(\\d+)\\.jpe?g$").getMatch(0);
-                /* They start from zero so we'll have to add 1 here. */
-                final short realPage = (short) (Short.parseShort(realPageStr) + 1);
                 final String chapter_formatted = df_chapter.format(chapter);
                 final String page_formatted = df_page.format(page);
                 final DownloadLink dl = this.createDownloadlink(finallink);
                 dl.setFinalFileName(url_name + "_" + chapter_formatted + "_" + page_formatted + ".jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
-                /*
-                 * Did we find more than one url? Well then we can skip the http request for the "next" page and directly move to the
-                 * overnext :)
-                 */
-                if (realPage > page) {
-                    page = realPage;
-                    continue;
-                }
                 page++;
             }
         } while (page <= page_max);
