@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,7 +28,7 @@ public class RetroSx extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
         final String id = new Regex(parameter.toString(), ".+/(\\d+)").getMatch(0);
-        final String title = br.getRegex("meta\\s*property='og:title'\\s*content='(.*?)'").getMatch(0);
+        final String title = Encoding.htmlDecode(br.getRegex("meta\\s*property='og:title'\\s*content='(.*?)'").getMatch(0));
         final String all_data[][] = br.getRegex("<tr\\s*data-rttid='(\\d+)'\\s*>.*?class='ttDuration'\\s*title='([0-9\\.]+MB)'.*?class='ttName'\\s*title='(.*?)'").getMatches();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

@@ -235,19 +235,19 @@ public class EightTracksCom extends antiDDoSForHost {
                      * can finally get to the next track
                      */
                     if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"") || clipData.contains("doesn’t allow more than 3 skips within a playlist per hour")) {
-                        for (int skip_block = 1; skip_block <= 10; skip_block++) {
+                        for (int skip_block = 1; skip_block <= 2; skip_block++) {
                             this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
                             // Maybe listened to the track -> Next track
                             clipData = pageGet(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                             if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"") || clipData.contains("doesn’t allow more than 3 skips within a playlist per hour")) {
                                 continue;
+                            } else {
+                                break;
                             }
-                            break;
-
                         }
                         /* In case it fails after 10 minutes */
                         if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"") || clipData.contains("doesn’t allow more than 3 skips within a playlist per hour")) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Quota reached", 60 * 60 * 1000l);
                         }
                     }
                 }
