@@ -12,6 +12,17 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -31,28 +42,20 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-
 public class DownloadLinkDownloadable implements Downloadable {
     /**
      *
      */
-
     private final DownloadLink downloadLink;
     private PluginForHost      plugin;
 
     public DownloadLinkDownloadable(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
         plugin = downloadLink.getLivePlugin();
+    }
+
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
     }
 
     @Override
@@ -63,7 +66,6 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public Browser getContextBrowser() {
         return plugin.getBrowser().cloneBrowser();
-
     }
 
     @Override
@@ -157,7 +159,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         final SingleDownloadController dlc = getDownloadLinkController();
         final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         DownloadWatchDog.getInstance().localFileCheck(dlc, new ExceptionRunnable() {
-
             @Override
             public void run() throws Exception {
                 runOkay.run();
@@ -173,7 +174,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         for (File f : files) {
             dlc.lockFile(f);
         }
-
     }
 
     @Override
@@ -380,7 +380,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         } else {
             return controller.getFileOutput(false, ignoreCustom);
         }
-
     }
 
     @Override
@@ -408,7 +407,6 @@ public class DownloadLinkDownloadable implements Downloadable {
             getLogger().severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
             getLogger().severe("Try copy workaround!");
             DiskSpaceReservation reservation = new DiskSpaceReservation() {
-
                 @Override
                 public long getSize() {
                     return outputPartFile.length() - outputCompleteFile.length();
@@ -446,7 +444,6 @@ public class DownloadLinkDownloadable implements Downloadable {
                 getLogger().severe("Copy workaround: :)");
             }
         }
-
         return renameOkay;
     }
 
@@ -489,7 +486,6 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public DiskSpaceReservation createDiskSpaceReservation() {
         return new DiskSpaceReservation() {
-
             @Override
             public long getSize() {
                 final File partFile = new File(getFileOutputPart());
