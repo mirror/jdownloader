@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -263,23 +264,38 @@ public class RtmpDump extends RTMPDownload {
         return true;
     }
 
+    public boolean isReadPacketError(final String errorMessage) {
+        if (errorMessage != null) {
+            final String e = errorMessage.toLowerCase(Locale.ENGLISH);
+            return e.contains("rtmp_readpacket, failed to read rtmp packet header") || e.contains("rtmp_readpacket, failed to read RTMP packet body");
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isTimeoutError(final String errorMessage) {
+        if (errorMessage != null) {
+            final String e = errorMessage.toLowerCase(Locale.ENGLISH);
+            return e.contains("rtmpdump timed out while waiting for a reply after");
+        } else {
+            return false;
+        }
+    }
+
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
         if (!findRtmpDump()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Error: rtmpdump executable not found!");
         }
-
         // rtmpe not supported
         /** TODO: Add a nicer error message... */
         if (rtmpConnection.protocolIsRtmpe()) {
             logger.warning("Protocol rtmpe:// not supported");
             throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
         }
-
         boolean debug = config.isRtmpDumpDebugModeEnabled();
         if (debug) {
             rtmpConnection.setVerbose();
         }
-
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
             public long getSpeedMeter() {
@@ -291,7 +307,7 @@ public class RtmpDump extends RTMPDownload {
                 return BYTESLOADED;
             }
         };
-        File tmpFile = new File(downloadable.getFileOutput() + ".part");
+        final File tmpFile = new File(downloadable.getFileOutput() + ".part");
         final DownloadPluginProgress downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker()) {
 
             @Override
@@ -322,8 +338,6 @@ public class RtmpDump extends RTMPDownload {
             long before = 0;
             long lastTime = System.currentTimeMillis();
             boolean complete = false;
-
-            String timeoutMessage = "rtmpdump timed out while waiting for a reply after";
             long readerTimeOut = 10000l;
 
             String cmdArgsWindows = rtmpConnection.getCommandLineParameter();
@@ -340,7 +354,6 @@ public class RtmpDump extends RTMPDownload {
                 cmdArgsMacAndLinux.addAll(rtmpConnection.getCommandLineParameterAsArray());
                 cmdArgsMacAndLinux.add(String.valueOf(tmpFile));
             }
-
             setResume(rtmpConnection.isResume());
             final ExecutorService executor = Executors.newSingleThreadExecutor();
             try {
@@ -365,10 +378,8 @@ public class RtmpDump extends RTMPDownload {
                 };
 
                 long tmplen = 0, fixedlen = 0, calc = 0;
-
                 while (true) {
                     if (externalDownloadStop()) {
-                        kill();
                         return true;
                     }
                     future = executor.submit(readTask);
@@ -378,17 +389,13 @@ public class RtmpDump extends RTMPDownload {
                         }
                         line = future.get(readerTimeOut, TimeUnit.MILLISECONDS);
                     } catch (TimeoutException e) {
-                        kill();
-                        error = timeoutMessage + " " + readerTimeOut + " ms";
-                        break;
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "rtmpdump timed out while waiting for a reply after " + readerTimeOut + " ms");
                     } catch (InterruptedException e) {
-                        kill();
-                        return true;
+                        throw e;
                     }
                     if (line == null) {
                         break;
                     }
-
                     if (debug || true) {
                         logger.finest(line);
                     }
@@ -459,24 +466,28 @@ public class RtmpDump extends RTMPDownload {
                     }
                 }
             } finally {
-                downloadable.removePluginProgress(downloadPluginProgress);
-                executor.shutdownNow();
-                if (rtmpConnection != null) {
-                    rtmpConnection.disconnect();
-                }
+                kill();
                 try {
-                    /* make sure we destroyed the process */
-                    P.destroy();
-                } catch (final Throwable e) {
-                }
-                try {
-                    /* close InputStreamReader */
-                    R.close();
-                } catch (final Throwable e) {
-                }
-                if (NP != null) {
-                    /* close Streams from native */
-                    NP.closeStreams();
+                    downloadable.removePluginProgress(downloadPluginProgress);
+                    executor.shutdownNow();
+                    if (rtmpConnection != null) {
+                        rtmpConnection.disconnect();
+                    }
+                } finally {
+                    try {
+                        /* make sure we destroyed the process */
+                        P.destroy();
+                    } catch (final Throwable e) {
+                    }
+                    try {
+                        /* close InputStreamReader */
+                        R.close();
+                    } catch (final Throwable e) {
+                    }
+                    if (NP != null) {
+                        /* close Streams from native */
+                        NP.closeStreams();
+                    }
                 }
             }
 
@@ -495,6 +506,7 @@ public class RtmpDump extends RTMPDownload {
             if (line != null) {
                 if (line.toLowerCase().contains("download complete") || complete) {
                     downloadable.setDownloadTotalBytes(BYTESLOADED);
+                    downloadable.setDownloadTotalBytes(BYTESLOADED);
                     if (dLink.getBooleanProperty("FLVFIXER", false)) {
                         if (!FixFlv(tmpFile)) {
                             return false;
@@ -511,7 +523,6 @@ public class RtmpDump extends RTMPDownload {
             }
             if (error != null) {
                 String e = error.toLowerCase();
-
                 /* special ArteTv handling */
                 if (this.plg.getLazyP().getClassName().endsWith("ArteTv")) {
                     if (e.contains("netstream.failed")) {
@@ -526,14 +537,11 @@ public class RtmpDump extends RTMPDownload {
                         return false;
                     }
                     throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
-                } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else if (isReadPacketError(e)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, e);
                 } else if (e.contains("netstream.play.streamnotfound")) {
                     FileCreationManager.getInstance().delete(tmpFile, null);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (error.startsWith(timeoutMessage)) {
-                    logger.severe(error);
-                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, LinkStatus.VALUE_NETWORK_IO_ERROR);
                 } else {
                     String cmd = cmdArgsWindows;
                     if (!CrossSystem.isWindows()) {
