@@ -400,7 +400,9 @@ public class SecondLevelLaunch {
             LoggerFactory.getDefaultLogger().log(e);
         }
         LoggerFactory.getDefaultLogger().info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
-        vmOptionsWorkaround(maxHeap);
+        if (!Application.isHeadless()) {
+            vmOptionsWorkaround(maxHeap);
+        }
         LoggerFactory.getDefaultLogger().info("JDownloader2");
 
         // checkSessionInstallLog();
@@ -454,19 +456,19 @@ public class SecondLevelLaunch {
         final IOErrorHandler errorHandler = IO.getErrorHandler();
         try {
             IO.setErrorHandler(null);
-            if (maxHeap > 0 && maxHeap <= 100 * 1024 * 1024) {
+            if (maxHeap > 0 && maxHeap <= 256 * 1024 * 1024) {
                 LoggerFactory.getDefaultLogger().warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
                 if (CrossSystem.isWindows() || CrossSystem.isUnix()) {
-                    java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                    List<String> arguments = runtimeMxBean.getInputArguments();
+                    final java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                    final List<String> arguments = runtimeMxBean.getInputArguments();
                     boolean xmxArgFound = false;
-                    for (String arg : arguments) {
+                    for (final String arg : arguments) {
                         if (arg != null && arg.startsWith("-Xmx")) {
                             xmxArgFound = true;
                             break;
                         }
                     }
-                    File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
+                    final File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
 
                         @Override
                         public boolean accept(File arg0) {
@@ -475,7 +477,7 @@ public class SecondLevelLaunch {
                     });
                     if (vmOptions != null) {
                         for (File vmOption : vmOptions) {
-                            byte[] bytes = IO.readFile(vmOption, 1024 * 50);
+                            final byte[] bytes = IO.readFile(vmOption, 1024 * 50);
                             if (new String(bytes, "UTF-8").contains("-Xmx")) {
                                 LoggerFactory.getDefaultLogger().info("Rename " + vmOption + " because it contains too low Xmx VM arg!");
                                 int i = 1;
@@ -499,14 +501,13 @@ public class SecondLevelLaunch {
                                 if (backup.exists()) {
                                     backup.delete();
                                 }
-
                                 if (vmOption.renameTo(backup)) {
-                                    StringBuilder sb = new StringBuilder();
+                                    final StringBuilder sb = new StringBuilder();
                                     if (CrossSystem.isWindows()) {
-                                        sb.append("-Xmx256m\r\n");
+                                        sb.append("-Xmx512m\r\n");
                                         sb.append("-Dsun.java2d.d3d=false\r\n");
                                     } else if (CrossSystem.isLinux()) {
-                                        sb.append("-Xmx256m\n\n");
+                                        sb.append("-Xmx512m\n\n");
                                     }
                                     if (vmOption.exists() == false || vmOption.delete()) {
                                         IO.writeStringToFile(vmOption, sb.toString());
@@ -520,20 +521,20 @@ public class SecondLevelLaunch {
                         if (StringUtils.isEmpty(launcher)) {
                             launcher = System.getProperty("exe4j.moduleName");
                         }
-                        LoggerFactory.getDefaultLogger().info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
+                            LoggerFactory.getDefaultLogger().info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                             if (CrossSystem.isWindows()) {
                                 launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
                             } else {
                                 launcher = launcher + ".vmoptions";
                             }
-                            File vmOption = new File(launcher);
-                            StringBuilder sb = new StringBuilder();
+                            final File vmOption = new File(launcher);
+                            final StringBuilder sb = new StringBuilder();
                             if (CrossSystem.isWindows()) {
-                                sb.append("-Xmx256m\r\n");
+                                sb.append("-Xmx512m\r\n");
                                 sb.append("-Dsun.java2d.d3d=false\r\n");
                             } else if (CrossSystem.isLinux()) {
-                                sb.append("-Xmx256m\n\n");
+                                sb.append("-Xmx512m\n\n");
                             }
                             if (vmOption.exists() == false || vmOption.delete()) {
                                 IO.writeStringToFile(vmOption, sb.toString());
@@ -541,9 +542,8 @@ public class SecondLevelLaunch {
                         }
                     }
                 } else if (CrossSystem.isMac()) {
-                    File file = getInfoPlistPath();
-                    if (file != null && file.exists()) {
-
+                    final File file = getInfoPlistPath();
+                    if (file != null && file.exists() && file.isFile()) {
                         String str = IO.readFileToTrimmedString(file);
                         boolean writeChanges = false;
                         if (Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
