@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigfile.to" }, urls = { "https?://(?:www\\.)?(uploadable\\.ch|bigfile\\.to)/file/[A-Za-z0-9]+" })
 public class BigfileTo extends PluginForHost {
 
     public BigfileTo(PluginWrapper wrapper) {
@@ -512,7 +512,11 @@ public class BigfileTo extends PluginForHost {
                  * Full message: You have exceeded your download limit. Please verify your email address to continue downloading.
                  */
                 if (br.containsHTML("You have exceeded your download limit")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    if (br.containsHTML("Please verify your email address to continue")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please verify your email address to continue downloading", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
                 }
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
