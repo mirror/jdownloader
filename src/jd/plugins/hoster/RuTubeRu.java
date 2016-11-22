@@ -108,7 +108,6 @@ public class RuTubeRu extends PluginForHost {
         final Browser ajax = cloneBrowser(br);
         dl = new HDSDownloader(downloadLink, ajax, downloadLink.getStringProperty("f4vUrl"));
         dl.startDownload();
-
     }
 
     @Override
@@ -270,6 +269,9 @@ public class RuTubeRu extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(HDSDownloader.RESUME_FRAGMENT);
+        }
     }
 
     @Override

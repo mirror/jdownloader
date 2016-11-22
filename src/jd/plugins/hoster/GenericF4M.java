@@ -213,6 +213,9 @@ public class GenericF4M extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(HDSDownloader.RESUME_FRAGMENT);
+        }
     }
 
     @Override

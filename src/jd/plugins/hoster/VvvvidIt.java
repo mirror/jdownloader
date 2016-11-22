@@ -268,6 +268,9 @@ public class VvvvidIt extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(HDSDownloader.RESUME_FRAGMENT);
+        }
     }
 
 }
