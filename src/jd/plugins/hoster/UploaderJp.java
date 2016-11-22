@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "http://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.jp" }, urls = { "http://(www\\.)?ux\\.getuploader\\.com/[a-z0-9\\-_]+/download/\\d+" })
 public class UploaderJp extends antiDDoSForHost {
 
     public UploaderJp(PluginWrapper wrapper) {
@@ -45,6 +46,10 @@ public class UploaderJp extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
+        final Form form = br.getFormByInputFieldKeyValue("q", "age_confirmation");
+        if (form != null) {
+            submitForm(form);
+        }
         if (br.containsHTML("404 File Not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
