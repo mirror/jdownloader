@@ -49,7 +49,6 @@ public class AventertainmentsCom extends PluginForHost {
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other:
 
     private final String         TYPE_IMAGE        = "https?://imgs\\.aventertainments\\.com/.+";
     private final String         TYPE_VIDEO_HTTP   = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
