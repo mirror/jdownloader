@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depofile.info" }, urls = { "http://(www\\.)?depofile\\.info/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depofile.info" }, urls = { "http://(www\\.)?depofile\\.info/[a-z0-9]+" })
 public class DepoFileInfo extends PluginForHost {
 
     public DepoFileInfo(PluginWrapper wrapper) {
@@ -137,7 +137,10 @@ public class DepoFileInfo extends PluginForHost {
         if (free_link == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        if (waittime == null) {
+            waittime = br.getRegex("var\\s*seconds\\s*=\\s*(\\d+)").getMatch(0);
+        }
         if (waittime != null) {
             sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         }
