@@ -818,6 +818,7 @@ public class OneFichierCom extends PluginForHost {
                     dllink = null;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
