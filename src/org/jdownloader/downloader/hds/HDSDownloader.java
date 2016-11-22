@@ -327,7 +327,7 @@ public class HDSDownloader extends DownloadInterface {
         }
     }
 
-    public int refreshFragmentStream() throws IOException {
+    public int refreshFragmentStream() throws IOException, PluginException {
         int type;
         while (stream == null || (type = stream.read()) == -1) {
             final InputStream stream = nextFragment();
@@ -360,7 +360,7 @@ public class HDSDownloader extends DownloadInterface {
         }
     }
 
-    private InputStream nextFragment() throws IOException {
+    private InputStream nextFragment() throws IOException, PluginException {
         if (currentConnection != null) {
             currentConnection.disconnect();
             if (bytesWritten.get() > 0 && fragmentIndex.get() > 1) {
@@ -370,7 +370,7 @@ public class HDSDownloader extends DownloadInterface {
         updateFileSizeEstimation();
         final Browser br = sourceBrowser.cloneBrowser();
         currentConnection = br.openGetConnection(buildFragmentURL(fragmentIndex.getAndIncrement()));
-        if (currentConnection.isOK()) {
+        if (currentConnection.getResponseCode() == 200) {
             if (inputStream == null) {
                 inputStream = new MeteredThrottledInputStream(new F4vInputStream(currentConnection), new AverageSpeedMeter(10));
                 connectionHandler.addThrottledConnection(inputStream);
@@ -380,7 +380,11 @@ public class HDSDownloader extends DownloadInterface {
             return inputStream;
         } else {
             currentConnection.disconnect();
-            return null;
+            if (currentConnection.getResponseCode() == 404) {
+                return null;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
