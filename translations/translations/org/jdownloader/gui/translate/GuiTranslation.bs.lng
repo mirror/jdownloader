@@ -1870,6 +1870,7 @@ lit_accountid=ID Naloga
 lit_add=Dodaj
 lit_added=Dodano
 lit_and=i
+lit_api_key=API Ključ
 lit_apply=Primijeni
 lit_are_you_sure=Jeste li sigurni?
 lit_audio=Audio
