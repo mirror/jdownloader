@@ -26,19 +26,19 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.controlling.PasswordUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)/.+/.*" }) 
-public class IrfreeCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "https?://(www\\.)?irfree\\.(com|eu)/.+/.*" })
+public class IrfreeCm extends antiDDoSForDecrypt {
 
     public IrfreeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?irfree\\.(com|eu)//?(templates|engine|user|tutorials|images|tv\\-shows).+";
+    private static final String INVALIDLINKS = "https?://(www\\.)?irfree\\.(com|eu)//?(templates|engine|user|tutorials|images|tv\\-shows).+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -48,13 +48,13 @@ public class IrfreeCm extends PluginForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("(The article cannot be found\\.|>Ooops, Error\\!<)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         final Set<String> pws = PasswordUtils.getPasswords(br.toString());
-        String[] links = new Regex(br.toString(), "href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
+        String[] links = new Regex(br.toString(), "href=\"(https?://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
