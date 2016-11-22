@@ -53,7 +53,6 @@ public class SystemAPIImpl17 {
                 }
             }
         }
-
         for (Entry<Path, FileStore> entry : roots.entrySet()) {
             final StorageInformationStorable storage = new StorageInformationStorable();
             final Path root = entry.getKey();

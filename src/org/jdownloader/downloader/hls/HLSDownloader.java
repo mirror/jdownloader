@@ -93,6 +93,8 @@ public class HLSDownloader extends DownloadInterface {
     private final boolean                           isTwitch;
     private final boolean                           isTwitchOptimized;
 
+    public static final String                      ENCRYPTED_FLAG      = "ENCRYPTED";
+
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
         this.sourceBrowser = br2.cloneBrowser();
@@ -597,6 +599,7 @@ public class HLSDownloader extends DownloadInterface {
                         boolean containsEndList = false;
                         final M3U8Playlist m3u8Playlists = new M3U8Playlist();
                         long lastSegmentDuration = -1;
+                        boolean encrypted = false;
                         for (final String line : Regex.getLines(playlist)) {
                             if (StringUtils.isEmpty(line)) {
                                 continue;
@@ -631,7 +634,8 @@ public class HLSDownloader extends DownloadInterface {
                                 } else if ("#EXT-X-ENDLIST".equals(line)) {
                                     containsEndList = true;
                                 } else if (StringUtils.containsIgnoreCase(line, "EXT-X-KEY")) {
-                                    link.setProperty("ENCRYPTED", true);
+                                    link.setProperty(ENCRYPTED_FLAG, true);
+                                    encrypted = true;
                                 }
                                 if (sb.length() > 0) {
                                     sb.append("\n");
@@ -647,12 +651,16 @@ public class HLSDownloader extends DownloadInterface {
                             sb.append("\n\n");
                         }
                         HLSDownloader.this.m3u8Playlists = m3u8Playlists;
-                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
-                        byte[] bytes = sb.toString().getBytes("UTF-8");
-                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
-                        OutputStream out = response.getOutputStream(true);
-                        out.write(bytes);
-                        out.flush();
+                        if (encrypted) {
+                            response.setResponseCode(ResponseCode.get(404));
+                        } else {
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
+                            byte[] bytes = sb.toString().getBytes("UTF-8");
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
+                            OutputStream out = response.getOutputStream(true);
+                            out.write(bytes);
+                            out.flush();
+                        }
                         requestOkay = true;
                         return true;
                     } else if ("/download".equals(request.getRequestedPath())) {
