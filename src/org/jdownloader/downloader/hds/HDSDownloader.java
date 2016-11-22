@@ -86,12 +86,14 @@ public class HDSDownloader extends DownloadInterface {
     private PluginException                         caughtPluginException;
     private long                                    estimatedDurationSecs  = -1;
     private final AtomicLong                        lastTimeStampMs        = new AtomicLong(-1);
+    private final DownloadLink                      link;
     public static final String                      RESUME_FRAGMENT        = "RESUME_FRAGMENT";
 
     public HDSDownloader(final DownloadLink link, final Browser browser, final String fragmentBaseURL) {
         this.sourceBrowser = browser;
         this.fragmentBaseURL = fragmentBaseURL;
         connectionHandler = new ManagedThrottledConnectionHandler();
+        this.link = link;
         downloadable = new DownloadLinkDownloadable(link);
         downloadable.setDownloadInterface(this);
         downloadable.setResumeable(true);
@@ -114,9 +116,9 @@ public class HDSDownloader extends DownloadInterface {
     }
 
     public void run() throws IOException, PluginException {
-        buffer = ByteBuffer.allocate(200 * 1024);
+        buffer = ByteBuffer.allocate(512 * 1024);
         try {
-            final String resumeInfo = downloadable.getDownloadLink().getStringProperty(RESUME_FRAGMENT, null);
+            final String resumeInfo = link.getStringProperty(RESUME_FRAGMENT, null);
             if (resumeInfo != null) {
                 final String resumeFragment = new Regex(resumeInfo, "(\\d+):").getMatch(0);
                 final String resumePosition = new Regex(resumeInfo, ":(\\d+)").getMatch(0);
@@ -364,7 +366,7 @@ public class HDSDownloader extends DownloadInterface {
         if (currentConnection != null) {
             currentConnection.disconnect();
             if (bytesWritten.get() > 0 && fragmentIndex.get() > 1) {
-                downloadable.getDownloadLink().setProperty(RESUME_FRAGMENT, (fragmentIndex.get() - 1) + ":" + bytesWritten.get());
+                link.setProperty(RESUME_FRAGMENT, (fragmentIndex.get() - 1) + ":" + bytesWritten.get());
             }
         }
         updateFileSizeEstimation();
