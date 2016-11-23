@@ -1079,9 +1079,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1100,7 +1100,7 @@ public class RapidGatorNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private final int maxPremChunks = -8; // 21.11.16, check highest that can be handled without server issues
+    private final int maxPremChunks = -5; // 21.11.16, check highest that can be handled without server issues
 
     @SuppressWarnings("deprecation")
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
