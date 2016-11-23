@@ -6,7 +6,7 @@ import org.jdownloader.plugins.components.youtube.YT_STATICS;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 
-public enum AudioBitrate implements IntegerInterface,LabelInterface {
+public enum AudioBitrate implements IntegerInterface, LabelInterface {
     KBIT_384(384),
     KBIT_256(256),
     KBIT_192(192),
@@ -26,16 +26,16 @@ public enum AudioBitrate implements IntegerInterface,LabelInterface {
         this.kbit = kbit;
     }
 
-    public int getKbit() {
+    public final int getKbit() {
         return kbit;
     }
 
-    public String getLabel() {
+    public final String getLabel() {
         return kbit + " kbit/s";
     }
 
     @Override
-    public int getInt() {
+    public final int getInt() {
         return kbit;
     }
 
@@ -47,11 +47,11 @@ public enum AudioBitrate implements IntegerInterface,LabelInterface {
     }
 
     public static int getSortId(AbstractVariant v) {
-        AudioBitrate res = getByVariant(v);
+        final AudioBitrate res = getByVariant(v);
         if (res == null) {
             return -1;
         }
-        Object intObj = YT_STATICS.SORTIDS_AUDIO_BITRATE.get(res);
+        final Object intObj = YT_STATICS.SORTIDS_AUDIO_BITRATE.get(res);
         if (intObj == null) {
             return -1;
         }
@@ -60,7 +60,7 @@ public enum AudioBitrate implements IntegerInterface,LabelInterface {
 
     public static AudioBitrate getByInt(int bitrate) {
         AudioBitrate best = null;
-        for (AudioBitrate b : values()) {
+        for (final AudioBitrate b : values()) {
             if (best == null || Math.abs(best.getKbit() - bitrate) > Math.abs(b.getKbit() - bitrate)) {
                 best = b;
             }
