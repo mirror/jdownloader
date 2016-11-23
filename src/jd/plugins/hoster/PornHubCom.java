@@ -116,7 +116,7 @@ public class PornHubCom extends PluginForHost {
             /* Offline links should also have nice filenames */
             downloadLink.setName(viewkey + ".jpg");
             br.getPage(downloadLink.getDownloadURL());
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Video has been removed")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dlUrl = br.getRegex("name=\"twitter:image:src\" content=\"(http[^<>\"]*?\\.[A-Za-z]{3,5})\"").getMatch(0);
