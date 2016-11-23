@@ -1,11 +1,10 @@
 package org.jdownloader.plugins.components.youtube;
 
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
-import org.appwork.utils.parser.UrlQuery;
-
 public class YoutubeStreamData {
-
     private YoutubeClipData clip;
 
     @Override
@@ -81,6 +80,8 @@ public class YoutubeStreamData {
     private int    projectionType;
     private String qualityLabel;
     private String src;
+    private long   contentLength;
+    private int    bitrate;
 
     public String getSrc() {
         return src;
@@ -92,15 +93,37 @@ public class YoutubeStreamData {
         this.itag = itag;
         this.url = url;
         if (query != null) {
+            try {
+                String cLenString = query.get("clen");
+                if (cLenString != null) {
+                    contentLength = Long.parseLong(cLenString);
+                }
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
+            try {
+                String bitrateString = query.get("bitrate");
+                if (bitrateString != null) {
+                    bitrate = Integer.parseInt(bitrateString);
+                }
+            } catch (Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
+            }
             this.qualityLabel = query.get("quality_label");
             if (qualityLabel == null) {
                 qualityLabel = query.get("quality");
             }
             String v = query.get("projection_type");
             projectionType = v == null ? -1 : Integer.parseInt(v);
-
         }
+    }
 
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public int getBitrate() {
+        return bitrate;
     }
 
     public int getProjectionType() {
