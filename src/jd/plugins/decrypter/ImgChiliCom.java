@@ -70,6 +70,7 @@ public class ImgChiliCom extends PluginForDecrypt {
             for (String singleLink : thumbs) {
                 singleLink = "directhttp://" + singleLink.replace("http://t", "http://i");
                 final DownloadLink dl = createDownloadlink(singleLink);
+                dl.setProperty("Referer", parameter);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -81,6 +82,9 @@ public class ImgChiliCom extends PluginForDecrypt {
         } else if (parameter.matches(SINGLEFINALLINK)) {
             final String finallink = parameter.replace("http://t", "http://i");
             final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            final String ref = parameter.replaceFirst("http://(www\\.)?[it]\\d+\\.(imgchili\\.(com|net))", "http://$2/show").replaceFirst("(\\.jpe?g).*", "$1").replace("%28", "(").replace("%29", ")");
+            dl.setContainerUrl(ref);
+            dl.setProperty("Referer", ref);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         } else {
@@ -104,11 +108,11 @@ public class ImgChiliCom extends PluginForDecrypt {
                 return null;
             }
             final DownloadLink dl = createDownloadlink(finallink);
+            dl.setProperty("Referer", parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
 
         return decryptedLinks;
     }
-
 }
