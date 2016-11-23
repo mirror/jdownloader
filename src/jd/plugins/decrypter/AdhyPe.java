@@ -21,16 +21,24 @@ import java.util.ArrayList;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ah.pe" }, urls = { "https?://(?:www\\.)?ah\\.pe/[A-Za-z0-9]+" })
+/**
+ *
+ * @author psp
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ah.pe" }, urls = { "https?://(?:www\\.)?ah\\.pe/([A-Za-z0-9]+)" })
 public class AdhyPe extends PluginForDecrypt {
 
     public AdhyPe(PluginWrapper wrapper) {
@@ -38,45 +46,45 @@ public class AdhyPe extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setFollowRedirects(false);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String key = unWise();
-        this.br.getPage("/g/" + key);
-        final String redirecturl = this.br.toString();
-        if (redirecturl == null || redirecturl.length() > 500 || !(redirecturl.startsWith("/") && !redirecturl.startsWith("http"))) {
-            this.br.getPage(redirecturl);
-        }
-        final String finallink = this.br.getRedirectLocation();
+        final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String key = getKey(unWise(), fuid);
+        br.getPage("/" + key);
+        final String redirecturl = br.toString();
+        br.getPage("/" + redirecturl);
+        final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
     private String unWise() {
         String result = null;
-        // String fn = br.getRegex("eval\\((function\\(.+)\\)\\);").getMatch(0);
-        String fn = br.getRegex("eval\\(function\\(w,i,s,e\\)\\{(.+\\));\\s*?\\}").getMatch(0);
-        fn = fn.replace("function(w,i,s,e)", "function('','','','')");
-        final String vars = "var w = 'test'; var i = 'test'; var s = 'test'; var e = 'test';";
-        fn = vars + fn;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
         if (fn == null) {
             return null;
         }
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
-            // engine.eval("var res = " + fn + ")");
-            engine.eval(fn + ";");
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
             logger.log(e);
@@ -84,4 +92,13 @@ public class AdhyPe extends PluginForDecrypt {
         }
         return result;
     }
+
+    private String getKey(final String input, final String fuid) {
+        if (input == null) {
+            return input;
+        }
+        final String key = new Regex(input, "var\\s+[a-zA-Z0-9]+\\s*=\\s*('|\"|)(g/[a-f0-9]+\\." + fuid + "\\.[a-f0-9]+)\\1").getMatch(1);
+        return key;
+    }
+
 }
