@@ -61,11 +61,12 @@ public class PanBaiduCom extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
         shorturl = new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0);
         /* Extract password from url in case the url came from this decrypter before. */
-        link_password = new Regex(parameter, "\\&linkpassword=([^<>\"\\&=]+)").getMatch(0);
+        link_password = new Regex(parameter, "linkpassword=([^<>\"\\&=]+)").getMatch(0);
         if (link_password != null) {
-            link_password = Encoding.htmlDecode(link_password);
             /* Remove invalid parameter from url. */
-            parameter = parameter.replace("&linkpassword=" + link_password, "");
+            parameter = parameter.replaceAll("(\\&|\\?|#)linkpassword=" + link_password, "");
+            /* Revert urlencode */
+            link_password = Encoding.htmlDecode(link_password);
         }
         if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT)) {
             /* Correct invalid "view" linktypes - we need one general linkformat! */
