@@ -80,8 +80,8 @@ public class YoutubeStreamData {
     private int    projectionType;
     private String qualityLabel;
     private String src;
-    private long   contentLength;
-    private int    bitrate;
+    private long   contentLength = -1;
+    private int    bitrate       = -1;
 
     public String getSrc() {
         return src;
@@ -94,7 +94,7 @@ public class YoutubeStreamData {
         this.url = url;
         if (query != null) {
             try {
-                String cLenString = query.get("clen");
+                final String cLenString = query.get("clen");
                 if (cLenString != null) {
                     contentLength = Long.parseLong(cLenString);
                 }
@@ -102,7 +102,7 @@ public class YoutubeStreamData {
                 LoggerFactory.getDefaultLogger().log(e);
             }
             try {
-                String bitrateString = query.get("bitrate");
+                final String bitrateString = query.get("bitrate");
                 if (bitrateString != null) {
                     bitrate = Integer.parseInt(bitrateString);
                 }

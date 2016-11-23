@@ -31,11 +31,12 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
-        if (audio != null) {
-            for (YoutubeStreamData a : audio) {
-                if (a.getBitrate() > 0) {
-                    long abr = (8 * a.getContentLength()) / (1024l * vid.duration / 1000);
+        if (audio != null && vid != null) {
+            for (final YoutubeStreamData a : audio) {
+                if (a.getBitrate() > 0 && vid.duration > 0 && a.getContentLength() > 0) {
+                    final long abr = (8 * a.getContentLength()) / (1024l * vid.duration / 1000);
                     getGenericInfo().setaBitrate((int) abr);
+                    break;
                 }
             }
         }
