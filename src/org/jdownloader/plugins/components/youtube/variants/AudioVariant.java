@@ -19,21 +19,26 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 
 public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements AudioInterface {
-
     public AudioVariant(VariantBase base) {
         super(base);
-
     }
 
     @Override
     public void setJson(String jsonString) {
         setGenericInfo(JSonStorage.restoreFromString(jsonString, new TypeRef<GenericAudioInfo>() {
-
         }));
     }
 
     @Override
     protected void fill(YoutubeClipData vid, List<YoutubeStreamData> audio, List<YoutubeStreamData> video, List<YoutubeStreamData> data) {
+        if (audio != null) {
+            for (YoutubeStreamData a : audio) {
+                if (a.getBitrate() > 0) {
+                    long abr = (8 * a.getContentLength()) / (1024l * vid.duration / 1000);
+                    getGenericInfo().setaBitrate((int) abr);
+                }
+            }
+        }
     }
 
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
@@ -45,15 +50,12 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     @Override
     public String getFileNameQualityTag() {
-
         return getAudioBitrate().getKbit() + "kbits " + getAudioCodec().getLabel();
-
     }
 
     @Override
     public String _getName(Object caller) {
         String id = TYPE_ID_PATTERN;
-
         id = id.replace("*CONTAINER*", getContainer().getLabel().toUpperCase(Locale.ENGLISH) + "");
         id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
@@ -66,10 +68,8 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         default:
             id = id.replace("*SPATIAL*", "");
         }
-
         id = id.replace(" - ", "-").trim().replaceAll("[ ]+", " ");
         return id;
-
     }
 
     @Override
@@ -94,7 +94,6 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
 
     public String getTypeId() {
         String id = TYPE_ID_PATTERN;
-
         id = id.replace("*CONTAINER*", getContainer().name() + "");
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
@@ -109,9 +108,7 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
         }
         id = id.trim().replaceAll("\\s+", "_").toUpperCase(Locale.ENGLISH);
         return id;
-
     }
-
     // @Override
     // public String getTypeId() {
     // StringBuilder sb = new StringBuilder();
@@ -135,5 +132,4 @@ public class AudioVariant extends AbstractVariant<GenericAudioInfo> implements A
     // return sb.toString();
     //
     // }
-
 }
