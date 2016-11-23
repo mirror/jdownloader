@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -71,11 +72,16 @@ public class EdiskCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<span class=\"fl\" title=\"([^<>\"]*?)\"").getMatch(0);
-        String filesize = br.getRegex("<p>File size: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        /* 2016-11-23: New */
+        final Regex fileinfo = this.br.getRegex("<h1>([^<>\"]+) \\((\\d+[^<>\"]+)\\)</h1>");
+        String filename = fileinfo.getMatch(0);
+        if (filename == null) {
+            filename = this.br.getRegex("/filetypes/[a-z0-9]+\\.png\" alt=\"([^<>\"]+)\"").getMatch(0);
+        }
+        String filesize = fileinfo.getMatch(1);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -83,7 +89,10 @@ public class EdiskCz extends PluginForHost {
          * Set the final filename here because server gives us filename + ".html" which is bad
          */
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = Encoding.htmlDecode(filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -93,25 +102,28 @@ public class EdiskCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">Tento obsah není možné stahovat zdarma")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        br.setFollowRedirects(true);
-        final String linkpart = new Regex(downloadLink.getDownloadURL(), "/download/(.+)").getMatch(0);
-        br.getPage("http://www.edisk.cz/en/download-slow/" + linkpart);
+        br.setFollowRedirects(false);
+        final String url_download = this.br.getURL();
+        final String fid = this.br.getRegex("data\\.filesId\\s*?=\\s*?(\\d+);").getMatch(0);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String postUrl = "http://www.edisk.cz/en/x-download/" + linkpart;
-        final String postData = "action=" + Encoding.urlEncode(linkpart);
-        br.postPage(postUrl, postData);
-        String dllink = br.toString().trim();
-        if (!dllink.startsWith("http://") || !dllink.endsWith(".html") || dllink.length() > 500) {
+        this.br.postPageRaw("/ajax/generatecaptcha", "{\"url\":\"/files/downloadslow/" + fid + "/\"}");
+        final String captchaurl = PluginJSonUtils.getJsonValue(this.br, "captcha");
+        if (captchaurl == null || captchaurl.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String code = this.getCaptchaCode(captchaurl, downloadLink);
+        this.br.postPageRaw(url_download, "{\"triplussest\":\"devÄt\",\"captcha_id\":\"/files/downloadslow/" + fid + "/\",\"captcha\":\"" + code + "\"}");
+        String dllink = this.br.getRedirectLocation();
+        final String redirect_because_of_invalid_captcha = PluginJSonUtils.getJsonValue(this.br, "redirect");
+        if (dllink == null && redirect_because_of_invalid_captcha != null) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 1);

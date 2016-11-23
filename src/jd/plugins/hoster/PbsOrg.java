@@ -147,6 +147,11 @@ public class PbsOrg extends PluginForHost {
                 /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
                 vid = br.getRegex("startVideo\\(\\'(\\d+)\\'").getMatch(0);
             }
+            if (vid == null) {
+                /* 2016-11-23: E.g. embedded video: http://www.pbs.org/wgbh/frontline/film/policing-the-police */
+                /* --> If they got pages with multiple videos we'll need a decrypter! */
+                vid = br.getRegex("<div[^<>]*?class=\"film__stage\"[^<>]*?id=\"video\\-(\\d+)\"[^<>]*?>").getMatch(0);
+            }
             /* Whatever the user added - it doesn't seem to be a video --> Offline */
             if (vid == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
