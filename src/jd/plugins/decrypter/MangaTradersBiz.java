@@ -91,16 +91,18 @@ public class MangaTradersBiz extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
-        final String[] links = br.getRegex("linkValue=\"([A-Za-z0-9]+)\"").getColumn(0);
+        // logger.info(br.toString());
+        final String[][] linkinfos = br.getRegex("linkValue=\"([A-Za-z0-9]+)\">\\s*<[^<>]+>([^<>]+)</span>").getMatches();
 
-        if (links == null || links.length == 0) {
+        if (linkinfos == null || linkinfos.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (links != null && links.length != 0) {
-            for (final String dl : links) {
-                final DownloadLink dlink = createDownloadlink("http://" + this.getHost() + "/downloadlink/" + dl);
+        if (linkinfos != null && linkinfos.length != 0) {
+            for (final String linkinfo[] : linkinfos) {
+                final DownloadLink dlink = createDownloadlink("http://" + this.getHost() + "/downloadlink/" + linkinfo[0]);
                 dlink.setProperty("mainlink", parameter);
+                dlink.setName(linkinfo[1]);
                 dlink.setAvailable(true);
                 decryptedLinks.add(dlink);
             }
