@@ -28,8 +28,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de" }, urls = { "http://(?:www\\.)?myspass\\.de/myspass/shows/(?:tv|web)shows/.+" }) 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de" }, urls = { "https?://(?:www\\.)?myspass\\.de/(?:myspass/)?shows/(?:tv|web)shows/.+" })
 public class MySpassDe extends PluginForDecrypt {
 
     public MySpassDe(PluginWrapper wrapper) {
@@ -42,6 +45,7 @@ public class MySpassDe extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         boolean needs_series_filename = true;
         final String parameter = param.toString();
+        final boolean fastlinkcheck = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getBooleanProperty("FAST_LINKCHECK", true);
         if (parameter.matches(type_hoster)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("myspass.de", "myspassdecrypted.de/"));
             dl.setContentUrl(parameter);
@@ -56,14 +60,14 @@ public class MySpassDe extends PluginForDecrypt {
         String show = this.br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) Videos\"").getMatch(0);
         if (show == null) {
             /* Fallback to url */
-            show = new Regex(parameter, ".+/myspass/shows/[^/]+/([^/]+)/").getMatch(0);
+            show = new Regex(parameter, ".+/shows/[^/]+/([^/]+)/").getMatch(0);
             show = show.replace("-", " ");
         }
         show = Encoding.htmlDecode(show).trim();
 
         short seasoncounter = 1;
         final DecimalFormat df = new DecimalFormat("00");
-        final String[] html_list = this.br.getRegex("(<li[^>]*?data\\-target=\"#episodesBySeason_full_episode_\\d+\".*?</li>)").getColumn(0);
+        final String[] html_list = this.br.getRegex("(<li[^>]*?class=\"float\\-left seasonTab full_episode_seasonTab baxx\\-tabbes\\-tab.*?</li>)").getColumn(0);
         for (final String html : html_list) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
@@ -73,18 +77,27 @@ public class MySpassDe extends PluginForDecrypt {
              * Normally we could use seasoncounter here but site is buggy - sometimes they either dont have all seasons or they just start
              * with- or use random numbers e.g. here the "first season" from 2011 has the season number 9:
              * http://www.myspass.de/myspass/shows/tvshows/tv-total-wok-wm/
-             * 
+             *
              * --> Let's use their buggy numbers but set correct filenames below :)
              */
             String seasonnumber = new Regex(html, "season=(\\d+)").getMatch(0);
-            final String format = new Regex(html, "format=([^<>\"/\\&]*?)&").getMatch(0);
+            if (seasonnumber == null) {
+                /* 2016-11-23 */
+                seasonnumber = new Regex(html, "seasonId=(\\d+)").getMatch(0);
+            }
+            String format = new Regex(html, "format=([^<>\"/\\&]*?)&").getMatch(0);
+            if (format == null) {
+                /* 2016-11-23 */
+                format = new Regex(html, "formatId=(\\d+)").getMatch(0);
+            }
             if (format == null) {
                 return null;
             }
             if (seasonnumber == null) {
                 seasonnumber = Short.toString(seasoncounter);
             }
-            this.br.getPage("http://www.myspass.de/myspass/includes/php/ajax.php?v=2&ajax=true&action=getEpisodeListFromSeason&format=" + format + "&season=" + seasonnumber + "&category=full_episode&id=&sortBy=episode_asc");
+            br.setFollowRedirects(true);
+            this.br.getPage("//www." + this.getHost() + "/frontend/php/ajax.php?ajax=true&query=getEpisodeListFromSeason&formatId=" + format + "&seasonId=" + seasonnumber + "&category=full_episode&sortBy=episode_desc");
 
             /* Sometimes we don't have a season (Season 1, 2 and so on) but a YEAR instead. */
             String season_name_name = new Regex(html, "\">([^<>\"]*?)</a></span>").getMatch(0);
@@ -101,16 +114,23 @@ public class MySpassDe extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(show + " " + season_name_name);
 
-            final String[] links = br.getRegex("class=\"season_episode_delim\" onclick=\"location\\.href=\\'(/myspass/shows/[^/]+/[^/]+/[^/]+/\\d+/)\\'\"").getColumn(0);
+            final String[] links = br.getRegex("<a href=\"(/(?:myspass/)?shows/[^/]+/[^/]+/[^/]+/\\d+/)\"").getColumn(0);
             if (html_list == null || html_list.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singleLink : links) {
                 final String url_content = "http://myspass.de" + singleLink;
+                final String fid = new Regex(singleLink, "(\\d+)/$").getMatch(0);
                 final DownloadLink dl = createDownloadlink("http://myspassdecrypted.de" + singleLink);
                 dl.setProperty("needs_series_filename", needs_series_filename);
                 dl.setContentUrl(url_content);
+                dl.setLinkID(fid);
+                dl.setName(fid);
+                dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                if (fastlinkcheck) {
+                    dl.setAvailable(true);
+                }
                 dl._setFilePackage(fp);
                 distribute(dl);
                 decryptedLinks.add(dl);

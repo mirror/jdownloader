@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "obscuredfiles.com" }, urls = { "https?://(?:www\\.)?obscuredfiles.com/\\?file=[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "obscuredfiles.com" }, urls = { "https?://(?:www\\.)?obscuredfiles.com/\\?file=[A-Za-z0-9]+" })
 public class ObscuredfilesCom extends PluginForHost {
 
     public ObscuredfilesCom(PluginWrapper wrapper) {
@@ -66,18 +67,32 @@ public class ObscuredfilesCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = br.getRegex("\"(https://obscuredfiles\\.com/fd\\.php[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://obscuredfiles\\.com/fd\\.php[^<>\"]+)\"").getMatch(0);
+        }
+        Form dlform = this.br.getFormbyProperty("class", "form-download");
+        if (dlform == null) {
+            dlform = this.br.getForm(0);
+        }
+        if (dllink == null && dlform != null) {
+            dllink = dlform.getAction();
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String passCode = downloadLink.getDownloadPassword();
-        if (this.br.containsHTML("id=passwordInput")) {
-            passCode = getUserInput("Password?", downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "password=" + Encoding.urlEncode(passCode) + "&clear=Clearnet+Download", true, 0);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String ft = dlform != null ? dlform.getInputFieldByName("ft").getValue() : null;
+        final String lt = dlform != null ? dlform.getInputFieldByName("lt").getValue() : null;
+        String postData = "clear=Clearnet+Download";
+        if (ft != null && lt != null) {
+            postData += "&ft=" + ft + "&lt=" + lt;
         }
+        String passCode = downloadLink.getDownloadPassword();
+        if (this.br.containsHTML("id=\"passwordInput\"")) {
+            if (passCode == null) {
+                passCode = getUserInput("Password?", downloadLink);
+            }
+            postData += "&password=" + Encoding.urlEncode(passCode);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, postData, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -93,6 +108,9 @@ public class ObscuredfilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setDownloadPassword(passCode);
         }
         downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
