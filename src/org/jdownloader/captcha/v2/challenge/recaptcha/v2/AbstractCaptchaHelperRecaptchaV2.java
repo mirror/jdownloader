@@ -102,7 +102,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         final String[] divs = new Regex(source, "<div(?:[^>]*>.*?</div>|[^>]*\\s*/\\s*>)").getColumn(-1);
         if (divs != null) {
             for (final String div : divs) {
-                if (new Regex(div, "class=('|\")g-recaptcha\\1").matches()) {
+                if (new Regex(div, "class=('|\")g-recaptcha(\\1|\\s+)").matches()) {
                     siteKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
                     if (siteKey != null) {
                         return siteKey;
