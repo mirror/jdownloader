@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,16 +43,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" }) 
+@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" })
 public class TezFilesCom extends K2SApi {
 
     private final String MAINPAGE = "http://tezfiles.com";
@@ -187,7 +187,7 @@ public class TezFilesCom extends K2SApi {
         if (inValidate(dllink)) {
             dllink = getDllink();
             if (inValidate(dllink)) {
-                if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*</div>")) {
+                if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*")) {
                     premiumDownloadRestriction("This file can only be downloaded by premium users");
                 }
                 final Form slowdl = br.getFormbyKey("slow_id");
