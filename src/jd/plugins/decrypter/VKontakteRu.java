@@ -681,18 +681,7 @@ public class VKontakteRu extends PluginForDecrypt {
             {
                 // webui, youtube stuff within -raztoki20160817
                 jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
-                {
-                    final boolean isError = containsErrorTitle(br);
-                    if ((isError && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
-                        throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
-                    } else if (isError && br.containsHTML("<div class=\"message_page_body\">\\s*Access denied")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (br.toString().contains("<\\/b> was removed from public access by request of the copyright holder.<\\/div>\\n<\\/div>\"")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                }
+                handleVideoErrors(br);
                 String ajax = br.getRegex("ajax\\.preload\\('al_video\\.php',[^\r\n]+\\);[\r\n]+").getMatch(-1);
                 if (ajax != null) {
                     // now these are within iframe
@@ -701,6 +690,18 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (embeddedVideo != null) {
                         decryptedLinks.add(createDownloadlink(embeddedVideo));
                         return;
+                    }
+                    // rutube
+                    final String[] rutube = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(ajax, "params"));
+                    if (rutube != null) {
+                        // usually the first entry
+                        String url;
+                        for (final String p : rutube) {
+                            if (p.startsWith("//") || p.startsWith("http")) {
+                                decryptedLinks.add(createDownloadlink(Request.getLocation(p, br.getRequest())));
+                                return;
+                            }
+                        }
                     }
                     // vk video is also within ajax.preload, so make searches faster below...
                     correctedBR = ajax;
@@ -798,6 +799,19 @@ public class VKontakteRu extends PluginForDecrypt {
             throw de;
         } catch (final Throwable e) {
             // why do we do this??? -raztoki20161117
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+    }
+
+    private void handleVideoErrors(final Browser br) throws DecrypterException {
+        final boolean isError = containsErrorTitle(br);
+        if ((isError && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
+            throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
+        } else if (isError && br.containsHTML("<div class=\"message_page_body\">\\s*Access denied")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        } else if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        } else if (br.toString().contains("<\\/b> was removed from public access by request of the copyright holder.<\\/div>\\n<\\/div>\"")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
     }
@@ -938,9 +952,7 @@ public class VKontakteRu extends PluginForDecrypt {
     /** NOT Using API --> NOT possible */
     private void decryptVideoAlbum() throws Exception {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
-        if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
+        handleVideoErrors(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(-?\\d+)$").getMatch(0);
         final String videosCount = PluginJSonUtils.getJsonNested(br, "videosCount");
@@ -1607,6 +1619,9 @@ public class VKontakteRu extends PluginForDecrypt {
         int i = 0;
         while (true) {
             getPage(br, parameter);
+            // required when they switch from http/https or vice versa, we need code to prevent retrying
+            final String currentUrlCorrected = br.getURL().replaceFirst("https?:", "");
+            final String parameterCorrected = parameter.replaceFirst("https?:", "");
             i++;
             // what ever this is.. -raz
             if (br.containsHTML("server number not set \\(0\\)")) {
@@ -1624,10 +1639,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Trying to avoid block " + i + " / 10");
                 sleep(this.cfg.getLongProperty(jd.plugins.hoster.VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, jd.plugins.hoster.VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS), CRYPTEDLINK);
                 continue;
-            } else if (this.br.getURL().matches(".+/blank\\.php\\?code=\\d+") || this.br.containsHTML(">You do not have permission to do this")) {
+            } else if (this.br.getURL().matches(".+/blank\\.php\\?code=\\d+") || this.br.containsHTML(">You do not have permission to do this|>Only logged in users can see this profile\\.<")) {
                 /* General errormessage */
                 break;
-            } else if (br.getURL().equals(parameter) || br.getURL().replaceAll("https?://(\\w+\\.)?vk\\.com", "").equals(parameter.replaceAll("https?://(\\w+\\.)?vk\\.com", ""))) {
+            } else if (currentUrlCorrected.equals(parameterCorrected) || br.getURL().replaceAll("https?://(\\w+\\.)?vk\\.com", "").equals(parameter.replaceAll("https?://(\\w+\\.)?vk\\.com", ""))) {
                 // If our current url is already the one we want to access here, break dance!
                 break;
             } else if (!parameter.equals(br.getURL()) && i > 3) {
@@ -2024,6 +2039,8 @@ public class VKontakteRu extends PluginForDecrypt {
         /* General errorhandling start */
         if (br.containsHTML("Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        } else if (br.containsHTML(">Only logged in users can see this profile\\.<")) {
+            throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
         } else if (br.containsHTML("Access denied|Ошибка доступа|>You do not have permission to do this")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("vk.com/blank.php")) {

@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,9 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepup.net" }, urls = { "https?://(?:www\\.|sp\\d+\\.)?filepup\\.net/(?:files|get)/[A-Za-z0-9]+/.+" })
 public class FilePupNet extends PluginForHost {
@@ -236,6 +236,8 @@ public class FilePupNet extends PluginForHost {
         br.followConnection();
         if (br.containsHTML(">You have reached the limit of")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        } else if (br.containsHTML(">\\s*This file does not exist\\.\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
         if (unknownError != null) {
