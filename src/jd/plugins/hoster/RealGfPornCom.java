@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "http://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_]+\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realgfporn.com" }, urls = { "http://(?:www\\.)?realgfporn\\.com/videos/[a-z0-9\\-_]+\\d+\\.html" })
 public class RealGfPornCom extends PluginForHost {
 
     public RealGfPornCom(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class RealGfPornCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    private String DLLINK = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -61,28 +61,31 @@ public class RealGfPornCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(http://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\\&file=(http://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("<param name=\"filename\" value=\"(http://.*?)\"").getMatch(0);
+        dllink = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(http://media\\d+\\.realgfporn\\.com/videos/.*?)\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\\&file=(http://(www\\.)realgfporn\\.com/videos/.*?)\\&height=").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<param name=\"filename\" value=\"(http://.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("file\\s*:\\s*(\"|'|)(https?://.*?)\\1").getMatch(1);
+                    }
                 }
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + getFileNameExtensionFromString(dllink, ".mp4"));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -100,7 +103,7 @@ public class RealGfPornCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

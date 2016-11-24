@@ -36,7 +36,7 @@ public class EmpFlixCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    private String              DLLINK                = null;
+    private String              dllink                = null;
 
     private static final String TYPE_NORMAL           = "https?://(?:www\\.)?empflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
     private static final String TYPE_embed            = "https?://player\\.empflix\\.com/video/\\d+";
@@ -69,8 +69,10 @@ public class EmpFlixCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        /* Offline urls should have ok-filenames too. */
-        downloadLink.setName(getFid(downloadLink));
+        if (!downloadLink.isNameSet()) {
+            /* Offline urls should have ok-filenames too. */
+            downloadLink.setName(getFid(downloadLink));
+        }
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
             /* Convert embed urls --> Original urls */
@@ -87,7 +89,7 @@ public class EmpFlixCom extends PluginForHost {
             downloadLink.setUrlDownload(newlink);
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)") || this.br.containsHTML("We\\'re sorry, but the video you want to play") || this.br.getURL().matches(".+\\.com/?$")) {
+        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)") || this.br.getURL().matches(".+\\.com/?$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean directURL = false;
@@ -99,44 +101,70 @@ public class EmpFlixCom extends PluginForHost {
             /* 2016-11-03 */
             filename = br.getRegex("property=\"og:title\" content=\"([^<>]+)\"").getMatch(0);
         }
-        DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(\\'|\")(http://cdn\\.empflix\\.com/empflv(\\d+)?/.*?)(\\'|\")").getMatch(1);
+        dllink = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(\\'|\")(http://cdn\\.empflix\\.com/empflv(\\d+)?/.*?)(\\'|\")").getMatch(1);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(.*?)\"\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("flashvars\\.config = escape\\(\"(.*?)\"\\)").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("config\" value=\"(.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("config\" value=\"(.*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("config\\s*=\\s*('|\")(.*?)\1").getMatch(1);
+        if (dllink == null) {
+            dllink = br.getRegex("config\\s*=\\s*('|\")(.*?)\1").getMatch(1);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* 2016-11-03 */
-            DLLINK = br.getRegex("itemprop=\"contentUrl\" content=\"(https?[^<>\"]+)\"").getMatch(0);
-            directURL = true;
+            dllink = br.getRegex("itemprop=\"contentUrl\" content=\"(https?:[^<>\"]+)\"").getMatch(0);
+            if (dllink != null) {
+                directURL = true;
+            }
         }
-        // if (DLLINK == null) {
-        // /* 2016-11-11 */
-        // this.br.getPage("https://dyn.empflix.com/ajax/info.php?action=video&vid=123456789");
-        // }
-        if (filename == null || DLLINK == null) {
+        if (dllink == null) {
+            /* raztoki20161124 */
+            final String[] lis = br.getRegex("<\\s*li\\s+[^>]+").getColumn(-1);
+            if (lis != null) {
+                String vid = null, nk = null, vk = null, th = null;
+                for (final String li : lis) {
+                    if (li.contains("data-vid") && li.contains("data-nk") && li.contains("data-vk") && li.contains("data-th") && li.contains("data-name")) {
+                        vid = new Regex(li, "data-vid\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        nk = new Regex(li, "data-nk\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        vk = new Regex(li, "data-vk\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        th = new Regex(li, "data-th\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        filename = new Regex(li, "data-name\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        break;
+                    }
+                }
+                if (vid == null || nk == null || vk == null || th == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String url = "https://cdn-fck.empflix.com/empflix/" + vk + "-1.fid?key=" + nk + "&VID=" + vid + "&nomp4=1&catID=0&rollover=1&startThumb=" + th + "&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
+                final Browser br = this.br.cloneBrowser();
+                br.getHeaders().put("Accept", "*/*");
+                br.getPage(url);
+                dllink = br.getRegex("\\[CDATA\\[(.*?)\\]{2}").getMatch(0);
+                if (dllink != null) {
+                    directURL = true;
+                }
+            }
+        }
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!directURL) {
-            br.getPage(Encoding.htmlDecode(DLLINK));
-            DLLINK = br.getRegex("<res>480p</res>\\s+<videoLink><\\!\\[CDATA\\[(.*?)\\]\\]></videoLink>").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("<(file|videoLink)><?(\\!\\[CDATA\\[)?(.*?)(\\]\\])?>?</(file|videoLink)>").getMatch(2);
+            br.getPage(Encoding.htmlDecode(dllink));
+            dllink = br.getRegex("<res>480p</res>\\s+<videoLink><\\!\\[CDATA\\[(.*?)\\]\\]></videoLink>").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<(file|videoLink)><?(\\!\\[CDATA\\[)?(.*?)(\\]\\])?>?</(file|videoLink)>").getMatch(2);
             }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = Encoding.htmlDecode(DLLINK);
+            dllink = Encoding.htmlDecode(dllink);
             directURL = true;
         }
         filename = filename.trim();
@@ -146,7 +174,7 @@ public class EmpFlixCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -164,7 +192,7 @@ public class EmpFlixCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -27,6 +27,14 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,14 +58,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -510,6 +510,9 @@ public class DirectHTTP extends antiDDoSForHost {
                     this.br.getHeaders().remove("Authorization");
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
+                if (isCustomOffline(urlConnection)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 String urlParams = null;
                 if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403 || (StringUtils.contains(urlConnection.getContentType(), "image") && urlConnection.getLongContentLength() < 1024)) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
                     /* check if we need the URLPARAMS to download the file */
@@ -899,6 +902,21 @@ public class DirectHTTP extends antiDDoSForHost {
                 br.getHeaders().put("Referer", "http://sh.st/");
             }
         }
+    }
+
+    /**
+     * custom offline references based on conditions found within previous URLConnectionAdapter request.
+     *
+     * @author raztoki
+     */
+    private boolean isCustomOffline(URLConnectionAdapter urlConnection) {
+        final String url = urlConnection.getURL().toString();
+        if (url != null) {
+            if ("imgchili.net".equals(Browser.getHost(url)) && url.endsWith("/hotlink.png")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
