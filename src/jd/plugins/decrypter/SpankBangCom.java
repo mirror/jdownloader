@@ -31,6 +31,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -157,16 +159,21 @@ public class SpankBangCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException {
+    public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException, PluginException {
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         final String fid = getFid(source_url);
         final String streamkey = br.getRegex("var stream_key  = \\'([^<>\"]*?)\\'").getMatch(0);
         // qualities 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript
         String[] qualities = br.getRegex("class=\"q_(\\w+)\"").getColumn(0);
         if (qualities == null || qualities.length == 0) {
-            /* Maybe we only have 1 quality. */
-            qualities = new String[1];
-            qualities[0] = "high";
+            // this is typically within <source
+            final String source = br.getRegex("<source src=\"(.*?)\"").getMatch(0);
+            if (source != null) {
+                qualities = new String[1];
+                qualities[0] = parseSingleQuality(source);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (qualities == null || qualities.length == 0 || streamkey == null) {
             return null;
@@ -177,6 +184,23 @@ public class SpankBangCom extends PluginForDecrypt {
             foundQualities.put(quality, directlink);
         }
         return foundQualities;
+    }
+
+    private static String parseSingleQuality(String source) {
+        if (source == null) {
+            return null;
+        }
+        /* 'super = 1080p', 'high = 720p', 'medium = 480p', 'low = 240p' they do this in javascript */
+        if (source.contains("240p")) {
+            return "low";
+        } else if (source.contains("480p")) {
+            return "medium";
+        } else if (source.contains("720p")) {
+            return "high";
+        } else if (source.contains("1080p")) {
+            return "super";
+        }
+        return null;
     }
 
     public static String getFid(final String source_url) {
