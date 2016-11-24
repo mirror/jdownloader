@@ -14,30 +14,30 @@ import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storable;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
-import org.jdownloader.api.linkcollector.v2.CrawledLinkAPIStorableV2;
-import org.jdownloader.api.linkcollector.v2.CrawledLinkQueryStorable;
-import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
 public class CrawledLinkSandbox {
     private final CrawledLink                                              link;
-    private final CrawledLinkAPIStorableV2                                 storable;
     private final static WeakHashMap<CrawledLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<CrawledLink, HashMap<String, Object>>();
 
     public CrawledLinkSandbox(CrawledLink link) {
         this.link = link;
-        storable = LinkCollectorAPIImplV2.toStorable(CrawledLinkQueryStorable.FULL, link);
     }
 
     public String getAvailableState() {
-        return storable.getAvailability() + "";
+        if (link != null) {
+            return link.getLinkState().name();
+        } else {
+            return AvailableLinkState.UNKNOWN.name();
+        }
     }
 
     public String getPriority() {
@@ -67,7 +67,6 @@ public class CrawledLinkSandbox {
 
     public CrawledLinkSandbox() {
         link = null;
-        storable = new CrawledLinkAPIStorableV2();
     }
 
     public Object getProperty(String key) {
@@ -248,11 +247,19 @@ public class CrawledLinkSandbox {
     }
 
     public String getHost() {
-        return storable.getHost();
+        if (link != null) {
+            return link.getHost();
+        } else {
+            return null;
+        }
     }
 
     public boolean isEnabled() {
-        return storable.isEnabled();
+        if (link != null) {
+            return link.isEnabled();
+        } else {
+            return false;
+        }
     }
 
     @Override

@@ -37,7 +37,6 @@ import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.tv/[^/]+/[^/]+" })
@@ -273,8 +272,7 @@ public class AtvAt extends PluginForDecrypt {
                                         return getLogger();
                                     }
                                 };
-                                final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
-                                estimatedSize = m3u8PlayList.getEstimatedSize();
+                                estimatedSize = downloader.getEstimatedSize();
                                 final StreamInfo streamInfo = downloader.getProbe();
                                 for (Stream s : streamInfo.getStreams()) {
                                     if ("video".equals(s.getCodec_type())) {

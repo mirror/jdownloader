@@ -9,9 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
@@ -68,10 +68,10 @@ import org.jdownloader.translate._JDT;
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
 
-    private volatile long                           bytesWritten   = 0l;
+    private volatile long                           bytesWritten         = 0l;
     private final DownloadLinkDownloadable          downloadable;
     private final DownloadLink                      link;
-    private long                                    startTimeStamp = -1;
+    private long                                    startTimeStamp       = -1;
     private final LogInterface                      logger;
     private URLConnectionAdapter                    currentConnection;
     private final ManagedThrottledConnectionHandler connectionHandler;
@@ -85,23 +85,33 @@ public class HLSDownloader extends DownloadInterface {
 
     private final Browser                           sourceBrowser;
 
-    protected volatile long                         duration       = -1l;
-    protected volatile int                          bitrate        = -1;
+    protected volatile long                         duration             = -1l;
+    protected volatile int                          bitrate              = -1;
     private long                                    processID;
     protected MeteredThrottledInputStream           meteredThrottledInputStream;
-    protected final AtomicReference<byte[]>         instanceBuffer = new AtomicReference<byte[]>();
-    private final boolean                           isTwitch;
-    private final boolean                           isTwitchOptimized;
+    protected final AtomicReference<byte[]>         instanceBuffer       = new AtomicReference<byte[]>();
+    private final List<M3U8Playlist>                m3u8Playlists;
+    private final AtomicInteger                     currentPlayListIndex = new AtomicInteger(0);
 
-    public static final String                      ENCRYPTED_FLAG      = "ENCRYPTED";
+    public int getCurrentPlayListIndex() {
+        return currentPlayListIndex.get();
+    }
 
-    public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
+    public M3U8Playlist getCurrentPlayList() {
+        return getPlayLists().get(getCurrentPlayListIndex());
+    }
+
+    public List<M3U8Playlist> getPlayLists() {
+        return m3u8Playlists;
+    }
+
+    public static final String ENCRYPTED_FLAG = "ENCRYPTED";
+
+    public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) throws IOException {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
         this.sourceBrowser = br2.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
-        isTwitch = "twitch.tv".equals(link.getHost());
-        isTwitchOptimized = isTwitch && Boolean.TRUE.equals(SubConfiguration.getConfig(link.getHost()).getBooleanProperty("expspeed", false));
         connectionHandler = new ManagedThrottledConnectionHandler();
         downloadable = new DownloadLinkDownloadable(link) {
             @Override
@@ -115,6 +125,25 @@ public class HLSDownloader extends DownloadInterface {
                 super.setResumeable(value);
             }
         };
+        m3u8Playlists = getM3U8Playlists();
+        if (isEncrypted()) {
+            link.setProperty(ENCRYPTED_FLAG, true);
+        }
+    }
+
+    public long getEstimatedSize() {
+        return M3U8Playlist.getEstimatedSize(m3u8Playlists);
+    }
+
+    public boolean isEncrypted() {
+        if (m3u8Playlists != null) {
+            for (M3U8Playlist playlist : m3u8Playlists) {
+                if (playlist.isEncrypted) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public LogInterface initLogger(final DownloadLink link) {
@@ -312,140 +341,6 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    protected boolean isValidM3u8Segment(final String segment) {
-        if (StringUtils.isNotEmpty(segment)) {
-            if (isTwitch && StringUtils.endsWithCaseInsensitive(segment, "end_offset=-1")) {
-                return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private final String toExtInfDuration(final long duration) {
-        String value = Long.toString(duration);
-        switch (value.length()) {
-        case 0:
-            value = "0.000";
-            break;
-        case 1:
-            value = "0.00" + value;
-            break;
-        case 2:
-            value = "0.0" + value;
-            break;
-        case 3:
-            value = "0." + value;
-            break;
-        default:
-            value = value.replaceFirst("(\\d{3})$", ".$1").replaceFirst("^\\.", "0.");
-            break;
-        }
-        return value;
-    }
-
-    protected String optimizeM3U8Playlist(String m3u8Playlist) {
-        if (m3u8Playlist != null) {
-            if (isTwitchOptimized) {
-                final StringBuilder sb = new StringBuilder();
-                long lastSegmentDuration = 0;
-                String lastSegment = null;
-                long lastSegmentStart = -1;
-                long lastSegmentEnd = -1;
-                long lastMergedSegmentDuration = 0;
-                final long maxSegmentSize = 10000000l;// server-side limit
-                for (final String line : Regex.getLines(m3u8Playlist)) {
-                    if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
-                        final String segment = new Regex(line, "^(.*?)(\\?|$)").getMatch(0);
-                        final String segmentStart = new Regex(line, "\\?.*?start_offset=(-?\\d+)").getMatch(0);
-                        final String segmentEnd = new Regex(line, "\\?.*?end_offset=(-?\\d+)").getMatch(0);
-                        if ("-1".equals(segmentEnd)) {
-                            continue;
-                        }
-                        if (lastSegment != null && !lastSegment.equals(segment) || segmentStart == null || segmentEnd == null || lastSegmentEnd != Long.parseLong(segmentStart) - 1 || Long.parseLong(segmentEnd) - lastSegmentStart > maxSegmentSize) {
-                            if (lastSegment != null) {
-                                if (sb.length() > 0) {
-                                    sb.append("\n");
-                                }
-                                sb.append("#EXTINF:");
-                                sb.append(toExtInfDuration(lastMergedSegmentDuration));
-                                lastMergedSegmentDuration = 0;
-                                sb.append(",\n");
-                                sb.append(lastSegment + "?start_offset=" + lastSegmentStart + "&end_offset=" + lastSegmentEnd);
-                                lastSegment = null;
-                            }
-                        }
-                        if (segment != null && segmentStart != null && segmentEnd != null) {
-                            if (lastSegment == null) {
-                                lastSegment = segment;
-                                lastSegmentStart = Long.parseLong(segmentStart);
-                                lastSegmentEnd = Long.parseLong(segmentEnd);
-                                lastMergedSegmentDuration = lastSegmentDuration;
-                            } else {
-                                lastSegmentEnd = Long.parseLong(segmentEnd);
-                                lastMergedSegmentDuration += lastSegmentDuration;
-                            }
-                        } else {
-                            if (sb.length() > 0) {
-                                sb.append("\n");
-                            }
-                            sb.append("#EXTINF:");
-                            sb.append(toExtInfDuration(lastSegmentDuration));
-                            lastSegmentDuration = 0;
-                            sb.append(",\n");
-                            sb.append(line);
-                        }
-                    } else {
-                        if (line.startsWith("#EXT-X-ENDLIST")) {
-                            if (lastSegment != null) {
-                                if (sb.length() > 0) {
-                                    sb.append("\n");
-                                }
-                                sb.append("#EXTINF:");
-                                sb.append(toExtInfDuration(lastMergedSegmentDuration));
-                                lastMergedSegmentDuration = 0;
-                                sb.append(",\n");
-                                sb.append(lastSegment + "?start_offset=" + lastSegmentStart + "&end_offset=" + lastSegmentEnd);
-                                lastSegment = null;
-                            }
-                            if (sb.length() > 0) {
-                                sb.append("\n");
-                            }
-                            sb.append(line);
-                        } else if (line.startsWith("#EXTINF:")) {
-                            final String duration = new Regex(line, "#EXTINF:(\\d+(\\.\\d+)?)").getMatch(0);
-                            if (duration != null) {
-                                if (duration.contains(".")) {
-                                    lastSegmentDuration = Long.parseLong(duration.replace(".", ""));
-                                } else {
-                                    lastSegmentDuration = Long.parseLong(duration) * 1000;
-                                }
-                            }
-                        } else {
-                            if (sb.length() > 0) {
-                                sb.append("\n");
-                            }
-                            sb.append(line);
-                        }
-                    }
-                }
-                if (lastSegment != null) {
-                    if (sb.length() > 0) {
-                        sb.append("\n");
-                    }
-                    sb.append("#EXTINF:");
-                    sb.append(toExtInfDuration(lastMergedSegmentDuration));
-                    lastMergedSegmentDuration = 0;
-                    sb.append(",\n");
-                    sb.append(lastSegment + "?start_offset=" + lastSegmentStart + "&end_offset=" + lastSegmentEnd);
-                    lastSegment = null;
-                }
-                return sb.toString();
-            }
-        }
-        return m3u8Playlist;
-    }
-
     protected boolean isMapMetaDataEnabled() {
         return false;
     }
@@ -493,17 +388,24 @@ public class HLSDownloader extends DownloadInterface {
         return null;
     }
 
-    private volatile M3U8Playlist m3u8Playlists = new M3U8Playlist();
-
-    public M3U8Playlist getM3U8Playlist() {
-        return m3u8Playlists;
-    }
-
     protected Browser getRequestBrowser() {
         final Browser ret = sourceBrowser.cloneBrowser();
         ret.setConnectTimeout(30 * 1000);
         ret.setReadTimeout(30 * 1000);
         return ret;
+    }
+
+    protected List<M3U8Playlist> getM3U8Playlists() throws IOException {
+        final Browser br = getRequestBrowser();
+        // work around for longggggg m3u pages
+        final int was = br.getLoadLimit();
+        // lets set the connection limit to our required request
+        br.setLoadLimit(Integer.MAX_VALUE);
+        try {
+            return M3U8Playlist.loadM3U8(m3uUrl, br);
+        } finally {
+            br.setLoadLimit(was);
+        }
     }
 
     private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
@@ -581,80 +483,27 @@ public class HLSDownloader extends DownloadInterface {
                         return true;
                     } else if ("/m3u8".equals(request.getRequestedPath())) {
                         ffmpeg.updateLastUpdateTimestamp();
-                        final Browser br = getRequestBrowser();
-                        // work around for longggggg m3u pages
-                        final int was = br.getLoadLimit();
-                        // lets set the connection limit to our required request
-                        br.setLoadLimit(Integer.MAX_VALUE);
-                        final String playlist;
-                        try {
-                            playlist = optimizeM3U8Playlist(br.getPage(m3uUrl));
-                        } finally {
-                            // set it back!
-                            br.setLoadLimit(was);
-                        }
-                        ffmpeg.updateLastUpdateTimestamp();
-                        response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
-                        final StringBuilder sb = new StringBuilder();
-                        boolean containsEndList = false;
-                        final M3U8Playlist m3u8Playlists = new M3U8Playlist();
-                        long lastSegmentDuration = -1;
-                        boolean encrypted = false;
-                        for (final String line : Regex.getLines(playlist)) {
-                            if (StringUtils.isEmpty(line)) {
-                                continue;
-                            }
-                            if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
-                                // http://habrahabr.ru/company/mailru/blog/274855/
-                                logger.severe("possibly malicious: " + line);
-                            } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
-                                final String segmentURL = br.getURL(line).toString();
-                                if (!m3u8Playlists.containsSegmentURL(segmentURL)) {
-                                    if (isValidM3u8Segment(line)) {
-                                        final int index = m3u8Playlists.addSegment(segmentURL, lastSegmentDuration);
-                                        if (sb.length() > 0) {
-                                            sb.append("\n");
-                                        }
-                                        sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
-                                    } else if (logger != null) {
-                                        logger.info("Segment '" + line + "' is invalid!");
-                                    }
-                                }
-                                lastSegmentDuration = -1;
-                            } else {
-                                if (line.startsWith("#EXTINF:")) {
-                                    final String duration = new Regex(line, "#EXTINF:(\\d+(\\.\\d+)?)").getMatch(0);
-                                    if (duration != null) {
-                                        if (duration.contains(".")) {
-                                            lastSegmentDuration = Long.parseLong(duration.replace(".", ""));
-                                        } else {
-                                            lastSegmentDuration = Long.parseLong(duration) * 1000;
-                                        }
-                                    }
-                                } else if ("#EXT-X-ENDLIST".equals(line)) {
-                                    containsEndList = true;
-                                } else if (StringUtils.containsIgnoreCase(line, "EXT-X-KEY")) {
-                                    link.setProperty(ENCRYPTED_FLAG, true);
-                                    encrypted = true;
-                                }
-                                if (sb.length() > 0) {
-                                    sb.append("\n");
-                                }
-                                sb.append(line);
-                            }
-                        }
-                        if (!containsEndList) {
-                            if (sb.length() > 0) {
-                                sb.append("\n");
-                            }
-                            sb.append("#EXT-X-ENDLIST");
-                            sb.append("\n\n");
-                        }
-                        HLSDownloader.this.m3u8Playlists = m3u8Playlists;
-                        if (encrypted) {
+                        final M3U8Playlist m3u8 = getCurrentPlayList();
+                        if (m3u8.isEncrypted()) {
                             response.setResponseCode(ResponseCode.get(404));
                         } else {
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, br.getRequest().getHttpConnection().getContentType()));
+                            final StringBuilder sb = new StringBuilder();
+                            sb.append("#EXTM3U\r\n");
+                            sb.append("#EXT-X-VERSION:3\r\n");
+                            sb.append("#EXT-X-MEDIA-SEQUENCE:0\r\n");
+                            if (m3u8.getTargetDuration() > 0) {
+                                sb.append("#EXT-X-TARGETDURATION:");
+                                sb.append(m3u8.getTargetDuration());
+                                sb.append("\r\n");
+                            }
+                            for (int index = 0; index < m3u8.size(); index++) {
+                                final M3U8Segment segment = m3u8.getSegment(index);
+                                sb.append("#EXTINF:" + M3U8Segment.toExtInfDuration(segment.getDuration()));
+                                sb.append("\r\nhttp://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index + "\r\n");
+                            }
+                            sb.append("#EXT-X-ENDLIST\r\n");
+                            response.setResponseCode(ResponseCode.get(200));
+                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "application/x-mpegURL"));
                             byte[] bytes = sb.toString().getBytes("UTF-8");
                             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, String.valueOf(bytes.length)));
                             OutputStream out = response.getOutputStream(true);
@@ -678,7 +527,7 @@ public class HLSDownloader extends DownloadInterface {
                         } else {
                             try {
                                 final int index = Integer.parseInt(indexString);
-                                segment = m3u8Playlists.getSegment(index);
+                                segment = getCurrentPlayList().getSegment(index);
                                 if (segment == null) {
                                     throw new IndexOutOfBoundsException("Unknown segment:" + index);
                                 } else {
@@ -723,6 +572,7 @@ public class HLSDownloader extends DownloadInterface {
                                     throw new IOException("ResponseCode must be 200 or 206!");
                                 }
                             } catch (IOException e) {
+                                onSegmentException(connection, e);
                                 if (logger != null) {
                                     logger.log(e);
                                 }
@@ -730,9 +580,6 @@ public class HLSDownloader extends DownloadInterface {
                                     Thread.sleep(250 + (retry * 50));
                                     continue retryLoop;
                                 } else {
-                                    if (isTwitchOptimized && connection != null && connection.getResponseCode() == 400) {
-                                        SubConfiguration.getConfig(link.getHost()).setProperty("expspeed", false);
-                                    }
                                     return false;
                                 }
                             }
@@ -825,6 +672,9 @@ public class HLSDownloader extends DownloadInterface {
             }
         });
 
+    }
+
+    protected void onSegmentException(URLConnectionAdapter connection, IOException e) {
     }
 
     public long getBytesLoaded() {
@@ -943,9 +793,11 @@ public class HLSDownloader extends DownloadInterface {
             return false;
         }
         if (!isAcceptDownloadStopAsValidEnd()) {
-            for (int index = 0; index < m3u8Playlists.size(); index++) {
-                if (!m3u8Playlists.isSegmentLoaded(index)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            for (final M3U8Playlist m3u8Playlist : m3u8Playlists) {
+                for (int index = 0; index < m3u8Playlist.size(); index++) {
+                    if (!m3u8Playlist.isSegmentLoaded(index)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    }
                 }
             }
         }

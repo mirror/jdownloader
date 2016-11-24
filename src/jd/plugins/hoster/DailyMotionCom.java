@@ -45,7 +45,6 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
@@ -158,8 +157,7 @@ public class DailyMotionCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
                         }
                         if (streamInfo != null) {
-                            final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
-                            final long estimatedSize = m3u8PlayList.getEstimatedSize();
+                            final long estimatedSize = downloader.getEstimatedSize();
                             if (downloadLink.getKnownDownloadSize() == -1) {
                                 downloadLink.setDownloadSize(estimatedSize);
                             } else {
