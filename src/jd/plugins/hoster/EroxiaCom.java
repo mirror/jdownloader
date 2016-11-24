@@ -61,9 +61,9 @@ public class EroxiaCom extends PluginForHost {
         if (br.getURL().equals("http://www.eroxia.com/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1 class=\"detail\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1(?: class=\"detail\\-title\")?>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- Eroxia\\.com</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?)\\s*-\\s*Eroxia(?:\\.com)?</title>").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -72,22 +72,25 @@ public class EroxiaCom extends PluginForHost {
         dllink = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        }
-        if (dllink == null) {
-            // No direct link there -> 2nd way
-            dllink = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(Encoding.htmlDecode(dllink));
-            dllink = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("<source[^>]*\\s+src=(\"|'|)(.*?)\\1").getMatch(1);
+                if (dllink == null) {
+                    // No direct link there -> 2nd way
+                    dllink = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.getPage(Encoding.htmlDecode(dllink));
+                    dllink = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
             }
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".flv");
+        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
