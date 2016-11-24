@@ -56,44 +56,53 @@ public class AdhyPe extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
+        final int repeat = 4;
+        for (int i = 0; i <= repeat; i++) {
+            br = new Browser();
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+            final String unwise = unWise();
+            final String key = getKey(unwise, fuid);
+            if (key == null || unwise == null) {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
+            Browser br = this.br.cloneBrowser();
+            sleep(7500, param);
+            // only required for this request
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage(Request.getLocation(key, br.getRequest()));
+            String redirecturl = br.toString();
+            // recaptchav2
+            if (isCaptcha(unwise)) {
+                if (i + 1 <= repeat) {
+                    sleep(30000L, param);
+                    continue;
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, this.br).getToken();
+                if (recaptchaV2Response != null) {
+                    redirecturl += "." + recaptchaV2Response;
+                }
+            }
+            br = this.br.cloneBrowser();
+            br.getPage(Request.getLocation(redirecturl, br.getRequest()));
+            final String finallink = HTMLEntities.unhtmlentities(br.getRedirectLocation());
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         }
-        final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String unwise = unWise();
-        final String key = getKey(unwise, fuid);
-        if (key == null || unwise == null) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-        }
-        Browser br = this.br.cloneBrowser();
-        sleep(7500, param);
-        // only required for this request
-        br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage(Request.getLocation(key, br.getRequest()));
-        String redirecturl = br.toString();
-        // recaptchav2
-        if (isCaptcha(unwise)) {
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, this.br).getToken();
-            if (recaptchaV2Response != null) {
-                redirecturl += "." + recaptchaV2Response;
-            }
-        }
-        br = this.br.cloneBrowser();
-        br.getPage(Request.getLocation(redirecturl, br.getRequest()));
-        final String finallink = HTMLEntities.unhtmlentities(br.getRedirectLocation());
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
+
     }
 
     private boolean isCaptcha(String unwise) {
