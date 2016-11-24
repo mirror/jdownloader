@@ -347,7 +347,7 @@ public class SlideShareNet extends PluginForHost {
                          * #{help_page_url(:download_limit)}" target="_blank">FAQs</a>"
                          */
                         logger.info("Daily limit reached");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     dllink = br.getRegex("class=\"altDownload\">[\t\n\r ]+<a class=\"btn\" href=\"(http[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {

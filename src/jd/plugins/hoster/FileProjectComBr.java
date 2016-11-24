@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/(pp/files|files/epis(odios)?)/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+|http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.xpg\\.uol\\.com\\.br/([a-z]{2,3}/)?files/([^/]+/){0,3}[^<>\"/\\s]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/(pp/files|files/epis(odios)?)/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+|http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.xpg\\.uol\\.com\\.br/([a-z]{2,3}/)?files/([^/]+/){0,3}[^<>\"/\\s]+" })
 public class FileProjectComBr extends PluginForHost {
 
     // DEV NOTES
@@ -53,6 +53,9 @@ public class FileProjectComBr extends PluginForHost {
             // country block, seems to 403 outside of Brazil!
             link.getLinkStatus().setStatusText("Provider blocks your IP Address!");
             return AvailableStatus.UNCHECKABLE;
+        } else if (br.getURL() != null && !br.getURL().contains("fileproject")) {
+            /* 2016-11-14: New, not sure about this, either offline or GEO-block! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div id=\"name\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) {
