@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -23,6 +24,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -56,6 +58,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" })
 public class TwitchTv extends PluginForHost {
@@ -131,8 +134,7 @@ public class TwitchTv extends PluginForHost {
                 if (streamInfo == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
-                final long estimatedSize = m3u8PlayList.getEstimatedSize();
+                final long estimatedSize = downloader.getEstimatedSize();
                 if (downloadLink.getKnownDownloadSize() == -1) {
                     downloadLink.setDownloadSize(estimatedSize);
                 } else {
@@ -233,16 +235,11 @@ public class TwitchTv extends PluginForHost {
         dl.startDownload();
     }
 
-    private final void doHLS(final DownloadLink downloadLink) throws Exception {
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        if (downloadLink.getBooleanProperty("encrypted")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
-        }
-        // requestFileInformation(downloadLink);
-        if (getPluginConfig().getBooleanProperty("meta", true) == false) {
-            dl = new HLSDownloader(downloadLink, br, dllink);
-        } else {
-            final FFmpegMetaData ffMpegMetaData = new FFmpegMetaData();
+    private HLSDownloader getHLSDownloader(final DownloadLink downloadLink, Browser br, final String m3u8Url) throws IOException {
+        final FFmpegMetaData ffMpegMetaData;
+        final SubConfiguration config = getPluginConfig();
+        if (config.getBooleanProperty("meta", true)) {
+            ffMpegMetaData = new FFmpegMetaData();
             ffMpegMetaData.setTitle(downloadLink.getStringProperty("plainfilename", null));
             ffMpegMetaData.setArtist(downloadLink.getStringProperty("channel", null));
             final String originaldate = downloadLink.getStringProperty("originaldate", null);
@@ -255,18 +252,151 @@ public class TwitchTv extends PluginForHost {
                 }
             }
             ffMpegMetaData.setComment(downloadLink.getContentUrl());
-            dl = new HLSDownloader(downloadLink, br, dllink) {
-                @Override
-                protected boolean isMapMetaDataEnabled() {
-                    return true;
-                }
-
-                @Override
-                protected FFmpegMetaData getFFmpegMetaData() {
-                    return ffMpegMetaData;
-                }
-            };
+        } else {
+            ffMpegMetaData = null;
         }
+        return new HLSDownloader(downloadLink, br, m3u8Url) {
+            final boolean isTwitchOptimized = Boolean.TRUE.equals(config.getBooleanProperty("expspeed", false));
+
+            @Override
+            protected boolean isMapMetaDataEnabled() {
+                return ffMpegMetaData != null && !ffMpegMetaData.isEmpty();
+            }
+
+            @Override
+            protected FFmpegMetaData getFFmpegMetaData() {
+                return ffMpegMetaData;
+            }
+
+            @Override
+            protected void onSegmentException(URLConnectionAdapter connection, IOException e) {
+                if (isTwitchOptimized && connection != null && connection.getResponseCode() == 400) {
+                    config.setProperty("expspeed", false);
+                }
+            }
+
+            @Override
+            protected List<M3U8Playlist> getM3U8Playlists() throws IOException {
+                final List<M3U8Playlist> ret = super.getM3U8Playlists();
+                for (final M3U8Playlist playList : ret) {
+                    for (int index = playList.size() - 1; index >= 0; index--) {
+                        final M3U8Segment segment = playList.getSegment(index);
+                        if (segment != null && StringUtils.endsWithCaseInsensitive(segment.getUrl(), "end_offset=-1")) {
+                            playList.removeSegment(index);
+                        }
+                    }
+                }
+                return ret;
+            }
+
+            protected String optimizeM3U8Playlist(String m3u8Playlist) {
+                if (m3u8Playlist != null && isTwitchOptimized) {
+                    final StringBuilder sb = new StringBuilder();
+                    long lastSegmentDuration = 0;
+                    String lastSegment = null;
+                    long lastSegmentStart = -1;
+                    long lastSegmentEnd = -1;
+                    long lastMergedSegmentDuration = 0;
+                    final long maxSegmentSize = 10000000l;// server-side limit
+                    for (final String line : Regex.getLines(m3u8Playlist)) {
+                        if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
+                            final String segment = new Regex(line, "^(.*?)(\\?|$)").getMatch(0);
+                            final String segmentStart = new Regex(line, "\\?.*?start_offset=(-?\\d+)").getMatch(0);
+                            final String segmentEnd = new Regex(line, "\\?.*?end_offset=(-?\\d+)").getMatch(0);
+                            if ("-1".equals(segmentEnd)) {
+                                continue;
+                            }
+                            if (lastSegment != null && !lastSegment.equals(segment) || segmentStart == null || segmentEnd == null || lastSegmentEnd != Long.parseLong(segmentStart) - 1 || Long.parseLong(segmentEnd) - lastSegmentStart > maxSegmentSize) {
+                                if (lastSegment != null) {
+                                    if (sb.length() > 0) {
+                                        sb.append("\n");
+                                    }
+                                    sb.append("#EXTINF:");
+                                    sb.append(M3U8Segment.toExtInfDuration(lastMergedSegmentDuration));
+                                    lastMergedSegmentDuration = 0;
+                                    sb.append(",\n");
+                                    sb.append(lastSegment + "?start_offset=" + lastSegmentStart + "&end_offset=" + lastSegmentEnd);
+                                    lastSegment = null;
+                                }
+                            }
+                            if (segment != null && segmentStart != null && segmentEnd != null) {
+                                if (lastSegment == null) {
+                                    lastSegment = segment;
+                                    lastSegmentStart = Long.parseLong(segmentStart);
+                                    lastSegmentEnd = Long.parseLong(segmentEnd);
+                                    lastMergedSegmentDuration = lastSegmentDuration;
+                                } else {
+                                    lastSegmentEnd = Long.parseLong(segmentEnd);
+                                    lastMergedSegmentDuration += lastSegmentDuration;
+                                }
+                            } else {
+                                if (sb.length() > 0) {
+                                    sb.append("\n");
+                                }
+                                sb.append("#EXTINF:");
+                                sb.append(M3U8Segment.toExtInfDuration(lastSegmentDuration));
+                                lastSegmentDuration = 0;
+                                sb.append(",\n");
+                                sb.append(line);
+                            }
+                        } else {
+                            if (line.startsWith("#EXT-X-ENDLIST")) {
+                                if (lastSegment != null) {
+                                    if (sb.length() > 0) {
+                                        sb.append("\n");
+                                    }
+                                    sb.append("#EXTINF:");
+                                    sb.append(M3U8Segment.toExtInfDuration(lastMergedSegmentDuration));
+                                    lastMergedSegmentDuration = 0;
+                                    sb.append(",\n");
+                                    sb.append(lastSegment + "?start_offset=" + lastSegmentStart + "&end_offset=" + lastSegmentEnd);
+                                    lastSegment = null;
+                                }
+                                if (sb.length() > 0) {
+                                    sb.append("\n");
+                                }
+                                sb.append(line);
+                            } else if (line.startsWith("#EXTINF:")) {
+                                final String duration = new Regex(line, "#EXTINF:(\\d+(\\.\\d+)?)").getMatch(0);
+                                if (duration != null) {
+                                    if (duration.contains(".")) {
+                                        lastSegmentDuration = Long.parseLong(duration.replace(".", ""));
+                                    } else {
+                                        lastSegmentDuration = Long.parseLong(duration) * 1000;
+                                    }
+                                }
+                            } else {
+                                if (sb.length() > 0) {
+                                    sb.append("\n");
+                                }
+                                sb.append(line);
+                            }
+                        }
+                    }
+                    if (lastSegment != null) {
+                        if (sb.length() > 0) {
+                            sb.append("\n");
+                        }
+                        sb.append("#EXTINF:");
+                        sb.append(M3U8Segment.toExtInfDuration(lastMergedSegmentDuration));
+                        lastMergedSegmentDuration = 0;
+                        sb.append(",\n");
+                        sb.append(lastSegment + "?start_offset=" + lastSegmentStart + "&end_offset=" + lastSegmentEnd);
+                        lastSegment = null;
+                    }
+                    return sb.toString();
+                }
+                return m3u8Playlist;
+            };
+        };
+    }
+
+    private final void doHLS(final DownloadLink downloadLink) throws Exception {
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        if (downloadLink.getBooleanProperty("encrypted")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
+        }
+        dl = getHLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
     }
 

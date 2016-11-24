@@ -1,10 +1,46 @@
 package org.jdownloader.downloader.hls;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+
+import jd.http.Browser;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 public class M3U8Playlist {
 
     public static class M3U8Segment {
+
+        public static final String toExtInfDuration(final long duration) {
+            final String value = Long.toString(duration);
+            switch (value.length()) {
+            case 0:
+                return "0.000";
+            case 1:
+                return "0.00".concat(value);
+            case 2:
+                return "0.0".concat(value);
+            case 3:
+                return "0.".concat(value);
+            default:
+                return value.replaceFirst("(\\d{3})$", ".$1").replaceFirst("^\\.", "0.");
+            }
+        }
+
+        public static long fromExtInfDuration(String duration) {
+            duration = new Regex(duration, "#EXTINF:(\\d+(\\.\\d+)?)").getMatch(0);
+            if (duration != null) {
+                if (duration.contains(".")) {
+                    return Long.parseLong(duration.replace(".", ""));
+                } else {
+                    return Long.parseLong(duration) * 1000;
+                }
+            }
+            return -1;
+        }
+
         private final String url;
 
         private boolean      isLoaded = false;
@@ -46,12 +82,93 @@ public class M3U8Playlist {
         }
     }
 
+    @Override
+    public String toString() {
+        return "M3U8:Encrypted:" + isEncrypted() + "|Segments:" + size() + "|Duration:" + getEstimatedDuration() + "ms|Estimated Size:" + getEstimatedSize();
+    }
+
+    public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws IOException {
+        final List<M3U8Playlist> ret = new ArrayList<M3U8Playlist>();
+        M3U8Playlist current = new M3U8Playlist();
+        long lastSegmentDuration = -1;
+        for (final String line : Regex.getLines(br.getPage(m3u8))) {
+            if (StringUtils.isEmpty(line)) {
+                continue;
+            }
+            if (line.startsWith("#EXT-X-DISCONTINUITY")) {
+                if (current != null && current.size() > 0) {
+                    ret.add(current);
+                }
+                M3U8Playlist before = current;
+                current = new M3U8Playlist();
+                current.setEncrypted(before.isEncrypted);
+                current.setExtTargetDuration(before.getExtTargetDuration());
+                lastSegmentDuration = -1;
+            }
+            if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
+                // http://habrahabr.ru/company/mailru/blog/274855/
+            } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
+                final String segmentURL = br.getURL(line).toString();
+                if (!current.containsSegmentURL(segmentURL)) {
+                    current.addSegment(segmentURL, lastSegmentDuration);
+                }
+                lastSegmentDuration = -1;
+            } else {
+                if (line.startsWith("#EXTINF:")) {
+                    lastSegmentDuration = M3U8Segment.fromExtInfDuration(line);
+                } else if (line.startsWith("#EXT-X-KEY")) {
+                    current.setEncrypted(true);
+                } else if (line.startsWith("#EXT-X-TARGETDURATION")) {
+                    final String targetDuration = new Regex(line, "#EXT-X-TARGETDURATION:(\\d+)").getMatch(0);
+                    if (targetDuration != null) {
+                        current.setExtTargetDuration(Long.parseLong(targetDuration));
+                    }
+                }
+            }
+        }
+        if (current != null && current.size() > 0) {
+            ret.add(current);
+        }
+        return ret;
+    }
+
     public int addSegment(final String segmentURL, final long segmentDuration) {
         final M3U8Segment segment = new M3U8Segment(segmentURL, segmentDuration);
         return addSegment(segment);
     }
 
-    private final ArrayList<M3U8Segment> segments = new ArrayList<M3U8Segment>();
+    protected final ArrayList<M3U8Segment> segments       = new ArrayList<M3U8Segment>();
+
+    protected boolean                      isEncrypted    = false;
+    protected long                         targetDuration = -1;
+
+    public long getTargetDuration() {
+        long ret = -1;
+        for (final M3U8Segment segment : segments) {
+            ret = Math.max(segment.getDuration(), ret);
+        }
+        return Math.max(ret, getExtTargetDuration());
+    }
+
+    public long getExtTargetDuration() {
+        return targetDuration;
+    }
+
+    public void setExtTargetDuration(long targetDuration) {
+        if (targetDuration <= 0) {
+            this.targetDuration = -1;
+        } else {
+            this.targetDuration = targetDuration;
+        }
+    }
+
+    public boolean isEncrypted() {
+        return isEncrypted;
+    }
+
+    public void setEncrypted(boolean isEncrypted) {
+        this.isEncrypted = isEncrypted;
+    }
 
     public boolean isSegmentLoaded(final int index) {
         if (index >= 0 && index < segments.size()) {
@@ -120,6 +237,32 @@ public class M3U8Playlist {
             duration += Math.max(0, segment.getDuration());
         }
         return duration;
+    }
+
+    public static long getEstimatedSize(List<M3U8Playlist> list) {
+        long size = -1;
+        long duration = 0;
+        long unknownSizeDuration = 0;
+        if (list != null) {
+            for (M3U8Playlist playList : list) {
+                for (final M3U8Segment segment : playList.segments) {
+                    if (segment.getSize() != -1) {
+                        size += segment.getSize();
+                        duration += segment.getDuration();
+                    } else {
+                        unknownSizeDuration += segment.getDuration();
+                    }
+                }
+            }
+        }
+        if (unknownSizeDuration == 0 && duration > 0) {
+            return size + 1;
+        } else if (size > 0 && duration > 0) {
+            final double averagePerSecond = (Math.max(1, size)) / (duration / 1000d);
+            return size + (long) (averagePerSecond * (unknownSizeDuration / 1000d));
+        } else {
+            return -1;
+        }
     }
 
     public long getEstimatedSize() {

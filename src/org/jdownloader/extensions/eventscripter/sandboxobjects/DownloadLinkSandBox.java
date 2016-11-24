@@ -18,7 +18,7 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
-import org.jdownloader.api.downloads.v2.LinkQueryStorable;
+import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
@@ -37,18 +37,15 @@ import org.jdownloader.settings.UrlDisplayType;
 public class DownloadLinkSandBox {
 
     private final DownloadLink                                              downloadLink;
-    private final DownloadLinkAPIStorableV2                                 storable;
 
     private final static WeakHashMap<DownloadLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<DownloadLink, HashMap<String, Object>>();
 
     public DownloadLinkSandBox(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
-        storable = org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl.toStorable(LinkQueryStorable.FULL, downloadLink, this);
     }
 
     public DownloadLinkSandBox() {
         downloadLink = null;
-        storable = new DownloadLinkAPIStorableV2();
     }
 
     public String getPriority() {
@@ -116,15 +113,15 @@ public class DownloadLinkSandBox {
     }
 
     public long getAddedDate() {
-        if (storable != null) {
-            return storable.getAddedDate();
+        if (downloadLink != null) {
+            return downloadLink.getCreated();
         }
         return -1;
     }
 
     public long getFinishedDate() {
-        if (storable != null) {
-            return storable.getFinishedDate();
+        if (downloadLink != null) {
+            return downloadLink.getFinishedDate();
         }
         return -1;
     }
@@ -342,19 +339,35 @@ public class DownloadLinkSandBox {
     }
 
     public long getSpeed() {
-        return storable.getSpeed();
+        if (downloadLink != null) {
+            return downloadLink.getView().getSpeedBps();
+        } else {
+            return 0;
+        }
     }
 
     public String getStatus() {
-        return storable.getStatus();
+        if (downloadLink != null) {
+            final DownloadLinkAPIStorableV2 ret = new DownloadLinkAPIStorableV2(downloadLink);
+            DownloadsAPIV2Impl.setStatus(ret, downloadLink, this);
+            return ret.getStatus();
+        } else {
+            return null;
+        }
     }
 
     public String getHost() {
-        return storable.getHost();
+        if (downloadLink != null) {
+            return downloadLink.getHost();
+        }
+        return null;
     }
 
     public boolean isSkipped() {
-        return storable.isSkipped();
+        if (downloadLink != null) {
+            return downloadLink.isSkipped();
+        }
+        return false;
     }
 
     public String getSkippedReason() {
@@ -394,11 +407,19 @@ public class DownloadLinkSandBox {
     }
 
     public boolean isRunning() {
-        return storable.isRunning();
+        if (downloadLink != null) {
+            return downloadLink.getDownloadLinkController() != null;
+        } else {
+            return false;
+        }
     }
 
     public boolean isEnabled() {
-        return storable.isEnabled();
+        if (downloadLink != null) {
+            return downloadLink.isEnabled();
+        } else {
+            return false;
+        }
     }
 
     public boolean isResumeable() {
@@ -415,7 +436,11 @@ public class DownloadLinkSandBox {
     }
 
     public boolean isFinished() {
-        return storable.isFinished();
+        if (downloadLink != null) {
+            return FinalLinkState.CheckFinished(downloadLink.getFinalLinkState());
+        } else {
+            return false;
+        }
     }
 
     public String getExtractionStatus() {

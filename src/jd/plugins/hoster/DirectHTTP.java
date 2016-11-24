@@ -27,14 +27,6 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,6 +50,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -912,7 +912,7 @@ public class DirectHTTP extends antiDDoSForHost {
     private boolean isCustomOffline(URLConnectionAdapter urlConnection) {
         final String url = urlConnection.getURL().toString();
         if (url != null) {
-            if ("imgchili.net".equals(Browser.getHost(url)) && url.endsWith("/hotlink.png")) {
+            if ("imgchili.net".equals(Browser.getHost(url)) && (url.endsWith("/hotlink.png") || url.endsWith("/404.png"))) {
                 return true;
             }
         }

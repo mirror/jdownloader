@@ -33,7 +33,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8?(\\?.+)?|$)" })
@@ -103,8 +102,7 @@ public class GenericM3u8 extends PluginForHost {
         if (streamInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final M3U8Playlist m3u8PlayList = downloader.getM3U8Playlist();
-        final long estimatedSize = m3u8PlayList.getEstimatedSize();
+        final long estimatedSize = downloader.getEstimatedSize();
         if (downloadLink.getKnownDownloadSize() == -1) {
             downloadLink.setDownloadSize(estimatedSize);
         } else {

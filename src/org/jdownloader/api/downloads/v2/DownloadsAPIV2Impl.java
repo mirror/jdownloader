@@ -324,7 +324,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
         SkipReason skipReason = link.getSkipReason();
         if (skipReason != null) {
-
             icon = skipReason.getIcon(caller, 18);
             label = skipReason.getExplanation(caller);
             dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
