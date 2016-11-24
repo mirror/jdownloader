@@ -535,6 +535,8 @@ public class FileuploadCom extends PluginForHost {
                     download1.put("method_free", method_free_value);
                 }
                 /* end of backward compatibility */
+                /* 2016-11-24: They have a short waittime here but it is skippable! */
+                // this.waitTime(downloadLink, System.currentTimeMillis());
                 submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -790,7 +792,8 @@ public class FileuploadCom extends PluginForHost {
 
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
+        /* 2016-11-24: Removed that particular cleanup-RegEx as it caused issues. */
+        // regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
@@ -809,14 +812,18 @@ public class FileuploadCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
-            if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                    for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) {
-                            break;
-                        }
+        }
+        if (dllink == null) {
+            /* 2016-11-24: Special */
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://[^/]+(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+        }
+        if (dllink == null) {
+            final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                for (String crypted : cryptedScripts) {
+                    dllink = decodeDownloadLink(crypted);
+                    if (dllink != null) {
+                        break;
                     }
                 }
             }
@@ -985,6 +992,14 @@ public class FileuploadCom extends PluginForHost {
         if (ttt == null) {
             /* More open RegEx */
             ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
+        }
+        if (ttt == null) {
+            /* 2016-11-24: Special before sending download1 */
+            ttt = new Regex(correctedBR, "\\{\\s*?var\\s*?i=\\s*?(\\d+);").getMatch(0);
+        }
+        if (ttt == null) {
+            /* 2016-11-24: Special before sending download2 */
+            ttt = new Regex(correctedBR, "class=\"label label\\-danger seconds\">(\\d+)<").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);

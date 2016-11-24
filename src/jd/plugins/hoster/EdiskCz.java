@@ -96,14 +96,10 @@ public class EdiskCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    /* TODO: Implement English errormessages */
-    @SuppressWarnings("deprecation")
+    /* TODO: Implement English(and missing) errormessages */
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Tento obsah není možné stahovat zdarma")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         br.setFollowRedirects(false);
         final String url_download = this.br.getURL();
         final String fid = this.br.getRegex("data\\.filesId\\s*?=\\s*?(\\d+);").getMatch(0);
@@ -111,7 +107,10 @@ public class EdiskCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        /* Critical header!! */
+        br.getHeaders().put("Requested-With-AngularJS", "true");
+        // this.br.getPage("/files/downloadslow/" + fid);
         this.br.postPageRaw("/ajax/generatecaptcha", "{\"url\":\"/files/downloadslow/" + fid + "/\"}");
         final String captchaurl = PluginJSonUtils.getJsonValue(this.br, "captcha");
         if (captchaurl == null || captchaurl.equals("")) {
@@ -119,33 +118,35 @@ public class EdiskCz extends PluginForHost {
         }
         final String code = this.getCaptchaCode(captchaurl, downloadLink);
         this.br.postPageRaw(url_download, "{\"triplussest\":\"devÄt\",\"captcha_id\":\"/files/downloadslow/" + fid + "/\",\"captcha\":\"" + code + "\"}");
-        String dllink = this.br.getRedirectLocation();
-        final String redirect_because_of_invalid_captcha = PluginJSonUtils.getJsonValue(this.br, "redirect");
-        if (dllink == null && redirect_because_of_invalid_captcha != null) {
+        String dllink = PluginJSonUtils.getJsonValue(this.br, "redirect");
+        final String redirect_because_of_invalid_captcha = PluginJSonUtils.getJsonValue(this.br, "msg");
+        if ((dllink == null || dllink.equals("")) && redirect_because_of_invalid_captcha != null) {
+            /* E.g. {"type":"json","msg":"Neplatn\u00fd captcha k\u00f3d","msgtype":"danger","error":true} */
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 1);
+        if (!dllink.startsWith("http") && !dllink.startsWith("/")) {
+            dllink = "/" + dllink;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().contains("/error/503") || br.containsHTML("<h3>Z této IP adresy již probíhá stahování</h3>")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-            } else if (br.containsHTML("id=\"noslowdllinkcomment\"")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            }
-            String unknownErrormessage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-            if (unknownErrormessage != null) {
-                if (unknownErrormessage.equals("Maximální rychlost stahování")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, unknownErrormessage);
+            if (br.getHttpConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultaneous downloads", 10 * 60 * 1000l);
+            } else if (this.br.containsHTML("Pomalu je možné stáhnout pouze 1 soubor") || this.br.getURL().contains("/kredit")) {
+                /*
+                 * E.g. "<p>Pomalu je možné stáhnout pouze 1 soubor / 24 hodin. Pro stažení dalšího souboru si musíš <a href="/kredit/
+                 * ">koupit kredit</a>.</p>"
+                 */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
+    /* 2016-11-24: This might be broken as website has ben renewed! */
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
