@@ -55,6 +55,42 @@ public class Puls4Com extends PluginForHost {
         return "http://www.puls4.com/cms_content/agb";
     }
 
+    @Override
+    public boolean isValidURL(String URL) {
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+            final String urlpart = new Regex(URL, "puls4\\.com/(.+)").getMatch(0);
+            String mobileID = new Regex(URL, "(\\d{5,})$").getMatch(0);
+            if (mobileID == null) {
+                this.br.getPage("http://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
+                this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+                mobileID = this.br.getRegex("/video-grid/(\\d+)").getMatch(0);
+                if (mobileID == null) {
+                    return br.containsHTML("playerVideo");
+                } else {
+                    return true;
+                }
+            }
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            /* API can even avoid geo blocks! */
+            /* 2016-09-09: Changed from "m.puls4.com" to "www.puls4.com" */
+            br.getPage("http://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
+            /* Offline or geo blocked video */
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                return false;
+            } else {
+                return true;
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        return false;
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
