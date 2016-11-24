@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.sex" }, urls = { "http://(?:www\\.)?24video\\.(?:net|sex|xxx)/video/view/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "http://(?:www\\.)?24video\\.(?:net|xxx|sex)/video/view/\\d+" })
 public class TwenteeFourVideoXxx extends PluginForHost {
 
     public TwenteeFourVideoXxx(PluginWrapper wrapper) {
@@ -40,19 +40,19 @@ public class TwenteeFourVideoXxx extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("24video.net/", "24video.sex/").replace("24video.xxx/", "24video.sex/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("24video\\.(net|xxx)/", "24video.sex/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.24video.sex/staticPage/view/agreement_en";
+        return "http://www.24video.xxx/staticPage/view/agreement_en";
     }
 
     @Override
     public String rewriteHost(String host) {
         if ("24video.net".equals(getHost())) {
-            if (host == null || "24video.net".equals(host) || "24video.xxx".equals(host)) {
-                return "24video.sex";
+            if (host == null || "24video.net".equals(host)) {
+                return "24video.xxx";
             }
         }
         return super.rewriteHost(host);
@@ -75,7 +75,7 @@ public class TwenteeFourVideoXxx extends PluginForHost {
         correctDownloadLink(link);
         br.setFollowRedirects(true);
         // are you 18 ?
-        br.setCookie(this.getHost(), "plus18-1", "true");
+        br.setCookie(Browser.getHost(link.getDownloadURL()), "plus18-1", "true");
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<video><error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,7 +98,7 @@ public class TwenteeFourVideoXxx extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             final String fid = getFID(downloadLink);
-            ajaxGetPage("/auth/setSession?id=" + br.getCookie("http://24video.net/", "JSESSIONID"));
+            ajaxGetPage("/auth/setSession?id=" + br.getCookie(Browser.getHost(downloadLink.getDownloadURL()), "JSESSIONID"));
             // lets place some random time in here
             sleep(new Random().nextInt(10) * 1001l, downloadLink);
             ajaxGetPage("/video/xml/" + fid + "?mode=play");
