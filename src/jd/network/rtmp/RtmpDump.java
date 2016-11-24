@@ -341,10 +341,11 @@ public class RtmpDump extends RTMPDownload {
             long readerTimeOut = 10000l;
 
             String cmdArgsWindows = rtmpConnection.getCommandLineParameter();
-            List<String> cmdArgsMacAndLinux = new ArrayList<String>();
+            final List<String> cmdArgsMacAndLinux = new ArrayList<String>();
             if (CrossSystem.isWindows()) {
                 // MAX_PATH Fix --> \\?\ + Path
                 if (String.valueOf(tmpFile).length() >= 260) {
+                    // https://msdn.microsoft.com/en-us/library/aa365247.aspx
                     cmdArgsWindows += " \"\\\\?\\" + String.valueOf(tmpFile) + "\"";
                 } else {
                     cmdArgsWindows += " \"" + String.valueOf(tmpFile) + "\"";
@@ -357,18 +358,17 @@ public class RtmpDump extends RTMPDownload {
             setResume(rtmpConnection.isResume());
             final ExecutorService executor = Executors.newSingleThreadExecutor();
             try {
-                logger.info(cmdArgsMacAndLinux.toString());
                 if (CrossSystem.isWindows()) {
+                    logger.info(cmdArgsWindows);
                     NP = new NativeProcess(RTMPDUMP, cmdArgsWindows);
                     R = new InputStreamReader(NP.getErrorStream());
                 } else {
+                    logger.info(cmdArgsMacAndLinux.toString());
                     P = Runtime.getRuntime().exec(cmdArgsMacAndLinux.toArray(new String[cmdArgsMacAndLinux.size()]));
                     R = new InputStreamReader(P.getErrorStream());
                 }
                 final BufferedReader br = new BufferedReader(R);
-
                 /* prevents input buffer timed out */
-
                 Future<String> future;
                 Callable<String> readTask = new Callable<String>() {
                     @Override
