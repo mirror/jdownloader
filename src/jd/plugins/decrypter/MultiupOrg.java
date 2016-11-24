@@ -97,7 +97,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
     }
 
     private String getFilename(String parameter) {
-        String filename = new Regex(parameter, "(?:/[0-9a-z]{32}_)(.*?)").getMatch(0);
+        String filename = new Regex(parameter, "/[0-9a-f]{32}(?:/|_)(.+)").getMatch(0);
         // here it can be present within html source
         if (filename == null) {
             filename = br.getRegex("Filename\\s*:\\s*(.*?)\\s*<br").getMatch(0);

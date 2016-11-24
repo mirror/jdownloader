@@ -21,16 +21,21 @@ import java.util.ArrayList;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  *
@@ -45,6 +50,11 @@ public class AdhyPe extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -56,17 +66,40 @@ public class AdhyPe extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String key = getKey(unWise(), fuid);
-        br.getPage("/" + key);
-        final String redirecturl = br.toString();
-        br.getPage("/" + redirecturl);
-        final String finallink = br.getRedirectLocation();
+        final String unwise = unWise();
+        final String key = getKey(unwise, fuid);
+        if (key == null || unwise == null) {
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+        }
+        Browser br = this.br.cloneBrowser();
+        sleep(7500, param);
+        // only required for this request
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(Request.getLocation(key, br.getRequest()));
+        String redirecturl = br.toString();
+        // recaptchav2
+        if (isCaptcha(unwise)) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, this.br).getToken();
+            if (recaptchaV2Response != null) {
+                redirecturl += "." + recaptchaV2Response;
+            }
+        }
+        br = this.br.cloneBrowser();
+        br.getPage(Request.getLocation(redirecturl, br.getRequest()));
+        final String finallink = HTMLEntities.unhtmlentities(br.getRedirectLocation());
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
+    }
+
+    private boolean isCaptcha(String unwise) {
+        // its evaulated by js, see how long this will work for
+        final String captchaKey = new Regex(unwise, "var\\s+[a-zA-Z0-9]+\\s*=\\s*(0|1)\\s*;\\s*var\\s+password\\s*=\\s*(?:0|1);").getMatch(0);
+        return PluginJSonUtils.parseBoolean(captchaKey);
     }
 
     private String unWise() {
