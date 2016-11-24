@@ -26,6 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -49,10 +53,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -657,6 +657,11 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
+    private final boolean containsErrorTitle(final Browser br) {
+        final boolean result = br.containsHTML("<div class=\"message_page_title\">Error</div>");
+        return result;
+    }
+
     /** 2016-08-11: Using website, API not anymore! */
     private void decryptSingleVideo(final String parameter) throws Exception {
         final String[] ids = findVideoIDs(parameter);
@@ -676,10 +681,17 @@ public class VKontakteRu extends PluginForDecrypt {
             {
                 // webui, youtube stuff within -raztoki20160817
                 jd.plugins.hoster.VKontakteRuHoster.accessVideo(this.br, oid, id, listID, false);
-                if ((br.containsHTML("<div class=\"message_page_title\">Error</div>") && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
-                    throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
-                } else if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                {
+                    final boolean isError = containsErrorTitle(br);
+                    if ((isError && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
+                        throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
+                    } else if (isError && br.containsHTML("<div class=\"message_page_body\">\\s*Access denied")) {
+                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    } else if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
+                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    } else if (br.toString().contains("<\\/b> was removed from public access by request of the copyright holder.<\\/div>\\n<\\/div>\"")) {
+                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                    }
                 }
                 String ajax = br.getRegex("ajax\\.preload\\('al_video\\.php',[^\r\n]+\\);[\r\n]+").getMatch(-1);
                 if (ajax != null) {
@@ -871,6 +883,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         dl.setName(photoID);
         dl.setContentUrl(getProtocol() + "vk.com/photo" + photoID);
+        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
         return dl;
     }
 
@@ -958,8 +971,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             String[] videos = null;
             if (totalCounter < 12) {
-                /* 2016-08-24: Updated this RegEx */
-                final String jsVideoArray = br.getRegex("\"pageVideosList\"\\s*?:\\s*?(\\{.*?\\]\\}\\})").getMatch(0);
+                /* 2016-08-24: Updated this */
+                final String jsVideoArray = PluginJSonUtils.getJsonNested(br, "pageVideosList");
                 if (jsVideoArray != null) {
                     videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+,\\d+),\"").getColumn(0);
                 } else {
