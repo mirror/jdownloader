@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.xxx" }, urls = { "http://(?:www\\.)?24video\\.(?:net|xxx)/video/view/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24video.sex" }, urls = { "http://(?:www\\.)?24video\\.(?:net|sex|xxx)/video/view/\\d+" })
 public class TwenteeFourVideoXxx extends PluginForHost {
 
     public TwenteeFourVideoXxx(PluginWrapper wrapper) {
@@ -40,19 +40,19 @@ public class TwenteeFourVideoXxx extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("24video.net/", "24video.xxx/"));
+        link.setUrlDownload(link.getDownloadURL().replace("24video.net/", "24video.sex/").replace("24video.xxx/", "24video.sex/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.24video.xxx/staticPage/view/agreement_en";
+        return "http://www.24video.sex/staticPage/view/agreement_en";
     }
 
     @Override
     public String rewriteHost(String host) {
         if ("24video.net".equals(getHost())) {
-            if (host == null || "24video.net".equals(host)) {
-                return "24video.xxx";
+            if (host == null || "24video.net".equals(host) || "24video.xxx".equals(host)) {
+                return "24video.sex";
             }
         }
         return super.rewriteHost(host);
