@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" })
 public class BoobinspectorComDecrypter extends PornEmbedParser {
 
     public BoobinspectorComDecrypter(PluginWrapper wrapper) {
@@ -35,15 +35,18 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
     /* Porn_plugin */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        String externID = null;
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.addAllowedResponseCodes(410);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
-            return decryptedLinks;
+        {
+            final int status = br.getHttpConnection().getResponseCode();
+            if (status == 404 || status == 410) {
+                decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
+                return decryptedLinks;
+            }
         }
-        externID = this.br.getRedirectLocation();
+        String externID = br.getRedirectLocation();
         if (externID != null && !externID.contains("boobinspector.com/")) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -51,12 +54,11 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
             br.getPage(externID);
             externID = null;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
-        decryptedLinks = new ArrayList<DownloadLink>();
         /* No embed url found --> Probably video is selfhosted */
         final DownloadLink main = createDownloadlink(parameter.replace("boobinspector.com/", "boobinspectordecrypted.com/"));
         decryptedLinks.add(main);
