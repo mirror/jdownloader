@@ -16,10 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -27,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|info)/video/\\d+/[a-z0-9\\-]+" }) 
-public class AnitubeCo extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|info)/video/\\d+/[a-z0-9\\-]+" })
+public class AnitubeCo extends antiDDoSForHost {
 
     // note: .co, .tv, .com.br, .jp, .se don't respond only .info -raztoki20160716
     // https://www.facebook.com/anitubebr/ or google "anitube"
@@ -52,10 +52,18 @@ public class AnitubeCo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException b) {
+            // link correction can lead to redirect loop.. happens in browsers also.
+            if ("Too many redirects!".equals(b.getMessage())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         // provider blocks some subnets on http gateway, unknown what ranges.
         if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "IP Blocked: Provider prevents access based on IP address.");
@@ -76,13 +84,17 @@ public class AnitubeCo extends PluginForHost {
         }
         for (String match : matches) {
             final Browser br = this.br.cloneBrowser();
-            br.getPage(match);
+            getPage(br, match);
             final String[] qualities = { "720p HD", "360p SD", "480" };
             for (final String quality : qualities) {
                 dllink = br.getRegex("file\\s*:\\s*\"(https?://[^<>\"]*?)\",\\s*label:\\s*\"" + quality + "\"").getMatch(0);
                 if (dllink != null) {
                     break;
                 }
+            }
+            if (dllink == null && br.containsHTML("/manifest\\.mpd")) {
+                // hds
+                throw new PluginException(LinkStatus.ERROR_FATAL, "HDS support not implemented YET!");
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

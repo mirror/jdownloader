@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,10 +31,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})" })
 public class MultiupOrg extends antiDDoSForDecrypt {
 
     // DEV NOTES:
@@ -54,33 +54,20 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         String parameter = param.toString().replaceFirst("://multiup", "://www.multiup");
         parameter = parameter.replaceFirst("org/en/", "org/");
         parameter = parameter.replaceFirst("org/fr/", "org/");
-        // link structure parser!
-        String reg = "(?:org|eu)/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|mirror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
-        String[][] matches = new Regex(parameter, reg).getMatches();
-        String uid = matches[0][1];
+        final String uid = getFUID(parameter);
         if (uid == null) {
-            uid = matches[0][5];
-            if (uid == null) {
-                uid = matches[0][7];
-                if (uid == null) {
-                    logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
-                    return decryptedLinks;
-                }
-            }
+            logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
+            return decryptedLinks;
         }
-        String filename = matches[0][2];
+        final String filename = getFilename(parameter);
         if (filename == null) {
-            filename = matches[0][6];
-            if (filename == null) {
-                filename = matches[0][8];
-                if (filename == null) {
-                    logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
-                    return decryptedLinks;
-                }
-            }
+            logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
+            return decryptedLinks;
         }
-        parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
-        param.setCryptedUrl(parameter);
+        if (filename != null) {
+            parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/en/download/" + uid + "/" + filename;
+            param.setCryptedUrl(parameter);
+        }
 
         getPage(parameter.replace("/en/download/", "/en/mirror/"));
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
@@ -96,7 +83,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
-        final String[] links = br.getRegex("[\r\n\t ]{3,}href=\"([^\"]+)\"[\r\n\t ]{3,}").getColumn(0);
+        final String[] links = br.getRegex("\\s+href=\"([^\"]+)\"\\s+").getColumn(0);
         if (links == null || links.length == 0) {
             logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
             return null;
@@ -105,7 +92,22 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             singleLink = singleLink.trim().replaceFirst(":/+", "://");
             decryptedLinks.add(createDownloadlink(singleLink));
         }
+
         return decryptedLinks;
+    }
+
+    private String getFilename(String parameter) {
+        String filename = new Regex(parameter, "(?:/[0-9a-z]{32}_)(.*?)").getMatch(0);
+        // here it can be present within html source
+        if (filename == null) {
+            filename = br.getRegex("Filename\\s*:\\s*(.*?)\\s*<br").getMatch(0);
+        }
+        return filename;
+    }
+
+    private String getFUID(String parameter) {
+        final String fuid = new Regex(parameter, "(?:_|/)([a-f0-9]{32})").getMatch(0);
+        return fuid;
     }
 
     /* NO OVERRIDE!! */

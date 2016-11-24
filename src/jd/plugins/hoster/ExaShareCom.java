@@ -23,6 +23,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,11 +48,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info|bojem3a\\.info|ajihezo\\.info)/((vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info|bojem3a\\.info|ajihezo\\.info|ohbuegh3ev\\.com)/((vid)?embed\\-)?[a-z0-9]{12}" })
 public class ExaShareCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -59,8 +59,8 @@ public class ExaShareCom extends PluginForHost {
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info|bojem3a\\.info|ajihezo\\.info)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info|bojem3a\\.info|ajihezo\\.info|ohbuegh3ev\\.com)";
+    private static final String  MAINTENANCE                  = ">\\s*This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
