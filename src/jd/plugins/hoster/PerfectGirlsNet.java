@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?perfectgirlsdecrypted\\.net/\\d+/.{1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://([a-z]+\\.)?perfectgirlsdecrypted\\.net/\\d+/.{1}" })
 public class PerfectGirlsNet extends PluginForHost {
 
     public PerfectGirlsNet(PluginWrapper wrapper) {
@@ -67,7 +67,6 @@ public class PerfectGirlsNet extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://perfectgirls.net" + Encoding.htmlDecode(dllink);
         br.getPage(dllink);
         dllink = br.toString();
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
