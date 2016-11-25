@@ -20,12 +20,11 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+(/[^/]+)?" })
@@ -38,23 +37,26 @@ public class BsTo extends PluginForDecrypt {
     private static final String TYPE_SINGLE = "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
         if (parameter.matches(TYPE_SINGLE)) {
-            final String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
+            String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
             if (finallink == null) {
-                return null;
+                finallink = br.getRegex("<iframe\\s+[^>]+src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
+            }
+            if (finallink == null) {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            } else if (finallink.contains("bs.to/out/")) {
+                br.setFollowRedirects(false);
+                br.getPage(finallink);
+                finallink = br.getRedirectLocation();
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
@@ -66,12 +68,6 @@ public class BsTo extends PluginForDecrypt {
             }
             for (final String singleLink : links) {
                 decryptedLinks.add(createDownloadlink("http://bs.to/" + singleLink));
-            }
-
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
             }
         }
 
