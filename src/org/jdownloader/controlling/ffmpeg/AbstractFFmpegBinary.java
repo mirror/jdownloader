@@ -30,6 +30,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
@@ -276,13 +277,24 @@ public class AbstractFFmpegBinary {
         finalServer.registerRequestHandler(new HttpRequestHandler() {
             final byte[] readBuf = new byte[512];
 
+            private final boolean validateID(HttpRequest request) throws IOException {
+                final String id = request.getParameterbyKey("id");
+                if (id == null) {
+                    return false;
+                }
+                if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
+                    return false;
+                }
+                return true;
+            }
+
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 try {
                     if (logger != null) {
                         logger.info(request.toString());
                     }
-                    if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
+                    if (!validateID(request)) {
                         return false;
                     }
                     if ("/progress".equals(request.getRequestedPath())) {
@@ -309,14 +321,10 @@ public class AbstractFFmpegBinary {
                     if (logger != null) {
                         logger.info(request.toString());
                     }
-                    final String id = request.getParameterbyKey("id");
-                    if (id == null) {
+                    if (!validateID(request)) {
                         return false;
                     }
-                    if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
-                        return false;
-                    }
-                    if ("/meta".equals(request.getRequestedPath())) {
+                    if ("/m3u8".equals(request.getRequestedPath())) {
                         updateLastUpdateTimestamp();
                         final Browser br = getRequestBrowser();
                         // work around for longggggg m3u pages

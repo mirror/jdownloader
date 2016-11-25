@@ -289,6 +289,9 @@ public class TwitchTv extends PluginForHost {
                 return ret;
             }
 
+            /*
+             * TODO: move logic to getM3U8Playlists
+             */
             protected String optimizeM3U8Playlist(String m3u8Playlist) {
                 if (m3u8Playlist != null && isTwitchOptimized) {
                     final StringBuilder sb = new StringBuilder();
