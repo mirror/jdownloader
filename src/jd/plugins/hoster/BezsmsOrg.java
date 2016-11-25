@@ -127,12 +127,12 @@ public class BezsmsOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
-        final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
         correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
+        final Browser altbr = br.cloneBrowser();
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -145,7 +145,7 @@ public class BezsmsOrg extends PluginForHost {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        if (true || br.getURL().contains("/?op=login&redirect=")) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             try {
@@ -153,7 +153,7 @@ public class BezsmsOrg extends PluginForHost {
                 if (br.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+                altbr.getPage("/?op=report_file&id=" + fuid);
                 if (altbr.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -256,7 +256,7 @@ public class BezsmsOrg extends PluginForHost {
     }
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
-        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+        br.getPage("/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 

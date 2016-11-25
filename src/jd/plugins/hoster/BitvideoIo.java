@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -33,10 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "playernaut.com" }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?playernaut\\.com/\\?v=[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "rapidvideo.com", }, urls = { "https?://(?:www\\.)?bitporno\\.sx/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(playernaut\\.com|rapidvideo\\.com)/\\?v=[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
@@ -46,7 +46,8 @@ public class BitvideoIo extends PluginForHost {
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other:
+    // other: playernaut.com -> redirect into rapidvideo.com
+    // other: same owner/sites I assume..
 
     /* Connection stuff */
     private static final boolean free_resume         = true;
