@@ -27,14 +27,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetram.com" }, urls = { "http://(www\\.)?filetram\\.com/(download/.+|(turbobit|uploading|netload|bitshare|rapidshare|mediafire|4shared)/[a-z0-9\\-_]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetram.com" }, urls = { "http://(www\\.)?filetram\\.com/(download/.+|(turbobit|uploading|mediafire|4shared)/[a-z0-9\\-_]+)" })
 public class FileTramCom extends PluginForDecrypt {
 
     public FileTramCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String OTHERLINK = "http://(www\\.)?filetram\\.com/(turbobit|uploading|netload|bitshare|rapidshare|mediafire|4shared)/[a-z0-9\\-_]+";
+    private final String OTHERLINK = "http://(www\\.)?filetram\\.com/(turbobit|uploading|mediafire|4shared)/[a-z0-9\\-_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -53,22 +53,31 @@ public class FileTramCom extends PluginForDecrypt {
                 fpName = br.getRegex("<title>([^<>\"]*?)\\- Free Download from").getMatch(0);
             } else {
                 fpName = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
-                if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- [A-Za-z0-9\\-]+ download</title>").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<title>(.*?) \\- [A-Za-z0-9\\-]+ download</title>").getMatch(0);
+                }
             }
             String textArea = br.getRegex("id=\"copy\\-links\" class=\"select\\-content\" wrap=\"off\">(.*?)</textarea>").getMatch(0);
             String singleLink = br.getRegex("globalVar\\.url=\\'(.*?)\\'").getMatch(0);
-            if (singleLink == null) singleLink = br.getRegex("<div id=\"urlHolder\" style=\"display:none\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
+            if (singleLink == null) {
+                singleLink = br.getRegex("<div id=\"urlHolder\" style=\"display:none\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
+            }
             if ((textArea == null || textArea.length() == 0) && singleLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             if (textArea != null && textArea.length() != 0) {
                 String[] links = HTMLParser.getHttpLinks(textArea, "");
-                if (links == null || links.length == 0) return null;
-                for (String dl : links)
+                if (links == null || links.length == 0) {
+                    return null;
+                }
+                for (String dl : links) {
                     decryptedLinks.add(createDownloadlink(dl));
+                }
             }
-            if (singleLink != null) decryptedLinks.add(createDownloadlink(singleLink));
+            if (singleLink != null) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());

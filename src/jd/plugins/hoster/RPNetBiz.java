@@ -23,6 +23,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.appwork.storage.simplejson.JSonArray;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonNode;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,14 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.simplejson.JSonArray;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonNode;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" })
 public class RPNetBiz extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -225,25 +225,7 @@ public class RPNetBiz extends PluginForHost {
                 }
             }
         }
-
-        // Temporary workaround for bitshare. Can be removed when rpnet accepts bitshare shorthand links.
-        String downloadURL = null;
-        if (link.getDownloadURL().contains("bitshare.com/?f=")) {
-            String rex = link.getStringProperty("rex", null);
-            if (rex == null) {
-                Browser newBr = new Browser();
-                newBr.getPage(link.getDownloadURL());
-                rex = newBr.getRegex("Download:</td>[^\"]*<td><input type=\"text\" value=\"([^\"]+)\"").getMatch(0);
-                if (rex == null) {
-                    logger.warning("Could not find 'rex'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                link.setProperty("rex", rex);
-            }
-            downloadURL = rex;
-        } else {
-            downloadURL = link.getDownloadURL();
-        }
+        String downloadURL = link.getDownloadURL();
         prepBrowser();
         String generatedLink = checkDirectLink(link, "cachedDllink");
         int maxChunks = 0;
