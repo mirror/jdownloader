@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kumpulbagi.id" }, urls = { "http://(?:kbagi\\.com|kumpulbagi\\.(?:id|com))/[a-z0-9\\-_\\.]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "http://(?:kbagi\\.com|kumpulbagi\\.(?:id|com))/[a-z0-9\\-_\\.]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
 public class KumpulbagiId extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

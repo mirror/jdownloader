@@ -28,9 +28,9 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "2ch.io", "anonym.to", "hiderefer.com", "blankrefer.com", "anon.click", "lolinez.com", "nullrefer.com", "noreferer.link", "redirect.am", "relinker.org", "href.li" },
+        names = { "2ch.io", "anonym.to", "hiderefer.com", "blankrefer.com", "anon.click", "lolinez.com", "nullrefer.com", "redirect.am", "relinker.org", "href.li" },
 
-urls = { "https?://(?:www\\.)?2ch\\.io/(.+)", "https?://(?:www\\.)?anonym\\.to/\\?(.+)", "https?://(?:www\\.)?hiderefer\\.com/\\?(.+)", "https?://(?:www\\.)?blankrefer\\.com/\\?(.+)", "https?://(?:www\\.)?anon\\.click/(.+)", "https?://(?:www\\.)?lolinez\\.com/\\?(.+)", "https?://(?:www\\.)?nullrefer\\.com/\\?(.+)", "https?://(?:www\\.)?noreferer\\.link/\\?(.+)", "https?://(?:www\\.)?redirect\\.am/\\?(.+)", "https?://(?:www\\.)?relinker\\.org/(.+)", "https?://(?:www\\.)?href\\.li/\\?(.+)" }
+        urls = { "https?://(?:www\\.)?2ch\\.io/(.+)", "https?://(?:www\\.)?anonym\\.to/\\?(.+)", "https?://(?:www\\.)?hiderefer\\.com/\\?(.+)", "https?://(?:www\\.)?blankrefer\\.com/\\?(.+)", "https?://(?:www\\.)?anon\\.click/(.+)", "https?://(?:www\\.)?lolinez\\.com/\\?(.+)", "https?://(?:www\\.)?nullrefer\\.com/\\?(.+)", "https?://(?:www\\.)?redirect\\.am/\\?(.+)", "https?://(?:www\\.)?relinker\\.org/(.+)", "https?://(?:www\\.)?href\\.li/\\?(.+)" }
 
 )
 public class NnmT extends PluginForDecrypt {
