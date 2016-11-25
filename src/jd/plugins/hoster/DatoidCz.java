@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -30,9 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+/.{1}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "https?://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+(?:/.*)?" })
 public class DatoidCz extends PluginForHost {
 
     public DatoidCz(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class DatoidCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(link.getDownloadURL()));
+        br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML("\"error\":\"(File not found|File was blocked|File was deleted)\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("\"error\":\"File is password protected\"")) {
@@ -80,14 +80,7 @@ public class DatoidCz extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
             logger.info("Only downloadable by Premium Account holders");
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -118,7 +111,7 @@ public class DatoidCz extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(final Account account) throws Exception {
         br.setFollowRedirects(false);
-        br.getPage("http://api.datoid.cz/v1/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("https://api.datoid.cz/v1/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("\\{\"success\":false\\}")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -138,7 +131,7 @@ public class DatoidCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://api.datoid.cz/v1/get-user-details?token=" + TOKEN);
+        br.getPage("https://api.datoid.cz/v1/get-user-details?token=" + TOKEN);
         /** 1 Credit = 1 MB */
         final String credits = PluginJSonUtils.getJsonValue(br, "credits");
         ai.setTrafficLeft(SizeFormatter.getSize(credits + " MB"));
@@ -152,7 +145,7 @@ public class DatoidCz extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         TOKEN = account.getStringProperty("logintoken", null);
-        br.getPage("http://api.datoid.cz/v1/get-download-link?token=" + TOKEN + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        br.getPage("https://api.datoid.cz/v1/get-download-link?token=" + TOKEN + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML("\"error\":\"Lack of credits\"")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }

@@ -11,7 +11,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28942 $", interfaceVersion = 3, names = { "ul-instant.pw" }, urls = { "https?://ul\\-instant\\.pw/dl/[A-F0-9\\-]+" }) public class UlInstantPw extends PluginForHost {
+@HostPlugin(revision = "$Revision: 28942 $", interfaceVersion = 3, names = { "ul-instant.pw" }, urls = { "https?://ul\\-instant\\.pw/dl/[A-F0-9\\-]+" })
+public class UlInstantPw extends PluginForHost {
 
     public UlInstantPw(PluginWrapper wrapper) {
         super(wrapper);

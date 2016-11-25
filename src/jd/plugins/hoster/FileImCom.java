@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -29,8 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "http://(www\\.)?fileim\\.com/file/[a-f0-9]{16}" })
 public class FileImCom extends PluginForHost {
@@ -83,7 +83,6 @@ public class FileImCom extends PluginForHost {
         }
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("http://www.fileim.com/ajax/download/settimer.ashx?fid=" + fid);
         br2.getPage("/ajax/download/gettimer.ashx");
         String waittime = br2.getRegex("(\\d+)_\\d+").getMatch(0);
         if (waittime == null) {
