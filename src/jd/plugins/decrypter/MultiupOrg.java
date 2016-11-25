@@ -78,7 +78,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             final Form form = br.getFormbyActionRegex("/mirror/");
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(form);
+            submitForm(form);
             if (br.containsHTML("g-recaptcha")) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }

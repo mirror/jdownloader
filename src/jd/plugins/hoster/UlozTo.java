@@ -22,6 +22,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,10 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -101,90 +101,101 @@ public class UlozTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        passwordProtected = false;
-        this.setBrowserExclusive();
-        correctDownloadLink(downloadLink);
-        prepBR(this.br);
-        br.setFollowRedirects(false);
-        if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
-            downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
-            return AvailableStatus.TRUE;
-        }
-        finalDirectDownloadURL = handleDownloadUrl(downloadLink);
-        if (finalDirectDownloadURL != null) {
-            return AvailableStatus.TRUE;
-        }
-        /* For age restricted links */
-        final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (ageFormToken != null) {
-            /* 2016-05-24: This might be outdated */
-            br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
-            handleRedirect(downloadLink);
-        } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
-            /* 2016-05-24: This might be outdated */
-            br.setFollowRedirects(true);
-            String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
-            currenturlpart = Encoding.urlEncode(currenturlpart);
-            br.postPage("/porn-disclaimer/?back=" + currenturlpart, "agree=Souhlas%C3%ADm&_do=pornDisclaimer-submit");
+        synchronized (CTRLLOCK) {
+            passwordProtected = false;
+            this.setBrowserExclusive();
+            correctDownloadLink(downloadLink);
+            prepBR(this.br);
             br.setFollowRedirects(false);
-        } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
-            /*
-             * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
-             * link-ID.
-             */
-            this.br.setFollowRedirects(true);
-            /* Agree to redirect from uloz.to to pornfile.cz */
-            br.postPage(this.br.getURL(), "agree=Souhlas%C3%ADm&do=askAgeForm-submit");
-            /* Agree to porn disclaimer */
-            final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
-            br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
-            br.setFollowRedirects(false);
-        }
-        if (br.containsHTML("The file is not available at this moment, please, try it later")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
-        }
-        if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
-            return AvailableStatus.UNCHECKABLE;
-        }
-        // Wrong links show the mainpage so here we check if we got the mainpage or not
-        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = null;
-        if (br.containsHTML(PASSWORDPROTECTED)) {
-            passwordProtected = true;
-            filename = getFilename();
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
+                downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+                return AvailableStatus.TRUE;
             }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            downloadLink.getLinkStatus().setStatusText("This link is password protected");
-        } else {
-            filename = getFilename();
-            // For video links
-            String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
-            if (filesize == null) {
-                filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
+            finalDirectDownloadURL = handleDownloadUrl(downloadLink);
+            if (finalDirectDownloadURL != null) {
+                return AvailableStatus.TRUE;
+            }
+            if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+                final Form f = br.getFormbyAction("/limit-exceeded");
+                if (f != null) {
+                    if (f.containsHTML("class=\"g-recaptcha\"")) {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    br.submitForm(f);
+                } else {
+                    return AvailableStatus.UNCHECKABLE;
+                }
+            }
+            /* For age restricted links */
+            final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (ageFormToken != null) {
+                /* 2016-05-24: This might be outdated */
+                br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
+                handleRedirect(downloadLink);
+            } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
+                /* 2016-05-24: This might be outdated */
+                br.setFollowRedirects(true);
+                String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
+                currenturlpart = Encoding.urlEncode(currenturlpart);
+                br.postPage("/porn-disclaimer/?back=" + currenturlpart, "agree=Souhlas%C3%ADm&_do=pornDisclaimer-submit");
+                br.setFollowRedirects(false);
+            } else if (br.containsHTML("id=\"frm\\-askAgeForm\"")) {
+                /*
+                 * 2016-05-24: Uloz.to recognizes porn files and moves them from uloz.to to pornfile.cz (usually with the same filename- and
+                 * link-ID.
+                 */
+                this.br.setFollowRedirects(true);
+                /* Agree to redirect from uloz.to to pornfile.cz */
+                br.postPage(this.br.getURL(), "agree=Souhlas%C3%ADm&do=askAgeForm-submit");
+                /* Agree to porn disclaimer */
+                final String currenturlpart = new Regex(br.getURL(), "https?://[^/]+(/.+)").getMatch(0);
+                br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
+                br.setFollowRedirects(false);
+            }
+            if (br.containsHTML("The file is not available at this moment, please, try it later")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
+            }
+            // Wrong links show the mainpage so here we check if we got the mainpage or not
+            if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = null;
+            if (br.containsHTML(PASSWORDPROTECTED)) {
+                passwordProtected = true;
+                filename = getFilename();
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                downloadLink.getLinkStatus().setStatusText("This link is password protected");
+            } else {
+                filename = getFilename();
+                // For video links
+                String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
                 if (filesize == null) {
-                    filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
-                    // For file links
+                    filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
                     if (filesize == null) {
-                        filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
+                        filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
+                        // For file links
                         if (filesize == null) {
-                            filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
+                            filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
+                            if (filesize == null) {
+                                filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
+                            }
                         }
                     }
                 }
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                if (filesize != null) {
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
             }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            if (filesize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     private String getFilename() {
@@ -501,9 +512,9 @@ public class UlozTo extends PluginForHost {
                         /*
                          * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                          * 1800542995541.log; 2422576; jdlog://1800542995541
-                         * 
+                         *
                          * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                         * 
+                         *
                          * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                          */
                         // logger.info("No traffic available!");

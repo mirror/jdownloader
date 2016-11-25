@@ -82,7 +82,7 @@ public class AdhyPe extends PluginForDecrypt {
             String redirecturl = br.toString();
             // recaptchav2
             if (isCaptcha(unwise)) {
-                if (i + 1 <= repeat) {
+                if ((i + 1) <= (repeat - 1)) {
                     sleep(30000L, param);
                     continue;
                 }
