@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,8 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" }) 
 public class BandCampCom extends PluginForHost {
@@ -87,6 +87,7 @@ public class BandCampCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
+        br = new Browser();
         this.setBrowserExclusive();
         if (userAgent == null) {
             /* we first have to load the plugin, before we can reference it */
@@ -95,7 +96,7 @@ public class BandCampCom extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(true);
-        final Browser br2 = br.cloneBrowser();
+        Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
@@ -114,7 +115,7 @@ public class BandCampCom extends PluginForHost {
             con.disconnect();
         } catch (Throwable e) {
         }
-        if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) {
+        if (br.containsHTML("(>Sorry, that something isn't here|>start at the beginning</a> and you'll certainly find what)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         DLLINK = br.getRegex("\"file\":.*?\"((https?:)?//.*?)\"").getMatch(0);
@@ -123,9 +124,6 @@ public class BandCampCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        if (DLLINK.startsWith("//")) {
-            DLLINK = "http:" + DLLINK;
-        }
         if (!downloadLink.getBooleanProperty("fromdecrypter", false)) {
             String tracknumber = br.getRegex("\"track_number\":(\\d+)").getMatch(0);
             if (tracknumber == null) {
@@ -163,6 +161,7 @@ public class BandCampCom extends PluginForHost {
         final String filename = getFormattedFilename(downloadLink);
         downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
+        br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         try {
             /* Server does NOT like HEAD requests! */

@@ -52,7 +52,7 @@ public class VvvvidIt extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setFollowRedirects(true);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final Regex urlinfo = new Regex(parameter, "vvvvid\\.it/#\\!show/(\\d+)/([a-z0-9\\-]+)");
         final Regex urlinfo_2 = new Regex(parameter, "vvvvid\\.it/#\\!show/\\d+/[a-z0-9\\-]+/(\\d+)/(\\d+)");
@@ -66,6 +66,7 @@ public class VvvvidIt extends PluginForDecrypt {
             conn_id = jd.plugins.hoster.VvvvidIt.getConnIDFromAccount(aa);
         } else {
             prepBR(this.br);
+            br.getPage(parameter);
             conn_id = getConnID(this.br);
         }
 

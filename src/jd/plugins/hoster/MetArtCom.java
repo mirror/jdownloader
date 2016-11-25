@@ -37,9 +37,13 @@ import jd.plugins.PluginForHost;
         } else if (parameter.getDownloadURL().contains("zip.php")) {
             name = new Regex(parameter.getDownloadURL(), "zip\\.php\\?zip=([A-Z0-9]+)\\&").getMatch(0);
         }
-        if (name == null) name = "Unknown Filename";
+        if (name == null) {
+            name = "Unknown Filename";
+        }
         String type = new Regex(parameter.getDownloadURL(), "movie\\.(php|mp4).*?type=(.*?)&").getMatch(1);
-        if (parameter.getDownloadURL().contains("zip.php")) type = ".zip";
+        if (parameter.getDownloadURL().contains("zip.php")) {
+            type = ".zip";
+        }
         if (type != null) {
             if ("avi".equalsIgnoreCase(type)) {
                 name = name + ".avi";
@@ -62,7 +66,9 @@ import jd.plugins.PluginForHost;
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Met-Art members only!");
     }
@@ -76,7 +82,9 @@ import jd.plugins.PluginForHost;
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        if (account == null) return false;
+        if (account == null) {
+            return false;
+        }
         return true;
     }
 
@@ -111,7 +119,9 @@ import jd.plugins.PluginForHost;
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-        if (dl.getConnection().getResponseCode() == 401) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (dl.getConnection().getResponseCode() == 401) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -21,6 +21,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,14 +43,9 @@ import jd.plugins.LetitBitAccountBuilderImpl;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multivip.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multivip.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class MultiVipNet extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -203,9 +204,9 @@ public class MultiVipNet extends PluginForHost {
         if (dllink == null) {
             /* request Download */
             if (USE_API) {
-                br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+                br.getPage("/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
                 /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
-                if ("204".equals(getJson(br.toString(), "error"))) {
+                if ("204".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
                     /*
                      * Should never happen because size limit is set in fetchAccountInfo and handled via canHandle. Update 16.05.2015: This
                      * can indeed happen for links with unknown filesize!
@@ -214,9 +215,9 @@ public class MultiVipNet extends PluginForHost {
                     account.getAccountInfo().setStatus("Free account");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link too big to download via " + this.getHost());
                 }
-                dllink = getJson(br.toString(), "directlink");
+                dllink = PluginJSonUtils.getJsonValue(br, "directlink");
             } else {
-                br.postPage("http://multivip.net/links.php", "do=addlinks&links=" + Encoding.urlEncode(link.getDownloadURL()) + "&vipkey=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("/links.php", "do=addlinks&links=" + Encoding.urlEncode(link.getDownloadURL()) + "&vipkey=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("Universal VIP key is missing or incorrect")) {
                     logger.info("Given Vip key is invalid");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -230,7 +231,7 @@ public class MultiVipNet extends PluginForHost {
                      * can indeed happen for links with unknown filesize!
                      */
                     account.setType(AccountType.FREE);
-                    account.getAccountInfo().setStatus("Free account");
+                    account.getAccountInfo().setStatus("Free Account");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link too big to download via " + this.getHost());
                 } else if (br.containsHTML("Unfortunately this key was expired")) {
                     /* Our account has expired */
@@ -300,7 +301,7 @@ public class MultiVipNet extends PluginForHost {
         account.setMaxSimultanDownloads(20);
         maxPrem.set(20);
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
-        final String error = getJson(br.toString(), "error");
+        final String error = PluginJSonUtils.getJsonValue(br, "error");
         if (error != null) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Vip key!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -308,9 +309,9 @@ public class MultiVipNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid Vip key!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String expire = getJson(br.toString(), "diedate");
-        final String max_downloadable_filesize = getJson(br.toString(), "limit");
-        final String traffic_left_kb = getJson(br.toString(), "points");
+        final String expire = PluginJSonUtils.getJsonValue(br, "diedate");
+        final String max_downloadable_filesize = PluginJSonUtils.getJsonValue(br, "limit");
+        final String traffic_left_kb = PluginJSonUtils.getJsonValue(br, "points");
         ai.setValidUntil(Long.parseLong(expire) * 1000);
         ai.setTrafficLeft(Long.parseLong(traffic_left_kb) * 1024);
         account.setProperty("max_downloadable_filesize", Long.parseLong(max_downloadable_filesize) * 1024);
@@ -343,14 +344,6 @@ public class MultiVipNet extends PluginForHost {
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
-    }
-
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {

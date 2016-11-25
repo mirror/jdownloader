@@ -267,7 +267,7 @@ public class TwitterCom extends PornEmbedParser {
                 final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
                 decryptedLinks.add(dl);
             } else {
-                final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "(<source video\\-src=|video_url\":)\"(https?://[^<>\"]*?)\"" };
+                final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "(?:<source video\\-src=|video_url\":)\"(https?://[^<>\"]*?)\"" };
                 for (final String regex : regexes) {
                     final String[] alllinks = br.getRegex(regex).getColumn(0);
                     if (alllinks != null && alllinks.length > 0) {
