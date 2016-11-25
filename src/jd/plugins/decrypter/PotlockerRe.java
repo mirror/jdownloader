@@ -26,7 +26,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "potlocker.me" }, urls = { "http://(www\\.)?potlocker\\.(net/[a-z0-9\\-]+/\\d{4}/[a-z0-9\\-]+|(re|me)/[a-z0-9\\-_]+)\\.html" }) 
+/**
+ * DON'T ADD GREEDY REGEX!!!
+ *
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "potlocker.me" }, urls = { "http://(www\\.)?potlocker\\.(net/[a-z0-9\\-]+/\\d{4}/[a-z0-9\\-]+\\.html|(re|me)/[a-z0-9\\-_]+_[a-f0-9]{9}\\.html|me/embed\\.php\\?vid=[a-z0-9\\-]+)" })
 public class PotlockerRe extends antiDDoSForDecrypt {
 
     public PotlockerRe(PluginWrapper wrapper) {
@@ -42,27 +48,29 @@ public class PotlockerRe extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("potlocker.re/", "potlocker.me/");
         String finallink = null;
-        if (parameter.matches("http://(www\\.)?potlocker\\.(re|net)/(newvideos|browse\\-.*?|login|index|contact_us|register|topvideos)\\.html")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        getPage(parameter);
-        final String potlockerdirect = br.getRegex("file:\\s*'(http://potlocker\\.(?:re|me)/videos\\.php\\?vid=[a-z0-9]+)'").getMatch(0);
-        if (potlockerdirect != null) {
-            getPage(potlockerdirect);
+        if (parameter.matches(".+/embed\\.php\\?vid=[a-z0-9\\-]+")) {
+            br.setFollowRedirects(false);
+            getPage(parameter.replace("/embed.php", "/videos.php"));
             finallink = br.getRedirectLocation();
+            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
-            if (br.getRedirectLocation() != null) {
-                getPage(br.getRedirectLocation());
+            getPage(parameter);
+            final String potlockerdirect = br.getRegex("file:\\s*'(http://potlocker\\.(?:re|me|net)/videos\\.php\\?vid=[a-z0-9]+)'").getMatch(0);
+            if (potlockerdirect != null) {
+                getPage(potlockerdirect);
+                finallink = br.getRedirectLocation();
+            } else {
+                if (br.getRedirectLocation() != null) {
+                    getPage(br.getRedirectLocation());
+                }
+                finallink = br.getRegex("<IFRAME[^>]*\\s+SRC=\"(http[^\"]+)\"").getMatch(0);
             }
-            finallink = br.getRegex("<IFRAME SRC=\"(http[^\"]+)\" FRAMEBORDER=0").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-
-        decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
     }

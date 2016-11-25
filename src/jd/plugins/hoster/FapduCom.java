@@ -69,13 +69,13 @@ public class FapduCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
-        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("'(?:file|video)'\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(?:file|video)\"[\t\n\r ]*?:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(?:file|video)\"\\s*:\\s*\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+                dllink = br.getRegex("(?:file|url):\\s*(\"|')(http[^<>\"]*?)\\1").getMatch(1);
                 if (dllink == null) {
-                    dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+                    dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\1").getMatch(1);
                     if (dllink == null) {
                         dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
                     }
@@ -83,6 +83,10 @@ public class FapduCom extends PluginForHost {
             }
         }
         if (filename == null || dllink == null) {
+            // stuff is embed, thats not supported (would need decrypter anyway) https://svn.jdownloader.org/issues/81442
+            if (br.containsHTML("<object type=\"application/x-shockwave-flash\"") && br.containsHTML("tjoob\\.com/xmoov_flv/player/\"")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Embeded links to 3rd party providers are not supported in dedicated hoster plugins.");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
