@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lvpaste.net" }, urls = { "http://(www\\.)?lupaste\\.com/index\\.php\\?v=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lupaste.com" }, urls = { "http://(www\\.)?lupaste\\.com/index\\.php\\?v=\\d+" })
 public class PegatextoNet extends PluginForDecrypt {
 
     public PegatextoNet(PluginWrapper wrapper) {

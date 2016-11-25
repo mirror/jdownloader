@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { ".com" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/shows/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/shows/.+" })
 public class AlphatvGr extends PluginForDecrypt {
 
     public AlphatvGr(PluginWrapper wrapper) {
@@ -33,7 +33,7 @@ public class AlphatvGr extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final DownloadLink main = this.createDownloadlink(parameter.replace("alphatv.gr/", "alphatvdecrypted.gr/"));
         jd.plugins.hoster.AlphatvGr.prepBR(this.br);

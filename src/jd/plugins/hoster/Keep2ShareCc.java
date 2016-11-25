@@ -50,7 +50,7 @@ import jd.plugins.PluginForHost;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" })
 public class Keep2ShareCc extends K2SApi {
 
     public Keep2ShareCc(PluginWrapper wrapper) {
@@ -71,7 +71,8 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "keep2share.cc", "k2s.cc", "keep2s.cc", "keep2.cc", "k2share.cc", "keep2share.com" };
+        // keep2.cc no dns
+        return new String[] { "keep2share.cc", "k2s.cc", "keep2s.cc", "k2share.cc", "keep2share.com" };
     }
 
     @Override
