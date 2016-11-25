@@ -13,25 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -51,7 +32,6 @@ import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
@@ -71,9 +51,27 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
+
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
-
     private final AtomicLong                        bytesWritten         = new AtomicLong(0);
     private final DownloadLinkDownloadable          downloadable;
     private final DownloadLink                      link;
@@ -82,13 +80,10 @@ public class HLSDownloader extends DownloadInterface {
     private URLConnectionAdapter                    currentConnection;
     private final ManagedThrottledConnectionHandler connectionHandler;
     private File                                    outputCompleteFile;
-
     private PluginException                         caughtPluginException;
     private final String                            m3uUrl;
     private HttpServer                              server;
-
     private final Browser                           sourceBrowser;
-
     private long                                    processID;
     protected MeteredThrottledInputStream           meteredThrottledInputStream;
     protected final AtomicReference<byte[]>         instanceBuffer       = new AtomicReference<byte[]>();
@@ -419,7 +414,6 @@ public class HLSDownloader extends DownloadInterface {
                             final long currentBytesWritten = lastBytesWritten.get() + size;
                             bytesWritten.set(currentBytesWritten);
                             downloadable.setDownloadBytesLoaded(currentBytesWritten);
-
                             final String timeString = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
                             long time = (formatStringToMilliseconds(timeString) / 1000);
                             if (time < timeInSeconds) {
@@ -638,11 +632,7 @@ public class HLSDownloader extends DownloadInterface {
                             if (sb.length() > 0) {
                                 sb.append("\r\n");
                             }
-                            if (CrossSystem.isWindows()) {
-                                sb.append("file '" + partFile.getAbsolutePath() + "'");
-                            } else {
-                                sb.append("file 'file://" + partFile.getAbsolutePath() + "'");
-                            }
+                            sb.append("file 'file://" + partFile.getAbsolutePath() + "'");
                         }
                         final byte[] bytes = sb.toString().getBytes("UTF-8");
                         response.setResponseCode(ResponseCode.get(200));
@@ -863,7 +853,6 @@ public class HLSDownloader extends DownloadInterface {
                 return true;
             }
         });
-
     }
 
     protected void onSegmentException(URLConnectionAdapter connection, IOException e) {
@@ -898,7 +887,6 @@ public class HLSDownloader extends DownloadInterface {
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
                     @Override
                     public void run() throws Exception {
                         downloadable.checkAndReserve(reservation);
@@ -942,7 +930,6 @@ public class HLSDownloader extends DownloadInterface {
             downloadable.unlockFiles(requiredFiles.toArray(new File[0]));
             cleanupDownladInterface();
         }
-
     }
 
     protected void error(PluginException pluginException) {
@@ -1095,5 +1082,4 @@ public class HLSDownloader extends DownloadInterface {
     public boolean isAcceptDownloadStopAsValidEnd() {
         return acceptDownloadStopAsValidEnd;
     }
-
 }
