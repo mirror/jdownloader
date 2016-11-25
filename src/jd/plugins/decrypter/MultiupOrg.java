@@ -96,10 +96,11 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private String getFilename(String parameter) {
+    private String getFilename(String parameter) throws Exception {
         String filename = new Regex(parameter, "/[0-9a-f]{32}(?:/|_)(.+)").getMatch(0);
-        // here it can be present within html source
         if (filename == null) {
+            // here it can be present within html source
+            getPage(parameter);
             filename = br.getRegex("Filename\\s*:\\s*(.*?)\\s*<br").getMatch(0);
         }
         return filename;
