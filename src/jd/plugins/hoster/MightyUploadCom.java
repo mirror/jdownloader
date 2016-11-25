@@ -32,10 +32,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -62,21 +67,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}(?:/\\S+)?" })
 @SuppressWarnings("deprecation")
-public class MightyUploadCom extends PluginForHost {
+public class MightyUploadCom extends antiDDoSForHost {
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://mightyupload.com";
@@ -170,36 +166,13 @@ public class MightyUploadCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    /**
-     * defines custom browser requirements.
-     */
-    private Browser prepBrowser(final Browser prepBr) {
-        HashMap<String, String> map = null;
-        synchronized (cloudflareCookies) {
-            map = new HashMap<String, String>(cloudflareCookies);
-        }
-        if (!map.isEmpty()) {
-            for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                prepBr.setCookie(this.getHost(), key, value);
-            }
-        }
-        if (useRUA) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", userAgent.get());
-        }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        // required for native cloudflare support, without the need to repeat requests.
-        try {
-            /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503 });
-        } catch (Throwable e) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(this.COOKIE_HOST, "lang", "english");
+            prepBr.addAllowedResponseCodes(500);
         }
         return prepBr;
     }
@@ -210,7 +183,6 @@ public class MightyUploadCom extends PluginForHost {
         correctDownloadLink(downloadLink);
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
-        prepBrowser(br);
         String[] fileInfo = new String[2];
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
@@ -236,7 +208,7 @@ public class MightyUploadCom extends PluginForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) {
+        if (cbr.getHttpConnection().getResponseCode() == 500 || cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (cbr.containsHTML(MAINTENANCE)) {
@@ -251,7 +223,7 @@ public class MightyUploadCom extends PluginForHost {
             if (download1 != null) {
                 download1 = cleanForm(download1);
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(downloadLink, fileInfo);
             }
             if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
@@ -330,7 +302,6 @@ public class MightyUploadCom extends PluginForHost {
      */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
-        prepBrowser(alt);
         // cloudflare initial support is within getPage.. otherwise not needed.
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
@@ -397,7 +368,7 @@ public class MightyUploadCom extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
             }
@@ -423,7 +394,7 @@ public class MightyUploadCom extends PluginForHost {
                 if (!skipWaitTime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
@@ -829,7 +800,6 @@ public class MightyUploadCom extends PluginForHost {
         synchronized (ACCLOCK) {
             try {
                 /** Load cookies */
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -864,7 +834,7 @@ public class MightyUploadCom extends PluginForHost {
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
                 // end of check form for login captcha crap.
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -933,7 +903,7 @@ public class MightyUploadCom extends PluginForHost {
                     } else if (cbr.containsHTML(PASSWORDTEXT)) {
                         dlform = handlePassword(dlform, downloadLink);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
                     if (inValidate(dllink)) {
@@ -1129,135 +1099,31 @@ public class MightyUploadCom extends PluginForHost {
      *
      * @author raztoki
      */
-    private void getPage(final String page) throws Exception {
+    @Override
+    protected void getPage(final String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
-        }
-        // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) {
-                cloudflare = br.getFormbyProperty("id", "challenge-form");
-            }
-            if (cloudflare != null) {
-                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) {
-                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                }
-                if (math == null) {
-                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) {
-                        variableName = variableName.trim();
-                    }
-                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                }
-                if (math == null) {
-                    logger.warning("Couldn't find 'math'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                // author.
-                ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                cloudflare.put("jschl_answer", value + "");
-                Thread.sleep(5500);
-                br.submitForm(cloudflare);
-                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                    logger.warning("Possible plugin error within cloudflare handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-                synchronized (cloudflareCookies) {
-                    cloudflareCookies.clear();
-                    cloudflareCookies.putAll(cookies);
-                }
-            }
-        }
+        super.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(String page, final String postData) throws Exception {
+    @Override
+    protected void postPage(String page, final String postData) throws Exception {
         if (page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // stable sucks
-        if (isJava7nJDStable() && page.startsWith("https")) {
-            page = page.replaceFirst("https://", "http://");
-        }
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        try {
-            br.postPage(page, postData);
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-        }
+        super.postPage(page, postData);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
+    @Override
+    protected void submitForm(final Form form) throws Exception {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
-        if (Form.MethodType.POST.equals(form.getMethod())) {
-            // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(br.getURL());
-            }
-            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
-                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
-                    // change relative path into full path, with protocol correction
-                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
-                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
-                    String path = form.getAction();
-                    String finalpath = null;
-                    if (path.startsWith("/")) {
-                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
-                    } else if (!path.startsWith(".")) {
-                        finalpath = basepath.replaceFirst("https://", "http://") + path;
-                    } else {
-                        // lacking builder for ../relative paths. this will do for now.
-                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    form.setAction(finalpath);
-                } else {
-                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
-                }
-                if (!stableSucks.get()) {
-                    showSSLWarning(this.getHost());
-                }
-            }
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        }
-        try {
-            br.submitForm(form);
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-        }
+        super.submitForm(form);
         correctBR();
     }
 
@@ -1795,22 +1661,6 @@ public class MightyUploadCom extends PluginForHost {
             }
         }
         return false;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)

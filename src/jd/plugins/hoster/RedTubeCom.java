@@ -14,6 +14,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube\\.(cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)\\d+" })
@@ -94,9 +95,24 @@ public class RedTubeCom extends PluginForHost {
         dllink = br.getRegex("source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                final String json = PluginJSonUtils.getJsonNested(br, "sources");
+                if (json != null) {
+                    dllink = PluginJSonUtils.getJsonValue(json, "1080");
+                    if (dllink == null) {
+                        dllink = PluginJSonUtils.getJsonValue(json, "720");
+                        if (dllink == null) {
+                            dllink = PluginJSonUtils.getJsonValue(json, "480");
+                            if (dllink == null) {
+                                dllink = PluginJSonUtils.getJsonValue(json, "240");
+                            }
+                        }
+                    }
+                }
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dllink = Encoding.urlDecode(dllink, true);
         String ext = new Regex(dllink, "(\\.flv|\\.mp4).+$").getMatch(0);
