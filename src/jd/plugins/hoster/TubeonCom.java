@@ -16,7 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -59,7 +61,7 @@ public class TubeonCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -74,6 +76,26 @@ public class TubeonCom extends PluginForHost {
         }
         if (dllink == null) {
             dllink = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            final String playerJson = br.getRegex("\\$\\('video'\\)\\.html5Player\\(\\{.*?\\}\\);").getMatch(-1);
+            if (playerJson != null) {
+                final String p = new Regex(playerJson, "config_url\\s*:\\s*'(.*?)'").getMatch(0);
+                final String vid = new Regex(playerJson, "vid\\s*:\\s*(\\d+)").getMatch(0);
+                final String embed = new Regex(playerJson, "embed\\s*:\\s*(\\d+)").getMatch(0);
+                br.getPage(p + "?vid=" + vid + "&aid=&domain_id=&embed=" + embed + "&ref=&check_speed=0");
+                //
+                Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+
+                if (map == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+
+                dllink = (String) JavaScriptEngineFactory.walkJson(map, "files/hq");
+                if (dllink == null) {
+                    dllink = (String) JavaScriptEngineFactory.walkJson(map, "files/lq");
+                }
+            }
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -40,7 +40,7 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
     // alot of these sites are all on the same ip http://samesites.com/ip/5.255.64.5
 
     public String[] siteSupportedNames() {
-        return new String[] { "links-secure.com", "save-link.info", "share-link.info", "h-link.us", "forexurls.net", "zmelody.com", "foxmoviez.com", "filmey.co", "dualmarket.info", "wwenews.us", "arabseed.com" };
+        return new String[] { "links-secure.com", "save-link.info", "share-link.info", "h-link.us", "zmelody.com", "foxmoviez.com", "filmey.co", "dualmarket.info", "wwenews.us", "arabseed.com" };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10000 $", interfaceVersion = 2, names = { "stocporn.com" }, urls = { "http?://stocporn.com/[a-zA-Z0-9\\\\-]+.html/" }) 
+@DecrypterPlugin(revision = "$Revision: 10000 $", interfaceVersion = 3, names = { "stocporn.com" }, urls = { "http?://stocporn.com/[a-zA-Z0-9\\\\-]+.html/" })
 public class StcPrnCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -41,14 +41,14 @@ public class StcPrnCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Es existiert kein Eintrag mit der ID") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String source = br.getRegex(">Download(.*?)<center><a").getMatch(0);
-        final String fpName = br.getRegex(">Download([^<]+)").getMatch(0).trim();
+        if (source == null) {
+            // unsupported isn't defect (say images)
+            return decryptedLinks;
+        }
         final String[] links = new Regex(source, "<a href=\\\"(https?://[^\\\"]+)").getColumn(0);
 
         if (links != null) {
