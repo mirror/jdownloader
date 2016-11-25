@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,9 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-/*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
+/*Same script for AbelhasPt, CopiapopEs, MinhatecaComBr*/
 /* ChomikujPlScript */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
 public class KumpulbagiId extends PluginForHost {
