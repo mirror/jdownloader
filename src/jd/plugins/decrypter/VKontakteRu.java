@@ -1120,6 +1120,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (entry instanceof Map) {
                     final Map<String, Object> entries_single_wall_post = (Map<String, Object>) entry;
                     decryptWallPost(ownerID, entries_single_wall_post, fp);
+                    /* Check if user also wants the media from inside wall comments and add that. */
                     if (vkwall_grabcomments) {
                         final long postID = getPostIDFromSingleWallPostMap(entries_single_wall_post);
                         decryptWallPostComments(ownerID, Long.toString(postID), false, fp);
