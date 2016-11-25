@@ -1086,10 +1086,9 @@ public class VKontakteRu extends PluginForDecrypt {
     @SuppressWarnings("unchecked")
     private void decryptWallLink_API() throws Exception {
         long total_numberof_entries;
-        final String userID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
-        final String wallID = "wall" + userID;
+        final String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(userID);
+        fp.setName(ownerID);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int currentOffset = 0;
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
@@ -1098,7 +1097,7 @@ public class VKontakteRu extends PluginForDecrypt {
             currentOffset = Integer.parseInt(info.getMatch(1));
             logger.info("PATTERN_WALL_LOOPBACK_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         } else {
-            apiGetPageSafe("https://api.vk.com/method/wall.get?format=json&owner_id=" + userID + "&count=1&offset=0&filter=all&extended=0");
+            apiGetPageSafe("https://api.vk.com/method/wall.get?format=json&owner_id=" + ownerID + "&count=1&offset=0&filter=all&extended=0");
             total_numberof_entries = Long.parseLong(br.getRegex("\\{\"response\"\\:\\[(\\d+)").getMatch(0));
             logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         }
@@ -1109,17 +1108,22 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
-            apiGetPageSafe("https://api.vk.com/method/wall.get?format=json&owner_id=" + userID + "&count=" + API_MAX_ENTRIES_PER_REQUEST + "&offset=" + currentOffset + "&filter=all&extended=0");
+            apiGetPageSafe("https://api.vk.com/method/wall.get?format=json&owner_id=" + ownerID + "&count=" + API_MAX_ENTRIES_PER_REQUEST + "&offset=" + currentOffset + "&filter=all&extended=0");
 
-            Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
             if (map == null) {
                 return;
             }
             List<Object> response = (List<Object>) map.get("response");
-            for (Object entry : response) {
+            for (final Object entry : response) {
                 if (entry instanceof Map) {
-                    decryptWallPost(wallID, (Map<String, Object>) entry, fp);
+                    final Map<String, Object> entries_single_wall_post = (Map<String, Object>) entry;
+                    decryptWallPost(ownerID, entries_single_wall_post, fp);
+                    if (vkwall_grabcomments) {
+                        final long postID = getPostIDFromSingleWallPostMap(entries_single_wall_post);
+                        decryptWallPostComments(ownerID, Long.toString(postID), false, fp);
+                    }
                 }
             }
 
@@ -1138,20 +1142,20 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Decrypts media of single API wall-post json objects. */
     @SuppressWarnings({ "unchecked" })
-    private void decryptWallPost(final String wall_ID, final Map<String, Object> entry, FilePackage fp) throws IOException {
-        final long id = ((Number) entry.get("id")).longValue();
+    private void decryptWallPost(final String ownerID, final Map<String, Object> entry, FilePackage fp) throws IOException {
+        final long postID = getPostIDFromSingleWallPostMap(entry);
         final long fromId = ((Number) entry.get("from_id")).longValue();
         final long toId = ((Number) entry.get("to_id")).longValue();
-        final String wall_list_id = wall_ID + "_" + id;
+        final String wall_list_id = ownerID + "_" + postID;
         /* URL to show this post. */
-        final String wall_single_post_url = "https://vk.com/" + wall_list_id;
+        final String wall_single_post_url = "https://vk.com/wall" + wall_list_id;
         final String post_text = (String) entry.get("text");
 
         List<Map<String, Object>> attachments = (List<Map<String, Object>>) entry.get("attachments");
         if (attachments == null) {
             return;
         }
-        for (Map<String, Object> attachment : attachments) {
+        for (final Map<String, Object> attachment : attachments) {
             try {
                 String owner_id = null;
                 final String type = (String) attachment.get("type");
@@ -1174,14 +1178,14 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (type.equals(wallpost_type_photo) && vkwall_grabphotos) {
                     content_id = typeObject.get("pid").toString();
                     final String album_id = typeObject.get("aid").toString();
-                    final String wall_single_photo_content_url = getProtocol() + "vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
+                    final String wall_single_photo_content_url = getProtocol() + "vk.com/wall" + ownerID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
 
                     dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
                     /*
                      * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
                      */
                     dl.setContentUrl(wall_single_photo_content_url);
-                    dl.setProperty("postID", id);
+                    dl.setProperty("postID", postID);
                     dl.setProperty("albumid", album_id);
                     dl.setProperty("owner_id", owner_id);
                     // dl.setProperty("directlinks", typeObject); //requires a lot of memory but not used at all?
@@ -1217,7 +1221,7 @@ public class VKontakteRu extends PluginForDecrypt {
                      * here so the user can easily find the title when opening it in browser.
                      */
                     dl.setContentUrl(wall_single_post_url);
-                    dl.setProperty("postID", id);
+                    dl.setProperty("postID", postID);
                     dl.setProperty("fromId", fromId);
                     dl.setProperty("toId", toId);
                     dl.setProperty("directlink", url);
@@ -1304,13 +1308,18 @@ public class VKontakteRu extends PluginForDecrypt {
 
     }
 
+    private long getPostIDFromSingleWallPostMap(final Map<String, Object> entry) {
+        return ((Number) entry.get("id")).longValue();
+    }
+
     /**
-     * Decrypts media of single API wall-post json objects.
+     * Decrypts media of single API wall-post json objects. 2016-11-25: In the future this might need some improvements but it should be
+     * okay for now.
      *
      * @throws Exception
      */
     @SuppressWarnings({ "unchecked" })
-    private void decryptWallPostComments(final String ownerID, final String postID, final boolean accessedWallPostViaWebsite, Map<String, Object> entry, final FilePackage fp) throws Exception {
+    private void decryptWallPostComments(final String ownerID, final String postID, final boolean accessedWallPostViaWebsite, final FilePackage fp) throws Exception {
         /* User has the chance to abort crawl process here. */
         if (this.isAbort()) {
             logger.info("Decryption aborted by user");
@@ -1324,17 +1333,17 @@ public class VKontakteRu extends PluginForDecrypt {
          */
         /* Additional, optional parameters: need_likes=0&start_comment_id=&offset=0&count=1000&extended=1 */
         apiGetPageSafe("https://api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID);
-        entry = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        Map<String, Object> entry = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
 
         /* First Object typically is an Integer representing the number of (following) comment objects --> Skip that */
         final ArrayList<Object> commentList = (ArrayList<Object>) entry.get("response");
         final boolean tryToGetTrackInformation = commentsHtml != null && commentsHtml.length == commentList.size() - 1;
         int commentCounter = 0;
-        for (final Object comment : commentList) {
-            if (comment instanceof Integer) {
+        for (final Object comment_o : commentList) {
+            if (comment_o instanceof Integer) {
                 continue;
             }
-            entry = (Map<String, Object>) comment;
+            entry = (Map<String, Object>) comment_o;
             int audioUrlCounter = 0;
             final String postText = (String) entry.get("text");
             final String urls[] = HTMLParser.getHttpLinks(postText, null);
@@ -1344,12 +1353,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* Hmm most times we will have audio urls here ... but it could be ANYTHING(!!) */
                 for (final String url : urls) {
                     final DownloadLink dl;
-                    if (url.matches(".+/audio(?:\\-)?\\d+_\\d+") && tryToGetTrackInformation) {
+                    if (url.matches(".+/audio(?:\\-)?\\d+_\\d+")) {
                         final Regex audioInfoRegex = new Regex(url, "audio((?:\\-)?\\d+)_(\\d+)");
                         final String audioOwnerID = audioInfoRegex.getMatch(0);
                         final String audioContentID = audioInfoRegex.getMatch(1);
                         dl = this.createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + audioOwnerID + "_" + audioContentID);
-                        if (audioInfo != null && audioUrlCounter <= audioInfo.length - 1) {
+                        if (tryToGetTrackInformation && audioInfo != null && audioUrlCounter <= audioInfo.length - 1) {
                             String informationAboutThisAudio = audioInfo[audioUrlCounter];
                             informationAboutThisAudio = Encoding.htmlDecode(informationAboutThisAudio).replace("\"", "");
                             final String[] audioInfoArray = informationAboutThisAudio.split(",");
@@ -1380,7 +1389,6 @@ public class VKontakteRu extends PluginForDecrypt {
         final String ownerID = wallRegex.getMatch(0);
         final String postID = wallRegex.getMatch(1);
         final String postIDWithOwnerID = ownerID + "_" + postID;
-        final String wallID = "wall" + ownerID;
 
         apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postIDWithOwnerID + "&extended=0&copy_history_depth=2");
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -1401,12 +1409,12 @@ public class VKontakteRu extends PluginForDecrypt {
         List<Object> response = (List<Object>) map.get("response");
         for (Object entry : response) {
             if (entry instanceof Map) {
-                decryptWallPost(wallID, (Map<String, Object>) entry, fp);
+                decryptWallPost(ownerID, (Map<String, Object>) entry, fp);
             }
         }
 
         if (vkwall_grabcomments) {
-            decryptWallPostComments(ownerID, postID, accessedWallPostViaWebsite, map, fp);
+            decryptWallPostComments(ownerID, postID, accessedWallPostViaWebsite, fp);
         }
         logger.info("Found " + decryptedLinks.size() + " links");
     }
