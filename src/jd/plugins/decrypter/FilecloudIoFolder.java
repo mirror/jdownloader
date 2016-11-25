@@ -18,10 +18,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,9 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(?:www\\.)?(?:ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "https?://(?:www\\.)?(?:ifile\\.it|filecloud\\.io)/_[a-z0-9]+" })
 public class FilecloudIoFolder extends PluginForDecrypt {
 
     public FilecloudIoFolder(PluginWrapper wrapper) {
@@ -48,22 +46,19 @@ public class FilecloudIoFolder extends PluginForDecrypt {
 
     // TODO: Implement API: http://code.google.com/p/filecloud/wiki/FetchTagDetails
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (true) {
-            return decryptedLinks;
-        }
-        String parameter = param.toString().replace("ifile.it/", "filecloud.io/").replace("http://", "https://");
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("ifile.it/", "filecloud.io/").replace("http://", "https://");
         String fpName = null;
-        // ((jd.plugins.hoster.IFileIt) hostPlugin).prepBrowser(br, null);
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
+        // final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        ((jd.plugins.hoster.FilecloudIo) hostPlugin).prepBrowser(br);
         try {
             /* Grab extremely big folderlinks */
             br.setLoadLimit(br.getLoadLimit() * 8);
         } catch (final Throwable e) {
         }
         // Id we have an account we can use the API, if not we have to do it over the site
-        if (aa != null) {
+        if (false /* aa != null */) {
             // final String akey = ((jd.plugins.hoster.FilecloudIo) hostPlugin).getUrlEncodedAPIkey(aa, br);
             // br.postPage(jd.plugins.hoster.FilecloudIo.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new
             // Regex(parameter, "([a-z0-9]+)$").getMatch(0));
@@ -82,7 +77,7 @@ public class FilecloudIoFolder extends PluginForDecrypt {
             }
         } else {
             br.getPage(parameter);
-            if (br.containsHTML(">no such tag")) {
+            if (br.containsHTML(">no such tag|>\\s*The folder at this URL was either removed or did not exist in the first place\\s*<")) {
                 logger.info("Invalid/Offline folderlink: " + parameter);
                 return decryptedLinks;
             }

@@ -30,6 +30,13 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,16 +64,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
@@ -178,10 +179,72 @@ public class BackinNet extends antiDDoSForHost {
     }
 
     @Override
+    public boolean checkLinks(DownloadLink[] urls) throws Exception {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        for (DownloadLink link : urls) {
+            correctDownloadLink(link);
+        }
+        try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 1 url at a time */
+                    if (index == urls.length || links.size() >= 1) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("&fc=");
+                for (DownloadLink dl : links) {
+                    sb.append(getFUID(dl) + ",");
+                }
+                sb.deleteCharAt(sb.length() - 1);
+                getPage(br, "http://fast-api.backin.net/file_info.php?key=" + Encoding.Base64Decode("amRzb2Z0d2FyZTQ5NjQ=") + sb.toString());
+                if (br.toString().equals("0")) {
+                    for (DownloadLink dl : links) {
+                        dl.setAvailableStatus(AvailableStatus.FALSE);
+                    }
+                    break;
+                }
+                for (DownloadLink dl : links) {
+                    String id = getFUID(dl);
+                    final String filename = PluginJSonUtils.getJson(br, "file_name");
+                    final String filesize = PluginJSonUtils.getJson(br, "file_size");
+                    int size = filesize != null && filesize.matches("\\d+") ? Integer.parseInt(filesize) : -1;
+                    dl.setFinalFileName(filename);
+                    if (dl.getVerifiedFileSize() == -1 && size > 0) {
+                        dl.setVerifiedFileSize(size);
+                    }
+                    dl.setAvailableStatus(AvailableStatus.TRUE);
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private String getFUID(DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
         correctDownloadLink(downloadLink);
-        fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        fuid = getFUID(downloadLink);
         br.setFollowRedirects(true);
         String[] fileInfo = new String[2];
         if (useAltLinkCheck) {
