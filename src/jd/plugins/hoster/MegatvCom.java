@@ -69,8 +69,10 @@ public class MegatvCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        downloadLink.setLinkID(linkid);
-        downloadLink.setName(downloadLink.getLinkID());
+        if (linkid != null) {
+            downloadLink.setLinkID(getHost() + "://" + linkid);
+            downloadLink.setName(linkid);
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megatv.com" }, urls = { "http://(www\\.)?megatv\\.com/[^<>\"]+\\.asp\\?catid=\\d+\\&subid=\\d+\\&pubid=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megatv.com" }, urls = { "http://(www\\.)?megatv\\.com/[^<>\"]+\\.asp\\?catid=\\d+\\&subid=\\d+\\&pubid=\\d+" })
 public class MegatvComDecrypter extends PluginForDecrypt {
 
     public MegatvComDecrypter(PluginWrapper wrapper) {
@@ -35,7 +35,7 @@ public class MegatvComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String catid = new Regex(parameter, "catid=(\\d+)").getMatch(0);
         final String subid = new Regex(parameter, "subid=(\\d+)").getMatch(0);

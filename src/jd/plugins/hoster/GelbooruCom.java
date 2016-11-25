@@ -76,6 +76,10 @@ public class GelbooruCom extends PluginForHost {
         dllink = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://img\\.gelbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                // can be a video!
+                dllink = br.getRegex("<\\s*source\\s+[^>]*src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
+            }
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
