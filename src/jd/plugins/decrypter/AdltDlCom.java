@@ -19,6 +19,10 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,11 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"'/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"'/]+" })
 public class AdltDlCom extends PluginForDecrypt {
 
     public AdltDlCom(PluginWrapper wrapper) {
@@ -60,11 +60,6 @@ public class AdltDlCom extends PluginForDecrypt {
         String fpName = br.getRegex("<h2[^>]+entry-title[^>]+>(.*?)</h2>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"']+) (?:\\||-) AdultDDL</title>").getMatch(0);
-        }
-        // these are still shown, keep until we remove firedirve/putlocker.
-        final String streamLink = br.getRegex("'(http://(www\\.)?(putlocker|firedrive)\\.com/embed/[A-Z0-9]+)'").getMatch(0);
-        if (streamLink != null) {
-            decryptedLinks.add(createDownloadlink(streamLink));
         }
         final String linksText = br.getRegex("<div class='links'>(.*?)(?:<div id=\"comment-section\"|<!--//entry-content)").getMatch(0);
         if (linksText == null) {

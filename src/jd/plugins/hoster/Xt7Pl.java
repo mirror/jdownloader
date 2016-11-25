@@ -21,6 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,11 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xt7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class Xt7Pl extends PluginForHost {
@@ -138,7 +138,7 @@ public class Xt7Pl extends PluginForHost {
         // // "turbobit.net",
         // "catshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploaded.to",
         // "uploaded.net", "ul.to", "sharehost.eu"
-        // // "oboom.com", "fileparadox.in", "bitshare.com", "freakshare.net", "freakshare.com"
+        // // "oboom.com", "fileparadox.in", "freakshare.net", "freakshare.com"
         // ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
