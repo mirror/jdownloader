@@ -106,16 +106,24 @@ public class ToMvzUs extends antiDDoSForDecrypt {
                 throw new DecrypterException("submitForm(tosform) failed ");
             }
         }
-        final String[] iframes = br.getRegex("<iframe .*?</iframe>").getColumn(-1);
-        if (iframes != null) {
-            for (final String iframe : iframes) {
-                final String src = new Regex(iframe, "src=(\"|')(.*?)\\1").getMatch(1);
-                if (src != null) {
-                    decryptedLinks.add(createDownloadlink(src));
-                }
+        if (this.br.containsHTML("We temporary marked this link .*? as possibly dangerous")) {
+            final String finallink = this.br.getRegex("/user/go_away/\\?go=(https?://[^<>\"]+)\"").getMatch(0);
+            if (finallink == null) {
+                throw new DecrypterException("Handling for 'dangerous' urls failed");
             }
+            decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            System.out.println("Possible error: break point me");
+            final String[] iframes = br.getRegex("<iframe .*?</iframe>").getColumn(-1);
+            if (iframes != null) {
+                for (final String iframe : iframes) {
+                    final String src = new Regex(iframe, "src=(\"|')(.*?)\\1").getMatch(1);
+                    if (src != null) {
+                        decryptedLinks.add(createDownloadlink(src));
+                    }
+                }
+            } else {
+                System.out.println("Possible error: break point me");
+            }
         }
     }
 

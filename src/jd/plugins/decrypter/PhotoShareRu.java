@@ -23,32 +23,53 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "http://(www\\.)?photoshare\\.ru/album\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "https?://(?:www\\.)?photoshare\\.ru/(?:album\\d+\\.html|login/album\\.php\\?id=\\d+)" })
 public class PhotoShareRu extends PluginForDecrypt {
 
     public PhotoShareRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private String html_passwordprotected = "name=\"password\"";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
         final String parameter = param.toString();
+        final String fid = new Regex(parameter, "(\\d+)(?:\\.html)?$").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().equals("http://photoshare.ru/")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML(">Альбом пуст<")) {
             logger.info("Link offline (album empty): " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+
+        if (this.br.containsHTML(html_passwordprotected)) {
+            boolean failed = true;
+            for (int i = 0; i <= 2; i++) {
+                final String passCode = getUserInput("Password?", param);
+                this.br.postPage("/login/album.php?id=" + fid + "&from=", "password=" + Encoding.urlEncode(passCode));
+                if (this.br.containsHTML(html_passwordprotected)) {
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
 
         final Regex fpn = br.getRegex("<h1 style=\"margin: 0px; padding: 0px;\">([^<>\"]*?)</h1>([^<>\"]*?)</div>");
@@ -64,13 +85,18 @@ public class PhotoShareRu extends PluginForDecrypt {
         final String albumID = new Regex(parameter, "album(\\d+)\\.html$").getMatch(0);
         final String[] pages = br.getRegex("<a href=\"/album" + albumID + "\\-(\\d+)\\.html\"").getColumn(0);
         if (pages != null && pages.length != 0) {
-            for (final String page : pages)
-                if (!allPages.contains(page)) allPages.add(page);
+            for (final String page : pages) {
+                if (!allPages.contains(page)) {
+                    allPages.add(page);
+                }
+            }
         }
 
         for (final String currentPage : allPages) {
             logger.info("Decrypting page " + currentPage + " of " + allPages.size());
-            if (!currentPage.equals("1")) br.getPage("http://photoshare.ru/album" + albumID + "-" + currentPage + ".html");
+            if (!currentPage.equals("1")) {
+                br.getPage("http://photoshare.ru/album" + albumID + "-" + currentPage + ".html");
+            }
             final String[][] links = br.getRegex("class=\"phototxt\"><b><a href=\"(/photo\\d+\\.html)\" class=\"title\">([^<>\"]*?)</a>").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);

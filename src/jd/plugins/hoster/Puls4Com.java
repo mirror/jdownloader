@@ -55,13 +55,18 @@ public class Puls4Com extends PluginForHost {
         return "http://www.puls4.com/cms_content/agb";
     }
 
+    private Browser prepBR(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+        return br;
+    }
+
     @Override
     public boolean isValidURL(String URL) {
         try {
             final Browser br = new Browser();
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+            prepBR(br);
             final String urlpart = new Regex(URL, "puls4\\.com/(.+)").getMatch(0);
             String mobileID = new Regex(URL, "(\\d{5,})$").getMatch(0);
             if (mobileID == null) {
@@ -98,7 +103,7 @@ public class Puls4Com extends PluginForHost {
         String filename = null;
         final String urlpart = new Regex(downloadLink.getDownloadURL(), "puls4\\.com/(.+)").getMatch(0);
         if (use_mobile_api) {
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+            prepBR(this.br);
             /* 2016-09-08: Webpage has changed. */
             String mobileID = new Regex(downloadLink.getDownloadURL(), "(\\d{5,})$").getMatch(0);
             if (mobileID == null) {
@@ -120,7 +125,7 @@ public class Puls4Com extends PluginForHost {
             /* 2016-09-09: Changed from "m.puls4.com" to "www.puls4.com" */
             br.getPage("http://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
             /* Offline or geo blocked video */
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() <= 10) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
