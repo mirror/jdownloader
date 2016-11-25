@@ -373,9 +373,10 @@ public class PornHubCom extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.submitForm(loginform);
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
-                if (redirect != null && redirect.startsWith("http")) {
+                if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                     /* Sometimes needed to get the (premium) cookies. */
                     br.getPage(redirect);
+                    br.followRedirect();
                 }
                 if (!isCookieLoggedIn(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -393,9 +394,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isCookieLoggedIn(final Browser br) {
-        final String cookie_loggedin_free = br.getCookie(MAINPAGE, "gateway_security_key");
-        final String cookie_loggedin_premium = getPremiumCookie(br);
-        return cookie_loggedin_free != null || cookie_loggedin_premium != null;
+        return (br.getCookie(MAINPAGE, "gateway_security_key") != null || br.getCookie(MAINPAGE, "ii") != null) || (br.getCookie(PORNHUB_PREMIUM, "gateway_security_key") != null || br.getCookie(PORNHUB_PREMIUM, "ii") != null);
     }
 
     public static String getPremiumCookie(final Browser br) {

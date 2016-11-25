@@ -26,7 +26,7 @@ public class DownloadPluginProgress extends PluginProgress {
     protected final long            startTimeStamp;
     private final String            normal;
 
-    private Downloadable            downloadable;
+    private final Downloadable      downloadable;
 
     public DownloadPluginProgress(Downloadable downloadable, DownloadInterface downloadInterface, Color color) {
         super(0, 0, color);
@@ -50,11 +50,11 @@ public class DownloadPluginProgress extends PluginProgress {
 
     @Override
     public long getETA() {
-        long speed = getSpeed();
+        final long speed = getSpeed();
         if (speed > 0) {
-            long remainingBytes = (getTotal() - getCurrent());
+            final long remainingBytes = (getTotal() - getCurrent());
             if (remainingBytes > 0) {
-                long eta = remainingBytes / speed;
+                final long eta = remainingBytes / speed;
                 return eta;
             }
         }
@@ -66,11 +66,11 @@ public class DownloadPluginProgress extends PluginProgress {
         if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView || requestor instanceof PluginProgressTask || requestor instanceof DownloadsAPIV2Impl || requestor instanceof DownloadControllerEventPublisher || requestor instanceof ChannelCollector) {
             return normal;
         }
-        long total = getTotal();
+        final long total = getTotal();
         if (total < 0) {
             return unknownFileSize;
         }
-        long eta = getETA();
+        final long eta = getETA();
         if (eta > 0) {
             return Formatter.formatSeconds(eta);
         }

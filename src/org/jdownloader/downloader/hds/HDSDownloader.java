@@ -80,7 +80,6 @@ public class HDSDownloader extends DownloadInterface {
     private URLConnectionAdapter                    currentConnection;
     private final ManagedThrottledConnectionHandler connectionHandler;
     private File                                    outputCompleteFile;
-    private File                                    outputFinalCompleteFile;
     private File                                    outputPartFile;
     private FileOutputStream                        outStream;
     private PluginException                         caughtPluginException;
@@ -454,9 +453,9 @@ public class HDSDownloader extends DownloadInterface {
                         downloadable.checkAndReserve(reservation);
                         createOutputChannel();
                         try {
-                            downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                            downloadable.lockFiles(outputCompleteFile, outputPartFile);
                         } catch (FileIsLockedException e) {
-                            downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                            downloadable.unlockFiles(outputCompleteFile, outputPartFile);
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                     }
@@ -486,7 +485,7 @@ public class HDSDownloader extends DownloadInterface {
             onDownloadReady();
             return handleErrors();
         } finally {
-            downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+            downloadable.unlockFiles(outputCompleteFile, outputPartFile);
             cleanupDownladInterface();
         }
     }
@@ -560,14 +559,8 @@ public class HDSDownloader extends DownloadInterface {
 
     private void createOutputChannel() throws SkipReasonException {
         try {
-            String fileOutput = downloadable.getFileOutput();
-            logger.info("createOutputChannel for " + fileOutput);
-            String finalFileOutput = downloadable.getFinalFileOutput();
+            final String fileOutput = downloadable.getFileOutput();
             outputCompleteFile = new File(fileOutput);
-            outputFinalCompleteFile = outputCompleteFile;
-            if (!fileOutput.equals(finalFileOutput)) {
-                outputFinalCompleteFile = new File(finalFileOutput);
-            }
             outputPartFile = new File(downloadable.getFileOutputPart());
             outStream = new FileOutputStream(outputPartFile, true) {
                 public synchronized void write(byte[] b, int off, int len) throws IOException {

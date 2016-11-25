@@ -97,9 +97,9 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
     private void fillColumnHelper(AbstractNode value, ColumnHelper columnHelper) {
         if (value instanceof DownloadLink) {
-            DownloadLink link = (DownloadLink) value;
-            PluginProgress progress = null;
-            if ((progress = link.getPluginProgress()) != null) {
+            final DownloadLink link = (DownloadLink) value;
+            final PluginProgress progress = link.getPluginProgress();
+            if (progress != null) {
                 columnHelper.icon = progress.getIcon(this);
                 columnHelper.string = progress.getMessage(this);
                 long eta = progress.getETA();
@@ -108,10 +108,9 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                 } else {
                     columnHelper.eta = -1;
                 }
-
                 return;
             }
-            ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+            final ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
             if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
                 if (conditionalSkipReason instanceof TimeOutCondition) {
                     long time = ((TimeOutCondition) conditionalSkipReason).getTimeOutLeft();
