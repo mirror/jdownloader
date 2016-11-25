@@ -64,16 +64,19 @@ public class FreeshemaletubeCom extends PluginForHost {
         }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"content\\-title\">[\t\n\r ]*?<h3>([^<>\"]*?)</h3>").getMatch(0);
+            filename = br.getRegex("class=\"content-title\">\\s*<h3>([^<>\"]*?)</h3>").getMatch(0);
         }
         if (filename == null) {
             /* Fallback to url-filename */
             filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
-        final String token = br.getRegex("\\'token\\', ?\\'([^<>\"]*?)\\'").getMatch(0);
-        dllink = br.getRegex("\\'file\\', ?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        final String token = br.getRegex("'token',\\s*'([^<>\"]*?)'").getMatch(0);
+        dllink = br.getRegex("'file'\\s*,\\s*'(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("file:\\s*\"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<source\\s+[^>]*src\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
+            }
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

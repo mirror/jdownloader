@@ -16,9 +16,10 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -27,9 +28,11 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -41,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(www\\.)?peekvids\\.com/watch\\?v=[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(?:www\\.)?peekvids\\.com/watch\\?v=([A-Za-z0-9\\-_]+)" })
 public class PeekVidsCom extends PluginForHost {
 
     public PeekVidsCom(PluginWrapper wrapper) {
@@ -54,7 +57,8 @@ public class PeekVidsCom extends PluginForHost {
     // protocol: no https
     // other:
 
-    private String dllink = null;
+    private String            dllink = null;
+    private static AtomicLong time   = new AtomicLong();
 
     @Override
     public String getAGBLink() {
@@ -67,75 +71,117 @@ public class PeekVidsCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
-    /** Free account = HD (720p) versions are (sometimes) available. */
+    /**
+     * Free account = HD (720p) versions are (sometimes) available.
+     *
+     * @throws Exception
+     */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        String ext = null;
-        final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
-        dllink = null;
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            logger.info("Account available --> Logging in");
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        synchronized (time) {
             try {
-                this.login(aa, false);
-            } catch (final Throwable e) {
-                logger.warning("Failed to login");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            logger.info("No account available --> Continuing without account");
-        }
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video not found<|class=\"play\\-error\"|>This video was deleted<") || br.getHttpConnection().getResponseCode() == 404) {
-            // filename can be present with offline links, so lets set it!
-            String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-            if (filename != null) {
+                final long passedTime = ((System.currentTimeMillis() - time.get()) / 1000) - 1;
+                if (passedTime < 15) {
+                    Thread.sleep(((15 - passedTime) + new Random().nextInt(5)) * 1000l);
+                }
+                String ext = null;
+                final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
+                dllink = null;
+                final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+                if (uid != null) {
+                    downloadLink.setLinkID(getHost() + "://" + uid);
+                    if (!downloadLink.isNameSet()) {
+                        downloadLink.setFinalFileName(uid);
+                    }
+                }
+                this.setBrowserExclusive();
+                br.setFollowRedirects(true);
+                br.addAllowedResponseCodes(410, 429);
+                final Request getRequest = br.createGetRequest(downloadLink.getDownloadURL());
+                final Account aa = AccountController.getInstance().getValidAccount(this);
+                if (aa != null) {
+                    logger.info("Account available --> Logging in");
+                    try {
+                        this.login(aa, false);
+                    } catch (final Throwable e) {
+                        logger.warning("Failed to login");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    logger.info("No account available --> Continuing without account");
+                }
+                br.getPage(getRequest);
+                int i = 0;
+                while (br.getHttpConnection().getResponseCode() == 429) {
+                    if (i > 3) {
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    i++;
+                    // captcha event
+                    final Form captcha = br.getForm(0);
+                    if (captcha == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String img = captcha.getRegex("<img\\s+[^>]*src=\"(.*?)\"").getMatch(0);
+                    if (img == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String code = getCaptchaCode(img, downloadLink);
+                    captcha.put("secimginp", Encoding.urlEncode(code));
+                    br.submitForm(captcha);
+                }
+                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|>This video was deleted<")) {
+                    // filename can be present with offline links, so lets set it!
+                    String filename = br.getRegex("<h2>((?!Related Videos).*?)</h2>").getMatch(0);
+                    if (filename != null) {
+                        filename = Encoding.htmlDecode(filename);
+                        filename = filename.trim();
+                        filename = encodeUnicode(filename);
+                        downloadLink.setFinalFileName(filename + ".mp4");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
+                String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+                if (flashvars == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                flashvars = Encoding.htmlDecode(flashvars);
+
+                int counter = 0;
+                for (final String quality : qualities) {
+                    dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
+                    if (dllink != null) {
+                        counter++;
+                        if (checkDirectLink()) {
+                            break;
+                        }
+                    }
+                }
+                if ((filename == null || dllink == null) && counter == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
                 filename = encodeUnicode(filename);
-                downloadLink.setFinalFileName(filename + ".mp4");
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-        String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
-        if (flashvars == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        flashvars = Encoding.htmlDecode(flashvars);
-
-        int counter = 0;
-        for (final String quality : qualities) {
-            dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
-            if (dllink != null) {
-                counter++;
-                if (checkDirectLink()) {
-                    break;
+                if (dllink == null) {
+                    /* Download not possible at this moment. */
+                    downloadLink.setName(filename + ".mp4");
+                    return AvailableStatus.TRUE;
                 }
+                dllink = Encoding.htmlDecode(dllink);
+                ext = getFileNameExtensionFromString(dllink, ".mp4");
+                if (!filename.endsWith(ext)) {
+                    filename += ext;
+                }
+                downloadLink.setFinalFileName(filename);
+                return AvailableStatus.TRUE;
+                /* Don't check filesize here as this can lead to server errors */
+            } finally {
+                time.set(System.currentTimeMillis());
             }
         }
-        if ((filename == null || dllink == null) && counter == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        if (dllink == null) {
-            /* Download not possible at this moment. */
-            downloadLink.setName(filename + ".mp4");
-            return AvailableStatus.TRUE;
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
-        return AvailableStatus.TRUE;
-        /* Don't check filesize here as this can lead to server errors */
     }
 
     private boolean checkDirectLink() {
