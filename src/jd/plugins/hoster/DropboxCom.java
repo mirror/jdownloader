@@ -12,6 +12,14 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,14 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -86,10 +86,11 @@ public class DropboxCom extends PluginForHost {
 
             URLConnectionAdapter con = null;
             if (link.getPluginPatternMatcher().matches(TYPE_S)) {
+                br.setCookie("http://dropbox.com", "locale", "en");
                 url = link.getPluginPatternMatcher().replace("https://", "https://dl.");
                 for (int i = 0; i < 2; i++) {
                     try {
-                        this.br.setFollowRedirects(true);
+                        br.setFollowRedirects(true);
                         con = i == 0 ? br.openHeadConnection(url) : br.openGetConnection(url);
                         if (!con.getContentType().contains("html")) {
                             link.setProperty("directlink", con.getURL().toString());
@@ -107,51 +108,49 @@ public class DropboxCom extends PluginForHost {
                 }
                 url = link.getPluginPatternMatcher();
                 /* Either offline or password protected */
-                this.br.getPage(url);
+                br.getPage(url);
                 if (!this.br.getURL().contains("/password")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    // NOT TRUE , https://svn.jdownloader.org/issues/81049
+                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    passwordProtected = true;
+                    return AvailableStatus.TRUE;
                 }
-                passwordProtected = true;
-                return AvailableStatus.TRUE;
-            }
-
-            url = link.getPluginPatternMatcher();
-
-            this.br.setCookie("http://dropbox.com", "locale", "en");
-            this.br.setFollowRedirects(true);
-            for (int i = 0; i < 2; i++) {
-                try {
-                    con = i == 0 ? br.openHeadConnection(url) : br.openGetConnection(url);
-                    if (con.getResponseCode() == 403) {
-                        link.getLinkStatus().setStatusText("Forbidden 403");
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-                    }
-                    if (con.getResponseCode() == 509) {
-
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-
-                    }
-                    if (!con.getContentType().contains("html")) {
-
-                        link.setDownloadSize(con.getLongContentLength());
-                        String name = Encoding.htmlDecode(getFileNameFromHeader(con).trim());
-                        link.setFinalFileName(name);
-                        return AvailableStatus.TRUE;
-                    }
-                    if (i != 0) {
-                        this.br.followConnection();
-                        break;
-                    }
-                } finally {
+            } else {
+                url = link.getPluginPatternMatcher();
+                br.setCookie("http://dropbox.com", "locale", "en");
+                br.setFollowRedirects(true);
+                for (int i = 0; i < 2; i++) {
                     try {
-                        con.disconnect();
-                    } catch (Throwable e) {
+                        con = i == 0 ? br.openHeadConnection(url) : br.openGetConnection(url);
+                        if (con.getResponseCode() == 403) {
+                            link.getLinkStatus().setStatusText("Forbidden 403");
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        if (con.getResponseCode() == 509) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+                        }
+                        if (!con.getContentType().contains("html")) {
+
+                            link.setDownloadSize(con.getLongContentLength());
+                            String name = Encoding.htmlDecode(getFileNameFromHeader(con).trim());
+                            link.setFinalFileName(name);
+                            return AvailableStatus.TRUE;
+                        }
+                        if (i != 0) {
+                            br.followConnection();
+                            break;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
                     }
                 }
             }
 
-            if (this.br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
