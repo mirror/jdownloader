@@ -31,10 +31,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "http://(?:www\\.)?bigbooty\\.com/video/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "http://(?:www\\.)?bigbooty\\.com/video/\\d+" })
 public class BigBootyCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public BigBootyCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,22 +74,28 @@ public class BigBootyCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        if (!downloadLink.isNameSet()) {
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        }
         if (br.containsHTML(PREMIUMONLYTEXT)) {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("flashvars=\"file=(http.*?)\\&image").getMatch(0);
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = br.getRegex("flashvars=\"file=(http.*?)\\&image").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source[^>]*\\s+src\\s*=\\s*('|\"|)(.*?)\\1").getMatch(1);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + getFileNameExtensionFromString(dllink, ".mp4"));
+        dllink = Encoding.htmlDecode(dllink);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -110,7 +116,7 @@ public class BigBootyCom extends PluginForHost {
         if (br.containsHTML(PREMIUMONLYTEXT)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

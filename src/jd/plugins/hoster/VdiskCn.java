@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.RandomUserAgent;
@@ -29,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/down/index/[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/(?:down/index/[A-Z0-9]+|[a-zA-Z0-9]+/.*?\\.html)" })
 public class VdiskCn extends PluginForHost {
 
     // No HTTPS
@@ -92,22 +92,30 @@ public class VdiskCn extends PluginForHost {
         if (dllink == null) {
             requestFileInformation(downloadLink);
             dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         int chunks = 0;
         if (downloadLink.getBooleanProperty(VdiskCn.NOCHUNKS, false)) {
             chunks = 1;
         }
-        if (startDL == false) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+        if (startDL == false) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
-        if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        if (downloadLink.getFinalFileName() == null) {
+            downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        }
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
@@ -126,23 +134,42 @@ public class VdiskCn extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
-        if (filename == null) filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex(">文件名称</td>\\s*<td>(.*?)</td>").getMatch(0);
+            }
+        }
         String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(GB|MB|KB|B))").getMatch(0);
         if (filesize == null) {
-            logger.warning("Can't find filesize, Please report issue to JDownloader Development!");
-            logger.warning("Continuing...");
+            filesize = br.getRegex(">文件大小</td>\\s*<td>(.*?)</td>").getMatch(0);
+            if (filesize == null) {
+                logger.warning("Can't find filesize, Please report issue to JDownloader Development!");
+                logger.warning("Continuing...");
+            }
         }
         String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
         if (MD5sum == null) {
-            logger.warning("Can't find MD5sum, Please report issue to JDownloader Development!");
-            logger.warning("Continuing...");
+            MD5sum = br.getRegex(">MD5</td>\\s*<td>([a-fA-F0-9]{32})</td>").getMatch(0);
+            if (MD5sum == null) {
+                logger.warning("Can't find MD5sum, Please report issue to JDownloader Development!");
+                logger.warning("Continuing...");
+            }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (MD5sum != null) link.setMD5Hash(MD5sum);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (MD5sum != null) {
+            link.setMD5Hash(MD5sum);
+        }
         return AvailableStatus.TRUE;
     }
 
