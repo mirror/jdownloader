@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[A-Za-z0-9\\-_]+/mixtapes/[A-Za-z0-9\\-_]+/\\d+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[A-Za-z0-9\\-_]+/mixtapes/[A-Za-z0-9\\-_]+/\\d+/" })
 public class BaseShareCom extends PluginForDecrypt {
 
     public BaseShareCom(PluginWrapper wrapper) {
@@ -36,15 +36,12 @@ public class BaseShareCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().equals("http://baseshare.com/")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
             return decryptedLinks;
         }
         final String url_artist = new Regex(parameter, "baseshare\\.com/([A-Za-z0-9\\-_]+)/mixtapes").getMatch(0);
@@ -56,14 +53,14 @@ public class BaseShareCom extends PluginForDecrypt {
             title = encodeUnicode(Encoding.htmlDecode(title).trim());
             fpName = artist + " - " + title;
         }
-        final String jstext = br.getRegex("<div id=\"content\">[\t\n\r ]+<script>(.*?)</script>").getMatch(0);
+        final String jstext = br.getRegex("<div id=\"content\">.*?<script>(.*?)</script>").getMatch(0);
         final String[] links = jstext.split("function ");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleLink : links) {
-            final String[][] linkinfo = new Regex(singleLink, "updateSong\\(\\'(http://baseshare\\.com/uploads[^<>\"]*?\\.mp3)\\', \\'/uploads/waves/[a-z0-9]+\\.png\\', \\'([^<>\"]*?)\\', \\'([^<>\"]*?)\\', (\\d+)\\);").getMatches();
+            final String[][] linkinfo = new Regex(singleLink, "updateSong\\(\\'\\s*(http://baseshare\\.com/uploads[^<>\"]*?\\.mp3)\\'\\s*,\\s*\\'/uploads/waves/[a-z0-9]+\\.png\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*(\\d+)\\);").getMatches();
             if (linkinfo != null && linkinfo.length == 1) {
                 final String thisurl = linkinfo[0][0];
                 final String thisartist = linkinfo[0][1];
