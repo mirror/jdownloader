@@ -71,6 +71,10 @@ public class UpfilesNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        String language = System.getProperty("user.language");
+        if ("pl".equals(language)) {
+            br.setHeader("Accept-Language", "pl-PL,pl;q=0.8,en-US;q=0.6,en;q=0.4");
+        }
         String downloadURL = link.getDownloadURL();
         if (downloadURL.contains("http:")) {
             downloadURL = link.getDownloadURL().replace("http:", "https:");
@@ -84,7 +88,7 @@ public class UpfilesNet extends PluginForHost {
         String filename = br.getRegex("class=\"file\\-heading\">([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex("class=\"file\\-info\">Rozmiar:[\t\n\r ]*?([^<>\"]+)<").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("class=\"file\\-info\" style='font-size:20px'>Rozmiar:[\t\n\r ]*?([^<>\"]+)<").getMatch(0);
+            filesize = br.getRegex("class=\"file\\-info\" style='font-size:20px'>([Rozmiar]+|[Size]+):[\t\n\r ]*?([^<>\"]+)<").getMatch(1);
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
