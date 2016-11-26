@@ -347,10 +347,7 @@ public class DepfileCom extends PluginForHost {
                     checkForStupidFileDownloadQuota(account);
                 }
             }
-            String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(https?://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
-            }
+            final String dllink = getPremiumDllink(br);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -371,6 +368,18 @@ public class DepfileCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private String getPremiumDllink(Browser br) {
+        String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(https?://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(\"|')(https?://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)\\1").getMatch(1);
+            if (dllink == null) {
+                // Link; 4855091887641.log; 271792; jdlog://4855091887641
+                dllink = br.getRegex("<th>Download:</th>\\s*<td><a href=('|\")(http.*?)\\1").getMatch(1);
+            }
+        }
+        return dllink;
     }
 
     private void checkForStupidFileDownloadQuota(final Account account) throws PluginException {
