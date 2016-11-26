@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntube.com" }, urls = { "http://(www\\.)?(porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntube.com" }, urls = { "http://(www\\.)?(porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)" })
 public class PornTubeCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -71,9 +71,8 @@ public class PornTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-        final Regex info = br.getRegex("\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
         final String mediaID = getMediaid(this.br);
-        String availablequalities = info.getMatch(1);
+        String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {
@@ -155,7 +154,7 @@ public class PornTubeCom extends PluginForHost {
             final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
             if (embed != null) {
                 br.getPage(embed);
-                mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+                mediaID = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
             }
         }
         return mediaID;

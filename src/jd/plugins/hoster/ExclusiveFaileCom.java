@@ -37,6 +37,13 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -68,14 +75,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "exclusiveloader.com", "exclusivefaile.com" }, urls = { "https?://(www\\.)?(exclusivefaile\\.com|exclusiveloader\\.com)/((vid)?embed-)?[a-z0-9]{12}", "NOTUSED_4812jdmSDusd4aSAJD415uauadfjadafasadx" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "exclusiveloader.com", "exclusivefaile.com" }, urls = { "https?://(www\\.)?(exclusivefaile\\.com|exclusiveloader\\.com)/((vid)?embed-)?[a-z0-9]{12}", "NOTUSED_4812jdmSDusd4aSAJD415uauadfjadafasadx" })
 @SuppressWarnings("deprecation")
 public class ExclusiveFaileCom extends PluginForHost {
     // Site Setters
@@ -279,24 +279,27 @@ public class ExclusiveFaileCom extends PluginForHost {
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
-        // standard traits from base page
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = cbr.getRegex("class=\"dfilename\">(.*?)</span>").getMatch(0);
+            // standard traits from base page
             if (inValidate(fileInfo[0])) {
-                fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = cbr.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                     if (inValidate(fileInfo[0])) {
-                        // can cause new line finds, so check if it matches.
-                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                        // traits from download1 page below.
+                        fileInfo[0] = cbr.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                            // next two are details from sharing box
+                            // can cause new line finds, so check if it matches.
+                            // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            // traits from download1 page below.
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
+                                fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                                // next two are details from sharing box
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    }
                                 }
                             }
                         }

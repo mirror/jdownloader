@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "http://(www\\.)?fux\\.com/(video|embed)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "http://(www\\.)?fux\\.com/(video|embed)/\\d+" })
 public class FuxCom extends PluginForHost {
 
     public FuxCom(PluginWrapper wrapper) {
@@ -64,9 +63,8 @@ public class FuxCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- FUX</title>").getMatch(0);
         }
-        final Regex info = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+), \\d+, \\[(.*?)\\]\\);");
         final String mediaID = jd.plugins.hoster.PornTubeCom.getMediaid(this.br);
-        String availablequalities = info.getMatch(1);
+        String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(0);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {

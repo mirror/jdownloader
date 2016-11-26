@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(?:www\\.)?4tube\\.com/(?:embed|videos)/(\\d+)/?([\\w-]+)?" }) 
-public class FourTubeCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(?:www\\.)?4tube\\.com/(?:embed|videos)/(\\d+)/?([\\w-]+)?" })
+public class FourTubeCom extends antiDDoSForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
@@ -65,7 +64,7 @@ public class FourTubeCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0");
         br.setFollowRedirects(true);
-        br.getPage(dllink);
+        getPage(dllink);
         if (br.getHttpConnection() == null) {
             return AvailableStatus.UNCHECKABLE;
         }
@@ -98,10 +97,9 @@ public class FourTubeCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getDllink() throws PluginException, IOException {
-        final String id_media = "\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);";
+    private void getDllink() throws Exception {
         final String mediaID = jd.plugins.hoster.PornTubeCom.getMediaid(this.br);
-        String availablequalities = br.getRegex(id_media).getMatch(1);
+        String availablequalities = br.getRegex("\\((\\d+)\\s*,\\s*\\d+\\s*,\\s*\\[([0-9,]+)\\]\\);").getMatch(1);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {
@@ -115,7 +113,7 @@ public class FourTubeCom extends PluginForHost {
         br2.getHeaders().put("Origin", "http://www.4tube.com");
         br2.getHeaders().put("Accept-Charset", null);
         br2.getHeaders().put("Content-Type", null);
-        br2.postPageRaw("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
+        postPageRaw(br2, "http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
         String finallink = null;
         final String[] qualities = availablequalities.split("\\+");
         for (final String quality : qualities) {
