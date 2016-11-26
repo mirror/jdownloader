@@ -29,27 +29,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/(?!wp)[a-z0-9]+\\-[a-z0-9\\-]+" })
 public class MuslimAssCom extends PluginForDecrypt {
 
     public MuslimAssCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String INVALIDLINK = "http://(www\\.)?muslimass\\.com/(category|feed|wp\\-(content|includes)|about|login|webmaster)/?";
-
     // This is a site which shows embedded videos of other sites so we may have
     // to add regexes/handlings here
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        if (parameter.matches(INVALIDLINK)) {
-            logger.info("Invalid link: " + parameter);
-            return decryptedLinks;
-        }
         br.getPage(parameter);
-        if (br.containsHTML(">Error 404 \\- Not Found<|>Nothing found for") || br.getURL().matches(INVALIDLINK)) {
+        if (br.containsHTML(">Error 404 \\- Not Found<|>Nothing found for")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
