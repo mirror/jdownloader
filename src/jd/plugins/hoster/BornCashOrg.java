@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "borncash.org" }, urls = { "http://(www\\.)?borncash\\.org/(load/|download/\\?a=|dw/\\?a=)\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "borncash.org" }, urls = { "http://(www\\.)?borncash\\.org/(load/|download/\\?a=|dw/\\?a=)\\d+" })
 public class BornCashOrg extends PluginForHost {
 
     public BornCashOrg(PluginWrapper wrapper) {
@@ -57,14 +57,22 @@ public class BornCashOrg extends PluginForHost {
         if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // meta redirect
+        if (br.containsHTML("<meta http-equiv=")) {
+            final String redirect = br.getRegex("<meta http-equiv=('|\")refresh\\1\\s*[^>]*url=(.*?)'").getMatch(1);
+            if (redirect == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(redirect);
+        }
         final String filename = br.getRegex("file\"><b>([^<>]+)</b>").getMatch(0);
         final String filesize = br.getRegex("file\"><b>[^<>]+</b>\\s*\\(([\\d\\.]+\\s*[KMG]B)\\)<").getMatch(0);
-        if (filename == null ) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) { 
-        	link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
