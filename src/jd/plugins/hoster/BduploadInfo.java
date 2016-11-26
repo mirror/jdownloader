@@ -55,7 +55,7 @@ public class BduploadInfo extends antiDDoSForHost {
     private String               passCode                      = null;
     private static final String  PASSWORDTEXT                  = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                   = "http://bdupload.net";
+    private static final String  COOKIE_HOST                   = "https://bdupload.info";
     private static final String  NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -105,6 +105,8 @@ public class BduploadInfo extends antiDDoSForHost {
         } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
+        final String importHost = Browser.getHost(link.getDownloadURL(), true);
+        link.setUrlDownload(link.getDownloadURL().replace(importHost, this.getHost()));
     }
 
     @Override

@@ -19,10 +19,14 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,15 +41,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
 
     /**
      * @author raztoki
-     * */
+     */
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -65,6 +66,7 @@ public class GoogleDrive extends PluginForDecrypt {
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final PluginForHost plg = JDUtilities.getPluginForHost("docs.google.com");
@@ -148,11 +150,7 @@ public class GoogleDrive extends PluginForDecrypt {
         if (results != null && results.length != 0) {
             /* Handle the json way. */
             /* TODO: Find out how the "pageToken" can be generated. */
-            // \"([A-Za-z0-9\\-_]+)\",\"[A-Za-z0-9\\-_]+\",?1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client
-            String key = this.br.getRegex("\"([A-Za-z0-9\\-_]+)\",\"[A-Za-z0-9\\-_]+\",?1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
-            if (key == null) {
-                key = this.br.getRegex("\"([A-Za-z0-9\\-_]+)\",,1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
-            }
+            final String key = this.br.getRegex("\"([A-Za-z0-9\\-_]+)\",{1,}1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
             // final String eof = this.br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
             String nextPageToken = null;
             boolean firstRequest = true;

@@ -17,6 +17,10 @@
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +33,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
@@ -92,8 +93,11 @@ public class WeTransferCom extends PluginForHost {
         if (recepientID == null) {
             recepientID = "";
         }
-        String filename1 = br.getRegex("class='filename'>(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("class='filename'>.*?</span>.*?([0-9,\\.]+\\s*(K|M|G)B)").getMatch(0);
+        final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
+        final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+
+        String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
+        Long filesize1 = ((Number) JavaScriptEngineFactory.walkJson(map, "files/{0}/size")).longValue();
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         br.getPage(mainpage + "api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
@@ -165,19 +169,20 @@ public class WeTransferCom extends PluginForHost {
             }
 
             final String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
+            if (filesize1 == null) {
+                final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+            } else {
+                link.setDownloadSize(filesize1);
             }
             dllink = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
 
-            if (filename == null || filesize == null || dllink == null) {
+            if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
 
         return AvailableStatus.TRUE;
