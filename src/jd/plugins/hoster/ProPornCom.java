@@ -16,13 +16,14 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proporn.com" }, urls = { "http://((www|de|fr|ru|es|it|jp|nl|pl|pt)\\.)?proporn\\.com/(video|embed)/\\d+" })
 public class ProPornCom extends PluginForHost {
@@ -56,7 +58,7 @@ public class ProPornCom extends PluginForHost {
     /* IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://proporn.com/", "lang", "en");
@@ -65,13 +67,18 @@ public class ProPornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Video").getMatch(0);
-        final String h = br.getRegex("\\'h=([a-z0-9]+)").getMatch(0);
-        final String t = br.getRegex("t=(\\d+)\\'").getMatch(0);
-        final String vkey = br.getRegex("vkey=\\' \\+ \\'([a-z0-9]+)\\';").getMatch(0);
-        br.getPage("http://www.proporn.com/player_config/?h=" + h + "&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");
-        dllink = br.getRegex("<video_file>(http://[^<>\"]*?)</video_file>").getMatch(0);
+        final String uid = PluginJSonUtils.getJson(br, "vid");
+        final Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getPage("/player_config_json/?vid=" + uid + "&aid=&domain_id=&embed=0&ref=&check_speed=0");
+        final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+        if (filename == null) {
+            filename = (String) map.get("title");
+        }
+        dllink = (String) JavaScriptEngineFactory.walkJson(map, "files/hq");
         if (dllink == null) {
-            dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></video_file>").getMatch(0);
+            dllink = (String) JavaScriptEngineFactory.walkJson(map, "files/lq");
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
