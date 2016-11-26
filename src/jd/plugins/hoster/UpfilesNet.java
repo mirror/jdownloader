@@ -127,7 +127,7 @@ public class UpfilesNet extends PluginForHost {
             this.br.postPage(dllink, "refPage=&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             dllink = getDllinkFree();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -271,9 +271,17 @@ public class UpfilesNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        final String language = System.getProperty("user.language");
+        String expireSearchPattern = "";
+        if ("pl".equals(language)) {
+            br.setHeader("Accept-Language", "pl-PL,pl;q=0.8,en-US;q=0.6,en;q=0.4");
+            expireSearchPattern = ">Twoje konto VIP jest ważne do[ ]*?(\\d{4}\\-\\d{2}\\-\\d{2})<";
+        } else {
+            expireSearchPattern = ">Your VIP account expiring[ ]*?(\\d{4}\\-\\d{2}\\-\\d{2})<";
+        }
         this.br.getPage("/vip/show-plans");
         ai.setUnlimitedTraffic();
-        String expire = this.br.getRegex(">Twoje konto VIP jest ważne do (\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
+        String expire = this.br.getRegex(expireSearchPattern).getMatch(0);
         if (expire != null) {
             /* If there is only a very small amount of credit left, premium downloads will not be possible! */
             account.setType(AccountType.PREMIUM);
@@ -282,7 +290,12 @@ public class UpfilesNet extends PluginForHost {
             ai.setStatus("VIP account");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
         } else {
-            expire = this.br.getRegex(">Twoje konto Premium jest ważne do (\\d{4}\\-\\d{2}\\-\\d{2})<").getMatch(0);
+            if ("pl".equals(language)) {
+                expireSearchPattern = ">Twoje konto Premium jest ważne do[ ]*?(\\d{4}\\-\\d{2}\\-\\d{2})<";
+            } else {
+                expireSearchPattern = ">Your premium account expiring[ ]*?(\\d{4}\\-\\d{2}\\-\\d{2})<";
+            }
+            expire = this.br.getRegex(expireSearchPattern).getMatch(0);
             if (expire != null) {
                 /* If there is only a very small amount of credit left, premium downloads will not be possible! */
                 account.setType(AccountType.PREMIUM);
