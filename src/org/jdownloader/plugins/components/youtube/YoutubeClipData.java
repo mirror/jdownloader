@@ -75,7 +75,8 @@ public class YoutubeClipData {
             }
 
             String str = sb.toString();
-            if (title.contains("3d")) {
+            // should we be using sb instead of title here?
+            if (title != null && title.contains("3d")) {
                 if (str.contains("sbs")) {
                     return true;
                 }
