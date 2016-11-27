@@ -70,7 +70,7 @@ public class AnyfilesPl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/Alert.jsp") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("/Alert.jsp") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h4>Error</h4>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
