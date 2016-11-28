@@ -74,6 +74,11 @@ public class Rule34Xxx extends PluginForDecrypt {
                 if (!StringUtils.equals(this.getCurrentLink().getSourceLink().getLinkID(), prefixLinkID + id)) {
                     dl.setLinkID(prefixLinkID + id);
                 }
+                if (".webm".equals(getFileNameExtensionFromString(image))) {
+                    dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.WEBM);
+                } else {
+                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+                }
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -104,7 +109,6 @@ public class Rule34Xxx extends PluginForDecrypt {
                     final String id = new Regex(link, "id=(\\d+)").getMatch(0);
                     dl.setLinkID(prefixLinkID + id);
                     dl.setName(id);
-                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
                     distribute(dl);
                     decryptedLinks.add(dl);
                 }
