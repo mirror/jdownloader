@@ -22,6 +22,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,12 +47,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brfiles.com" }, urls = { "https?://(?:www\\.)?(?:brfiles\\.com/f/[A-Za-z0-9]+(/[^/]+?:)?|brfil\\.es)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brfiles.com" }, urls = { "https?://(?:www\\.)?(?:brfiles\\.com|brfil\\.es)/f/[A-Za-z0-9]+(/[^/]+?:)?" })
 public class BrfilesCom extends PluginForHost {
 
     public BrfilesCom(PluginWrapper wrapper) {
@@ -480,7 +480,7 @@ public class BrfilesCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
