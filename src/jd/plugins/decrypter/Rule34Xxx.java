@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -31,9 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 /**
  *
@@ -60,7 +60,11 @@ public class Rule34Xxx extends PluginForDecrypt {
         }
         if (parameter.contains("&s=view&")) {
             // from list to post page
-            final String image = br.getRegex("<img[^>]+\\s+src=('|\")([^>]+)\\1 id=('|\")image\\3").getMatch(1);
+            String image = br.getRegex("<img[^>]+\\s+src=('|\")([^>]+)\\1 id=('|\")image\\3").getMatch(1);
+            // can be video (Webm)
+            if (image == null) {
+                image = br.getRegex("<source\\s+[^>]*src=('|\"|)(.*?)\\1").getMatch(1);
+            }
             if (image != null) {
                 // these should linkcheck as single event... but if from list its available = true.
                 final String link = HTMLEntities.unhtmlentities(image);
@@ -108,7 +112,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 // no links found we should break!
                 return null;
             }
-            final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
+            final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
             for (final String next : nexts) {
                 if (loop.add(next)) {
                     br.getPage(HTMLEntities.unhtmlentities(next));
