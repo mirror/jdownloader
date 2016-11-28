@@ -394,7 +394,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isCookieLoggedIn(final Browser br) {
-        return (br.getCookie(MAINPAGE, "gateway_security_key") != null || br.getCookie(MAINPAGE, "ii") != null) || (br.getCookie(PORNHUB_PREMIUM, "gateway_security_key") != null || br.getCookie(PORNHUB_PREMIUM, "ii") != null);
+        return (br.getCookie(MAINPAGE, "gateway_security_key") != null || br.getCookie(MAINPAGE, "ij") != null) || (br.getCookie(PORNHUB_PREMIUM, "gateway_security_key") != null || br.getCookie(PORNHUB_PREMIUM, "ii") != null);
     }
 
     public static String getPremiumCookie(final Browser br) {
