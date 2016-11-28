@@ -25,11 +25,12 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" })
 public class DataFileComFolder extends PluginForDecrypt {
 
     public DataFileComFolder(PluginWrapper wrapper) {
@@ -61,6 +62,11 @@ public class DataFileComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        FilePackage fp = FilePackage.getInstance();
+        String fpName = br.getRegex("file-name\">([^<>]+)<").getMatch(0);
+        if (fpName != null) {
+            fp.setName(fpName);
+        }
         for (final String linkinfo : links) {
             final String finallink = new Regex(linkinfo, "\"(https?://(www\\.)datafile\\.com/d/[A-Za-z0-9]+)\"").getMatch(0);
             String filename = new Regex(linkinfo, ">([^<>\"]*?)</a>").getMatch(0);
@@ -76,11 +82,12 @@ public class DataFileComFolder extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename.trim());
             final DownloadLink dl = createDownloadlink(finallink);
-            dl.setName(filename);
+            dl.setFinalFileName(filename);
             dl.setProperty("decrypterfilename", filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
+            fp.addLinks(decryptedLinks);
         }
 
         return decryptedLinks;
