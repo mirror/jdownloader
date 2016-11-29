@@ -51,6 +51,7 @@ import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
@@ -376,8 +377,8 @@ public class HLSDownloader extends DownloadInterface {
             final AtomicLong lastBitrate = new AtomicLong(-1);
             final AtomicLong lastBytesWritten = new AtomicLong(0);
             final AtomicLong lastTime = new AtomicLong(0);
+            final AtomicLong completeTime = new AtomicLong(0);
             final FFmpeg ffmpeg = new FFmpeg() {
-                private volatile long timeInSeconds = -1;
 
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     try {
@@ -416,11 +417,8 @@ public class HLSDownloader extends DownloadInterface {
                             downloadable.setDownloadBytesLoaded(currentBytesWritten);
                             final String timeString = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
                             long time = (formatStringToMilliseconds(timeString) / 1000);
-                            if (time < timeInSeconds) {
-                                lastTime.set(timeInSeconds);
-                            }
-                            timeInSeconds = time;
-                            time = lastTime.get() + time;
+                            lastTime.set(time);
+                            time += completeTime.get();
                             final long duration = lastDuration.get();
                             final long estimatedSize;
                             if (time > 0 && duration > 0) {
@@ -445,6 +443,7 @@ public class HLSDownloader extends DownloadInterface {
             for (int index = 0; index < m3u8Playlists.size(); index++) {
                 final File destination = outputPartFiles.get(index);
                 try {
+                    completeTime.addAndGet(lastTime.get());
                     lastBitrate.set(-1);
                     lastBytesWritten.set(bytesWritten.get());
                     currentPlayListIndex.set(index);
@@ -633,7 +632,12 @@ public class HLSDownloader extends DownloadInterface {
                                 sb.append("\r\n");
                             }
                             sb.append("file '");
-                            sb.append(partFile.toURI().toURL());
+                            if (CrossSystem.isWindows()) {
+                                // https://trac.ffmpeg.org/ticket/2702
+                                sb.append("file:" + partFile.getAbsolutePath().replaceAll("\\\\", "/"));
+                            } else {
+                                sb.append("file://" + partFile.getAbsolutePath());
+                            }
                             sb.append("'");
                         }
                         final byte[] bytes = sb.toString().getBytes("UTF-8");
@@ -887,6 +891,7 @@ public class HLSDownloader extends DownloadInterface {
             DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
+            // TODO: update to handle 2x disk space usage (download + concat)
             try {
                 if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
                     @Override
@@ -907,6 +912,7 @@ public class HLSDownloader extends DownloadInterface {
                 downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                 downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
+                // TODO: add resume to continue with unfished playlist
                 runDownload();
                 if (outputPartFiles.size() > 1) {
                     runConcat();
