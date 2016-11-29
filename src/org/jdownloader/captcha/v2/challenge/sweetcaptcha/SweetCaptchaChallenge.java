@@ -59,7 +59,7 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public String getHTML() {
+    public String getHTML(String id) {
         String html;
         try {
             URL url = SweetCaptchaChallenge.class.getResource("sweetcaptcha.html");

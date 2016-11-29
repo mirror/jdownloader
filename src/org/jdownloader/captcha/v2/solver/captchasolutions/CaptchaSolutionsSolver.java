@@ -108,7 +108,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
                 r.addFormData(new FormData("googlekey", Encoding.urlEncode(rc2.getSiteKey())));
                 r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
                 r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
-                r.addFormData(new FormData("pageurl", Encoding.urlEncode("http://" + rc2.getHost())));
+                r.addFormData(new FormData("pageurl", Encoding.urlEncode(rc2.getSiteDomain())));
                 br.getPage(r);
                 System.out.println(br);
             } catch (Exception e) {

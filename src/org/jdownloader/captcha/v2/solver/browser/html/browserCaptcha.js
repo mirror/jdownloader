@@ -125,7 +125,7 @@ function unload() {
 	}
 }
 function closeWindowOrTab() {
-
+if(window.location.hash)return;
 	console.log("Close browser");
 	if (/Edge\/\d+./i.test(navigator.userAgent)) {
 		open(location, '_self').close();
