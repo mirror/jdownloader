@@ -504,6 +504,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             String html = IO.readURLToString(url);
             html = html.replace("%%%sitekey%%%", siteKey);
             html = html.replace("%%%session%%%", id);
+            html = html.replace("%%%namespace%%%", getHttpPath());
             String stoken = getSecureToken();
             if (StringUtils.isNotEmpty(stoken)) {
                 html = html.replace("%%%optionals%%%", "data-stoken=\"" + stoken + "\"");
