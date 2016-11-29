@@ -104,7 +104,7 @@ public class UploadRocketNet extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other:
-    // note: sister site kingfiles.net, 2016-10-19: kingfiles.net == RIP
+    // note: sister site kingfiles.net, 2016-10-19: kingfiles.net == RIP, 2016-11-28: kingfiles.net back online [XFS]
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
