@@ -34,23 +34,23 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "http://(?:kbagi\\.com|kumpulbagi\\.(?:id|com))/[a-z0-9\\-_\\.]+/[a-z0-9\\-_]+(?:/[^\\s]+)?" })
-public class KumpulbagiId extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "diskokosmiko.mx" }, urls = { "https?://diskokosmiko\\.mx/.+" })
+public class DiskokosmikoMx extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
-    public KumpulbagiId(PluginWrapper wrapper) {
+    public DiskokosmikoMx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private DownloadLink getDecryptedDownloadlink() {
-        return createDownloadlink("http://kumpulbagidecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+        return createDownloadlink("http://diskokosmikodecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
     }
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String passCode = null;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("(?:kbagi\\.com|kumpulbagi\\.(?:id|com))/", "kbagi.com/");
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
@@ -81,7 +81,9 @@ public class KumpulbagiId extends PluginForDecrypt {
             dl.setProperty("plain_filesize", filesize);
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
-            dl.setProperty("pass", passCode);
+            // if (passCode != null) {
+            // dl.setDownloadPassword(passCode);
+            // }
             dl.setContentUrl(parameter);
             dl.setLinkID(getHost() + "://" + fid);
             dl.setName(filename);
@@ -89,10 +91,7 @@ public class KumpulbagiId extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         } else {
-            String fpName = br.getRegex("scrollTop\">([^<>\"]*?)</a>").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            }
+            String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             String nextPage = "";
             int currentPage = 1;
             do {
@@ -109,7 +108,6 @@ public class KumpulbagiId extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                // insert ajax stuff
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 final Browser org = br.cloneBrowser();
@@ -177,7 +175,9 @@ public class KumpulbagiId extends PluginForDecrypt {
                     }
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", parameter);
-                    dl.setProperty("pass", passCode);
+                    if (passCode != null) {
+                        dl.setDownloadPassword(passCode);
+                    }
                     dl.setContentUrl(content_url);
                     dl.setLinkID(getHost() + "://" + fid);
                     dl.setName(filename);

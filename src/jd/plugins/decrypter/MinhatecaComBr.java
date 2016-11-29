@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -41,8 +42,6 @@ public class MinhatecaComBr extends PluginForDecrypt {
     public MinhatecaComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    /* ChomikujPlScript */
 
     private DownloadLink getDecryptedDownloadlink() {
         return createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
@@ -295,5 +294,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.ChomikujPlScript;
     }
 }

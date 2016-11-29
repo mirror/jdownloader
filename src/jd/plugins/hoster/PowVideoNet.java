@@ -107,7 +107,7 @@ public class PowVideoNet extends antiDDoSForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -119,7 +119,7 @@ public class PowVideoNet extends antiDDoSForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2; // tested
+            chunks = 1; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -1388,14 +1388,26 @@ public class PowVideoNet extends antiDDoSForHost {
                 }
             }
         }
-        /* 2016-11-04: Prefer rtmp as hls and http urls seem to be broken/disabled! */
-        final String url_rtmp = new Regex(source, "src:\\s*?\\'(rtmp://[^<>\"\\']+mp4:[^<>\"\\']+)\\'").getMatch(0);
-        if (url_rtmp != null) {
-            result = url_rtmp;
-        }
+        /* 2016-11-29: Do NOT prefer rtmp anymore as http urls work fine again! */
+        // final String url_rtmp = new Regex(source, "src:\\s*?\\'(rtmp://[^<>\"\\']+mp4:[^<>\"\\']+)\\'").getMatch(0);
+        // if (url_rtmp != null) {
+        // result = url_rtmp;
+        // }
+
         if (inValidate(result)) {
             /* 2016-11-04: Special */
             result = new Regex(source, "(\"|')(" + dllinkRegex + ")\\1").getMatch(1);
+        }
+        if (!inValidate(result)) {
+            /*
+             * 2016-11-29: They added one character to the beginning of the h value. With this, our final downloadurl will be invalid and
+             * server will only return html "Wrong IP" on download attempt --> This correction is required!
+             */
+            final String h_source = new Regex(result, "/([a-z0-9]+)/v\\.mp4").getMatch(0);
+            if (h_source != null) {
+                final String h_corrected = h_source.substring(1);
+                result = result.replace(h_source, h_corrected);
+            }
         }
         return result;
     }

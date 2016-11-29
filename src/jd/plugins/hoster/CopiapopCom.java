@@ -39,25 +39,17 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kbagi.com" }, urls = { "http://kumpulbagidecrypted\\.com/\\d+" })
-public class KumpulbagiId extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "copiapop.com" }, urls = { "http://copiapopdecrypted\\.com/\\d+" })
+public class CopiapopCom extends PluginForHost {
 
-    public KumpulbagiId(PluginWrapper wrapper) {
+    public CopiapopCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://kbagi.com/termosecondicoes.aspx";
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || "kbagi.com".equals(host) || "kumpulbagi.id".equals(host) || "kumpulbagi.com".equals(host)) {
-            return "kbagi.com";
-        }
-        return super.rewriteHost(host);
+        return "http://copiapop.com/terms-of-service";
     }
 
     /* Connection stuff */
@@ -75,12 +67,12 @@ public class KumpulbagiId extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url = link.getStringProperty("mainlink", null).replace(".id/", ".com/");
+        final String url = link.getStringProperty("mainlink", null);
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(url);
-        if (br.containsHTML("class=\"noFile\"")) {
+        if (br.containsHTML("class=\"noFile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = link.getStringProperty("plain_filename", null);
@@ -182,11 +174,11 @@ public class KumpulbagiId extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             /* We don't want to work with the encoded json bla html response */
-            br.getPage(dl.getStringProperty("mainlink", null).replace(".id/", ".com/"));
+            br.getPage(dl.getStringProperty("mainlink", null));
         }
     }
 
-    private static final String MAINPAGE = "http://kbagi.com";
+    private static final String MAINPAGE = "http://copiapop.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("deprecation")
@@ -265,7 +257,7 @@ public class KumpulbagiId extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, true);
-        br.getPage(link.getStringProperty("mainlink", null).replace(".id/", ".com/"));
+        br.getPage(link.getStringProperty("mainlink", null));
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {

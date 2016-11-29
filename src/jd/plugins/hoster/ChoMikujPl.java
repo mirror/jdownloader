@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,8 +41,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
@@ -78,7 +79,6 @@ public class ChoMikujPl extends antiDDoSForHost {
     private boolean             premiumonly                 = false;
     private boolean             plus18                      = false;
 
-    /* ChomikujPlScript */
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://chomikuj.pl/Create.aspx");
@@ -692,6 +692,11 @@ public class ChoMikujPl extends antiDDoSForHost {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
             System.out.println(ibr.toString());
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.ChomikujPlScript;
     }
 
     // for the decrypter, so we have only one session of antiddos
