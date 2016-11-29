@@ -28,13 +28,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" }) 
-public class CopiapopEsDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.com" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" })
+public class CopiapopComDecrypter extends PluginForDecrypt {
 
-    public CopiapopEsDecrypter(PluginWrapper wrapper) {
+    public CopiapopComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -55,10 +56,8 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("class=\"tiles_container\"|id=\"fileDetails\"")) {
-            final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -83,7 +82,7 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
                 return null;
             }
             filename = Encoding.htmlDecode(filename).trim();
-            final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
             dl.setProperty("plain_filename", filename);
             dl.setProperty("plain_filesize", filesize);
@@ -154,7 +153,7 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
                     filesize = Encoding.htmlDecode(filesize).trim();
                     filename = Encoding.htmlDecode(filename).trim();
 
-                    final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                    final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
                     dl.setProperty("plain_filename", filename);
                     dl.setProperty("plain_filesize", filesize);
@@ -183,6 +182,11 @@ public class CopiapopEsDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.ChomikujPlScript;
     }
 
 }

@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -38,7 +36,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
 public class ChoMikujPl extends PluginForDecrypt {
@@ -46,8 +47,6 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    /* ChomikujPlScript */
 
     private final String       PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
     private String             FOLDERPASSWORD           = null;
@@ -661,6 +660,11 @@ public class ChoMikujPl extends PluginForDecrypt {
                 throw new IllegalStateException(getHost() + " hoster plugin not found!");
             }
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.ChomikujPlScript;
     }
 
 }
