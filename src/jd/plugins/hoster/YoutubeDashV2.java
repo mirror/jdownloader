@@ -437,9 +437,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         }
                         if (variant.getiTagAudioOrVideoItagEquivalent() != variant.getiTagVideo() && urls != null && urls.getAudioStreams() != null) {
                             PluginException firstException = null;
-                            for (YoutubeStreamData si : urls.getAudioStreams()) {
-                                YoutubeFinalLinkResource cache = new YoutubeFinalLinkResource(si);
-                                si = null;
+                            for (final YoutubeStreamData si : urls.getAudioStreams()) {
+                                final YoutubeFinalLinkResource cache = new YoutubeFinalLinkResource(si);
                                 if (cache.getSegments() != null) {
                                     verifiedSize = false;
                                     long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
@@ -449,7 +448,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         // continue;
                                         // }
                                         if (si.getSrc() != null) {
-                                            Log.info("Stream Source: " + si.getSrc());
+                                            logger.info("Stream Source: " + si.getSrc());
                                         }
                                         if (firstException == null) {
                                             firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
