@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,14 +32,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" }) 
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" })
 public class AnimeggOrg extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -73,7 +73,7 @@ public class AnimeggOrg extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         final String link = downloadLink.getDownloadURL();
-        br.getPage(link);
+        getPage(link);
         // not yet available. We can only say offline!
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"\\.\\./images/animegg-unavailable.jpg\" style=\"width: 100%\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -83,7 +83,7 @@ public class AnimeggOrg extends antiDDoSForHost {
             if (embed == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(embed);
+            getPage(embed);
         }
         final String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         // multiple qualities.

@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -26,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bicycling.com" }, urls = { "http://(?:www\\.)?bicycling\\.com/video/[a-z0-9\\-_]+" })
-public class BicyclingCom extends PluginForHost {
+public class BicyclingCom extends antiDDoSForHost {
 
     public BicyclingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,7 +59,7 @@ public class BicyclingCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"video_page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -81,7 +82,7 @@ public class BicyclingCom extends PluginForHost {
         final String flashID = "myExperience" + videoID;
 
         final String brightcove_URL = "http://c.brightcove.com/services/viewer/htmlFederated?&width=340&height=192&flashID=" + flashID + "&includeAPI=true&templateLoadHandler=templateLoaded&templateReadyHandler=playerReady&bgcolor=%23FFFFFF&htmlFallback=true&playerID=" + playerID + "&publisherID=" + publisherID + "&playerKey=" + Encoding.urlEncode(playerKey) + "&isVid=true&isUI=true&dynamicStreaming=true&optimizedContentLoad=true&wmode=transparent&%40videoPlayer=" + videoID + "&allowScriptAccess=always";
-        this.br.getPage(brightcove_URL);
+        getPage(brightcove_URL);
         final jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this, this.br);
 
         String filename = bestBrightcoveVersion.displayName;
@@ -140,10 +141,6 @@ public class BicyclingCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

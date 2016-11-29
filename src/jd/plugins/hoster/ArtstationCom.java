@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/images/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/images/.+" })
 public class ArtstationCom extends PluginForHost {
 
     public ArtstationCom(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class ArtstationCom extends PluginForHost {
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other:
+    // other: image links do not use cloudflare service.
 
     /* Extension which will be used if no correct extension is found */
     public static final String   default_Extension = ".jpg";

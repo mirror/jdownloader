@@ -17,11 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,8 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
 public class ChoMikujPl extends PluginForDecrypt {
@@ -75,7 +74,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             parameter = param.toString().replace("chomikuj.pl//", "chomikuj.pl/");
             // Check for page 1 of multi page folder
             if (!parameter.contains(",")) {
-                br.getPage(parameter);
+                getPage(parameter);
                 if (br.containsHTML("fileListPage")) {
                     FilePackage fp = FilePackage.getInstance();
                     Integer pageNum = 1;
@@ -112,12 +111,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         /* Correct added link */
         parameter = parameter.replace("www.", "");
         br.setFollowRedirects(false);
-        try {
-            br.setLoadLimit(4194304);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 */
-        }
-
+        br.setLoadLimit(4194304);
         /* checking if the single link is folder with EXTENSTION in the name */
         boolean folderCheck = false;
         /* Handle single links */
@@ -135,7 +129,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                  * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
                  */
                 if (isLinkendingWithoutID) {
-                    br.getPage(parameter);
+                    getPage(parameter);
                     final String orgLink = br.getRegex("property=\"og:url\" content=\"(http://(www\\.)?chomikuj\\.pl/[^<>\"]*?)\"").getMatch(0);
                     if (orgLink != null && orgLink.contains(",")) {
                         linkending = orgLink.substring(orgLink.lastIndexOf(","));
@@ -181,7 +175,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     }
                     String fileid = info.getMatch(1);
                     if (fileid == null) {
-                        br.getPage(parameter);
+                        getPage(parameter);
                         fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
                     }
                     if (fileid == null) {
@@ -192,14 +186,10 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setProperty("fileid", fileid);
                     }
                     dl.setName(filename);
-                    try {
-                        dl.setContentUrl(parameter);
-                        dl.setProperty("mainlink", parameter);
-                        dl.setLinkID(fileid);
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
+                    dl.setContentUrl(parameter);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setLinkID(fileid);
+                    distribute(dl);
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
@@ -211,13 +201,13 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
 
-        br.getPage(parameter);
+        getPage(parameter);
 
         // Check for redirect and apply new link
         String redirect = br.getRedirectLocation();
         if (redirect != null) {
             parameter = redirect;
-            br.getPage(parameter);
+            getPage(parameter);
         }
 
         final String numberof_files = br.getRegex("class=\"bold\">(\\d+)</span> plik\\&#243;w<br />").getMatch(0);
@@ -238,7 +228,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             ext = new Regex(ext, "(" + ENDINGS + ").+$").getMatch(0);
         }
         if (ext != null && ext.matches(ENDINGS) && !folderCheck) {
-            br.getPage(parameter);
+            getPage(parameter);
             redirect = br.getRedirectLocation();
             if (redirect != null) {
                 // Maybe direct link is no direct link anymore?!
@@ -247,7 +237,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
-                br.getPage(redirect);
+                getPage(redirect);
             }
 
             // Check if link can be decrypted
@@ -270,13 +260,9 @@ public class ChoMikujPl extends PluginForDecrypt {
             dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim().replace(",", "."))));
             dl.setAvailable(true);
             dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
-            try {
-                dl.setContentUrl(parameter);
-                dl.setLinkID(fid);
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
+            dl.setContentUrl(parameter);
+            dl.setLinkID(fid);
+            distribute(dl);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -298,7 +284,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         // later when POSTing things to the server
         if (br.getRedirectLocation() != null) {
             parameter = br.getRedirectLocation();
-            br.getPage(br.getRedirectLocation());
+            getPage(br.getRedirectLocation());
         }
         /* Get needed values */
         String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?)\" />").getMatch(0);
@@ -429,7 +415,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                     pass.put("Password", FOLDERPASSWORD);
-                    br.submitForm(pass);
+                    submitForm(pass);
                     if (br.containsHTML("\\{\"IsSuccess\":true")) {
                         param.setDecrypterPassword(FOLDERPASSWORD);
                         this.getPluginConfig().setProperty("password", FOLDERPASSWORD);
@@ -473,7 +459,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             prepareBrowser(parameter, tempBr);
             /** Only request further pages is folder isn't password protected */
             if (FOLDERPASSWORD != null) {
-                tempBr.getPage(parameter);
+                getPage(tempBr, parameter);
             } else {
                 accessPage(postdata, tempBr, pageCount);
             }
@@ -540,7 +526,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                     if (tempExt != null) {
                         ext = new Regex(tempExt, "(" + ENDINGS + ").*?$").getMatch(0);
                         if (ext == null) {
-                            /* Last try to find the correct extension - if we fail to find it here the host plugin should find it anyways! */
+                            /*
+                             * Last try to find the correct extension - if we fail to find it here the host plugin should find it anyways!
+                             */
                             ext = new Regex(tempExt, "(\\.[A-Za-z0-9]+)").getMatch(0);
                         }
                         /* We found the good extension? Okay then let's remove the previously found bad extension! */
@@ -608,8 +596,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void accessPage(String postData, Browser pageBR, int pageNum) throws IOException {
-        pageBR.postPage("http://chomikuj.pl/action/Files/FilesList", postData + "&pageNr=" + pageNum);
+    private void accessPage(String postData, Browser pageBR, int pageNum) throws Exception {
+        postPage(pageBR, "http://chomikuj.pl/action/Files/FilesList", postData + "&pageNr=" + pageNum);
     }
 
     private void prepareBrowser(String parameter, Browser bro) {
@@ -632,6 +620,47 @@ public class ChoMikujPl extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    private PluginForHost plugin = null;
+
+    private void getPage(final String parameter) throws Exception {
+        getPage(br, parameter);
+    }
+
+    private void getPage(final Browser br, final String parameter) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.ChoMikujPl) plugin).setBrowser(br);
+        ((jd.plugins.hoster.ChoMikujPl) plugin).getPage(parameter);
+    }
+
+    private void postPage(final String url, final String arg) throws Exception {
+        postPage(br, url, arg);
+    }
+
+    private void postPage(final Browser br, final String url, final String arg) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.ChoMikujPl) plugin).setBrowser(br);
+        ((jd.plugins.hoster.ChoMikujPl) plugin).postPage(url, arg);
+    }
+
+    private void submitForm(final Form form) throws Exception {
+        submitForm(br, form);
+    }
+
+    private void submitForm(final Browser br, final Form form) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.ChoMikujPl) plugin).setBrowser(br);
+        ((jd.plugins.hoster.ChoMikujPl) plugin).submitForm(form);
+    }
+
+    public void loadPlugin() {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("chomikuj.pl");
+            if (plugin == null) {
+                throw new IllegalStateException(getHost() + " hoster plugin not found!");
+            }
+        }
     }
 
 }

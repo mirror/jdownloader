@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -28,12 +29,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkmirror.com" }, urls = { "http://(?:www\\.)?apkmirror\\.com/apk/[^/]+/[^/]+/[^/]+/[^/]+\\-download/" })
-public class ApkmirrorCom extends PluginForHost {
+public class ApkmirrorCom extends antiDDoSForHost {
 
     public ApkmirrorCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,9 +58,9 @@ public class ApkmirrorCom extends PluginForHost {
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -94,7 +92,7 @@ public class ApkmirrorCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            this.br.getPage(this.br.getURL() + "download/");
+            getPage(this.br.getURL() + "download/");
             dllink = br.getRegex("download\\.php\\?id=(\\d+)").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

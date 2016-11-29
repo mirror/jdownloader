@@ -19,18 +19,21 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/folder/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catshare.net" }, urls = { "https?://(?:www\\.)?catshare\\.net/folder/[A-Za-z0-9]+" })
 public class CatShareNetFolder extends PluginForDecrypt {
 
     public CatShareNetFolder(PluginWrapper wrapper) {
@@ -39,12 +42,11 @@ public class CatShareNetFolder extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
 
-        jd.plugins.hoster.CatShareNet.prepBRAPI(this.br);
-        br.postPage(jd.plugins.hoster.CatShareNet.getAPIProtocol() + this.getHost() + "/folder/json_folder", " folder_hash=" + folderid);
+        postPage(jd.plugins.hoster.CatShareNet.getAPIProtocol() + this.getHost() + "/folder/json_folder", " folder_hash=" + folderid);
 
         if (br.getHttpConnection().getResponseCode() == 404 || jd.plugins.hoster.CatShareNet.getAPIStatuscode(this.br) != jd.plugins.hoster.CatShareNet.api_status_all_ok) {
             /* If a folder doesn't exist we will get error code 2 with error "Brak folderu" */
@@ -56,7 +58,7 @@ public class CatShareNetFolder extends PluginForDecrypt {
         // final ArrayList<Object> ressourcelist = (ArrayList<Object>)
         // JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
 
-        HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         HashMap<String, Object> entries_tmp = null;
         Object entries_tmp_o = null;
 
@@ -93,6 +95,27 @@ public class CatShareNetFolder extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    private PluginForHost plugin = null;
+
+    private void postPage(final String url, final String arg) throws Exception {
+        postPage(br, url, arg);
+    }
+
+    private void postPage(final Browser br, final String url, final String arg) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.CatShareNet) plugin).setBrowser(br);
+        ((jd.plugins.hoster.CatShareNet) plugin).postPage(url, arg);
+    }
+
+    public void loadPlugin() {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("catshare.net");
+            if (plugin == null) {
+                throw new IllegalStateException(getHost() + " hoster plugin not found!");
+            }
+        }
     }
 
 }

@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,12 +29,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me", "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "http://(?:www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?vid2c\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?pornper\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?fantasy8\\.com/video/\\d+/[a-z0-9\\-]+",
         "http://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bestporntube\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvideo\\.me/video/\\d+/[a-z0-9\\-]+" })
-public class UnknownPornScript3 extends PluginForHost {
+public class UnknownPornScript3 extends antiDDoSForHost {
 
     public UnknownPornScript3(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,10 +53,10 @@ public class UnknownPornScript3 extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("?m=e") || !br.getURL().contains("/video") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

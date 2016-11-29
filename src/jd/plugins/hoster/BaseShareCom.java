@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,10 +29,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[^<>/\"]+/songs/[^<>/\"]+/\\d+/" })
-public class BaseShareCom extends PluginForHost {
+public class BaseShareCom extends antiDDoSForHost {
 
     public BaseShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,10 +45,10 @@ public class BaseShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://baseshare.com/") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -134,6 +133,11 @@ public class BaseShareCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    // for the decrypter, so we have only one session of antiddos
+    public void getPage(final String url) throws Exception {
+        super.getPage(url);
     }
 
     @Override
