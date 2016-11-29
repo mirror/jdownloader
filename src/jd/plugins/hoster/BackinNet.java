@@ -27,8 +27,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -61,13 +69,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
@@ -195,8 +196,8 @@ public class BackinNet extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 1 url at a time */
-                    if (index == urls.length || links.size() >= 1) {
+                    /* we test 20 url at a time */
+                    if (index == urls.length || links.size() >= 20) {
                         break;
                     }
                     links.add(urls[index]);
@@ -209,22 +210,22 @@ public class BackinNet extends antiDDoSForHost {
                 }
                 sb.deleteCharAt(sb.length() - 1);
                 getPage(br, "http://fast-api.backin.net/file_info.php?key=" + Encoding.Base64Decode("amRzb2Z0d2FyZTQ5NjQ=") + sb.toString());
-                if (br.toString().equals("0")) {
-                    for (DownloadLink dl : links) {
-                        dl.setAvailableStatus(AvailableStatus.FALSE);
-                    }
-                    break;
-                }
                 for (DownloadLink dl : links) {
                     String id = getFUID(dl);
-                    final String filename = PluginJSonUtils.getJson(br, "file_name");
-                    final String filesize = PluginJSonUtils.getJson(br, "file_size");
-                    int size = filesize != null && filesize.matches("\\d+") ? Integer.parseInt(filesize) : -1;
+                    final String result = br.getRegex("\\{\"file_code\":\"" + id + "\"[^\\}]+\\}").getMatch(-1);
+                    final String status = PluginJSonUtils.getJson(result, "online");
+                    final String filename = PluginJSonUtils.getJson(result, "file_name");
+                    final String filesize = PluginJSonUtils.getJson(result, "file_size");
+                    long size = filesize != null && filesize.matches("\\d+") ? Long.parseLong(filesize) : -1;
                     dl.setFinalFileName(filename);
                     if (dl.getVerifiedFileSize() == -1 && size > 0) {
                         dl.setVerifiedFileSize(size);
                     }
-                    dl.setAvailableStatus(AvailableStatus.TRUE);
+                    if ("true".equals(status)) {
+                        dl.setAvailableStatus(AvailableStatus.TRUE);
+                    } else {
+                        dl.setAvailableStatus(AvailableStatus.FALSE);
+                    }
                 }
                 if (index == urls.length) {
                     break;
@@ -805,110 +806,121 @@ public class BackinNet extends antiDDoSForHost {
         }
     }
 
+    private static AtomicBoolean useAPI = new AtomicBoolean(false);
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            // logic to manipulate full login.
-            if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
-                login(account, false);
+        if (!useAPI.get()) {
+            try {
+                // logic to manipulate full login.
+                if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+                    login(account, false);
+                } else {
+                    login(account, true);
+                }
+            } catch (final PluginException e) {
+                account.setValid(false);
+                throw e;
+            }
+            // required for when we don't login fully.
+            final String myAccount = "/?op=my_account";
+            if (br.getURL() == null) {
+                br.setFollowRedirects(true);
+                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
+            } else if (!br.getURL().contains(myAccount)) {
+                getPage(myAccount);
+            }
+            // what type of account?
+            if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+                account.setProperty("free", true);
             } else {
-                login(account, true);
+                account.setProperty("free", false);
             }
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        // required for when we don't login fully.
-        final String myAccount = "/?op=my_account";
-        if (br.getURL() == null) {
-            br.setFollowRedirects(true);
-            getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
-        } else if (!br.getURL().contains(myAccount)) {
-            getPage(myAccount);
-        }
-        // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
-            account.setProperty("free", true);
-        } else {
-            account.setProperty("free", false);
-        }
-        final String space[] = cbr.getRegex("Used space:\\s*</td><td>\\s*([0-9\\.]+)\\s*(KB|MB|GB|TB)?\\s*</td>").getRow(0);
-        if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
-            // free users it's provided by default
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && !inValidate(space[0])) {
-            // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0] + "Mb");
-        }
-        account.setValid(true);
-        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD>([^<>\"']+)</td>").getMatch(0);
-        if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic = availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            final String space[] = cbr.getRegex("Used space:\\s*</td><td>\\s*([0-9\\.]+)\\s*(KB|MB|GB|TB)?\\s*</td>").getRow(0);
+            if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
+                // free users it's provided by default
+                ai.setUsedSpace(space[0] + " " + space[1]);
+            } else if ((space != null && space.length != 0) && !inValidate(space[0])) {
+                // premium users the Mb value isn't provided for some reason...
+                ai.setUsedSpace(space[0] + "Mb");
+            }
+            account.setValid(true);
+            String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD>([^<>\"']+)</td>").getMatch(0);
+            if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+                availabletraffic = availabletraffic.trim();
+                // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+                if (!availabletraffic.startsWith("-")) {
+                    ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+                } else {
+                    ai.setTrafficLeft(0);
+                }
             } else {
-                ai.setTrafficLeft(0);
+                ai.setUnlimitedTraffic();
             }
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
-        } else {
-            long expire = 0, expireD = 0, expireS = 0;
-            final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (!inValidate(expireDay)) {
-                expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-            }
-            if (inValidate(expireDay) || useAltExpire) {
-                // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
-                getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
-                if (!inValidate(expireSecond)) {
-                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpYears)) {
-                        years = Integer.parseInt(tmpYears);
+            if (account.getBooleanProperty("free")) {
+                ai.setStatus("Registered (free) User");
+                account.setProperty("totalMaxSim", 20);
+            } else {
+                long expire = 0, expireD = 0, expireS = 0;
+                final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+                if (!inValidate(expireDay)) {
+                    expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
+                }
+                if (inValidate(expireDay) || useAltExpire) {
+                    // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
+                    getPage("/?op=payments");
+                    String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
+                    if (!inValidate(expireSecond)) {
+                        String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                        String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                        String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                        String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                        String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                        long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                        if (!inValidate(tmpYears)) {
+                            years = Integer.parseInt(tmpYears);
+                        }
+                        if (!inValidate(tmpdays)) {
+                            days = Integer.parseInt(tmpdays);
+                        }
+                        if (!inValidate(tmphrs)) {
+                            hours = Integer.parseInt(tmphrs);
+                        }
+                        if (!inValidate(tmpmin)) {
+                            minutes = Integer.parseInt(tmpmin);
+                        }
+                        if (!inValidate(tmpsec)) {
+                            seconds = Integer.parseInt(tmpsec);
+                        }
+                        if (days > 0 && hours > 0 && minutes > 0 && seconds > 0) {
+                            expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                        }
                     }
-                    if (!inValidate(tmpdays)) {
-                        days = Integer.parseInt(tmpdays);
-                    }
-                    if (!inValidate(tmphrs)) {
-                        hours = Integer.parseInt(tmphrs);
-                    }
-                    if (!inValidate(tmpmin)) {
-                        minutes = Integer.parseInt(tmpmin);
-                    }
-                    if (!inValidate(tmpsec)) {
-                        seconds = Integer.parseInt(tmpsec);
-                    }
-                    if (days > 0 && hours > 0 && minutes > 0 && seconds > 0) {
-                        expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                    if (expireD == 0 && expireS == 0) {
+                        ai.setExpired(true);
+                        account.setValid(false);
+                        return ai;
                     }
                 }
-                if (expireD == 0 && expireS == 0) {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
+                if (expireS != 0) {
+                    expire = expireS;
+                } else {
+                    expire = expireD;
                 }
+                account.setProperty("totalMaxSim", 20);
+                ai.setValidUntil(expire);
+                ai.setStatus("Premium Account");
             }
-            if (expireS != 0) {
-                expire = expireS;
-            } else {
-                expire = expireD;
-            }
-            account.setProperty("totalMaxSim", 20);
-            ai.setValidUntil(expire);
-            ai.setStatus("Premium Account");
+        } else {
+            apiAccountCheck(account, ai);
         }
         return ai;
+    }
+
+    private void apiAccountCheck(final Account account, final AccountInfo ai) throws Exception {
+        // test method.. they don't require password.. go figure
+        br.getPage("http://fast-api.backin.net/account_info.php?key=" + Encoding.Base64Decode("amRzb2Z0d2FyZTQ5NjQ=") + "&login=" + Encoding.urlEncode(account.getUser()));
     }
 
     @SuppressWarnings("unchecked")
