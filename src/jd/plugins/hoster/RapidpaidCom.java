@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
@@ -47,19 +46,19 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brfiles.com" }, urls = { "https?://(?:www\\.)?(?:brfiles\\.com|brfil\\.es)/f/[A-Za-z0-9]+(/[^/]+?:)?" })
-public class BrfilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidpaid.com" }, urls = { "https?://(?:www\\.)?rapidpaid\\.com/[A-Za-z0-9]+" })
+public class RapidpaidCom extends PluginForHost {
 
-    public BrfilesCom(PluginWrapper wrapper) {
+    public RapidpaidCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(mainpage + "/cadastro/");
+        this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareBasic Version 0.7.7-psp<br />
-     * mods: heavily modified, do NOT upgrade!<br />
-     * limit-info: download only possible via brazillian IP and/or free account<br />
+     * YetiShareBasic Version 0.8.1-psp<br />
+     * mods:<br />
+     * limit-info: 2016-11-29: premium untested, set FREE account limits<br />
      * protocol: no https<br />
      * captchatype: reCaptchaV2<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
@@ -71,8 +70,8 @@ public class BrfilesCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://brfiles.com";
-    private final String                   domains                                      = "(brfiles\\.com)";
+    private final String                   mainpage                                     = "http://rapidpaid.com";
+    private final String                   domains                                      = "(rapidpaid\\.com)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
@@ -80,8 +79,8 @@ public class BrfilesCom extends PluginForHost {
     private static final boolean           supportshttps                                = false;
     private static final boolean           supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean           available_CHECK_OVER_INFO_PAGE               = false;
-    private static final boolean           useOldLoginMethod                            = true;
+    private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean           useOldLoginMethod                            = false;
     private static final boolean           enable_RANDOM_UA                             = false;
     /* Known errors */
     private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -98,16 +97,15 @@ public class BrfilesCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = -2;
+    private static final int               free_MAXCHUNKS                               = 1;
     private static final int               free_MAXDOWNLOADS                            = 1;
     private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = -2;
+    private static final int               account_FREE_MAXCHUNKS                       = 1;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
+    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 1;
 
-    private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
     @SuppressWarnings("deprecation")
@@ -139,9 +137,13 @@ public class BrfilesCom extends PluginForHost {
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
             filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
             if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                /* "Information about"-filename-trait without the animation(delay). */
+                filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
             }
-            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            if (filename == null) {
+                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
+            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             try {
                 /* Language-independant attempt ... */
                 if (filename == null) {
@@ -158,10 +160,7 @@ public class BrfilesCom extends PluginForHost {
             }
         } else {
             br.getPage(link.getDownloadURL());
-            if (this.br.getURL().contains("/error/")) {
-                /* Special */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
+            if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
                 return AvailableStatus.TRUE;
@@ -180,22 +179,15 @@ public class BrfilesCom extends PluginForHost {
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
             filename = fInfo.getMatch(0);
             filesize = fInfo.getMatch(1);
-            if (filename == null) {
-                /* Special */
-                filename = this.br.getRegex("<title>([^<>\"]+) \\- BRFiles</title>").getMatch(0);
-            }
             if (filesize == null) {
                 filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
             }
         }
-        if (filename == null) {
+        if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename).trim());
-        if (filesize != null) {
-            /* Special */
-            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
-        }
+        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -342,7 +334,7 @@ public class BrfilesCom extends PluginForHost {
     }
 
     private boolean isDownloadlink(final String url) {
-        final boolean isdownloadlink = url.contains("download_token=") || url.contains("dl_token=");
+        final boolean isdownloadlink = url.contains("download_token=");
         return isdownloadlink;
     }
 
@@ -465,12 +457,7 @@ public class BrfilesCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        String fid = new Regex(dl.getDownloadURL(), "/f/([A-Za-z0-9]+)").getMatch(0);
-        if (fid == null) {
-            /* E.g. for short urls */
-            fid = new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        }
-        return fid;
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     /**
@@ -480,7 +467,7 @@ public class BrfilesCom extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     */
+     * */
     private boolean inValidate(final String s) {
         if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
@@ -518,7 +505,6 @@ public class BrfilesCom extends PluginForHost {
     private void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 prepBrowser(this.br);
                 br.setFollowRedirects(true);
@@ -531,15 +517,14 @@ public class BrfilesCom extends PluginForHost {
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login/", "submit=&submitme=1&redirect=&btn-enviar=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout/?\"")) {
+                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    br.getPage(loginstart + this.getHost() + "/account_home/");
                 } else {
                     br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
                     final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
@@ -553,8 +538,8 @@ public class BrfilesCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    br.getPage(loginstart + this.getHost() + "/account_home." + type);
                 }
+                br.getPage(loginstart + this.getHost() + "/account_home." + type);
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
@@ -567,59 +552,42 @@ public class BrfilesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        MAXPREM.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO|CONTA PREMIUM)</span>")) {
+        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
         } else {
-            String expire;
-            if (useOldLoginMethod) {
-                /* 2016-11-29: Special */
-                br.getPage("/account_edit/");
-                expire = br.getRegex("Data de vencimento: </label>\\s*?<div class=\"[^\"]+\">\\s*?(\\d{2}/\\d{2}/\\d{4})\\s*?<").getMatch(0);
-            } else {
-                br.getPage("/upgrade." + type);
-                expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-                if (expire == null) {
-                    /* More wide RegEx to be more language independant */
-                    expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
-                }
+            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            /* If the premium account is expired we'll simply accept it as a free account. */
+            String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                /* More wide RegEx to be more language independant */
+                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
             }
             if (expire == null) {
                 account.setValid(false);
                 return ai;
             }
-            /* If the premium account is expired we'll simply accept it as a free account. */
             long expire_milliseconds = 0;
-            if (!expire.contains(":")) {
-                /* 2016-11-29: Special */
-                expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy", Locale.ENGLISH);
-            } else {
-                expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
-            }
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                MAXPREM.set(account_FREE_MAXDOWNLOADS);
                 ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
                 ai.setStatus("Premium account");
             }
         }
@@ -668,8 +636,7 @@ public class BrfilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return MAXPREM.get();
+        return account_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
