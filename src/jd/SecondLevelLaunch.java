@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 package jd;
 
 import java.awt.AWTEvent;
@@ -35,6 +34,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
@@ -43,22 +43,6 @@ import java.util.TreeSet;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
-
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
@@ -145,23 +129,36 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+
 public class SecondLevelLaunch {
     static {
         statics();
     }
-
     public final static SingleReachableState UPDATE_HANDLER_SET    = new SingleReachableState("UPDATE_HANDLER_SET");
     public final static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
     public final static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
-
     private static File                      FILE;
     public final static long                 startup               = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
-
     /**
      * Sets special Properties for MAC
      */
@@ -175,28 +172,21 @@ public class SecondLevelLaunch {
             LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
             LoggerFactory.getDefaultLogger().log(e);
         }
-
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-
         new Thread() {
             public void run() {
                 try {
                     LoggerFactory.getDefaultLogger().info("Try to disable AppNap");
-
                     // single bundle installer
                     File file = getInfoPlistPath();
                     String cFBundleIdentifier = null;
                     if (file != null && file.exists()) {
                         cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
-
                     }
-
                     LoggerFactory.getDefaultLogger().info("MAC Bundle Identifier: " + cFBundleIdentifier);
                     if (cFBundleIdentifier == null) {
-
                         cFBundleIdentifier = "org.jdownloader.launcher";
-
                         LoggerFactory.getDefaultLogger().info("Use MAC Default Bundle Identifier: " + cFBundleIdentifier);
                     }
                     if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
@@ -233,7 +223,6 @@ public class SecondLevelLaunch {
                 }
             };
         }.start();
-
         // native Mac just if User Choose Aqua as Skin
         // if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
         // // Mac Java from 1.3
@@ -245,14 +234,12 @@ public class SecondLevelLaunch {
         // System.setProperty("apple.laf.useScreenMenuBar", "true");
         // System.setProperty("apple.awt.showGrowBox", "true");
         // }
-
         try {
             MacOSApplicationAdapter.enableMacSpecial();
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
             LoggerFactory.getDefaultLogger().log(e);
         }
-
     }
 
     protected static File getInfoPlistPath() {
@@ -319,20 +306,17 @@ public class SecondLevelLaunch {
      *
      * @throws IOException
      */
-
     public static void mainStart(final String args[]) {
         /* setup JSPermission */
         try {
             // Ensure that proxyVole uses Rhino and not the build-in engines.
             // Rhino is Sandboxed by JSRhinoPermissionRestricter
             PacProxySelector.SCRIPT_ENGINE_FACTORY = new PACScriptEngineFactory() {
-
                 @Override
                 public PacScriptParser selectEngine(PacProxySelector selector, PacScriptSource pacSource) throws ProxyEvaluationException {
                     return new RhinoPacScriptParser(pacSource);
                 }
             };
-
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
@@ -341,7 +325,6 @@ public class SecondLevelLaunch {
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
-
         try {
             JSHtmlUnitPermissionRestricter.init();
         } catch (final Throwable e) {
@@ -357,7 +340,6 @@ public class SecondLevelLaunch {
         } else if (CrossSystem.isWindows()) {
             initWindowsSpecials();
         }
-
         /* hack for ftp plugin to use new ftp style */
         System.setProperty("ftpStyle", "new");
         /* random number: eg used for cnl2 without asking dialog */
@@ -404,9 +386,7 @@ public class SecondLevelLaunch {
             vmOptionsWorkaround(maxHeap);
         }
         LoggerFactory.getDefaultLogger().info("JDownloader2");
-
         // checkSessionInstallLog();
-
         boolean jared = Application.isJared(SecondLevelLaunch.class);
         String revision = JDUtilities.getRevision();
         if (!jared) {
@@ -420,9 +400,7 @@ public class SecondLevelLaunch {
     }
 
     private static void initWindowsSpecials() {
-
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 try {
@@ -434,7 +412,6 @@ public class SecondLevelLaunch {
                 }
             }
         });
-
     }
 
     private static void initLinuxSpecials() {
@@ -469,7 +446,6 @@ public class SecondLevelLaunch {
                         }
                     }
                     final File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
-
                         @Override
                         public boolean accept(File arg0) {
                             return arg0.getName().endsWith(".vmoptions");
@@ -597,7 +573,6 @@ public class SecondLevelLaunch {
     private static boolean isMacLauncherSigned() {
         String ownBundlePath = System.getProperty("i4j.ownBundlePath");
         if (StringUtils.isNotEmpty(ownBundlePath) && ownBundlePath.endsWith(".app")) {
-
             // folder installer
             File file = new File(new File(ownBundlePath), "Contents/﻿_CodeSignature");
             if (file.exists()) {
@@ -612,15 +587,11 @@ public class SecondLevelLaunch {
     }
 
     private static void exitCheck() {
-
         if (CrossSystem.isMac()) {
             // we need to check this on mac. use complain that it does not work. warning even if the exit via quit
-
             return;
         }
-
         FILE = Application.getTempResource("exitcheck");
-
         try {
             if (FILE.exists()) {
                 final String error = IO.readFileToString(FILE);
@@ -630,23 +601,17 @@ public class SecondLevelLaunch {
                     public void run() {
                         String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
                         LoggerFactory.getDefaultLogger().warning("BAD EXIT Detected!: " + txt);
-
                         if (!Application.isHeadless()) {
                             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
                         }
-
                     };
                 }.start();
-
             }
-
             FileCreationManager.getInstance().delete(FILE, null);
             FileCreationManager.getInstance().mkdir(FILE.getParentFile());
             IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
-
         } catch (Exception e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-
         }
         FILE.deleteOnExit();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -671,7 +636,6 @@ public class SecondLevelLaunch {
     private static void start(final String args[]) {
         exitCheck();
         go();
-
     }
 
     private static void go() {
@@ -718,9 +682,7 @@ public class SecondLevelLaunch {
         // public void close() throws SecurityException {
         // }
         // });
-
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 LogSource logger = LogController.getInstance().getLogger("UncaughtExceptionHandler");
@@ -796,7 +758,6 @@ public class SecondLevelLaunch {
                 }
                 try {
                     CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
-
                         @Override
                         public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
                         }
@@ -807,11 +768,8 @@ public class SecondLevelLaunch {
                         }
                     });
                     CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
-
                     // init
-
                     Dialog.getInstance().setDefaultTimeout(Math.max(2000, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeoutInMS()));
-
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
@@ -820,7 +778,6 @@ public class SecondLevelLaunch {
                     Browser.setGlobalConnectTimeout(config.getHttpConnectTimeout());
                     /* init global proxy stuff */
                     Browser.setGlobalProxy(ProxyController.getInstance());
-
                     if (CrossSystem.isWindows()) {
                         if (CFG_GENERAL.CFG.isWindowsJNAIdleDetectorEnabled()) {
                             try {
@@ -842,13 +799,11 @@ public class SecondLevelLaunch {
                 } catch (Throwable e) {
                     LoggerFactory.getDefaultLogger().log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-
                     // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                 }
             }
         };
         thread.start();
-
         final EDTHelper<Void> lafInit = new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
@@ -861,19 +816,15 @@ public class SecondLevelLaunch {
                     for (int i = 0; i < j; i++) {
                         Window window = awindow[i];
                         LoggerFactory.getDefaultLogger().info("Window: " + window);
-
                         boolean flag = !(window instanceof JWindow) && !(window instanceof JFrame) && !(window instanceof JDialog);
                         if (!window.getClass().getName().contains("Popup$HeavyWeightWindow") && !flag) {
                             LoggerFactory.getDefaultLogger().info("Window: " + "Reshape: yes");
                         }
-
                     }
                 } catch (Exception e) {
                     LoggerFactory.getDefaultLogger().log(e);
                 }
-
                 Dialog.getInstance().initLaf();
-
                 return null;
             }
         };
@@ -901,7 +852,6 @@ public class SecondLevelLaunch {
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(false);
         }
         GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 new Thread() {
                     @Override
@@ -910,13 +860,11 @@ public class SecondLevelLaunch {
                             final boolean jared = Application.isJared(SecondLevelLaunch.class);
                             if (!Application.isHeadless()) {
                                 new EDTHelper<Void>() {
-
                                     @Override
                                     public Void edtRun() {
                                         ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                                         return null;
                                     }
-
                                 }.start(true);
                             }
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -953,7 +901,6 @@ public class SecondLevelLaunch {
                                     SecondLevelLaunch.ACCOUNTLIST_LOADED.setReached();
                                 };
                             }.start();
-
                             /* start downloadwatchdog */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadWatchdog");
                             DownloadWatchDog.getInstance();
@@ -986,7 +933,6 @@ public class SecondLevelLaunch {
                                                     }
                                                 }
                                                 org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
                                                     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                                         if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
                                                             ClipboardMonitoring.getINSTANCE().startMonitoring();
@@ -1009,21 +955,18 @@ public class SecondLevelLaunch {
                                 }
                             });
                             DownloadController.DOWNLOADLIST_LOADED.executeWhenReached(new Runnable() {
-
                                 @Override
                                 public void run() {
                                     final AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
                                     final boolean closedWithRunningDownload = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                                     if (AutoDownloadStartOption.ALWAYS == doRestartRunninfDownloads || (closedWithRunningDownload && AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS == doRestartRunninfDownloads)) {
                                         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                                             @Override
                                             protected Void run() throws RuntimeException {
                                                 /*
                                                  * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                                  */
                                                 final List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
                                                     @Override
                                                     public boolean acceptNode(final DownloadLink node) {
                                                         return node.isEnabled() && node.getFinalLinkState() == null;
@@ -1033,7 +976,6 @@ public class SecondLevelLaunch {
                                                     public int returnMaxResults() {
                                                         return 1;
                                                     }
-
                                                 });
                                                 if (dlAvailable.size() > 0) {
                                                     new Thread("AutostartDialog") {
@@ -1081,7 +1023,6 @@ public class SecondLevelLaunch {
                                 });
                             }
                             SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
                                 @Override
                                 public void run() {
                                     DelayWriteController.getInstance().init();
@@ -1101,7 +1042,6 @@ public class SecondLevelLaunch {
                                 OperatingSystemEventSender.getInstance().setIgnoreSignal("HUP", true);
                             }
                         }
-
                         if (!Application.isHeadless() && CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
                             ExtFileSystemView.runSambaScanner();
                         }
@@ -1109,12 +1049,10 @@ public class SecondLevelLaunch {
                 }.start();
             }
         });
-
         if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
             ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
         }
         CFG_GUI.RLY_WARN_LEVEL.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
                 if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
@@ -1122,7 +1060,6 @@ public class SecondLevelLaunch {
                 } else {
                     ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
                 }
-
             }
 
             @Override
@@ -1135,10 +1072,8 @@ public class SecondLevelLaunch {
                 public Void edtRun() {
                     /* init gui here */
                     try {
-
                         if (!Application.isJared(null) && System.getProperty("iconsets") != null) {
                             Toolkit.getDefaultToolkit().addAWTEventListener(new IconSetMakerAdapter(), AWTEvent.MOUSE_EVENT_MASK);
-
                         }
                         lafInit.waitForEDT();
                         LoggerFactory.getDefaultLogger().info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
@@ -1146,19 +1081,16 @@ public class SecondLevelLaunch {
                         // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
                         ArchiveController.getInstance();
                         Toolkit.getDefaultToolkit().addAWTEventListener(new CustomCopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
-
                         LoggerFactory.getDefaultLogger().info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                     } catch (Throwable e) {
                         LoggerFactory.getDefaultLogger().log(e);
                         Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-
                         // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                     }
                     return null;
                 }
             }.waitForEDT();
         }
-
         try {
             /* thread should be finished here */
             thread.join(10000);
@@ -1179,17 +1111,14 @@ public class SecondLevelLaunch {
             }
             JDGui.getInstance().badLaunchCheck();
         }
-
         SecondLevelLaunch.GUI_COMPLETE.setReached();
         LoggerFactory.getDefaultLogger().info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();
-
         // init statsmanager
         StatsManager.I();
+   
         new Thread("Print Sec Infos") {
-
             public void run() {
-
                 if (CrossSystem.isWindows()) {
                     SecuritySoftwareResponse sw = null;
                     try {
@@ -1198,7 +1127,6 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "av", infos, CollectionName.SECURITY);
                     } catch (UnsupportedOperationException e) {
-
                     } catch (Throwable e) {
                         LoggerFactory.getDefaultLogger().log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
@@ -1211,7 +1139,6 @@ public class SecondLevelLaunch {
                     } finally {
                         LoggerFactory.getDefaultLogger().info("AntiVirusProduct END");
                     }
-
                     try {
                         LoggerFactory.getDefaultLogger().info("FirewallProduct START");
                         sw = CrossSystem.getFirewallSoftwareInfo();
@@ -1230,47 +1157,38 @@ public class SecondLevelLaunch {
                     } finally {
                         LoggerFactory.getDefaultLogger().info("FirewallProduct END");
                     }
-
                     switch (CrossSystem.getOS()) {
                     case WINDOWS_10:
                     case WINDOWS_7:
                     case WINDOWS_VISTA:
                     case WINDOWS_8:
-
                         try {
                             LoggerFactory.getDefaultLogger().info("AntiSpywareProduct START");
                             sw = CrossSystem.getAntiSpySoftwareInfo();
                             HashMap<String, String> infos = createInfoMap(sw);
                             StatsManager.I().track(100, "secur", "as", infos, CollectionName.SECURITY);
                         } catch (UnsupportedOperationException e) {
-
                         } catch (Throwable e) {
                             LoggerFactory.getDefaultLogger().log(e);
                             HashMap<String, String> infos = new HashMap<String, String>();
-
                             infos.put("error", e.getMessage());
                             infos.put("exception", Exceptions.getStackTrace(e));
                             if (e instanceof SecuritySoftwareException) {
                                 infos.put("response", ((SecuritySoftwareException) e).getResponse());
                             }
                             StatsManager.I().track(100, "secur", "as/error", infos, CollectionName.SECURITY);
-
                         } finally {
                             LoggerFactory.getDefaultLogger().info("AntiSpywareProduct END");
                         }
                     }
-
                 }
-
             }
 
             private HashMap<String, String> createInfoMap(SecuritySoftwareResponse sw) {
                 ArrayList<String> names = new ArrayList<String>();
-
                 ArrayList<String> signedReportingExe = new ArrayList<String>();
                 ArrayList<String> signedProductExe = new ArrayList<String>();
                 ArrayList<String> state = new ArrayList<String>();
-
                 for (SecuritySoftwareInfo s : sw) {
                     names.add(s.getName());
                     if (OperatingSystem.WINDOWS_XP == CrossSystem.getOS()) {
@@ -1289,11 +1207,8 @@ public class SecondLevelLaunch {
                         }
                     }
                     state.add(s.get("productState"));
-
                 }
-
                 HashMap<String, String> infos = new HashMap<String, String>();
-
                 infos.put("names", JSonStorage.serializeToJson(names));
                 infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
                 infos.put("product", JSonStorage.serializeToJson(signedProductExe));
@@ -1302,7 +1217,6 @@ public class SecondLevelLaunch {
                 return infos;
             };
         }.start();
-
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
         if (!Application.isHeadless()) {
             try {
@@ -1317,6 +1231,5 @@ public class SecondLevelLaunch {
                 e.printStackTrace();
             }
         }
-
     }
 }

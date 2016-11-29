@@ -58,7 +58,7 @@ public abstract class GeeTestChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public String getHTML() {
+    public String getHTML(String id) {
         String html;
         try {
             URL url = GeeTestChallenge.class.getResource("geetestchallenge.html");

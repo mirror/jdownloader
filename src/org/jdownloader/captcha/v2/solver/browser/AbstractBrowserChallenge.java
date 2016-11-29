@@ -53,7 +53,7 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         }
     }
 
-    abstract public String getHTML();
+    abstract public String getHTML(String id);
 
     abstract public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds);
 

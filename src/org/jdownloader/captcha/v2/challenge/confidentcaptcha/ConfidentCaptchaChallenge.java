@@ -118,7 +118,7 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
     }
 
     @Override
-    public String getHTML() {
+    public String getHTML(String id) {
         String html;
         try {
             URL url = ConfidentCaptchaChallenge.class.getResource("confidentcaptcha.html");

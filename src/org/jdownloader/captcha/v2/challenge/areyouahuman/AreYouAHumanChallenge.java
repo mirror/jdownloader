@@ -58,7 +58,7 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public String getHTML() {
+    public String getHTML(String id) {
         String html;
         try {
             URL url = AreYouAHumanChallenge.class.getResource("areyouahumanchallenge.html");

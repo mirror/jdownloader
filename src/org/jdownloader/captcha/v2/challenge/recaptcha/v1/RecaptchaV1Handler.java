@@ -77,7 +77,7 @@ public abstract class RecaptchaV1Handler {
             }
 
             @Override
-            public String getHTML() {
+            public String getHTML(String id) {
                 try {
                     final URL url = RecaptchaV1Handler.class.getResource("recaptchaGetChallenge.html");
                     String html = IO.readURLToString(url);

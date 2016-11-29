@@ -38,15 +38,20 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     private final AbstractBrowserChallenge         challenge;
     private final UniqueAlltimeID                  id          = new UniqueAlltimeID();
-    private final AtomicReference<Process>         process     = new AtomicReference<Process>(null);
-    private BrowserWindow                          browserWindow;
-    private BrowserViewport                        viewport;
-    private final HashMap<String, URL>             resourceIds;
-    private final HashMap<String, String>          types;
-    private long                                   opened;
-    private long                                   latestRequest;
-    private final static AtomicInteger             LATESTPORT  = new AtomicInteger(BrowserSolverService.getInstance().getConfig().getLocalHttpPort());
 
+    public UniqueAlltimeID getId() {
+        return id;
+    }
+
+    private final AtomicReference<Process> process    = new AtomicReference<Process>(null);
+    private BrowserWindow                  browserWindow;
+    private BrowserViewport                viewport;
+    private final HashMap<String, URL>     resourceIds;
+    private final HashMap<String, String>  types;
+    private long                           opened;
+    private long                           latestRequest;
+    protected String                       base;
+    private final static AtomicInteger     LATESTPORT = new AtomicInteger(BrowserSolverService.getInstance().getConfig().getLocalHttpPort());
     {
         resourceIds = new HashMap<String, URL>();
         resourceIds.put("style.css", BrowserReference.class.getResource("html/style.css"));
@@ -81,6 +86,9 @@ public abstract class BrowserReference implements HttpRequestHandler {
         this.challenge = challenge;
     }
 
+    private String baseHost;
+    private int    basePort;
+
     public void open() throws IOException {
         TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
             @Override
@@ -98,10 +106,25 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, BrowserReference.this);
                 }
                 LATESTPORT.set(lHandlerInfo.getPort());
-                openURL("http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath() + "/?id=" + id.getID());
+                base = "http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath();
+                baseHost = "127.0.0.1";
+                basePort = lHandlerInfo.getPort();
+                openURL(base + "/?id=" + id.getID());
                 return null;
             }
         });
+    }
+
+    public String getBaseHost() {
+        return baseHost;
+    }
+
+    public int getBasePort() {
+        return basePort;
+    }
+
+    public String getBase() {
+        return base;
     }
 
     private void openURL(String url) {
@@ -242,7 +265,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 response.getOutputStream(true).write("true".getBytes("UTF-8"));
                 return true;
             } else if (pDo == null) {
-                response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
+                response.getOutputStream(true).write(challenge.getHTML(String.valueOf(this.id.getID())).getBytes("UTF-8"));
             } else {
                 return challenge.onGetRequest(this, request, response);
             }
