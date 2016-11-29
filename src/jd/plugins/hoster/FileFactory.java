@@ -500,7 +500,7 @@ public class FileFactory extends PluginForHost {
         if (useAPI.get()) {
             handleDownload_API(downloadLink, null);
         } else {
-            requestFileInformation(downloadLink);
+            requestFileInformation(null, downloadLink);
             if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
                 handleTrafficShare(downloadLink, null);
             } else {
@@ -630,7 +630,7 @@ public class FileFactory extends PluginForHost {
         if (useAPI.get()) {
             handleDownload_API(downloadLink, account);
         } else {
-            requestFileInformation(downloadLink);
+            requestFileInformation(account, downloadLink);
             if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
                 handleTrafficShare(downloadLink, account);
             } else {
@@ -862,12 +862,15 @@ public class FileFactory extends PluginForHost {
                 }
                 break;
             } catch (final Exception e) {
+                logger.log(e);
                 if (i == 3) {
                     throw e;
                 }
             } finally {
                 try {
-                    con.disconnect();
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 } catch (final Throwable e) {
                 }
             }
