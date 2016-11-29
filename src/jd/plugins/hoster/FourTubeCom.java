@@ -166,7 +166,7 @@ public class FourTubeCom extends antiDDoSForHost {
         if (configUrl != null) {
             playpath = br.getRegex("var videoUrl = (\'|\")([^\'\"]+)").getMatch(1);
             if (playpath == null) {
-                br.getPage("http://" + br.getHost() + configUrl);
+                getPage(configUrl);
                 playpath = br.getRegex("<file>(.*?)</file>").getMatch(0);
             }
             String token = br.getRegex("<token>(.*?)</token>").getMatch(0);

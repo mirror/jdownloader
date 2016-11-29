@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.(?:com|io)/(embed\\.php\\?file=.+|embed/[a-zA-Z0-9]+)" }) 
-public class AuEngineCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.(?:com|io)/(embed\\.php\\?file=.+|embed/[a-zA-Z0-9]+)" })
+public class AuEngineCom extends antiDDoSForHost {
 
     // raztoki embed video player template.
 
@@ -65,7 +66,7 @@ public class AuEngineCom extends PluginForHost {
         if (offlineFilename != null && !downloadLink.isNameSet()) {
             downloadLink.setName(offlineFilename);
         }
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         dllink = br.getRegex("url: '(http[^']+auengine\\.(?:com|io)(%2F|/)videos[^']+)").getMatch(0);
         if (dllink == null) {

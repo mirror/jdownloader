@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -34,10 +34,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/areader\\?id=[a-z0-9]+\\&p=\\d+" }) 
-public class BatoTo extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/areader\\?id=[a-z0-9]+\\&p=\\d+" })
+public class BatoTo extends antiDDoSForHost {
 
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,7 +62,7 @@ public class BatoTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -76,7 +75,7 @@ public class BatoTo extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 503) {
@@ -159,7 +158,7 @@ public class BatoTo extends PluginForHost {
     public static final String MAINPAGE = "http://bato.to";
     private static Object      LOCK     = new Object();
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
@@ -169,7 +168,7 @@ public class BatoTo extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                br.getPage(MAINPAGE);
+                getPage(br, MAINPAGE);
                 final Form loginform = br.getFormbyKey("auth_key");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -187,7 +186,7 @@ public class BatoTo extends PluginForHost {
                 loginform.put("rememberMe", "1");
                 loginform.remove("anonymous");
                 loginform.remove(null);
-                br.submitForm(loginform);
+                submitForm(br, loginform);
                 if (br.getCookie(MAINPAGE, "pass_hash") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -228,6 +227,11 @@ public class BatoTo extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+    }
+
+    // for the decrypter, so we have only one session of antiddos
+    public void getPage(final String url) throws Exception {
+        super.getPage(url);
     }
 
     @Override

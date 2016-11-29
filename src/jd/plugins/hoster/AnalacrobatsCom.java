@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -35,8 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "analacrobats.com" }, urls = { "https?://members\\.analacrobats\\.com/(?:en/)?[^/]+/scene/\\d+" }) 
-public class AnalacrobatsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "analacrobats.com" }, urls = { "https?://members\\.analacrobats\\.com/(?:en/)?[^/]+/scene/\\d+" })
+public class AnalacrobatsCom extends antiDDoSForHost {
 
     public AnalacrobatsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,19 +58,16 @@ public class AnalacrobatsCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private String               DLLINK                       = null;
+    private String               dllink                       = null;
     public static final long     trust_cookie_age             = 300000l;
     private static final String  HTML_LOGGEDIN                = "\"headerToolbarlinkLogout\"";
     public static final String   LOGIN_PAGE                   = "http://members.analacrobats.com/en";
     private static final String  HTML_ACCOUNTNEEDED           = "class=\"alertTitle\"";
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
@@ -79,7 +76,7 @@ public class AnalacrobatsCom extends PluginForHost {
         }
         this.login(aa);
         this.br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -95,12 +92,12 @@ public class AnalacrobatsCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
 
-        DLLINK = jd.plugins.hoster.EvilAngelCom.getDllink(this.br);
-        if (DLLINK == null) {
+        dllink = jd.plugins.hoster.EvilAngelCom.getDllink(this.br);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = "http://members.analacrobats.com" + DLLINK;
-        final String quality = new Regex(DLLINK, "(\\d+p)").getMatch(0);
+        dllink = "http://members.analacrobats.com" + dllink;
+        final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
         if (quality == null) {
             filename += ".mp4";
         } else {
@@ -112,7 +109,7 @@ public class AnalacrobatsCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -121,7 +118,7 @@ public class AnalacrobatsCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setProperty("free_directlink", DLLINK);
+            link.setProperty("free_directlink", dllink);
         } finally {
             try {
                 con.disconnect();
@@ -168,11 +165,10 @@ public class AnalacrobatsCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium account");
+        ai.setStatus("Premium Account");
         account.setValid(true);
         return ai;
     }
@@ -183,7 +179,7 @@ public class AnalacrobatsCom extends PluginForHost {
         if (this.br.containsHTML(HTML_ACCOUNTNEEDED)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -194,14 +190,8 @@ public class AnalacrobatsCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty("premium_directlink", DLLINK);
+        link.setProperty("premium_directlink", dllink);
         dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

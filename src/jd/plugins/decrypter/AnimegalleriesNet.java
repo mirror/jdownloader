@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,8 +28,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animegalleries.net" }, urls = { "http://(?:www\\.)?animegalleries\\.net/album/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animegalleries.net" }, urls = { "http://(?:www\\.)?animegalleries\\.net/album/\\d+" })
 public class AnimegalleriesNet extends PluginForDecrypt {
 
     public AnimegalleriesNet(PluginWrapper wrapper) {
@@ -38,7 +41,7 @@ public class AnimegalleriesNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -57,7 +60,7 @@ public class AnimegalleriesNet extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (next != null) {
-                this.br.getPage(next);
+                getPage(next);
             }
             final String[] linkids = br.getRegex("\"/img/(\\d+)\"").getColumn(0);
             if (linkids == null || linkids.length == 0) {
@@ -76,5 +79,26 @@ public class AnimegalleriesNet extends PluginForDecrypt {
         } while (next != null);
 
         return decryptedLinks;
+    }
+
+    private PluginForHost plugin = null;
+
+    private void getPage(final String parameter) throws Exception {
+        getPage(br, parameter);
+    }
+
+    private void getPage(final Browser br, final String parameter) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.AnimegalleriesNet) plugin).setBrowser(br);
+        ((jd.plugins.hoster.AnimegalleriesNet) plugin).getPage(parameter);
+    }
+
+    public void loadPlugin() {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("animegalleries.net");
+            if (plugin == null) {
+                throw new IllegalStateException(getHost() + " hoster plugin not found!");
+            }
+        }
     }
 }

@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,10 +25,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://(www\\.)?chauthanh\\.info/(animeDownload/(download|new)/\\d+/[^<>\"/]+/[^<>\"/]+|animeOST/download/[a-z0-9\\-_]+/[a-z0-9\\-_\\.]+|anime/download/[^<>\"]+\\.html)" }) 
-public class ChThnhInfo extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://(www\\.)?chauthanh\\.info/(animeDownload/(download|new)/\\d+/[^<>\"/]+/[^<>\"/]+|animeOST/download/[a-z0-9\\-_]+/[a-z0-9\\-_\\.]+|anime/download/[^<>\"]+\\.html)" })
+public class ChThnhInfo extends antiDDoSForHost {
 
     public String dllink = null;
 
@@ -51,28 +50,42 @@ public class ChThnhInfo extends PluginForHost {
     private static final String TYPE3 = "http://(www\\.)?chauthanh\\.info/anime/download/[^<>\"]+\\.html";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         String filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE1)) {
-            if (br.containsHTML("(This video does not exist|>Removed due to licensed<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(This video does not exist|>Removed due to licensed<)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<title>Downloading file(.*?)\\- Download Anime").getMatch(0);
-            if (filename == null) filename = br.getRegex("<div id=\"content_text\"><p><center><b>(.*?)</b>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<div id=\"content_text\"><p><center><b>(.*?)</b>").getMatch(0);
+            }
             dllink = br.getRegex("<p><a href=\"(/[^\"]+)").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<p><a href=\"(/animeDownload/.+/download/\\d+/[^\"]+)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<p><a href=\"(/animeDownload/.+/download/\\d+/[^\"]+)").getMatch(0);
+            }
         } else if (downloadLink.getDownloadURL().matches(TYPE2)) {
-            if (!br.containsHTML("\\[Download to your computer\\]<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.containsHTML("\\[Download to your computer\\]<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("File name: <b>([^<>\"]*?)</b>").getMatch(0);
             dllink = br.getRegex("\"(/animeOST/download/[^<>\"]*?)\"").getMatch(0);
         } else {
             filename = br.getRegex(">Download file ([^<>\"]*?)</h3>").getMatch(0);
             dllink = br.getRegex("class=\"p100 center middle\">[\t\n\r ]+<a href=\"\\.\\.(/[^<>\"]*?)\"").getMatch(0);
-            if (dllink != null) dllink = "http://chauthanh.info/anime/download" + dllink;
+            if (dllink != null) {
+                dllink = "http://chauthanh.info/anime/download" + dllink;
+            }
         }
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!dllink.contains("chauthanh.info")) dllink = "http://chauthanh.info" + dllink;
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!dllink.contains("chauthanh.info")) {
+            dllink = "http://chauthanh.info" + dllink;
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -87,6 +100,11 @@ public class ChThnhInfo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    // for the decrypter, so we have only one session of antiddos
+    public void getPage(final String url) throws Exception {
+        super.getPage(url);
     }
 
     @Override

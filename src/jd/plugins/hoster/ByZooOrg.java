@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byzoo.org" }, urls = { "http://(www\\.)?byzoo\\.org/embed\\.php\\?.+" }) 
-public class ByZooOrg extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byzoo.org" }, urls = { "http://(www\\.)?byzoo\\.org/embed\\.php\\?.+" })
+public class ByZooOrg extends antiDDoSForHost {
 
     // raztoki embed video player template.
 
@@ -60,7 +61,7 @@ public class ByZooOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "byzoo\\.org/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         dllink = br.getRegex("url: \\'(http[^\\']+(byzoo\\.org|play44\\.net)%2[^\\']+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("url: \\'(http://[^<>\"\\']*?)\\',[\t\r\n ]+autoPlay: false").getMatch(0);

@@ -20,14 +20,17 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" })
 public class ChThnhInfo extends PluginForDecrypt {
 
     public ChThnhInfo(PluginWrapper wrapper) {
@@ -40,7 +43,7 @@ public class ChThnhInfo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML(">Licensed, no download available<")) {
             logger.info("Link offline (not downloadable): " + parameter);
             return decryptedLinks;
@@ -57,7 +60,9 @@ public class ChThnhInfo extends PluginForDecrypt {
             }
             fpName = br.getRegex("<h2 itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
             final String[] links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                return null;
+            }
             for (String finallink : links) {
                 finallink = "http://chauthanh.info/anime" + Encoding.htmlDecode(finallink);
                 decryptedLinks.add(createDownloadlink(finallink));
@@ -80,10 +85,16 @@ public class ChThnhInfo extends PluginForDecrypt {
                 return decryptedLinks;
             }
             fpName = br.getRegex("<title>Download anime(.*?)\\- Download Anime").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
+            }
             String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
+            }
+            if (links == null || links.length == 0) {
+                links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
+            }
             if (links == null || links.length == 0) {
                 if (br.containsHTML("<th>Size</th>")) {
                     logger.info("Link offline: " + parameter);
@@ -112,6 +123,27 @@ public class ChThnhInfo extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    private PluginForHost plugin = null;
+
+    private void getPage(final String parameter) throws Exception {
+        getPage(br, parameter);
+    }
+
+    private void getPage(final Browser br, final String parameter) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.ChThnhInfo) plugin).setBrowser(br);
+        ((jd.plugins.hoster.ChThnhInfo) plugin).getPage(parameter);
+    }
+
+    public void loadPlugin() {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("chauthanh.info");
+            if (plugin == null) {
+                throw new IllegalStateException(getHost() + " hoster plugin not found!");
+            }
+        }
     }
 
 }

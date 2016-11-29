@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -31,10 +32,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/(?:artist|artwork)/[^/]+" })
-public class ArtstationCom extends PluginForDecrypt {
+public class ArtstationCom extends antiDDoSForDecrypt {
 
     public ArtstationCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,7 +47,7 @@ public class ArtstationCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http:", "https:");
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -57,7 +57,7 @@ public class ArtstationCom extends PluginForDecrypt {
         if (parameter.matches(TYPE_ARTIST)) {
             final String username = parameter.substring(parameter.lastIndexOf("/"));
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
-            this.br.getPage("https://www.artstation.com/users/" + username + ".json");
+            getPage("https://www.artstation.com/users/" + username + ".json");
             final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final String full_name = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
@@ -66,7 +66,7 @@ public class ArtstationCom extends PluginForDecrypt {
             int offset = 0;
             int page = 1;
             do {
-                this.br.getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
+                getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
                 final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList) pageJson.get("data");
                 for (final Object resource : ressourcelist) {
@@ -122,7 +122,7 @@ public class ArtstationCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
-            this.br.getPage("https://www.artstation.com/projects/" + project_id + ".json");
+            getPage("https://www.artstation.com/projects/" + project_id + ".json");
             final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> resource_data_list = (ArrayList<Object>) json.get("assets");
             final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
@@ -191,22 +191,6 @@ public class ArtstationCom extends PluginForDecrypt {
             fp.setName(packageName);
         }
         return decryptedLinks;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    public static boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
 }

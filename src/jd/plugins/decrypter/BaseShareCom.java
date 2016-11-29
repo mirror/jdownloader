@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,6 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[A-Za-z0-9\\-_]+/mixtapes/[A-Za-z0-9\\-_]+/\\d+/" })
 public class BaseShareCom extends PluginForDecrypt {
@@ -39,7 +42,7 @@ public class BaseShareCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getURL().equals("http://baseshare.com/")) {
             decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
             return decryptedLinks;
@@ -84,6 +87,27 @@ public class BaseShareCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private PluginForHost plugin = null;
+
+    private void getPage(final String parameter) throws Exception {
+        getPage(br, parameter);
+    }
+
+    private void getPage(final Browser br, final String parameter) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.BaseShareCom) plugin).setBrowser(br);
+        ((jd.plugins.hoster.BaseShareCom) plugin).getPage(parameter);
+    }
+
+    public void loadPlugin() {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("baseshare.com");
+            if (plugin == null) {
+                throw new IllegalStateException(getHost() + " hoster plugin not found!");
+            }
+        }
     }
 
 }

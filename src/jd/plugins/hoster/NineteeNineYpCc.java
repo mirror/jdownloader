@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,13 +30,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "99yp.cc" }, urls = { "https?://(?:www\\.)?(?:99yp\\.cc|66yn\\.cc)/(?:file|down)\\-\\d+\\.html" })
+public class NineteeNineYpCc extends antiDDoSForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "99yp.cc" }, urls = { "https?://(?:www\\.)?99yp\\.cc/(?:file|down)\\-\\d+\\.html" })
-public class NineteeNineYpCc extends PluginForHost {
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "99yp.cc", "66yp.cc" };
+    }
 
     public NineteeNineYpCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,22 +56,16 @@ public class NineteeNineYpCc extends PluginForHost {
 
     private String               fuid              = null;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         fuid = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -105,11 +102,11 @@ public class NineteeNineYpCc extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            this.br.getPage("/down2-" + this.fuid + ".html");
-            this.br.getPage("/down-" + this.fuid + ".html");
+            getPage("/down2-" + this.fuid + ".html");
+            getPage("/down-" + this.fuid + ".html");
             String js_source = this.br.getRegex("down_file\\(([^<>\"]+)\\)").getMatch(0).replace("'", "");
             final String[] js_params = js_source.split(",");
             if (js_params.length < 6) {
@@ -117,7 +114,7 @@ public class NineteeNineYpCc extends PluginForHost {
             }
             final String code = this.getCaptchaCode("/imagecode.php", downloadLink);
             // this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.postPage(this.br.getURL(), "action=check_code&code=" + Encoding.urlEncode(code));
+            postPage(this.br.getURL(), "action=check_code&code=" + Encoding.urlEncode(code));
             if (this.br.getURL().contains("/file")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

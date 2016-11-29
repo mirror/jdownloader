@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -28,12 +27,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,12 +44,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "aniteca.zlx.com.br" }, urls = { "https?://(?:www\\.)?aniteca\\.zlx\\.com\\.br/[A-Za-z0-9]+" })
-public class AnitecaZlxComBr extends PluginForHost {
+public class AnitecaZlxComBr extends antiDDoSForHost {
 
     public AnitecaZlxComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -85,7 +81,6 @@ public class AnitecaZlxComBr extends PluginForHost {
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean           useOldLoginMethod                            = false;
-    private static final boolean           enable_RANDOM_UA                             = false;
     /* Known errors */
     private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String            url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
@@ -124,17 +119,26 @@ public class AnitecaZlxComBr extends PluginForHost {
         }
     }
 
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.addAllowedResponseCodes(416);
+        }
+        return prepBr;
+    }
+
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(this.br);
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -160,7 +164,7 @@ public class AnitecaZlxComBr extends PluginForHost {
                 filename = fid;
             }
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -218,7 +222,7 @@ public class AnitecaZlxComBr extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             handleErrors();
             /* Passwords are usually before waittime. */
@@ -347,7 +351,7 @@ public class AnitecaZlxComBr extends PluginForHost {
         return isdownloadlink;
     }
 
-    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
             String passCode = dl.getStringProperty("pass", null);
@@ -360,7 +364,7 @@ public class AnitecaZlxComBr extends PluginForHost {
                 }
                 dl.setProperty("pass", passCode);
             }
-            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
                 dl.setProperty("pass", Property.NULL);
@@ -462,22 +466,6 @@ public class AnitecaZlxComBr extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
             return "https://";
@@ -499,7 +487,6 @@ public class AnitecaZlxComBr extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -517,11 +504,11 @@ public class AnitecaZlxComBr extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(this.getProtocol() + this.getHost() + "/");
+                getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -530,11 +517,11 @@ public class AnitecaZlxComBr extends PluginForHost {
                         }
                     }
                 } else {
-                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
                     final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -543,21 +530,15 @@ public class AnitecaZlxComBr extends PluginForHost {
                         }
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
+                getPage(loginstart + this.getHost() + "/account_home." + type);
                 if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mainpage);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(mainpage));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -589,7 +570,7 @@ public class AnitecaZlxComBr extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -634,7 +615,7 @@ public class AnitecaZlxComBr extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("free", false)) {
             if (!available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
@@ -663,23 +644,6 @@ public class AnitecaZlxComBr extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    private Browser prepBrowser(final Browser br) {
-        br.setAllowedResponseCodes(new int[] { 416, 429 });
-        if (enable_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
-        return br;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return MAXPREM.get();
     }
 
     @Override
