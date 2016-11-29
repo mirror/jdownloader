@@ -171,7 +171,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onPostRequest(final BrowserReference brRef, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
+    public boolean onPostRequest(final BrowserReference brRef, final PostRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         synchronized (this) {
             String pDo = request.getParameterbyKey("do");
             // if (!"pDo".startsWith("http")) {
@@ -257,7 +257,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onGetRequest(BrowserReference brRef, GetRequest request, HttpResponse response) throws IOException, RemoteAPIException {
+    public boolean onGetRequest(final BrowserReference brRef, final GetRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         synchronized (this) {
             String pDo = request.getParameterbyKey("do");
             String refOrg = request.getRequestHeaders().get("Referer").getValue();
