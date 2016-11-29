@@ -63,7 +63,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                                = true;
-    private static final int     FREE_MAXCHUNKS                             = 0;
+    private static final int     FREE_MAXCHUNKS                             = 1;
     private static final int     FREE_MAXDOWNLOADS                          = 20;
 
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]

@@ -98,10 +98,10 @@ public class BrfilesCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = -2;
+    private static final int               free_MAXCHUNKS                               = 1;
     private static final int               free_MAXDOWNLOADS                            = 1;
     private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = -2;
+    private static final int               account_FREE_MAXCHUNKS                       = 1;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
     private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
