@@ -82,6 +82,8 @@ public class MangaTradersBiz extends antiDDoSForHost {
     public MangaTradersBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.mangatraders.biz/register/");
+        /* 2016-11-30: Only one download every 20 seconds possible (via account). */
+        this.setStartIntervall(20);
     }
 
     @Override
@@ -215,6 +217,8 @@ public class MangaTradersBiz extends antiDDoSForHost {
         final String waitseconds = this.br.getRegex("Error\\s*?:\\s*?You may only download once every (\\d+) seconds").getMatch(0);
         if (waitseconds != null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some seconds", Long.parseLong(waitseconds) * 1001l);
+        } else if (this.br.containsHTML("Error\\s*?:\\s*?Please Login")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Temporary login issue", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
     }
 

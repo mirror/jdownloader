@@ -52,7 +52,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(?:www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos|ondemand/[A-Za-z0-9\\-_]+|groups/[A-Za-z0-9\\-_]+(?:/videos/\\d+)?)|https?://player\\.vimeo.com/(?:video|external)/\\d+.+" })
 public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
@@ -70,7 +70,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String LINKTYPE_USER = "https?://(www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
+    private static final String LINKTYPE_USER  = "https?://(?:www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
+    private static final String LINKTYPE_GROUP = "https?://(?:www\\.)?vimeo\\.com/groups/[A-Za-z0-9\\-_]+(?!videos/\\d+)";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -95,41 +96,53 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 400, 410 });
-        if (parameter.matches(LINKTYPE_USER)) {
+        if (parameter.matches(LINKTYPE_USER) || parameter.matches(LINKTYPE_GROUP)) {
+            /* Decrypt all videos of a user- or group. */
             br.getPage(parameter);
-            if (br.containsHTML(">\\s*We couldn(?:'|&rsquo;)t find that page") || this.br.getHttpConnection().getResponseCode() == 404) {
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(createOfflinelink(parameter, "Could not find that page"));
                 return decryptedLinks;
             }
 
-            final String user_id = new Regex(parameter, "vimeo\\.com/([A-Za-z0-9\\-_]+)/videos").getMatch(0);
-            String userName = br.getRegex(">Here are all of the videos that <a href=\"/user\\d+\">([^<>\"]*?)</a> has uploaded to Vimeo").getMatch(0);
+            final String urlpart_pagination;
+            final String user_or_group_id;
+            String userName = null;
+            if (parameter.matches(LINKTYPE_USER)) {
+                user_or_group_id = new Regex(parameter, "vimeo\\.com/([A-Za-z0-9\\-_]+)/videos").getMatch(0);
+                userName = br.getRegex(">Here are all of the videos that <a href=\"/user\\d+\">([^<>\"]*?)</a> has uploaded to Vimeo").getMatch(0);
+                urlpart_pagination = "/" + user_or_group_id + "/videos";
+            } else {
+                user_or_group_id = new Regex(parameter, "vimeo\\.com/groups/([A-Za-z0-9\\-_]+)").getMatch(0);
+                urlpart_pagination = "/groups/" + user_or_group_id;
+            }
             if (userName == null) {
-                userName = user_id;
+                userName = user_or_group_id;
             }
             final String totalVideoNum = br.getRegex(">(\\d+(,\\d+)?) Total</a>").getMatch(0);
-            int totalPages = 1;
-            final String[] pages = br.getRegex("/videos/page:(\\d+)/").getColumn(0);
+            int numberofPages = 1;
+            final String[] pages = br.getRegex("/page:(\\d+)/").getColumn(0);
             if (pages != null && pages.length != 0) {
                 for (final String apage : pages) {
                     final int currentp = Integer.parseInt(apage);
-                    if (currentp > totalPages) {
-                        totalPages = currentp;
+                    if (currentp > numberofPages) {
+                        numberofPages = currentp;
                     }
                 }
             }
-            if (totalVideoNum == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            final int totalVids;
+            if (totalVideoNum != null) {
+                totalVids = Integer.parseInt(totalVideoNum.replace(",", ""));
+            } else {
+                /* Assume number of videos. */
+                totalVids = numberofPages * 12;
             }
-            final int totalVids = Integer.parseInt(totalVideoNum.replace(",", ""));
-            for (int i = 1; i <= totalPages; i++) {
+            for (int i = 1; i <= numberofPages; i++) {
                 if (this.isAbort()) {
                     logger.info("Decrypt process aborted by user: " + parameter);
                     return decryptedLinks;
                 }
                 if (i > 1) {
-                    br.getPage("/" + user_id + "/videos/page:" + i + "/sort:date/format:detail");
+                    br.getPage(urlpart_pagination + "/page:" + i + "/sort:date/format:detail");
                 }
                 final String[] videoIDs = br.getRegex("id=\"clip_(\\d+)\"").getColumn(0);
                 if (videoIDs == null || videoIDs.length == 0) {
@@ -137,10 +150,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     break;
                 }
                 for (final String videoID : videoIDs) {
-                    final DownloadLink fina = createDownloadlink("http://vimeo.com/" + videoID);
-                    decryptedLinks.add(fina);
+                    decryptedLinks.add(createDownloadlink("http://vimeo.com/" + videoID));
                 }
-                logger.info("Decrypted page: " + i + " of " + totalPages);
+                logger.info("Decrypted page: " + i + " of " + numberofPages);
                 logger.info("Found " + videoIDs.length + " videolinks on current page");
                 logger.info("Found " + decryptedLinks.size() + " of " + totalVids + " total videolinks");
                 if (decryptedLinks.size() >= totalVids) {
@@ -161,13 +173,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 vimeo_forced_referer = Encoding.Base64Decode(new Regex(vimeo_forced_referer_url_part, "forced_referer=(.+)").getMatch(0));
             }
             final boolean new_way_allowed = true;
-            final String ID = new Regex(parameter, "/(\\d+)").getMatch(0);
+            final String videoID = new Regex(parameter, "/(\\d+)").getMatch(0);
             String date = null;
             String channelName = null;
             String title = null;
             final String cleanVimeoURL;
-            if (ID != null && !StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
-                cleanVimeoURL = "https://vimeo.com/" + ID;
+            if (videoID != null && !StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                cleanVimeoURL = "https://vimeo.com/" + videoID;
             } else {
                 cleanVimeoURL = parameter;
             }
@@ -182,7 +194,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     br.getHeaders().put("Referer", vimeo_forced_referer);
                 }
                 /* We HAVE TO access the url via player.vimeo.com (with the correct Referer) otherwise we will only receive 403/404! */
-                br.getPage("https://player.vimeo.com/video/" + ID);
+                br.getPage("https://player.vimeo.com/video/" + videoID);
                 if (vimeo_forced_referer == null && br.getHttpConnection().getResponseCode() == 403) {
                     CrawledLink check = getCurrentLink().getSourceLink();
                     while (true) {
@@ -195,19 +207,19 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                     if (!StringUtils.equalsIgnoreCase(Browser.getHost(vimeo_forced_referer), "vimeo.com")) {
                         br.getHeaders().put("Referer", vimeo_forced_referer);
-                        br.getPage("https://player.vimeo.com/video/" + ID);
+                        br.getPage("https://player.vimeo.com/video/" + videoID);
                     }
                 }
                 if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || "This video does not exist\\.".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
-                    decryptedLinks.add(createOfflinelink(orgParam, ID, null));
+                    decryptedLinks.add(createOfflinelink(orgParam, videoID, null));
                     return decryptedLinks;
                 }
                 if (br.containsHTML(containsPass())) {
                     try {
-                        handlePW(param, ID, this.br);
+                        handlePW(param, videoID, this.br);
                     } catch (final DecrypterException edc) {
                         logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
-                        decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                         return decryptedLinks;
                     }
                 }
@@ -248,7 +260,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 } catch (final BrowserException e) {
                     // HTTP/1.1 451 Unavailable For Legal Reasons
                     if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 451) {
-                        decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                         return decryptedLinks;
                     }
                     throw e;
@@ -256,17 +268,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
                 /* Workaround for User from Iran */
                 if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
-                    br.getPage("//player.vimeo.com/config/" + ID);
+                    br.getPage("//player.vimeo.com/config/" + videoID);
                 }
 
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
-                    decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                     return decryptedLinks;
                 }
 
                 if (br.containsHTML(containsPass())) {
                     try {
-                        handlePW(param, ID, br);
+                        handlePW(param, videoID, br);
                         /*
                          * After successful password input we'll get json but we want the "normal" html which suits the code below -->
                          * Access main video url again!
@@ -274,13 +286,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         br.getPage(parameter);
                     } catch (final DecrypterException edc) {
                         logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
-                        decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                        decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                         return decryptedLinks;
                     }
                 }
 
                 if (br.containsHTML(">There was a problem loading this video")) {
-                    decryptedLinks.add(createOfflinelink(parameter, ID, null));
+                    decryptedLinks.add(createOfflinelink(parameter, videoID, null));
                     return decryptedLinks;
                 }
                 // document.cookie = 'vuid=' + encodeURIComponent('35533916.335958829')
@@ -301,7 +313,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             }
             title = getFormattedString(title);
 
-            String qualities[][] = getQualities(br, ID);
+            String qualities[][] = getQualities(br, videoID);
             if (qualities == null) {
                 return null;
             }
@@ -365,14 +377,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
                 // there can be multiple hd/sd etc need to identify with framesize.
-                final String linkdupeid = ID + "_" + fmt + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "") + quality[8];
+                final String linkdupeid = videoID + "_" + fmt + "_" + quality[3] + (StringUtils.isNotEmpty(quality[7]) ? "_" + quality[7] : "") + quality[8];
                 final DownloadLink link = createDownloadlink(parameter.replaceAll("https?://", "decryptedforVimeoHosterPlugin" + format + "://"));
                 link.setProperty("directURL", url);
                 // videoTitle is required!
                 link.setProperty("videoTitle", title);
                 link.setProperty("videoQuality", fmt);
                 link.setProperty("videoExt", quality[1]);
-                link.setProperty("videoID", ID);
+                link.setProperty("videoID", videoID);
                 link.setProperty("videoFrameSize", quality[3]);
                 link.setProperty("videoBitrate", quality[4]);
                 link.setProperty("videoCodec", quality[6]);
