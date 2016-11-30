@@ -152,7 +152,7 @@ public class HLSDownloader extends DownloadInterface {
         return false;
     }
 
-    protected boolean isEncrypted(M3U8Playlist m3u8) {
+    protected boolean isSupported(M3U8Playlist m3u8) {
         if (isJared && m3u8 != null && m3u8.isEncrypted()) {
             return true;
         } else {
@@ -709,7 +709,7 @@ public class HLSDownloader extends DownloadInterface {
                     } else if ("/m3u8".equals(request.getRequestedPath())) {
                         ffmpeg.updateLastUpdateTimestamp();
                         final M3U8Playlist m3u8 = getCurrentPlayList();
-                        if (isEncrypted(m3u8)) {
+                        if (isSupported(m3u8)) {
                             response.setResponseCode(ResponseCode.get(404));
                         } else {
                             final StringBuilder sb = new StringBuilder();
