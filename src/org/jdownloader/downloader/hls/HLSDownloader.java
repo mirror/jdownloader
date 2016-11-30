@@ -113,7 +113,7 @@ public class HLSDownloader extends DownloadInterface {
         return m3u8Playlists;
     }
 
-    public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) throws IOException {
+    public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) throws IOException, PluginException {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
         this.sourceBrowser = br2.cloneBrowser();
         this.link = link;
@@ -132,6 +132,9 @@ public class HLSDownloader extends DownloadInterface {
             }
         };
         m3u8Playlists = getM3U8Playlists();
+        if (m3u8Playlists.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     public long getEstimatedSize() {
