@@ -142,10 +142,12 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     public boolean isEncrypted() {
-        if (m3u8Playlists != null && isJared) {
-            for (final M3U8Playlist playlist : m3u8Playlists) {
-                if (playlist.isEncrypted()) {
-                    return true;
+        if (isJared) {
+            if (m3u8Playlists != null) {
+                for (final M3U8Playlist playlist : m3u8Playlists) {
+                    if (playlist.isEncrypted()) {
+                        return true;
+                    }
                 }
             }
         }
@@ -153,11 +155,14 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected boolean isSupported(M3U8Playlist m3u8) {
-        if (isJared && m3u8 != null && m3u8.isEncrypted()) {
-            return true;
-        } else {
-            return isEncrypted();
+        if (isJared) {
+            if (m3u8 != null && m3u8.isEncrypted()) {
+                return false;
+            } else {
+                return !isEncrypted();
+            }
         }
+        return true;
     }
 
     public LogInterface initLogger(final DownloadLink link) {
