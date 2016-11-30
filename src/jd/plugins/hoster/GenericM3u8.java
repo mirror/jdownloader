@@ -80,9 +80,6 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty(HLSDownloader.ENCRYPTED_FLAG, false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Encrypted HLS is not supported");
-        }
         checkFFProbe(downloadLink, "Download a HLS Stream");
         this.setBrowserExclusive();
         final String cookiesString = downloadLink.getStringProperty("cookies", null);
@@ -96,8 +93,8 @@ public class GenericM3u8 extends PluginForHost {
         }
         final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
         final StreamInfo streamInfo = downloader.getProbe();
-        if (downloadLink.getBooleanProperty(HLSDownloader.ENCRYPTED_FLAG, false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Encrypted HLS is not supported");
+        if (downloader.isEncrypted()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
         }
         if (streamInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -152,9 +149,6 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty(HLSDownloader.ENCRYPTED_FLAG, false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Encrypted HLS is not supported");
-        }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         final String cookiesString = downloadLink.getStringProperty("cookies", null);
         if (cookiesString != null) {
@@ -180,9 +174,6 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        if (link != null) {
-            link.removeProperty(HLSDownloader.ENCRYPTED_FLAG);
-        }
     }
 
     @Override

@@ -13,6 +13,79 @@ public class M3U8Playlist {
 
     public static class M3U8Segment {
 
+        public static enum X_KEY_METHOD {
+            // Media Segments are not encrypted
+            NONE("NONE"),
+            // 128-bit key, Cipher Block Chaining, and PKCS7 padding
+            AES_128("AES-128"),
+            // SAMPLE-AES means that the Media Segments contain media samples, such as audio or video, that are encrypted
+            SAMPLE_AES("SAMPLE-AES");
+
+            private final String method;
+
+            public String getMethod() {
+                return method;
+            }
+
+            private X_KEY_METHOD(final String method) {
+                this.method = method;
+            }
+
+            public boolean isEncrypted() {
+                return this != NONE;
+            }
+
+            public static X_KEY_METHOD get(final String method) {
+                if (method == null || method.trim().length() == 0) {
+                    return NONE;
+                } else {
+                    for (X_KEY_METHOD ret : values()) {
+                        if (ret.getMethod().equals(method)) {
+                            return ret;
+                        }
+                    }
+                    return null;
+                }
+            }
+        }
+
+        private X_KEY_METHOD xKeyMethod = X_KEY_METHOD.NONE;
+        private String       xKeyIV     = null;
+
+        public String getxKeyIV() {
+            return xKeyIV;
+        }
+
+        protected void setxKeyIV(String xKeyIV) {
+            this.xKeyIV = xKeyIV;
+        }
+
+        public String getxKeyURI() {
+            return xKeyURI;
+        }
+
+        protected void setxKeyURI(String xKeyURI) {
+            this.xKeyURI = xKeyURI;
+        }
+
+        private String xKeyURI = null;
+
+        public X_KEY_METHOD getxKeyMethod() {
+            return xKeyMethod;
+        }
+
+        public boolean isEncrypted() {
+            return getxKeyMethod().isEncrypted();
+        }
+
+        protected void setxKeyMethod(X_KEY_METHOD xKeyMethod) {
+            if (xKeyMethod == null) {
+                this.xKeyMethod = X_KEY_METHOD.NONE;
+            } else {
+                this.xKeyMethod = xKeyMethod;
+            }
+        }
+
         public static final String toExtInfDuration(final long duration) {
             final String value = Long.toString(duration);
             switch (value.length()) {
@@ -87,10 +160,19 @@ public class M3U8Playlist {
         return "M3U8:Encrypted:" + isEncrypted() + "|Segments:" + size() + "|Duration:" + getEstimatedDuration() + "ms|Estimated Size:" + getEstimatedSize();
     }
 
+    /*
+     * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20
+     */
     public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws IOException {
         final List<M3U8Playlist> ret = new ArrayList<M3U8Playlist>();
         M3U8Playlist current = new M3U8Playlist();
         long lastSegmentDuration = -1;
+        int sequenceOffset = 0;
+
+        M3U8Segment.X_KEY_METHOD xKeyMethod = M3U8Segment.X_KEY_METHOD.NONE;
+        String xKeyIV = null;
+        String xKeyURI = null;
+
         for (final String line : Regex.getLines(br.getPage(m3u8))) {
             if (StringUtils.isEmpty(line)) {
                 continue;
@@ -101,7 +183,7 @@ public class M3U8Playlist {
                 }
                 M3U8Playlist before = current;
                 current = new M3U8Playlist();
-                current.setEncrypted(before.isEncrypted);
+                current.setMediaSequenceOffset(sequenceOffset);
                 current.setExtTargetDuration(before.getExtTargetDuration());
                 lastSegmentDuration = -1;
             }
@@ -110,14 +192,29 @@ public class M3U8Playlist {
             } else if (line.matches("^https?://.+") || !line.trim().startsWith("#")) {
                 final String segmentURL = br.getURL(line).toString();
                 if (!current.containsSegmentURL(segmentURL)) {
-                    current.addSegment(segmentURL, lastSegmentDuration);
+                    final int index = current.addSegment(segmentURL, lastSegmentDuration);
+                    if (!M3U8Segment.X_KEY_METHOD.NONE.equals(xKeyMethod)) {
+                        final M3U8Segment segment = current.getSegment(index);
+                        segment.setxKeyMethod(xKeyMethod);
+                        segment.setxKeyIV(xKeyIV);
+                        segment.setxKeyURI(xKeyURI);
+                    }
                 }
                 lastSegmentDuration = -1;
             } else {
-                if (line.startsWith("#EXTINF:")) {
+                if (line.startsWith("#EXT-X-MEDIA-SEQUENCE")) {
+                    sequenceOffset = Integer.parseInt(new Regex(line, "#EXT-X-MEDIA-SEQUENCE:(\\d+)").getMatch(0));
+                    current.setMediaSequenceOffset(sequenceOffset);
+                } else if (line.startsWith("#EXTINF:")) {
                     lastSegmentDuration = M3U8Segment.fromExtInfDuration(line);
+                    sequenceOffset++;
                 } else if (line.startsWith("#EXT-X-KEY")) {
-                    current.setEncrypted(true);
+                    xKeyMethod = M3U8Segment.X_KEY_METHOD.get(new Regex(line, "METHOD=(NONE|AES-128|SAMPLE-AES)").getMatch(0));
+                    xKeyIV = new Regex(line, "IV=0x[a-fA-F0-9]{32}").getMatch(0);
+                    xKeyURI = new Regex(line, "URI=\"(.*?)\"").getMatch(0);
+                    if (xKeyURI != null) {
+                        xKeyURI = br.getURL(xKeyURI).toString();
+                    }
                 } else if (line.startsWith("#EXT-X-TARGETDURATION")) {
                     final String targetDuration = new Regex(line, "#EXT-X-TARGETDURATION:(\\d+)").getMatch(0);
                     if (targetDuration != null) {
@@ -137,10 +234,18 @@ public class M3U8Playlist {
         return addSegment(segment);
     }
 
-    protected final ArrayList<M3U8Segment> segments       = new ArrayList<M3U8Segment>();
+    protected final ArrayList<M3U8Segment> segments            = new ArrayList<M3U8Segment>();
+    protected int                          mediaSequenceOffset = 0;
 
-    protected boolean                      isEncrypted    = false;
-    protected long                         targetDuration = -1;
+    public int getMediaSequenceOffset() {
+        return mediaSequenceOffset;
+    }
+
+    protected void setMediaSequenceOffset(int mediaSequenceOffset) {
+        this.mediaSequenceOffset = mediaSequenceOffset;
+    }
+
+    protected long targetDuration = -1;
 
     public long getTargetDuration() {
         long ret = -1;
@@ -162,12 +267,17 @@ public class M3U8Playlist {
         }
     }
 
-    public boolean isEncrypted() {
-        return isEncrypted;
+    public int indexOf(M3U8Segment segment) {
+        return segments.indexOf(segment);
     }
 
-    public void setEncrypted(boolean isEncrypted) {
-        this.isEncrypted = isEncrypted;
+    public boolean isEncrypted() {
+        for (final M3U8Segment segment : segments) {
+            if (!M3U8Segment.X_KEY_METHOD.NONE.equals(segment.getxKeyMethod())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isSegmentLoaded(final int index) {
