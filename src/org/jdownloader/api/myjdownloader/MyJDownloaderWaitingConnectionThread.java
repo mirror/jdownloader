@@ -128,7 +128,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                             connectionSocket.connect(addr, 30000);
                             connectionSocket.getOutputStream().write(("DEVICE" + request.getSession().getSessionToken()).getBytes("ISO-8859-1"));
                             connectionSocket.getOutputStream().flush();
-                            int validToken = connectionSocket.getInputStream().read();
+                            final int validToken = connectionSocket.getInputStream().read();
                             connectionStatus = DeviceConnectionStatus.parse(validToken);
                         } else {
                             synchronized (connectionRequest) {

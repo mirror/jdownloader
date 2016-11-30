@@ -7,6 +7,11 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -23,11 +28,6 @@ import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-
 public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     private final Browser br;
@@ -36,7 +36,6 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
     @Override
     protected byte[] base64decode(String base64encodedString) {
         return Base64.decode(base64encodedString);
-
     }
 
     @Override
@@ -130,7 +129,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     public MyJDownloaderAPI() {
         super("JD_" + getRevision());
-        setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
+        setServerRoot("https://" + CFG_MYJD.SERVER_HOST.getValue());
         br = new Browser() {
             @Override
             public LogInterface getLogger() {

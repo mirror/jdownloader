@@ -252,7 +252,7 @@ public class MyJDownloaderConnectThread extends Thread {
         };
         final ArrayList<DeviceConnectionHelper> helper = new ArrayList<DeviceConnectionHelper>();
         for (int port : CFG_MYJD.CFG.getDeviceConnectPorts()) {
-            helper.add(new DeviceConnectionHelper(port, CFG_MYJD.CFG.getConnectIP()));
+            helper.add(new DeviceConnectionHelper(port, CFG_MYJD.CFG.getServerHost()));
         }
         deviceConnectionHelper = helper.toArray(new DeviceConnectionHelper[helper.size()]);
         loadSessionInfo();
@@ -599,6 +599,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                 setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_DOWN);
                             }
                         } else {
+                            log(e);
                             currentHelper.requestbackoff();
                             if (isConnectionOffline(currentHelper)) {
                                 setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.NO_INTERNET_CONNECTION);

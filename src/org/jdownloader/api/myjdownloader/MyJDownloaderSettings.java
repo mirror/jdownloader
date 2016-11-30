@@ -32,10 +32,9 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     @DefaultStringValue("api.jdownloader.org")
     @RequiresRestart("A JDownloader Restart is Required")
-    @AboutConfig
-    public String getConnectIP();
+    public String getServerHost();
 
-    public void setConnectIP(String url);
+    public void setServerHost(String url);
 
     @DefaultIntArrayValue({ 80, 10101 })
     @AboutConfig
@@ -48,13 +47,6 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public boolean isDebugEnabled();
 
     public void setDebugEnabled(boolean s);
-
-    @DefaultIntValue(80)
-    @RequiresRestart("A JDownloader Restart is Required")
-    @AboutConfig
-    public int getClientConnectPort();
-
-    public void setClientConnectPort(int port);
 
     public String getEmail();
 
