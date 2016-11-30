@@ -235,7 +235,7 @@ public class TwitchTv extends PluginForHost {
         dl.startDownload();
     }
 
-    private HLSDownloader getHLSDownloader(final DownloadLink downloadLink, Browser br, final String m3u8Url) throws IOException {
+    private HLSDownloader getHLSDownloader(final DownloadLink downloadLink, Browser br, final String m3u8Url) throws IOException, PluginException {
         final FFmpegMetaData ffMpegMetaData;
         final SubConfiguration config = getPluginConfig();
         if (config.getBooleanProperty("meta", true)) {
