@@ -59,7 +59,8 @@ public class RecTubeCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
+        /* Not sure if this is required. */
+        // this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
         fid = new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0);
         getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("http\\-equiv=\"refresh\"")) {
@@ -106,8 +107,8 @@ public class RecTubeCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        /* Not sure if this is required. */
-        this.br.getHeaders().put("Referer", "https://rec-tube.com/embed/" + this.fid + "/");
+        /* Not sure if this is required - but it makes sense. */
+        this.br.getHeaders().put("Referer", "https://" + this.getHost() + "/embed/" + this.fid + "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
