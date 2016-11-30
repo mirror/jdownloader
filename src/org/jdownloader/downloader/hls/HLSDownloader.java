@@ -996,7 +996,13 @@ public class HLSDownloader extends DownloadInterface {
             }
         }
         if (caughtPluginException == null) {
-            if (outputCompleteFile.exists()) {
+            if (outputPartFiles.size() == 1 && outputPartFiles.get(0).exists()) {
+                downloadable.setLinkStatus(LinkStatus.FINISHED);
+                final long fileSize = outputPartFiles.get(0).length();
+                downloadable.setDownloadBytesLoaded(fileSize);
+                downloadable.setVerifiedFileSize(fileSize);
+                return true;
+            } else if (outputCompleteFile.exists()) {
                 downloadable.setLinkStatus(LinkStatus.FINISHED);
                 final long fileSize = outputCompleteFile.length();
                 downloadable.setDownloadBytesLoaded(fileSize);
