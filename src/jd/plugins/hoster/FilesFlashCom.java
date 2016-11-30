@@ -101,7 +101,7 @@ public class FilesFlashCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getStringProperty("userEndURL", link.getDownloadURL()));
         // Link offline
-        if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<|>That file has been banned from this website|>That file was deleted due to inactivity<|>That file has been deleted|>That file was deleted due to inactivity|>That file is not available for download as the uploader has been banned|>That file was lost due to a technical fault)")) {
+        if (br.containsHTML("(>That is not a valid url\\.<|>That file has been banned|>That file has been deleted|>That file is not available|>That file was deleted|>That file was lost|>That file was removed)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
