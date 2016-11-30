@@ -3,6 +3,7 @@ package org.jdownloader.downloader.hls;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +13,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -38,8 +43,10 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -91,6 +98,8 @@ public class HLSDownloader extends DownloadInterface {
     private final List<M3U8Playlist>                m3u8Playlists;
     private final List<File>                        outputPartFiles      = new ArrayList<File>();
     private final AtomicInteger                     currentPlayListIndex = new AtomicInteger(0);
+    private final HashMap<String, SecretKeySpec>    aes128Keys           = new HashMap<String, SecretKeySpec>();
+    private final boolean                           isJared              = Application.isJared(HLSDownloader.class);
 
     public int getCurrentPlayListIndex() {
         return currentPlayListIndex.get();
@@ -103,8 +112,6 @@ public class HLSDownloader extends DownloadInterface {
     public List<M3U8Playlist> getPlayLists() {
         return m3u8Playlists;
     }
-
-    public static final String ENCRYPTED_FLAG = "ENCRYPTED";
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) throws IOException {
         this.m3uUrl = Request.getLocation(m3uUrl, br2.getRequest());
@@ -125,9 +132,6 @@ public class HLSDownloader extends DownloadInterface {
             }
         };
         m3u8Playlists = getM3U8Playlists();
-        if (isEncrypted()) {
-            link.setProperty(ENCRYPTED_FLAG, true);
-        }
     }
 
     public long getEstimatedSize() {
@@ -135,14 +139,22 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     public boolean isEncrypted() {
-        if (m3u8Playlists != null) {
-            for (M3U8Playlist playlist : m3u8Playlists) {
-                if (playlist.isEncrypted) {
+        if (m3u8Playlists != null && isJared) {
+            for (final M3U8Playlist playlist : m3u8Playlists) {
+                if (playlist.isEncrypted()) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    protected boolean isEncrypted(M3U8Playlist m3u8) {
+        if (isJared && m3u8 != null && m3u8.isEncrypted()) {
+            return true;
+        } else {
+            return isEncrypted();
+        }
     }
 
     public LogInterface initLogger(final DownloadLink link) {
@@ -163,7 +175,7 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    public StreamInfo getProbe() throws IOException {
+    public StreamInfo getProbe() throws IOException, InterruptedException {
         try {
             final FFprobe ffprobe = new FFprobe();
             if (!ffprobe.isAvailable()) {
@@ -174,8 +186,22 @@ public class HLSDownloader extends DownloadInterface {
                 return ffprobe.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
             }
         } finally {
+            final HttpServer server = this.server;
+            this.server = null;
             if (server != null) {
                 server.stop();
+                waitForProcessingRequests();
+            }
+        }
+    }
+
+    protected void waitForProcessingRequests() throws InterruptedException {
+        while (true) {
+            synchronized (requestsInProcess) {
+                if (requestsInProcess.get() == 0) {
+                    break;
+                }
+                requestsInProcess.wait(50);
             }
         }
     }
@@ -569,6 +595,8 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
+    private final AtomicInteger requestsInProcess = new AtomicInteger(0);
+
     private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
@@ -580,6 +608,7 @@ public class HLSDownloader extends DownloadInterface {
 
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
+                requestsInProcess.incrementAndGet();
                 try {
                     if (logger != null) {
                         logger.info(request.toString());
@@ -596,6 +625,11 @@ public class HLSDownloader extends DownloadInterface {
                 } catch (Exception e) {
                     if (logger != null) {
                         logger.log(e);
+                    }
+                } finally {
+                    synchronized (requestsInProcess) {
+                        requestsInProcess.decrementAndGet();
+                        requestsInProcess.notifyAll();
                     }
                 }
                 return false;
@@ -614,6 +648,7 @@ public class HLSDownloader extends DownloadInterface {
 
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
+                requestsInProcess.incrementAndGet();
                 boolean requestOkay = false;
                 try {
                     if (logger != null) {
@@ -671,7 +706,7 @@ public class HLSDownloader extends DownloadInterface {
                     } else if ("/m3u8".equals(request.getRequestedPath())) {
                         ffmpeg.updateLastUpdateTimestamp();
                         final M3U8Playlist m3u8 = getCurrentPlayList();
-                        if (m3u8.isEncrypted()) {
+                        if (isEncrypted(m3u8)) {
                             response.setResponseCode(ResponseCode.get(404));
                         } else {
                             final StringBuilder sb = new StringBuilder();
@@ -707,12 +742,14 @@ public class HLSDownloader extends DownloadInterface {
                         }
                         final String downloadURL;
                         final M3U8Segment segment;
+                        final M3U8Playlist playList;
                         if (url != null) {
                             segment = null;
                             downloadURL = url;
+                            playList = null;
                             return false;// disabled in HLSDownloader! do not allow access to other urls than hls segments
                         } else {
-                            final M3U8Playlist playList = getCurrentPlayList();
+                            playList = getCurrentPlayList();
                             try {
                                 final int index = Integer.parseInt(segmentIndex);
                                 segment = playList.getSegment(index);
@@ -791,15 +828,68 @@ public class HLSDownloader extends DownloadInterface {
                                     response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
                                     outputStream = response.getOutputStream(true);
                                 }
+                                final InputStream inputStream;
+                                if (segment != null && segment.isEncrypted()) {
+                                    // FIXME: resume(range request) not supported yet
+                                    final String keyURI = segment.getxKeyURI();
+                                    if (M3U8Segment.X_KEY_METHOD.AES_128.equals(segment.getxKeyMethod()) && keyURI != null) {
+                                        SecretKeySpec key = aes128Keys.get(keyURI);
+                                        if (key == null) {
+                                            final Browser br2 = getRequestBrowser();
+                                            br2.setFollowRedirects(true);
+                                            final URLConnectionAdapter con = br2.openGetConnection(keyURI);
+                                            try {
+                                                if (con.getResponseCode() == 200) {
+                                                    final byte[] buf = IO.readStream(20, con.getInputStream());
+                                                    if (buf.length == 16) {
+                                                        key = new SecretKeySpec(buf, "AES");
+                                                        aes128Keys.put(keyURI, key);
+                                                    }
+                                                }
+                                            } finally {
+                                                con.disconnect();
+                                            }
+                                            if (key == null) {
+                                                throw new IOException("Failed to fetch #EXT-X-KEY:URI=" + keyURI);
+                                            }
+                                        }
+                                        /*
+                                         * https://tools.ietf.org/html/draft-pantos-http-live-streaming-20#section-5.2
+                                         */
+                                        final IvParameterSpec ivSpec;
+                                        if (segment.getxKeyIV() != null) {
+                                            ivSpec = new IvParameterSpec(HexFormatter.hexToByteArray(segment.getxKeyIV()));
+                                        } else {
+                                            final int sequenceNumber = playList.getMediaSequenceOffset() + playList.indexOf(segment);
+                                            final byte[] iv = new byte[16];
+                                            iv[15] = (byte) (sequenceNumber >>> 0 & 0xFF);
+                                            iv[14] = (byte) (sequenceNumber >>> 8 & 0xFF);
+                                            iv[13] = (byte) (sequenceNumber >>> 16 & 0xFF);
+                                            ivSpec = new IvParameterSpec(iv);
+                                        }
+                                        try {
+                                            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                                            cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
+                                            inputStream = new javax.crypto.CipherInputStream(connection.getInputStream(), cipher);
+                                        } catch (Exception e) {
+                                            throw new IOException(e);
+                                        }
+                                    } else {
+                                        throw new IOException("Unsupported Method #EXT-X-KEY:METHOD=" + segment.getxKeyMethod());
+                                    }
+                                } else {
+                                    inputStream = connection.getInputStream();
+                                }
                                 if (meteredThrottledInputStream == null) {
-                                    meteredThrottledInputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
+                                    meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
                                     if (connectionHandler != null) {
                                         connectionHandler.addThrottledConnection(meteredThrottledInputStream);
                                     }
                                 } else {
-                                    meteredThrottledInputStream.setInputStream(connection.getInputStream());
+                                    meteredThrottledInputStream.setInputStream(inputStream);
                                 }
                                 long position = fileBytesMap.getMarkedBytes();
+                                boolean writeToOutputStream = true;
                                 while (true) {
                                     int len = -1;
                                     try {
@@ -814,7 +904,17 @@ public class HLSDownloader extends DownloadInterface {
                                     }
                                     if (len > 0) {
                                         ffmpeg.updateLastUpdateTimestamp();
-                                        outputStream.write(readWriteBuffer, 0, len);
+                                        if (writeToOutputStream) {
+                                            try {
+                                                outputStream.write(readWriteBuffer, 0, len);
+                                            } catch (IOException e) {
+                                                if (connection.getCompleteContentLength() != -1) {
+                                                    throw e;
+                                                } else {
+                                                    writeToOutputStream = false;
+                                                }
+                                            }
+                                        }
                                         if (segment != null) {
                                             segment.setLoaded(true);
                                         }
@@ -824,8 +924,10 @@ public class HLSDownloader extends DownloadInterface {
                                         break;
                                     }
                                 }
-                                outputStream.flush();
-                                outputStream.close();
+                                if (writeToOutputStream) {
+                                    outputStream.flush();
+                                    outputStream.close();
+                                }
                                 if (fileBytesMap.getSize() > 0) {
                                     requestOkay = fileBytesMap.getUnMarkedBytes() == 0;
                                 } else {
@@ -854,6 +956,10 @@ public class HLSDownloader extends DownloadInterface {
                 } finally {
                     if (logger != null) {
                         logger.info("END:" + requestOkay + ">" + request.getRequestedURL());
+                    }
+                    synchronized (requestsInProcess) {
+                        requestsInProcess.decrementAndGet();
+                        requestsInProcess.notifyAll();
                     }
                 }
                 return true;
@@ -885,6 +991,9 @@ public class HLSDownloader extends DownloadInterface {
 
     @Override
     public boolean startDownload() throws Exception {
+        if (isEncrypted()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+        }
         final List<File> requiredFiles = new ArrayList<File>();
         try {
             downloadable.setDownloadInterface(this);
