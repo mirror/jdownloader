@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(?:de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video2brain.com" }, urls = { "https?://(?:www\\.)?video2brain\\.com/(?:de/tutorial/[a-z0-9\\-]+|en/lessons/[a-z0-9\\-]+|fr/tuto/[a-z0-9\\-]+|es/tutorial/[a-z0-9\\-]+|[a-z]{2}/videos\\-\\d+\\.htm)" })
 public class Video2brainCom extends PluginForHost {
 
     public Video2brainCom(PluginWrapper wrapper) {
@@ -480,6 +480,7 @@ public class Video2brainCom extends PluginForHost {
         this.br.getPage("https://www." + this.getHost() + "/" + accountlanguage + "/");
         /* Different url for every language/country */
         final String abonements_url = this.br.getRegex("id=\"myv2b_dd_usertype\">[^<>]*?<a href=\"(https?://(?:www\\.)?video2brain\\.com/[^/]+/my-video2brain/(options|settings)/[^/]+)\"").getMatch(0);
+        String statustext = "";
         String abonnement = null;
         String accessGroup = null;
         boolean isPremium = false;
@@ -513,37 +514,35 @@ public class Video2brainCom extends PluginForHost {
                 validUntil = TimeFormatter.getMilliSeconds(expiredate, "dd MMMM yyyy", Locale.FRENCH);
             }
         }
-        if (abonnement == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else {
+        if (abonnement != null) {
             if (accessGroup != null) {
                 if ("de".equalsIgnoreCase(accountlanguage)) {
-                    ai.setStatus(abonnement + "(Zugangsgruppe:" + accessGroup + ")");
+                    statustext = abonnement + "(Zugangsgruppe:" + accessGroup + ")";
                 } else {
-                    ai.setStatus(abonnement + "(Group:" + accessGroup + ")");
+                    statustext = abonnement + "(Group:" + accessGroup + ")";
                 }
             } else {
-                ai.setStatus(abonnement);
+                statustext = abonnement;
             }
+        } else {
+            statustext = "Free Account";
         }
-        /* In general if this is true user has a free account or trail subscription. */
-        final boolean html_contains_subscribe_or_upgrade_button = br.containsHTML("FooterCTA\\(\\'Subscribe\\'");
-        /*
-         * E.g. 'Activate trail' German: <a class="btn blue" href="https://www.video2brain.com/de/abonnieren/trials"
-         * onclick="Tracking.Events.FooterCTA('Subscribe', 'https\x3A\x2F\x2Fwww.video2brain.com\x2Fde\x2Fabonnieren\x2Ftrials')">10 TAGE
-         * KOSTENLOS TESTEN</a>
-         */
-        /*
-         * E.g. 'Upgrade' (from trail to paid subscription) French: <a class="btn blue"
-         * href="https://www.video2brain.com/fr/mon-video2brain/options/upgrade" onclick="Tracking.Events.FooterCTA('Subscribe',
-         * 'https\x3A\x2F\x2Fwww.video2brain.com\x2Ffr\x2Fmon\x2Dvideo2brain\x2Foptions\x2Fupgrade')">METTRE À JOUR</a>
-         */
-        /* Note that this 'is_test_abonement' is not safe! */
-        if (html_contains_subscribe_or_upgrade_button || validUntil == -1 || !isPremium) {
+        /* 2016-11-30: Removed check for "Upgrade" button as it seems to be always available! */
+        if (validUntil == -1 || !isPremium) {
             account.setType(AccountType.FREE);
+            /*
+             * Downloads via JDownloader only possible for real paid accounts --> Show this in account status to prevent users from thinking
+             * that this is a bug thus creating useless support tickets.
+             */
+            if ("de".equalsIgnoreCase(accountlanguage)) {
+                statustext += " !Downloads mit JDownloader NUR mit BEZAHLTEN Accounts möglich!";
+            } else {
+                statustext += " !Downloads via JDownloader ONLY possible via PAID accounts!";
+            }
         } else {
             account.setType(AccountType.PREMIUM);
         }
+        ai.setStatus(statustext);
         if (validUntil > 0) {
             ai.setValidUntil(validUntil);
         }
@@ -561,8 +560,7 @@ public class Video2brainCom extends PluginForHost {
         if (AccountType.FREE.equals(account.getType())) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        /* No need to log in - we're already logged in! */
-        // login(account);
+        /* No need to log in here - we're already logged in! */
         handleDownload(link);
     }
 

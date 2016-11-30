@@ -101,6 +101,7 @@ public class Puls4Com extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
+        String date = null;
         final String urlpart = new Regex(downloadLink.getDownloadURL(), "puls4\\.com/(.+)").getMatch(0);
         if (use_mobile_api) {
             prepBR(this.br);
@@ -128,7 +129,8 @@ public class Puls4Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() <= 10) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+            date = (String) entries.get("broadcast_date");
 
             filename = (String) entries.get("title");
 
@@ -161,6 +163,9 @@ public class Puls4Com extends PluginForHost {
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (date != null && !date.equals("")) {
+            filename = date + "_puls4_" + filename;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
