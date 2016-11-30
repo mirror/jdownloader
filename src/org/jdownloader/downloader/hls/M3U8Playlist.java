@@ -102,13 +102,19 @@ public class M3U8Playlist {
             }
         }
 
-        public static long fromExtInfDuration(String duration) {
-            duration = new Regex(duration, "#EXTINF:(\\d+(\\.\\d+)?)").getMatch(0);
+        public static long fromExtInfDuration(String extInf) {
+            final String[] duration = new Regex(extInf, "#EXTINF:(\\d+)(\\.(\\d+))?").getRow(0);
             if (duration != null) {
-                if (duration.contains(".")) {
-                    return Long.parseLong(duration.replace(".", ""));
+                if (duration.length == 1) {
+                    return Long.parseLong(duration[0]) * 1000;
                 } else {
-                    return Long.parseLong(duration) * 1000;
+                    long ret = Long.parseLong(duration[0]) * 1000;
+                    if (duration[2].length() <= 3) {
+                        ret += Long.parseLong(duration[2]);
+                    } else {
+                        ret += Long.parseLong(duration[2].substring(0, 3));
+                    }
+                    return ret;
                 }
             }
             return -1;
@@ -345,6 +351,14 @@ public class M3U8Playlist {
         long duration = 0;
         for (final M3U8Segment segment : segments) {
             duration += Math.max(0, segment.getDuration());
+        }
+        return duration;
+    }
+
+    public static long getEstimatedDuration(List<M3U8Playlist> list) {
+        long duration = 0;
+        for (final M3U8Playlist playList : list) {
+            duration += Math.max(0, playList.getEstimatedDuration());
         }
         return duration;
     }
