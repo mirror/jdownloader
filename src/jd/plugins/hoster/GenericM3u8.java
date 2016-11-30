@@ -94,7 +94,7 @@ public class GenericM3u8 extends PluginForHost {
         final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
         final StreamInfo streamInfo = downloader.getProbe();
         if (downloader.isEncrypted()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Encrypted HLS is not supported");
         }
         if (streamInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
