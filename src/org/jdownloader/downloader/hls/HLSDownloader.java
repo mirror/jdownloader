@@ -407,26 +407,23 @@ public class HLSDownloader extends DownloadInterface {
     private void runDownload() throws IOException, PluginException {
         link.setDownloadSize(-1);
         try {
-            final AtomicLong lastDuration = new AtomicLong(0);
             final AtomicLong lastBitrate = new AtomicLong(-1);
             final AtomicLong lastBytesWritten = new AtomicLong(0);
             final AtomicLong lastTime = new AtomicLong(0);
             final AtomicLong completeTime = new AtomicLong(0);
+            final long estimatedDuration = M3U8Playlist.getEstimatedDuration(m3u8Playlists) / 1000;
             final FFmpeg ffmpeg = new FFmpeg() {
 
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
                     try {
                         final String trimmedLine = line.trim();
                         if (trimmedLine.startsWith("Duration:")) {
-                            if (!line.contains("Duration: N/A")) {
-                                final String durationString = new Regex(line, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
-                                if (durationString != null) {
-                                    final long duration = formatStringToMilliseconds(durationString);
-                                    if (duration > 0) {
-                                        lastDuration.addAndGet(duration);
-                                    }
-                                }
-                            }
+                            // if (!line.contains("Duration: N/A")) {
+                            // final String durationString = new Regex(line, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+                            // if (durationString != null) {
+                            // final long duration = formatStringToMilliseconds(durationString);
+                            // }
+                            // }
                         } else if (trimmedLine.startsWith("Stream #")) {
                             final String bitrateString = new Regex(line, "(\\d+) kb\\/s").getMatch(0);
                             if (bitrateString != null) {
@@ -435,12 +432,16 @@ public class HLSDownloader extends DownloadInterface {
                                 } else {
                                     lastBitrate.addAndGet(Integer.parseInt(bitrateString));
                                 }
+                                final long bitrate = lastBitrate.get();
+                                if (estimatedDuration > 0 && bitrate > 0) {
+                                    final long estimatedSize = ((estimatedDuration) * bitrate * 1024) / 8;
+                                    downloadable.setDownloadTotalBytes(Math.max(M3U8Playlist.getEstimatedSize(m3u8Playlists), estimatedSize));
+                                }
                             }
                         } else if (trimmedLine.startsWith("Output #0")) {
-                            final long duration = lastDuration.get();
                             final long bitrate = lastBitrate.get();
-                            if (duration > 0 && bitrate > 0) {
-                                final long estimatedSize = ((duration / 1000) * bitrate * 1024) / 8;
+                            if (estimatedDuration > 0 && bitrate > 0) {
+                                final long estimatedSize = ((estimatedDuration) * bitrate * 1024) / 8;
                                 downloadable.setDownloadTotalBytes(Math.max(M3U8Playlist.getEstimatedSize(m3u8Playlists), estimatedSize));
                             }
                         } else if (trimmedLine.startsWith("frame=") || trimmedLine.startsWith("size=")) {
@@ -453,11 +454,10 @@ public class HLSDownloader extends DownloadInterface {
                             long time = (formatStringToMilliseconds(timeString) / 1000);
                             lastTime.set(time);
                             time += completeTime.get();
-                            final long duration = lastDuration.get();
                             final long estimatedSize;
-                            if (time > 0 && duration > 0) {
+                            if (time > 0 && estimatedDuration > 0) {
                                 final long rate = currentBytesWritten / time;
-                                estimatedSize = (duration / 1000) * rate;
+                                estimatedSize = (estimatedDuration) * rate;
                             } else {
                                 estimatedSize = currentBytesWritten;
                             }
@@ -715,8 +715,6 @@ public class HLSDownloader extends DownloadInterface {
                         ffmpeg.updateLastUpdateTimestamp();
                         final M3U8Playlist m3u8 = getCurrentPlayList();
                         if (isSupported(m3u8)) {
-                            response.setResponseCode(ResponseCode.get(404));
-                        } else {
                             final StringBuilder sb = new StringBuilder();
                             sb.append("#EXTM3U\r\n");
                             sb.append("#EXT-X-VERSION:3\r\n");
@@ -739,6 +737,8 @@ public class HLSDownloader extends DownloadInterface {
                             final OutputStream out = response.getOutputStream(true);
                             out.write(bytes);
                             out.flush();
+                        } else {
+                            response.setResponseCode(ResponseCode.get(404));
                         }
                         requestOkay = true;
                         return true;
