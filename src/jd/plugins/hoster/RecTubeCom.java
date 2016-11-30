@@ -59,6 +59,7 @@ public class RecTubeCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
         fid = new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0);
         getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("http\\-equiv=\"refresh\"")) {
@@ -82,23 +83,31 @@ public class RecTubeCom extends antiDDoSForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             br.setFollowRedirects(true);
-            getPage("/embed/" + fid + "/");
+            // getPage(this.br.cloneBrowser(), "https://rec-tube.com/cdn/css.css");
+            // getPage(this.br.cloneBrowser(), "https://rec-tube.com/cdn/js.js");
+            // getPage(this.br.cloneBrowser(), "https://rec-tube.com/cdn/filecss.css");
+            // getPage(this.br.cloneBrowser(), "https://rec-tube.com/cdn/piwik.js");
+            // getPage(this.br.cloneBrowser(), "https://rec-tube.com/cdn/rotation.js");
+            getPage("/embed/" + this.fid + "/");
             if (this.br.toString().length() <= 100 || br.containsHTML("You have reached your daily view limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             } else if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            this.br.setFollowRedirects(false);
             final String id = this.br.getRegex("var id\\s*?=\\s*?\"(\\d+)\"").getMatch(0);
             if (id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            this.br.setFollowRedirects(false);
+            // dllink = "https://rec-tube.com/file/" + id + "/";
             getPage("https://rec-tube.com/file/" + id + "/");
             dllink = this.br.getRedirectLocation();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        /* Not sure if this is required. */
+        this.br.getHeaders().put("Referer", "https://rec-tube.com/embed/" + this.fid + "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

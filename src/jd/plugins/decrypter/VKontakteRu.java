@@ -832,6 +832,10 @@ public class VKontakteRu extends PluginForDecrypt {
             final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)\\?");
             oid = idsRegex.getMatch(0);
             id = idsRegex.getMatch(1);
+        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_Z)) {
+            final Regex idsRegex = new Regex(parameter, "z=video((?:\\-)?\\d+)_(\\d+)");
+            oid = idsRegex.getMatch(0);
+            id = idsRegex.getMatch(1);
         }
         ids[0] = oid;
         ids[1] = id;

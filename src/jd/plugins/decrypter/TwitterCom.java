@@ -137,8 +137,10 @@ public class TwitterCom extends PornEmbedParser {
             }
         } else if (parameter.matches(TYPE_USER_ALL)) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            /* 2016-11-30: Seems like twitter limits their website to a max "load more" calls of 40. */
             int reloadNumber = 0;
-            String maxid = br.getRegex("data-min-position=\"(\\d+)\"").getMatch(0);
+            /* Get start-id */
+            String maxid = br.getRegex("data\\-min\\-position=\"(\\d+)\"").getMatch(0);
             DownloadLink dl = null;
             do {
                 if (this.isAbort()) {

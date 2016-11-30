@@ -30,7 +30,6 @@ import java.util.TimeZone;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -43,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br-online.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br-online.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class BrDe extends PluginForHost {
 
     public BrDe(PluginWrapper wrapper) {
@@ -51,7 +50,9 @@ public class BrDe extends PluginForHost {
         setConfigElements();
     }
 
-    private String DLLINK = null;
+    private String  dllink             = null;
+    private boolean geo_or_age_blocked = false;
+    private boolean server_issues      = false;
 
     @Override
     public String getAGBLink() {
@@ -69,12 +70,16 @@ public class BrDe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getBooleanProperty("offline", false)) {
+        final String startLink = downloadLink.getStringProperty("mainlink");
+        if (downloadLink.getBooleanProperty("offline", false) || startLink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        dllink = downloadLink.getStringProperty("direct_link", null);
+        geo_or_age_blocked = false;
+        server_issues = false;
+
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String startLink = downloadLink.getStringProperty("mainlink");
         br.getPage(startLink);
 
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -82,37 +87,50 @@ public class BrDe extends PluginForHost {
         }
 
         final String filename = downloadLink.getStringProperty("plain_filename", null);
-        DLLINK = downloadLink.getStringProperty("direct_link", null);
 
-        DLLINK = Encoding.htmlDecode(DLLINK.trim());
+        dllink = Encoding.htmlDecode(dllink.trim());
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            br2.getHeaders().put("Accept-Encoding", "identity");
-            con = br2.openGetConnection(DLLINK);
+            br.getHeaders().put("Accept-Encoding", "identity");
+            con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (con.getResponseCode() == 403) {
+                    /* E.g. content is not available before 10PM (Germany). */
+                    geo_or_age_blocked = true;
+                } else {
+                    server_issues = true;
+                }
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (geo_or_age_blocked) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-or age blocked", 30 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
