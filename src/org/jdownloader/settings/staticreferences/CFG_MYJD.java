@@ -3,7 +3,6 @@ package org.jdownloader.settings.staticreferences;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
-import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
@@ -22,13 +21,11 @@ public class CFG_MYJD {
     // null
     public static final StringKeyHandler                      UNIQUE_DEVICE_ID     = SH.getKeyHandler("UniqueDeviceID", StringKeyHandler.class);
     // api.jdownloader.org
-    public static final StringKeyHandler                      CONNECT_IP           = SH.getKeyHandler("ConnectIP", StringKeyHandler.class);
+    public static final StringKeyHandler                      SERVER_HOST          = SH.getKeyHandler("ServerHost", StringKeyHandler.class);
     // true
     public static final BooleanKeyHandler                     AUTO_CONNECT_ENABLED = SH.getKeyHandler("AutoConnectEnabledV2", BooleanKeyHandler.class);
     // null
     public static final StringKeyHandler                      PASSWORD             = SH.getKeyHandler("Password", StringKeyHandler.class);
-    // 80
-    public static final IntegerKeyHandler                     CLIENT_CONNECT_PORT  = SH.getKeyHandler("ClientConnectPort", IntegerKeyHandler.class);
     // [I@7df36af6
     public static final ListHandler<int[]>                    DEVICE_CONNECT_PORTS = SH.getKeyHandler("DeviceConnectPorts", ListHandler.class);
     // JDownloader
