@@ -105,14 +105,20 @@ public class M3U8Playlist {
         public static long fromExtInfDuration(String extInf) {
             final String[] duration = new Regex(extInf, "#EXTINF:(\\d+)(\\.(\\d+))?").getRow(0);
             if (duration != null) {
-                if (duration.length == 1 || duration[2] == null) {
-                    return Long.parseLong(duration[0]) * 1000;
+                final String secs = duration[0];
+                final String msns = duration[2];
+                if (duration.length == 1 || msns == null) {
+                    return Long.parseLong(secs) * 1000;
                 } else {
-                    long ret = Long.parseLong(duration[0]) * 1000;
-                    if (duration[2].length() <= 3) {
-                        ret += Long.parseLong(duration[2]);
+                    long ret = Long.parseLong(secs) * 1000;
+                    if (msns.length() == 1) {
+                        ret += Long.parseLong(msns) * 100;
+                    } else if (msns.length() == 2) {
+                        ret += Long.parseLong(msns) * 10;
+                    } else if (msns.length() == 3) {
+                        ret += Long.parseLong(msns);
                     } else {
-                        ret += Long.parseLong(duration[2].substring(0, 3));
+                        ret += Long.parseLong(msns.substring(0, 3));
                     }
                     return ret;
                 }
