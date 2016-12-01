@@ -451,7 +451,7 @@ public class OneFichierCom extends PluginForHost {
         for (int i = 1; i <= 3; i++) {
             logger.info("1fichier.com: API login try 1 / " + i);
             try {
-                br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
+                br.getPage("https://" + this.getHost() + "/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
                 break;
             } catch (final ConnectException c) {
                 if (i + 1 == 3) {
@@ -478,49 +478,60 @@ public class OneFichierCom extends PluginForHost {
                 account.setValid(false);
                 throw e;
             }
-            ai.setStatus("Free Account (Credits available)");
-            account.setValid(true);
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(maxdownloads_free);
-            account.setConcurrentUsePossible(false);
-            account.setProperty("freeAPIdisabled", true);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setFollowRedirects(true);
-            br.getPage("https://1fichier.com/en/console/details.pl");
-            String freeCredits2 = br.getRegex(">Your account have ([^<>\"]*?) of direct download credits").getMatch(0);
-            if (freeCredits2 != null) {
-                ai.setTrafficLeft(SizeFormatter.getSize(freeCredits2));
+            /* And yet another workaround for broken API case ... */
+            br.getPage("https://" + this.getHost() + "/en/console/index.pl");
+            final boolean isPremium = this.br.containsHTML("Premium offer Account");
+            if (isPremium) {
+                setBasicPremiumAccountInfo(account, ai);
             } else {
-                ai.setUnlimitedTraffic();
+                ai.setStatus("Free Account (Credits available)");
+                setBasicFreeAccountInfo(account, ai);
+                account.setProperty("freeAPIdisabled", true);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.setFollowRedirects(true);
+                br.getPage("https://" + this.getHost() + "/en/console/details.pl");
+                String freeCredits2 = br.getRegex(">Your account have ([^<>\"]*?) of direct download credits").getMatch(0);
+                if (freeCredits2 != null) {
+                    ai.setTrafficLeft(SizeFormatter.getSize(freeCredits2));
+                } else {
+                    ai.setUnlimitedTraffic();
+                }
             }
             return ai;
         } else if ("0".equalsIgnoreCase(timeStamp)) {
             if (freeCredits != null) {
                 /* not finished yet */
-                account.setValid(true);
                 if (Float.parseFloat(freeCredits) > 0) {
                     ai.setStatus("Free Account (Credits available)");
                 } else {
                     ai.setStatus("Free Account (No credits available)");
                 }
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxdownloads_free);
-                account.setConcurrentUsePossible(false);
                 account.setProperty("freeAPIdisabled", false);
+                setBasicFreeAccountInfo(account, ai);
             }
             return ai;
         } else {
-            account.setValid(true);
-            ai.setStatus("Premium Account");
             ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
-            /* Premiumusers have no (daily) trafficlimits */
-            ai.setUnlimitedTraffic();
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxdownloads_account_premium);
-            account.setConcurrentUsePossible(true);
+            setBasicPremiumAccountInfo(account, ai);
             return ai;
         }
+    }
+
+    private void setBasicPremiumAccountInfo(final Account acc, final AccountInfo ai) {
+        ai.setStatus("Premium Account");
+        /* Premiumusers have no (daily) trafficlimits */
+        ai.setUnlimitedTraffic();
+
+        acc.setType(AccountType.PREMIUM);
+        acc.setMaxSimultanDownloads(maxdownloads_account_premium);
+        acc.setConcurrentUsePossible(true);
+    }
+
+    private void setBasicFreeAccountInfo(final Account acc, final AccountInfo ai) {
+        acc.setType(AccountType.FREE);
+        acc.setMaxSimultanDownloads(maxdownloads_free);
+        acc.setConcurrentUsePossible(false);
     }
 
     private void checkConnection(final Browser br) throws PluginException {
