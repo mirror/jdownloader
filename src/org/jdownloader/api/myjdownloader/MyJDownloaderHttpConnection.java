@@ -31,6 +31,7 @@ import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.ChunkedOutputStream;
 import org.appwork.utils.net.DeChunkingOutputStream;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -56,6 +57,8 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     protected final MyJDownloaderAPI                                        api;
 
     private final LogSource                                                 logger;
+
+    private final SocketStreamInterface                                     socketStream;
 
     private static final HashMap<String, List<MyJDownloaderHttpConnection>> CONNECTIONS    = new HashMap<String, List<MyJDownloaderHttpConnection>>();
     private static final HashMap<String, KeyPair>                           RSAKEYPAIRS    = new HashMap<String, KeyPair>();
@@ -105,11 +108,20 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
         this.api = api;
+        this.socketStream = null;
+        logger = api.getLogger();
+    }
+
+    public MyJDownloaderHttpConnection(SocketStreamInterface socketStream, MyJDownloaderAPI api) throws IOException {
+        super(null, socketStream.getSocket(), socketStream.getInputStream(), socketStream.getOutputStream());
+        this.socketStream = socketStream;
+        this.api = api;
         logger = api.getLogger();
     }
 
     public MyJDownloaderHttpConnection(final Socket clientSocket, final InputStream is, final OutputStream os, MyJDownloaderAPI api) throws IOException {
         super(null, clientSocket, is, os);
+        this.socketStream = null;
         this.api = api;
         logger = api.getLogger();
     }
@@ -206,6 +218,12 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             }
         } catch (final Throwable nothing) {
             nothing.printStackTrace();
+        }
+        if (socketStream != null) {
+            try {
+                this.socketStream.close();
+            } catch (final Throwable nothing) {
+            }
         }
         try {
             this.clientSocket.close();
