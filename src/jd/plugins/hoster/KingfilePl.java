@@ -67,7 +67,7 @@ public class KingfilePl extends PluginForHost {
             br.openGetConnection("/googletagmanager/" + secret + ".png").disconnect();
             br.getPage(link.getDownloadURL());
         }
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Nie znaleziono pliku|>Szukany plik zmienił swój adres lub")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Plik który chcesz pobrać zmienił swój adres lub został usunięty<|>Nie znaleziono szukanego pliku<|>Nie znaleziono pliku|>Szukany plik zmienił swój adres lub")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"fileName\">([^<>\"]+)<").getMatch(0);
