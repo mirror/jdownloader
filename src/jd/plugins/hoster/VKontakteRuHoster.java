@@ -26,6 +26,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,12 +60,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" })
@@ -582,6 +582,7 @@ public class VKontakteRuHoster extends PluginForHost {
             return 0;
         }
         final Browser br2 = this.br.cloneBrowser();
+        br2.setFollowRedirects(true);
         br2.getHeaders().put("Accept-Encoding", "identity");
         final PluginForHost orginalPlugin = downloadLink.getLivePlugin();
         if (!isDownload) {
@@ -600,7 +601,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (finalfilename == null) {
                     downloadLink.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
                 } else {
-                    downloadLink.setFinalFileName(finalfilename);
+                    downloadLink.setFinalFileName(Encoding.urlDecode(finalfilename, false));
                 }
                 if (isDownload) {
                     closeConnection = false;
@@ -614,6 +615,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 if (con.getResponseCode() == 404) {
+                    if (!downloadLink.isNameSet() && finalfilename != null) {
+                        downloadLink.setFinalFileName(Encoding.urlDecode(finalfilename, false));
+                    }
                     return 404;
                 }
                 return 0;
