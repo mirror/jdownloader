@@ -27,7 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+(/[^/]+)?" })
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(www\\.)?bs\\.to/(serie/[^/]+/\\d+/[^/]+(/[^/]+)?|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
 
     public BsTo(PluginWrapper wrapper) {
@@ -39,6 +41,13 @@ public class BsTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (StringUtils.contains(parameter, "bs.to/out")) {
+            this.br.setFollowRedirects(false);
+            br.getPage(parameter);
+            final String finallink = br.getRedirectLocation();
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
+        }
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -73,5 +82,4 @@ public class BsTo extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
