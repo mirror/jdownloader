@@ -19,13 +19,22 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -40,12 +49,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uppit.com" }, urls = { "http://(?:www\\.)?uppit\\.com/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uppit.com" }, urls = { "http://(?:www\\.)?uppit\\.com/[a-z0-9]{12}" })
 public class UppItCom extends antiDDoSForHost {
 
     private String              correctedBR         = "";
@@ -96,6 +100,11 @@ public class UppItCom extends antiDDoSForHost {
             br.setCookie(COOKIE_HOST, "lang", "english");
         }
         return prepBr;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     @SuppressWarnings("deprecation")
@@ -177,7 +186,12 @@ public class UppItCom extends antiDDoSForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+                final Form form = br.getFormByInputFieldKeyValue("op", "download1");
+                if (form == null) {
+                    postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+                } else {
+                    submitForm(form);
+                }
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -333,7 +347,7 @@ public class UppItCom extends antiDDoSForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        dllink = new Regex(correctedBR, "<a [^>]*href=\"(https?://[^\"]+)\"[^>]*>(Click to Download|Download File|\\s*Download\\s*)").getMatch(0);
                         if (dllink == null) {
                             // br or correctedBR
                             String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -357,18 +371,86 @@ public class UppItCom extends antiDDoSForHost {
     protected void getPage(final String page) throws Exception {
         super.getPage(page);
         correctBR();
+        simulateBrowser();
     }
 
     @Override
     protected void postPage(String page, String postdata) throws Exception {
         super.postPage(page, postdata);
         correctBR();
+        simulateBrowser();
     }
 
     @Override
     protected void submitForm(Form form) throws Exception {
         super.submitForm(form);
         correctBR();
+        simulateBrowser();
+    }
+
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    private void simulateBrowser() throws InterruptedException {
+
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
+
+        final String out = correctedBR;
+
+        String[] l1 = new Regex(out, "\\s+(?:src|href)=(\"|')((?!'.*?\\').*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(out, "\\s+(?:src|href)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, this.br.getRequest());
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.matches(".+" + Pattern.quote(this.getHost()) + "/?$") && !correctedLink.contains(".html") && !correctedLink.contains("?op=") && !correctedLink.equals(this.br.getURL()) && !correctedLink.contains("%20") && !new Regex(correctedLink, "&(?:#[0-9]{3,4}|[A-Za-z]{2,8});").matches()) {
+                if (this.dupe.add(correctedLink)) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        @Override
+                        public void run() {
+                            final Browser rb = UppItCom.this.br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (correctedLink.matches(".+\\.png.*|jpe?g.*)")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            } else if (correctedLink.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (correctedLink.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                requestQ.getAndIncrement();
+                                con = openAntiDDoSRequestConnection(rb, rb.createGetRequest(correctedLink));
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                                requestS.getAndIncrement();
+                            }
+                            return;
+                        }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
+
+                }
+            }
+        }
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
