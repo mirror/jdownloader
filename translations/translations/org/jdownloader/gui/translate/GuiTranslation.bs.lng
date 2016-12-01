@@ -444,6 +444,7 @@ FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2=<html>Ako �
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title=Nedostaje FFmpeg™!
 FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser=Uredu, ali šta sada?
 FFMpegInstallTypeChooserDialog_layoutDialogContent_problem=O čemu se radi?
+FFMpegProgress_getMessage_concat=Združivanje...
 FFMpegProgress_getMessage_merging=Konvertovanje/Demuxing...
 FileColumn_getStringValue_accountgroup_=Glupa Naloga
 FileColumn_setStringValue_msg_=Preimenovali ste jedan dokument arhive koja ima više dijelova. Morate preimenovati sve dijelove da bi arhivu bilo moguće ekstraktovati!
