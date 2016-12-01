@@ -575,7 +575,7 @@ public class MyJDownloaderConnectThread extends Thread {
                             currentHelper.requestbackoff(2);
                             setConnectionStatus(MyJDownloaderConnectionStatus.PENDING, MyJDownloaderError.SERVER_OVERLOAD);
                         } else if (e instanceof OutdatedException) {
-                            log("Outdated Version, Please update!");
+                            log("Outdated version, please update!");
                             setConnectionStatus(MyJDownloaderConnectionStatus.UNCONNECTED, MyJDownloaderError.OUTDATED);
                             return;
                         } else if (e instanceof EmailInvalidException) {
