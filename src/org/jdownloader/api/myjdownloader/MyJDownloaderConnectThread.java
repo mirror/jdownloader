@@ -4,7 +4,6 @@ import java.io.File;
 import java.lang.reflect.Type;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -38,6 +37,7 @@ import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.ProxyEndpointConnectException;
+import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
@@ -193,7 +193,7 @@ public class MyJDownloaderConnectThread extends Thread {
     private String                                                       email;
     private String                                                       deviceName;
     private final Set<TYPE>                                              notifyInterests           = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
-    private final static HashMap<Thread, Socket>                         openConnections           = new HashMap<Thread, Socket>();
+    private final static HashMap<Thread, SocketStreamInterface>          openConnections           = new HashMap<Thread, SocketStreamInterface>();
     private final static HashSet<String>                                 KILLEDSESSIONS            = new HashSet<String>();
 
     private final ArrayDeque<MyJDownloaderConnectionResponse>            responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
@@ -217,7 +217,7 @@ public class MyJDownloaderConnectThread extends Thread {
 
     private final static Object SESSIONLOCK = new Object();
 
-    protected static HashMap<Thread, Socket> getOpenconnections() {
+    protected static HashMap<Thread, SocketStreamInterface> getOpenconnections() {
         return openConnections;
     }
 
@@ -344,8 +344,8 @@ public class MyJDownloaderConnectThread extends Thread {
             if (response.getThrowable() != null) {
                 throw response.getThrowable();
             }
-            final DeviceConnectionStatus connectionStatus = response.getConnectionStatus();
-            final Socket socket = response.getConnectionSocket();
+            final DeviceConnectionStatus connectionStatus = response.getStatus();
+            final SocketStreamInterface socket = response.getSocketStream();
             if (socket != null && connectionStatus != null) {
                 setConnectionStatus(MyJDownloaderConnectionStatus.CONNECTED, MyJDownloaderError.NONE);
                 switch (connectionStatus) {
@@ -359,7 +359,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     Thread keepAlivehandler = new Thread("KEEPALIVE_HANDLER") {
                         public void run() {
                             try {
-                                socket.setSoTimeout(5000);
+                                socket.getSocket().setSoTimeout(5000);
                                 long syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
                                 sync(syncMark, currentSession);
                             } catch (final Throwable e) {
@@ -470,7 +470,7 @@ public class MyJDownloaderConnectThread extends Thread {
         } finally {
             if (closeSocket) {
                 try {
-                    final Socket socket = response.getConnectionSocket();
+                    final SocketStreamInterface socket = response.getSocketStream();
                     if (socket != null) {
                         socket.close();
                     }
@@ -776,14 +776,14 @@ public class MyJDownloaderConnectThread extends Thread {
         notifyInterests.remove(captcha);
     }
 
-    protected void handleConnection(final Socket clientSocket) {
+    protected void handleConnection(final SocketStreamInterface clientSocket) {
         final long requestNumber = THREADCOUNTER.incrementAndGet();
         Thread connectionThread = new Thread("MyJDownloaderConnection:" + requestNumber) {
             @Override
             public void run() {
                 try {
                     System.out.println("Handle a passthrough MyJDownloader connection:" + requestNumber);
-                    MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, api);
+                    final MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, api);
                     httpConnection.run();
                 } catch (final Throwable e) {
                     log(e);
@@ -820,7 +820,7 @@ public class MyJDownloaderConnectThread extends Thread {
             MyJDownloaderConnectionResponse next = null;
             while ((next = responses.poll()) != null) {
                 try {
-                    final Socket socket = next.getConnectionSocket();
+                    final SocketStreamInterface socket = next.getSocketStream();
                     if (socket != null) {
                         socket.close();
                     }
@@ -863,7 +863,7 @@ public class MyJDownloaderConnectThread extends Thread {
         notifyInterests.clear();
         challengeExchangeEnabled.set(false);
         try {
-            MyJDownloaderAPI lapi = api;
+            final MyJDownloaderAPI lapi = api;
             api = null;
             synchronized (responses) {
                 responses.notifyAll();
@@ -871,9 +871,9 @@ public class MyJDownloaderConnectThread extends Thread {
             terminateWaitingConnections();
             disconnectSession(lapi, null);
             synchronized (openConnections) {
-                Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
+                final Iterator<Entry<Thread, SocketStreamInterface>> it = openConnections.entrySet().iterator();
                 while (it.hasNext()) {
-                    Entry<Thread, Socket> next = it.next();
+                    final Entry<Thread, SocketStreamInterface> next = it.next();
                     try {
                         next.getValue().close();
                     } catch (final Throwable e) {

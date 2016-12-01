@@ -20,6 +20,7 @@ import jd.controlling.reconnect.pluginsinc.upnp.cling.StreamClientImpl;
 
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
+import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
@@ -323,7 +324,28 @@ public class MyJDownloaderDirectServer extends Thread {
             }
         };
         synchronized (MyJDownloaderConnectThread.getOpenconnections()) {
-            MyJDownloaderConnectThread.getOpenconnections().put(connectionThread, clientSocket);
+            MyJDownloaderConnectThread.getOpenconnections().put(connectionThread, new SocketStreamInterface() {
+
+                @Override
+                public Socket getSocket() {
+                    return clientSocket;
+                }
+
+                @Override
+                public OutputStream getOutputStream() throws IOException {
+                    return clientSocket.getOutputStream();
+                }
+
+                @Override
+                public InputStream getInputStream() throws IOException {
+                    return clientSocket.getInputStream();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    clientSocket.close();
+                }
+            });
         }
         connectThread.setEstablishedConnections(connectThread.getEstablishedConnections());
         connectionThread.setDaemon(true);

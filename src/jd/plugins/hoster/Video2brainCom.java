@@ -535,9 +535,9 @@ public class Video2brainCom extends PluginForHost {
              * that this is a bug thus creating useless support tickets.
              */
             if ("de".equalsIgnoreCase(accountlanguage)) {
-                statustext += " !Downloads mit JDownloader NUR mit BEZAHLTEN Accounts möglich!";
+                statustext += " !Downloads nur mit bezahlten Accounts möglich!";
             } else {
-                statustext += " !Downloads via JDownloader ONLY possible via PAID accounts!";
+                statustext += " !Downloads require a paid account!";
             }
         } else {
             account.setType(AccountType.PREMIUM);
