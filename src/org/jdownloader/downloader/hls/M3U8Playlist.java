@@ -105,7 +105,7 @@ public class M3U8Playlist {
         public static long fromExtInfDuration(String extInf) {
             final String[] duration = new Regex(extInf, "#EXTINF:(\\d+)(\\.(\\d+))?").getRow(0);
             if (duration != null) {
-                if (duration.length == 1) {
+                if (duration.length == 1 || duration[2] == null) {
                     return Long.parseLong(duration[0]) * 1000;
                 } else {
                     long ret = Long.parseLong(duration[0]) * 1000;
