@@ -140,7 +140,7 @@ public class DataFileHostCom extends antiDDoSForHost {
                             final Browser rb = DataFileHostCom.this.br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
                             // open get connection for images, need to confirm
-                            if (correctedLink.matches(".+\\.(?:png.*|jpe?g|ico).*")) {
+                            if (correctedLink.matches(".+\\.(?:png.*|jpe?g|ico|gif).*")) {
                                 rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
                             } else if (correctedLink.matches(".+\\.js.*")) {
                                 rb.getHeaders().put("Accept", "*/*");
