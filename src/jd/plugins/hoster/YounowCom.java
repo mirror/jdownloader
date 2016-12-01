@@ -116,6 +116,12 @@ public class YounowCom extends PluginForHost {
         }
         if (hls_master != null && !hls_master.equals("")) {
             br.getPage(hls_master);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                /* At this stage the stream might have been deleted from the server. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             final String url_hls;
             if (this.br.containsHTML("0.ts")) {
                 /* Okay seems like there is no master so we already had the correct url */

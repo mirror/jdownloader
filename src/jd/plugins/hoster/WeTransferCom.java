@@ -97,7 +97,7 @@ public class WeTransferCom extends PluginForHost {
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
 
         String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
-        final long filesize1 = ((Number) JavaScriptEngineFactory.walkJson(map, "files/{0}/size")).longValue();
+        final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
         final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         br.getPage(mainpage + "api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
