@@ -378,8 +378,8 @@ public class PornHubCom extends PluginForHost {
                     br.getPage(redirect);
                     br.followRedirect();
                 }
-                // if (!isCookieLoggedIn(br)) {
-                if (!br.containsHTML(">Sign Out<")) {
+                // if (!isCookieLoggedIn(br)) { // 20161202 Was ii then ij now ik (free account)
+                if (!br.containsHTML("class=\"signOut\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
