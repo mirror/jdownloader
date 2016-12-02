@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,12 +32,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "http://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "http://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
-
     /* DEV NOTES */
     /* Porn_plugin */
-
     private String DLLINK = null;
 
     public YouJizzCom(PluginWrapper wrapper) {
@@ -107,6 +104,9 @@ public class YouJizzCom extends PluginForHost {
         }
         br.getPage(embed);
         DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("newLink\\.setAttribute\\(\\'href\\'\\,\\'([^']+)").getMatch(0);
+        }
         if (DLLINK == null) {
             DLLINK = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
             if (DLLINK == null) {
