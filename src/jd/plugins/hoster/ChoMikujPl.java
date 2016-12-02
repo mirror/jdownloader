@@ -243,16 +243,12 @@ public class ChoMikujPl extends antiDDoSForHost {
             // if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) {
             // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // }
-            /* TODO: fixme! */
-            if (true) {
-                return false;
-            }
             final String chomikID = theLink.getStringProperty("chomikID");
             String requestVerificationToken = theLink.getStringProperty("requestverificationtoken");
-            if (requestVerificationToken == null) {
-                br.setFollowRedirects(true);
+            if (requestVerificationToken == null || true) {
+                /* 2016-12-02: Debug-test: Always get a new requestverificationtoken */
                 getPage(br, theLink.getDownloadURL());
-                br.setFollowRedirects(false);
+                br.followRedirect();
                 requestVerificationToken = br.getRegex("<div id=\"content\">[\t\n\r ]+<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
             }
             if (requestVerificationToken == null) {
@@ -274,7 +270,8 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
             }
 
-            postPageWithCleanup(br, "http://" + this.getHost() + "/action/License/DownloadContext", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+            br.setCookie(this.getHost(), "cookiesAccepted", "1");
+            postPageWithCleanup(br, "http://" + this.getHost() + "/action/License/DownloadContext", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             unescapedBR = unescape(br.toString());
             final String serializedUserSelection = new Regex(unescapedBR, "name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
             final String serializedOrgFile = new Regex(unescapedBR, "name=\"SerializedOrgFile\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
@@ -283,7 +280,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                     /* Plugin broken */
                     return false;
                 }
-                postPageWithCleanup(br, "/action/License/DownloadWarningAccept", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile));
+                postPageWithCleanup(br, "/action/License/DownloadWarningAccept", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken) + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile));
                 unescapedBR = unescape(br.toString());
             }
 
@@ -295,15 +292,15 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
                 /* Handle captcha */
                 logger.info("Handling captcha");
-                // /* TODO 2016-11-03 */
-                // if (true) {
-                // return false;
-                // }
+                /* TODO 2016-11-03 */
+                if (true) {
+                    return false;
+                }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcSiteKey).getToken();
-                final String postData = "fileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&FileName=" + Encoding.urlEncode(theLink.getName()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
+                final String postData = "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&FileName=" + Encoding.urlEncode(theLink.getName()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
                 postPageWithCleanup(br, "/action/License/DownloadNotLoggedCaptchaEntered", postData);
             } else {
-                postPageWithCleanup(br, "http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
+                postPageWithCleanup(br, "/action/License/Download", "FileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             }
             if (cbr.containsHTML(PREMIUMONLY)) {
                 return false;

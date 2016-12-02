@@ -462,6 +462,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             } else {
                 accessPage(postdata, tempBr, pageCount);
             }
+            final String __RequestVerificationToken_Lw__ = br.getCookie(parameter, "__RequestVerificationToken_Lw__");
             String[] v2list = tempBr.getRegex("<li class=\"fileItemContainer\"(.*?)href=\"javascript:;\"").getColumn(0);
             if (v2list == null || v2list.length == 0) {
                 v2list = tempBr.getRegex("class=\"fileinfo tab\"(.*?)href=\"javascript:;\"").getColumn(0);
@@ -544,7 +545,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
 
                 dl.setProperty("fileid", fid);
-                dl.setProperty("__RequestVerificationToken_Lw__", br.getCookie(parameter, "__RequestVerificationToken_Lw__"));
+                if (__RequestVerificationToken_Lw__ != null) {
+                    dl.setProperty("__RequestVerificationToken_Lw__", __RequestVerificationToken_Lw__);
+                }
                 dl.setProperty("plain_filename", filename);
 
                 dl.setName(filename);
