@@ -17,33 +17,35 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidturk.com" }, urls = { "https?://(?:www\\.)?rapidturk\\.com/files/[A-Za-z0-9]+\\.html" })
-public class RapidturkCom extends PluginForHost {
+public class RapidturkCom extends Ftp {
 
     public RapidturkCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
+        this.enablePremium("http://www.rapidturk.com/premium/get");
     }
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.rapidturk.com/help/faq";
     }
 
     /* Connection stuff */
@@ -53,8 +55,8 @@ public class RapidturkCom extends PluginForHost {
     private final boolean ACCOUNT_FREE_RESUME          = true;
     private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
+    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
@@ -82,21 +84,18 @@ public class RapidturkCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            this.br.getPage(this.br.getURL().replace("/files/", "/get/"));
-            if (this.br.getURL().length() < 28 || this.br.containsHTML(">This file is available with Premium only|Reason: this file is larger than")) {
+        this.br.getPage(this.br.getURL().replace("/files/", "/get/"));
+        if (this.br.getURL().length() < 28 || this.br.containsHTML(">This file is available with Premium only|Reason: this file is larger than")) {
 
-            }
-            if (true) {
-                /* Premiumonly */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-            /* TODO! */
-            dllink = br.getRegex("").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        }
+        if (true) {
+            /* Premiumonly */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+        /* TODO! */
+        String dllink = br.getRegex("").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -112,150 +111,93 @@ public class RapidturkCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
 
-    // private static Object LOCK = new Object();
-    //
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // br.setFollowRedirects(true);
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.getPage("");
-    // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (br.getCookie(this.getHost(), "") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // String space = br.getRegex("").getMatch(0);
-    // if (space != null) {
-    // ai.setUsedSpace(space.trim());
-    // }
-    // ai.setUnlimitedTraffic();
-    // if (account.getBooleanProperty("free", false)) {
-    // account.setType(AccountType.FREE);
-    // /* free accounts can still have captcha */
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // final String expire = br.getRegex("").getMatch(0);
-    // if (expire == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // } else {
-    // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-    // }
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(true);
-    // ai.setStatus("Premium account");
-    // }
-    // account.setValid(true);
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // br.setFollowRedirects(false);
-    // br.getPage(link.getDownloadURL());
-    // if (account.getType() == AccountType.FREE) {
-    // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    // } else {
-    // String dllink = this.checkDirectLink(link, "premium_directlink");
-    // if (dllink == null) {
-    // dllink = br.getRegex("").getMatch(0);
-    // if (dllink == null) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 403) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-    // } else if (dl.getConnection().getResponseCode() == 404) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // link.setProperty("premium_directlink", dllink);
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // return ACCOUNT_FREE_MAXDOWNLOADS;
-    // }
+    private static Object LOCK = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.postPage("http://www.rapidturk.com/account/login", "task=dologin&return=%2Fmembers%2Fmyfiles&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (!this.br.containsHTML("/account/logout")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        final String create = this.br.getRegex("Registered\\s*?:\\s*?(\\d{2}\\-\\d{2}\\-\\d{4} @ \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        final String expire = this.br.getRegex("Premium Expires\\s*?:\\s*?(\\d{2}\\-\\d{2}\\-\\d{4} @ \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        ai.setUnlimitedTraffic();
+        if (create != null) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy '@' HH:mm:ss", Locale.ENGLISH));
+        }
+        if (expire == null) {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy '@' HH:mm:ss", Locale.ENGLISH));
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium account");
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getDownloadURL());
+        if (account.getType() == AccountType.FREE) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            String dllink = br.getRegex("\\'(ftp://[^<>\"\\']+)\\'").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            download(dllink, link, true);
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
+    }
 
     @Override
     public void reset() {

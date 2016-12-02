@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -44,6 +46,7 @@ public class PanBaiduCom extends PluginForHost {
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        setConfigElements();
     }
 
     @Override
@@ -275,7 +278,13 @@ public class PanBaiduCom extends PluginForHost {
         }
 
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
+        final int maxchunks;
+        if (this.getPluginConfig().getBooleanProperty("ALLOW_UNLIMITED_CHUNKS", false)) {
+            maxchunks = 0;
+        } else {
+            maxchunks = FREE_MAXCHUNKS;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             br.followConnection();
             if (br.containsHTML("\"error_code\":31326")) {
@@ -482,6 +491,10 @@ public class PanBaiduCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         doFree(link, "account_free_directlink");
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_UNLIMITED_CHUNKS", "Allow unlimited [=20] connections per file (chunks)?\r\nWarning: This can cause download issues.").setDefaultValue(false));
     }
 
     @Override
