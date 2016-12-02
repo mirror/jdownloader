@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,10 +28,10 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.NullInputStream;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.plugins.DownloadPluginProgress;
@@ -41,32 +42,46 @@ import org.jdownloader.translate._JDT;
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class SegmentDownloader extends DownloadInterface {
 
-    private volatile long                     bytesWritten   = 0l;
-    private Downloadable                      downloadable;
-    private final DownloadLink                link;
-    private long                              startTimeStamp = -1;
-    private final LogInterface                logger;
-    private volatile URLConnectionAdapter     currentConnection;
-    private ManagedThrottledConnectionHandler connectionHandler;
-    private File                              outputCompleteFile;
-    private File                              outputFinalCompleteFile;
-    private File                              outputPartFile;
+    private volatile long                           bytesWritten   = 0l;
+    private final Downloadable                      downloadable;
+    private final DownloadLink                      link;
+    private long                                    startTimeStamp = -1;
+    private final LogInterface                      logger;
+    private volatile URLConnectionAdapter           currentConnection;
+    private final ManagedThrottledConnectionHandler connectionHandler;
+    private File                                    outputCompleteFile;
+    private File                                    outputFinalCompleteFile;
+    private File                                    outputPartFile;
 
-    private PluginException                   caughtPluginException;
+    private PluginException                         caughtPluginException;
 
-    private final Browser                     obr;
+    private final Browser                           obr;
 
-    private final List<Segment>               segments       = new ArrayList<Segment>();
+    private final List<Segment>                     segments       = new ArrayList<Segment>();
 
-    public SegmentDownloader(final DownloadLink link, Downloadable dashDownloadable, Browser br2, String baseUrl, String[] segments) {
+    public SegmentDownloader(final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
         for (final String segment : segments) {
-            if (StringUtils.startsWithCaseInsensitive(segment, "http://") || StringUtils.startsWithCaseInsensitive(segment, "https://")) {
-                this.segments.add(new Segment(segment));
-            } else {
-                this.segments.add(new Segment(baseUrl, segment));
-            }
+            this.segments.add(new Segment(URLHelper.parseLocation(baseURL, segment)));
         }
-        this.downloadable = dashDownloadable;
+        connectionHandler = new ManagedThrottledConnectionHandler();
+        if (dashDownloadable == null) {
+            this.downloadable = new DownloadLinkDownloadable(link) {
+                @Override
+                public boolean isResumable() {
+                    return false;
+                }
+
+                @Override
+                public void setResumeable(boolean value) {
+                    // link.setProperty("RESUME", value);
+                    super.setResumeable(value);
+                }
+            };
+
+        } else {
+            this.downloadable = dashDownloadable;
+        }
+        downloadable.setDownloadInterface(this);
         this.obr = br2.cloneBrowser();
         this.link = link;
         logger = initLogger(link);
@@ -117,16 +132,19 @@ public class SegmentDownloader extends DownloadInterface {
             if (connectionHandler != null) {
                 connectionHandler.addThrottledConnection(meteredThrottledInputStream);
             }
-            for (final Segment seg : segments) {
+            for (final Segment segment : segments) {
                 if (abort.get()) {
                     return;
                 }
                 final Browser br = obr.cloneBrowser();
-
-                final Request getRequest = createSegmentRequest(seg);
-
+                final Request getRequest = createSegmentRequest(segment);
+                long loaded = 0;
                 try {
                     currentConnection = br.openRequestConnection(getRequest);
+                    if (currentConnection.getResponseCode() != 200) {
+                        throw new IOException("Invalid responseCode:" + currentConnection.getResponseCode());
+                    }
+                    segment.setLoaded(true);
                     meteredThrottledInputStream.setInputStream(currentConnection.getInputStream());
                     while (true) {
                         if (abort.get()) {
@@ -134,6 +152,7 @@ public class SegmentDownloader extends DownloadInterface {
                         }
                         final int len = meteredThrottledInputStream.read(readWriteBuffer);
                         if (len > 0) {
+                            loaded += len;
                             localIO = true;
                             outputStream.write(readWriteBuffer, 0, len);
                             localIO = false;
@@ -144,19 +163,25 @@ public class SegmentDownloader extends DownloadInterface {
                         }
                     }
                 } finally {
-                    if (currentConnection != null) {
-                        currentConnection.disconnect();
-                    }
+                    final URLConnectionAdapter lCurrentConnection = currentConnection;
                     currentConnection = null;
+                    if (lCurrentConnection != null) {
+                        if (segment != null && (lCurrentConnection.getResponseCode() == 200 || lCurrentConnection.getResponseCode() == 206)) {
+                            segment.setSize(Math.max(lCurrentConnection.getCompleteContentLength(), loaded));
+                        }
+                        if (lCurrentConnection != null) {
+                            lCurrentConnection.disconnect();
+                        }
+                    }
                 }
             }
         } catch (IOException e) {
             if (localIO) {
                 throw new SkipReasonException(SkipReason.DISK_FULL);
+            } else {
+                throw e;
             }
-            throw e;
         } catch (Throwable e) {
-
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
         } finally {
             close(outputStream);
@@ -166,9 +191,8 @@ public class SegmentDownloader extends DownloadInterface {
         }
     }
 
-    private GetRequest createSegmentRequest(Segment seg) throws IOException {
-        GetRequest ret = new GetRequest(seg.getUrl());
-
+    private GetRequest createSegmentRequest(final Segment seg) throws IOException {
+        final GetRequest ret = new GetRequest(seg.getUrl());
         return ret;
     }
 
@@ -194,22 +218,6 @@ public class SegmentDownloader extends DownloadInterface {
     @Override
     public boolean startDownload() throws Exception {
         try {
-            connectionHandler = new ManagedThrottledConnectionHandler();
-            if (downloadable == null) {
-                downloadable = new DownloadLinkDownloadable(link) {
-                    @Override
-                    public boolean isResumable() {
-                        return false;
-                    }
-
-                    @Override
-                    public void setResumeable(boolean value) {
-                        // link.setProperty("RESUME", value);
-                        super.setResumeable(value);
-                    }
-                };
-            }
-            downloadable.setDownloadInterface(this);
 
             String fileOutput = downloadable.getFileOutput();
             String finalFileOutput = downloadable.getFinalFileOutput();
@@ -286,19 +294,15 @@ public class SegmentDownloader extends DownloadInterface {
     }
 
     protected void onDownloadReady() throws Exception {
-
         cleanupDownladInterface();
         if (!handleErrors()) {
             return;
         }
         // link.setVerifiedFileSize(bytesWritten);
-
-        boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
+        final boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
         if (!renameOkay) {
-
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
         }
-
     }
 
     protected void cleanupDownladInterface() {
@@ -308,9 +312,17 @@ public class SegmentDownloader extends DownloadInterface {
         if (externalDownloadStop()) {
             return false;
         }
+        for (final Segment segment : segments) {
+            if (!segment.isLoaded()) {
+                // ignore index>0 as it is not supported yet
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+        }
         if (caughtPluginException == null) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);
-            downloadable.setVerifiedFileSize(outputCompleteFile.length());
+            final long fileSize = outputCompleteFile.length();
+            downloadable.setDownloadBytesLoaded(fileSize);
+            downloadable.setVerifiedFileSize(fileSize);
             return true;
         } else {
             throw caughtPluginException;
@@ -348,8 +360,9 @@ public class SegmentDownloader extends DownloadInterface {
             }
             terminate();
         }
-        if (currentConnection != null) {
-            currentConnection.disconnect();
+        final URLConnectionAdapter lCurrentConnection = currentConnection;
+        if (lCurrentConnection != null) {
+            lCurrentConnection.disconnect();
         }
     }
 

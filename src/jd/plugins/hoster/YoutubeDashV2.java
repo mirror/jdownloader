@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,6 +80,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.net.httpserver.HttpServer;
@@ -1117,22 +1119,22 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
         };
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
+        final String[] segments = streamData.getSegments();
         final GetRequest request;
-        if (youtubeConfig.isRateBypassEnabled()) {
-            request = new GetRequest(streamData.getBaseUrl() + "&ratebypass=yes&cmbypass=yes");
+        if (youtubeConfig.isRateBypassEnabled() && segments == null) {
+            request = new GetRequest(URLHelper.parseLocation(new URL(streamData.getBaseUrl()), "&ratebypass=yes&cmbypass=yes"));
         } else {
             request = new GetRequest(streamData.getBaseUrl());
         }
-        String[] segments = streamData.getSegments();
         if (segments != null) {
-            dl = new SegmentDownloader(dashLink, dashDownloadable, br, request.getUrl(), segments);
-            boolean ret = dl.startDownload();
+            dl = new SegmentDownloader(dashLink, dashDownloadable, br, new URL(request.getUrl()), segments);
+            final boolean ret = dl.startDownload();
             if (dl.externalDownloadStop()) {
                 return null;
             }
             return ret;
         }
-        List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
+        final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
         request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
