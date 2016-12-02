@@ -41,11 +41,8 @@ public class KirmiziturkOrgDecrypter extends PluginForDecrypt {
 
         main.setContentUrl(parameter);
 
-        if (br.getURL().contains("<h3>404</h3>") || br.getHttpConnection().getResponseCode() == 404) {
-            main.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
+        if (br.containsHTML("<h3>404</h3>|<title></title>") || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String externID = br.getRegex("file: \"(https?://(www\\.)?youtube\\.com/watch\\?v=[^<>\"]*?)\"").getMatch(0);
