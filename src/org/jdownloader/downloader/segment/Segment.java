@@ -2,7 +2,26 @@ package org.jdownloader.downloader.segment;
 
 public class Segment {
 
-    private String url;
+    private final String url;
+    private long         size = -1;
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    public void setLoaded(boolean loaded) {
+        this.loaded = loaded;
+    }
+
+    private boolean loaded = false;
 
     public String getUrl() {
         return url;
@@ -10,10 +29,6 @@ public class Segment {
 
     public Segment(String url) {
         this.url = url;
-    }
-
-    public Segment(String baseUrl, String s) {
-        this.url = baseUrl + s;
     }
 
 }
