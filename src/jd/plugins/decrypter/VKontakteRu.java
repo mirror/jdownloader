@@ -57,8 +57,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+" })
 public class VKontakteRu extends PluginForDecrypt {
 
-    /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
-
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
         /* need this twice, because decrypter plugin might not be loaded yet */
@@ -187,6 +185,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private boolean                 loggedIn                                  = false;
     private ArrayList<DownloadLink> decryptedLinks                            = null;
+    private ArrayList<String>       wallSinglePostIDs                         = null;
 
     /* General error handling language implementation: English | Rus | Polish */
     /*
@@ -225,11 +224,16 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_grabaudio = cfg.getBooleanProperty(VKWALL_GRAB_AUDIO, false);
         vkwall_grabvideo = cfg.getBooleanProperty(VKWALL_GRAB_VIDEO, false);
         vkwall_grablink = cfg.getBooleanProperty(VKWALL_GRAB_LINK, false);
-        vkwall_grabcomments = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS, jd.plugins.hoster.VKontakteRuHoster.default_WALL_ALLOW_comments);
+        vkwall_grabcomments = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_PHOTOS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_PHOTOS) || cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_AUDIO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_AUDIO) || cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_VIDEO) || cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_URLS);
         vkwall_grabdocs = cfg.getBooleanProperty(VKWALL_GRAB_DOCS, false);
         vkwall_graburlsinsideposts = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, jd.plugins.hoster.VKontakteRuHoster.default_WALL_ALLOW_lookforurlsinsidewallposts);
         vkwall_graburlsinsideposts_regex_default = jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX;
         vkwall_graburlsinsideposts_regex = cfg.getStringProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX, vkwall_graburlsinsideposts_regex_default);
+
+        /* Initiate Array if needed */
+        if (vkwall_grabcomments) {
+            wallSinglePostIDs = new ArrayList<String>();
+        }
 
         prepBrowser(br);
         prepCryptedLink(null);
@@ -404,6 +408,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("Cannot decrypt unsupported linktype: " + CRYPTEDLINK_FUNCTIONAL);
                 return null;
             }
+            /* Always execute this - if we have single posts, we can crawl the contents of their posts. */
+            decryptWallPostComments();
         } catch (final BrowserException e) {
             logger.warning("Browser exception thrown: " + e.getMessage());
             logger.warning("Decrypter failed for link: " + CRYPTEDLINK_FUNCTIONAL);
@@ -1122,13 +1128,7 @@ public class VKontakteRu extends PluginForDecrypt {
             List<Object> response = (List<Object>) map.get("response");
             for (final Object entry : response) {
                 if (entry instanceof Map) {
-                    final Map<String, Object> entries_single_wall_post = (Map<String, Object>) entry;
-                    decryptWallPost(ownerID, entries_single_wall_post, fp);
-                    /* Check if user also wants the media from inside wall comments and add that. */
-                    if (vkwall_grabcomments) {
-                        final long postID = getPostIDFromSingleWallPostMap(entries_single_wall_post);
-                        decryptWallPostComments(ownerID, Long.toString(postID), false, fp);
-                    }
+                    decryptWallPost(ownerID, (Map<String, Object>) entry, fp);
                 }
             }
 
@@ -1310,7 +1310,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
         }
-
+        if (vkwall_grabcomments && !wallSinglePostIDs.contains(wall_list_id)) {
+            wallSinglePostIDs.add(wall_list_id);
+        }
     }
 
     private long getPostIDFromSingleWallPostMap(final Map<String, Object> entry) {
@@ -1324,66 +1326,127 @@ public class VKontakteRu extends PluginForDecrypt {
      * @throws Exception
      */
     @SuppressWarnings({ "unchecked" })
-    private void decryptWallPostComments(final String ownerID, final String postID, final boolean accessedWallPostViaWebsite, final FilePackage fp) throws Exception {
-        /* User has the chance to abort crawl process here. */
-        if (this.isAbort()) {
-            logger.info("Decryption aborted by user");
-            return;
-        }
-        final String[] commentsHtml = accessedWallPostViaWebsite ? this.br.getRegex("<div class=\"reply_text\"(.*?)</a>\\s*?</div>").getColumn(0) : null;
-        logger.info("Decrypting comments of single wall post");
-        /*
-         * 2016-11-10: To get more information e.g. for audio content not only the url but also the artist & songname, we need to use the
-         * API with authentification so that we can use "extended=1"
-         */
-        /* Additional, optional parameters: need_likes=0&start_comment_id=&offset=0&count=1000&extended=1 */
-        apiGetPageSafe("https://api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID);
-        Map<String, Object> entry = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-
-        /* First Object typically is an Integer representing the number of (following) comment objects --> Skip that */
-        final ArrayList<Object> commentList = (ArrayList<Object>) entry.get("response");
-        final boolean tryToGetTrackInformation = commentsHtml != null && commentsHtml.length == commentList.size() - 1;
-        int commentCounter = 0;
-        for (final Object comment_o : commentList) {
-            if (comment_o instanceof Integer) {
-                continue;
-            }
-            entry = (Map<String, Object>) comment_o;
-            int audioUrlCounter = 0;
-            final String postText = (String) entry.get("text");
-            final String urls[] = HTMLParser.getHttpLinks(postText, null);
-            /* Get html of current comment --> Get information for all eventually pposted audio urls of that comment! */
-            final String[] audioInfo = tryToGetTrackInformation ? new Regex(commentsHtml[commentCounter], "data\\-audio=\"\\[([^<>\"]+)\\]\"").getColumn(0) : null;
-            if (urls != null && urls.length > 0) {
-                /* Hmm most times we will have audio urls here ... but it could be ANYTHING(!!) */
-                for (final String url : urls) {
-                    final DownloadLink dl;
-                    if (url.matches(".+/audio(?:\\-)?\\d+_\\d+")) {
-                        final Regex audioInfoRegex = new Regex(url, "audio((?:\\-)?\\d+)_(\\d+)");
-                        final String audioOwnerID = audioInfoRegex.getMatch(0);
-                        final String audioContentID = audioInfoRegex.getMatch(1);
-                        dl = this.createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + audioOwnerID + "_" + audioContentID);
-                        if (tryToGetTrackInformation && audioInfo != null && audioUrlCounter <= audioInfo.length - 1) {
-                            String informationAboutThisAudio = audioInfo[audioUrlCounter];
-                            informationAboutThisAudio = Encoding.htmlDecode(informationAboutThisAudio).replace("\"", "");
-                            final String[] audioInfoArray = informationAboutThisAudio.split(",");
-                            final String artist = audioInfoArray[4];
-                            final String title = audioInfoArray[3];
-                            dl.setFinalFileName(artist + " - " + title + ".mp3");
-                        } else {
-                            dl.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-                        }
-                        if (fastcheck_audio) {
-                            dl.setAvailable(true);
-                        }
-                        audioUrlCounter++;
-                    } else {
-                        dl = this.createDownloadlink(url);
-                    }
-                    decryptedLinks.add(dl);
+    private void decryptWallPostComments() throws Exception {
+        /* wallSinglePostIDs!= null --> User wants contents of comments! */
+        if (wallSinglePostIDs != null) {
+            final boolean allow_photos = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_PHOTOS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_PHOTOS);
+            final boolean allow_audio = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_AUDIO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_AUDIO);
+            final boolean allow_video = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_VIDEO);
+            final boolean allow_urls = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_URLS);
+            final short max_comments_per_page = 20;
+            int offset = max_comments_per_page;
+            int last_offset_increase = 0;
+            String[] commentsHtml = null;
+            for (final String wall_single_post_id : wallSinglePostIDs) {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return;
                 }
+                logger.info("Decrypting comments of single wall post: " + wall_single_post_id);
+                final String url_single_wall_post_full = this.getProtocol() + this.getHost() + "/wall" + wall_single_post_id;
+                /* First access the single post. */
+                /* Avoid unnecessary http requests. */
+                if (!this.br.getURL().contains(wall_single_post_id)) {
+                    getPage(this.br, url_single_wall_post_full);
+                }
+
+                final String[] wall_single_post_id_info = wall_single_post_id.split("_");
+                final String ownerID = wall_single_post_id_info[0];
+                final String postID = wall_single_post_id_info[1];
+                do {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user");
+                        return;
+                    }
+                    logger.info("Decrypting offset: " + offset);
+                    if (offset > max_comments_per_page) {
+                        /* We got many comments? Access current offset. */
+                        postPageSafe(url_single_wall_post_full, "al=1&offset=" + offset + "&part=1");
+                    }
+                    commentsHtml = this.br.getRegex("<div class=\"reply_text\"(.*?)</a>\\s*?</div>").getColumn(0);
+                    if (commentsHtml == null || commentsHtml.length == 0) {
+                        logger.info("Comment decryption ends");
+                        break;
+                    }
+
+                    /*
+                     * 2016-11-10: To get more information e.g. for audio content not only the url but also the artist & songname, we need
+                     * to use the API with authentification so that we can use "extended=1"
+                     */
+                    /* Additional, optional parameters: need_likes=0&start_comment_id=&offset=0&count=1000&extended=1 */
+                    apiGetPageSafe(this.getProtocol() + "api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID + "&offset=" + offset);
+                    Map<String, Object> entry = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+
+                    /* First Object typically is an Integer representing the number of (following) comment objects --> Skip that */
+                    final ArrayList<Object> commentList = (ArrayList<Object>) entry.get("response");
+                    final boolean tryToGetTrackInformation = commentsHtml.length == commentList.size() - 1;
+                    int commentCounter = 0;
+                    for (final Object comment_o : commentList) {
+                        if (comment_o instanceof Integer) {
+                            continue;
+                        }
+                        entry = (Map<String, Object>) comment_o;
+                        int audioUrlCounter = 0;
+                        final String postText = (String) entry.get("text");
+                        final String urls[] = HTMLParser.getHttpLinks(postText, null);
+                        /* Get html of current comment --> Get information for all eventually pposted audio urls of that comment! */
+                        final String[] audioInfo = tryToGetTrackInformation ? new Regex(commentsHtml[commentCounter], "data\\-audio=\"\\[([^<>\"]+)\\]\"").getColumn(0) : null;
+                        if (urls != null && urls.length > 0) {
+                            /* Hmm most times we will have audio urls here ... but it could be ANYTHING(!!) */
+                            for (final String url : urls) {
+                                final DownloadLink dl;
+                                if (url.matches(".+/audio(?:\\-)?\\d+_\\d+")) {
+                                    if (!allow_audio) {
+                                        continue;
+                                    }
+                                    final Regex audioInfoRegex = new Regex(url, "audio((?:\\-)?\\d+)_(\\d+)");
+                                    final String audioOwnerID = audioInfoRegex.getMatch(0);
+                                    final String audioContentID = audioInfoRegex.getMatch(1);
+                                    dl = this.createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + audioOwnerID + "_" + audioContentID);
+                                    if (tryToGetTrackInformation && audioInfo != null && audioUrlCounter <= audioInfo.length - 1) {
+                                        String informationAboutThisAudio = audioInfo[audioUrlCounter];
+                                        informationAboutThisAudio = Encoding.htmlDecode(informationAboutThisAudio).replace("\"", "");
+                                        final String[] audioInfoArray = informationAboutThisAudio.split(",");
+                                        final String artist = audioInfoArray[4];
+                                        final String title = audioInfoArray[3];
+                                        dl.setFinalFileName(artist + " - " + title + ".mp3");
+                                    } else {
+                                        dl.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+                                    }
+                                    if (fastcheck_audio) {
+                                        dl.setAvailable(true);
+                                    }
+                                    audioUrlCounter++;
+                                } else if (url.matches(PATTERN_PHOTO_SINGLE)) {
+                                    if (!allow_photos) {
+                                        continue;
+                                    }
+                                    dl = this.createDownloadlink(url);
+                                } else if (url.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
+                                    if (!allow_video) {
+                                        continue;
+                                    }
+                                    dl = this.createDownloadlink(url);
+                                } else {
+                                    if (!allow_urls) {
+                                        continue;
+                                    }
+                                    dl = this.createDownloadlink(url);
+                                }/* else --> Unsupported/unselected content (url). */
+                                if (dl != null) {
+                                    decryptedLinks.add(dl);
+                                    /* Do not add to decryptedLinks array to lower RAM consumption. */
+                                    distribute(dl);
+                                }
+                            }
+                        }
+                        commentCounter++;
+                    }
+                    /* Increase offset by the number of comments regardless of how many urls we found. */
+                    offset += commentsHtml.length;
+                    last_offset_increase = commentsHtml.length;
+                } while (last_offset_increase >= max_comments_per_page);
             }
-            commentCounter++;
         }
     }
 
@@ -1397,11 +1460,9 @@ public class VKontakteRu extends PluginForDecrypt {
 
         apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postIDWithOwnerID + "&extended=0&copy_history_depth=2");
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        boolean accessedWallPostViaWebsite = false;
         try {
             /* Access original url as we sometimes need the listID for videos (see decryptWallPost). */
             this.apiGetPageSafe("https://vk.com/wall" + postIDWithOwnerID);
-            accessedWallPostViaWebsite = true;
         } catch (final Throwable e) {
         }
 
@@ -1416,10 +1477,6 @@ public class VKontakteRu extends PluginForDecrypt {
             if (entry instanceof Map) {
                 decryptWallPost(ownerID, (Map<String, Object>) entry, fp);
             }
-        }
-
-        if (vkwall_grabcomments) {
-            decryptWallPostComments(ownerID, postID, accessedWallPostViaWebsite, fp);
         }
         logger.info("Found " + decryptedLinks.size() + " links");
     }

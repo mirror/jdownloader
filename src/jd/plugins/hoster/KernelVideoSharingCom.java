@@ -38,7 +38,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
         "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/",
         "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?hclips\\.com/(?:videos/[a-z0-9\\-]+|embed/\\d+)", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/",
         "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)",
-        "https?://(?:www\\.)?camvideos\\.org/embed/\\d+" })
+"https?://(?:www\\.)?camvideos\\.org/embed/\\d+" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
 
     public KernelVideoSharingCom(PluginWrapper wrapper) {
@@ -223,7 +223,13 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = getDllink(downloadLink, this.br);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+        } else {
+            /* Fallback */
+            ext = ".mp4";
+        }
 
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -233,45 +239,50 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (isDownload) {
             return AvailableStatus.TRUE;
         }
-        // if you don't do this then referrer is fked for the download! -raztoki
-        final Browser br = this.br.cloneBrowser();
-        // In case the link redirects to the finallink -
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null && !dllink.contains(".m3u8")) {
+            URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
+                // if you don't do this then referrer is fked for the download! -raztoki
+                final Browser br = this.br.cloneBrowser();
+                // In case the link redirects to the finallink -
+                br.setFollowRedirects(true);
+                try {
+                    con = br.openHeadConnection(dllink);
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
+                        final String redirect_url = br.getHttpConnection().getRequest().getUrl();
+                        con = br.openHeadConnection(redirect_url);
+                    }
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                     final String redirect_url = br.getHttpConnection().getRequest().getUrl();
-                    con = br.openHeadConnection(redirect_url);
+                    if (redirect_url != null) {
+                        dllink = redirect_url;
+                        logger.info("DLLINK: " + dllink);
+                    }
+                    downloadLink.setProperty("directlink", dllink);
                 }
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                final String redirect_url = br.getHttpConnection().getRequest().getUrl();
-                if (redirect_url != null) {
-                    dllink = redirect_url;
-                    logger.info("DLLINK: " + dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
-                downloadLink.setProperty("directlink", dllink);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         isDownload = true;
         requestFileInformation(downloadLink);
-        if (br.getHttpConnection().getResponseCode() == 403) {
+        if (dllink == null || dllink.contains(".m3u8")) {
+            /* 2016-12-02: At this stage we should have a working hls to http workaround so we should never get hls urls. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
@@ -297,8 +308,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
-         * 
+         *
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         String dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
@@ -320,7 +331,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("'(?:file|video)'[\t\n\r ]*?:[\t\n\r ]*?'(http[^<>\"]*?)'").getMatch(0);
+            dllink = br.getRegex("\\'(?:file|video)\\'\\s*?:\\s*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"]*?)\\1").getMatch(1);
@@ -334,6 +345,32 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         if (dllink == null) {
             /* 2016-11-01 - bravotube.net */
             dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink != null && dllink.contains(".m3u8")) {
+            /* 2016-12-02: Art this stage we do not (yet) support hls downloads for this plugin as there is a working http workaround. */
+            dllink = null;
+            /* 2016-12-02 - txxx.com, tubecup.com, hdzog.com */
+            /* Prefer httpp over hls */
+            try {
+                /* First try to find highest quality */
+                final String fallback_player_json = br.getRegex("\\.on\\(\\'setupError\\',function\\(\\)\\{[^>]*?jwsettings\\.playlist\\[0\\]\\.sources=(\\[.*?\\])").getMatch(0);
+                final String[][] qualities = new Regex(fallback_player_json, "\\'label\\'\\s*?:\\s*?\\'(\\d+)p\\',\\s*?\\'file\\'\\s*?:\\s*?\\'(http[^<>\\']+)\\'").getMatches();
+                int quality_max = 0;
+                for (final String[] qualityInfo : qualities) {
+                    final String quality_temp_str = qualityInfo[0];
+                    final String quality_url_temp = qualityInfo[1];
+                    final int quality_temp = Integer.parseInt(quality_temp_str);
+                    if (quality_temp > quality_max) {
+                        quality_max = quality_temp;
+                        dllink = quality_url_temp;
+                    }
+                }
+            } catch (final Throwable e) {
+            }
+            /* Last chance */
+            if (dllink == null) {
+                dllink = br.getRegex("\\.on\\(\\'setupError\\',function\\(\\)\\{[^>]*?\\'file\\'\\s*?:\\s*?\\'(http[^<>\"\\']*?\\.mp4[^<>\"\\']*?)\\'").getMatch(0);
+            }
         }
         if (dllink == null) {
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {

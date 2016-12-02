@@ -80,6 +80,7 @@ public class YounowCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (errorcode > 0) {
+            /* E.g. 263 = "errorMsg":"Replay no longer exists" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
