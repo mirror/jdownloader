@@ -171,7 +171,7 @@ public class UppItCom extends antiDDoSForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -419,7 +419,7 @@ public class UppItCom extends antiDDoSForHost {
                             final Browser rb = UppItCom.this.br.cloneBrowser();
                             rb.getHeaders().put("Cache-Control", null);
                             // open get connection for images, need to confirm
-                            if (correctedLink.matches(".+\\.png.*|jpe?g.*)")) {
+                            if (correctedLink.matches(".+\\.(?:png.*|jpe?g.*)")) {
                                 rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
                             } else if (correctedLink.matches(".+\\.js.*")) {
                                 rb.getHeaders().put("Accept", "*/*");
