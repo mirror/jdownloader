@@ -27,6 +27,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,8 +55,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" })
 public class PornHubCom extends PluginForHost {
 
@@ -73,22 +73,39 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate,
-             * videoResolution, audioCodec, audioBitrate
-             */
-            /*
-             * Video-bitrates and resultions here are not exact as
-             * they vary.
-             */
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                {
+                                                                                                                                                                /*
+                                                                                                                                                                 * Format
+                                                                                                                                                                 * -
+                                                                                                                                                                 * name
+                                                                                                                                                                 * :
+                                                                                                                                                                 * videoCodec,
+                                                                                                                                                                 * videoBitrate,
+                                                                                                                                                                 * videoResolution,
+                                                                                                                                                                 * audioCodec,
+                                                                                                                                                                 * audioBitrate
+                                                                                                                                                                 */
+                                                                                                                                                                /*
+                                                                                                                                                                 * Video
+                                                                                                                                                                 * -
+                                                                                                                                                                 * bitrates
+                                                                                                                                                                 * and
+                                                                                                                                                                 * resultions
+                                                                                                                                                                 * here
+                                                                                                                                                                 * are
+                                                                                                                                                                 * not
+                                                                                                                                                                 * exact
+                                                                                                                                                                 * as
+                                                                                                                                                                 * they
+                                                                                                                                                                 * vary.
+                                                                                                                                                                 */
+                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-        }
-    });
+                                                                                }
+                                                                            });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -395,7 +412,7 @@ public class PornHubCom extends PluginForHost {
                     br.followRedirect();
                 }
                 // if (!isCookieLoggedIn(br)) { // 20161202 Was ii then ij now ik (free account)
-                if (success == "0" || !br.containsHTML("class=\"signOut\"")) {
+                if (!"1".equals(success) || !br.containsHTML("class=\"signOut\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -473,8 +490,8 @@ public class PornHubCom extends PluginForHost {
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
      *
-     * @see <a
-     *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
+     * @see <a href=
+     *      "http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
     public static String AESCounterModeDecrypt(String cipherText, String key, int nBits) throws Exception {
         if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
