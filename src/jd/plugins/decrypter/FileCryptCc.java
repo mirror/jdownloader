@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
@@ -54,7 +55,7 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
 
     private static AtomicReference<String> LAST_USED_PASSWORD = new AtomicReference<String>();
@@ -80,7 +81,12 @@ public class FileCryptCc extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
-        getPage(parameter + "/.html");
+        final String containsMirror = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        if (containsMirror == null) {
+            getPage(parameter + "/.html");
+        } else {
+            getPage(parameter);
+        }
         if (br.getURL().contains("filecrypt.cc/404.html")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -240,7 +246,8 @@ public class FileCryptCc extends PluginForDecrypt {
         final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
 
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
-        String[] mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)\"").getColumn(0);
+        // mirrors - note: containers can contain uid within path... -raztoki20161204
+        String[] mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+" + (containsMirror != null ? Pattern.quote(containsMirror) : "\\.html\\?mirror=\\d+") + ")\"").getColumn(0);
         if (mirrors.length < 1) {
             mirrors = new String[1];
             mirrors[0] = parameter + "?mirror=0";
@@ -262,6 +269,9 @@ public class FileCryptCc extends PluginForDecrypt {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(Encoding.htmlDecode(fpName.trim()));
                     fp.addLinks(decryptedLinks);
+                }
+                if (containsMirror != null) {
+                    return decryptedLinks;
                 }
                 continue;
             }
