@@ -1,3 +1,18 @@
+//  jDownloader - Downloadmanager
+//  Copyright (C) 2013  JD-Team support@jdownloader.org
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
 import java.net.URL;
@@ -372,6 +387,7 @@ public class PornHubCom extends PluginForHost {
                 loginform.setAction("/front/authenticate");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.submitForm(loginform);
+                final String success = PluginJSonUtils.getJsonValue(br, "success");
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
                 if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                     /* Sometimes needed to get the (premium) cookies. */
@@ -379,7 +395,7 @@ public class PornHubCom extends PluginForHost {
                     br.followRedirect();
                 }
                 // if (!isCookieLoggedIn(br)) { // 20161202 Was ii then ij now ik (free account)
-                if (!br.containsHTML("class=\"signOut\"")) {
+                if (success == "0" || !br.containsHTML("class=\"signOut\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -438,6 +454,7 @@ public class PornHubCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
         }
         account.setValid(true);
+        logger.info("Account: " + account + " - is valid");
         return ai;
     }
 
