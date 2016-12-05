@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kuaixiazai.com" }, urls = { "https?://(?:www\\.)?(?:163disk|kuaixiazai)\\.com/fileview_\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kuaixiazai.com" }, urls = { "https?://(?:www\\.)?(?:163disk|kuaixiazai)\\.com/fileview_\\d+\\.html" })
 public class KuaixiazaiCom extends PluginForHost {
 
     public KuaixiazaiCom(PluginWrapper wrapper) {
@@ -57,7 +57,7 @@ public class KuaixiazaiCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">你访问的文件为提取文件需提取码才可访问。现在将转入提取页面") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">你访问的文件不存在|>你访问的文件为提取文件需提取码才可访问。现在将转入提取页面") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"nowrap file\\-name kz\\-[a-z0-9]+\">([^<>\"]*?)</h1>").getMatch(0);
