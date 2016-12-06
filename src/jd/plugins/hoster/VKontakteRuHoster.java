@@ -284,7 +284,7 @@ public class VKontakteRuHoster extends PluginForHost {
                          * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
-                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
+                        postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
                         url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
                         if (url != null) {
                             url = url.replace("\\", "");

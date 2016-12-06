@@ -1350,9 +1350,13 @@ public class VKontakteRu extends PluginForDecrypt {
                     getPage(this.br, url_single_wall_post_full);
                 }
 
-                final String[] wall_single_post_id_info = wall_single_post_id.split("_");
-                final String ownerID = wall_single_post_id_info[0];
-                final String postID = wall_single_post_id_info[1];
+                // final String[] wall_single_post_id_info = wall_single_post_id.split("_");
+                // final String ownerID = wall_single_post_id_info[0];
+                // final String postID = wall_single_post_id_info[1];
+
+                /* Reset variables before re-using them. */
+                offset = 0;
+                last_offset_increase = 0;
                 do {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user");
@@ -1406,6 +1410,8 @@ public class VKontakteRu extends PluginForDecrypt {
                                 if (fastcheck_audio) {
                                     dl.setAvailable(true);
                                 }
+                                /* There is no official URL to these mp3 files --> Use url of the post. */
+                                dl.setContentUrl(url_single_wall_post_full);
                                 distribute(dl);
                             }
                         }
