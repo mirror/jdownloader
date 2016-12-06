@@ -1331,7 +1331,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (wallSinglePostIDs != null) {
             final boolean allow_photos = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_PHOTOS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_PHOTOS);
             final boolean allow_audio = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_AUDIO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_AUDIO);
-            final boolean allow_video = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_VIDEO);
+            final boolean allow_videos = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_VIDEO);
             final boolean allow_urls = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_COMMENTS_URLS);
             final short max_comments_per_page = 20;
             int offset = max_comments_per_page;
@@ -1369,79 +1369,75 @@ public class VKontakteRu extends PluginForDecrypt {
                         break;
                     }
 
+                    for (final String commentHtml : commentsHtml) {
+                        /* Hmm most times we will have audio urls here ... but it could be ANYTHING(!!) */
+                        final String urls[] = HTMLParser.getHttpLinks(commentHtml, null);
+                        /* Important! */
+                        final String single_wall_post_response_id = new Regex(commentHtml, "id=\"wpt((?:\\-)?\\d+_\\d+)\"").getMatch(0);
+                        /* Get audio array. */
+                        final String[] audioInfo = new Regex(commentHtml, "data\\-audio=\"\\[([^<>\"]+)\\]\"").getColumn(0);
+                        final String[] photoInfo = new Regex(commentHtml, "showPhoto\\(\\'((?:\\-)?\\d+_\\d+)\\'").getColumn(0);
+                        final String[] videoInfo = new Regex(commentHtml, "showVideo\\(\\'((?:\\-)?\\d+_\\d+)\\'").getColumn(0);
+
+                        if (single_wall_post_response_id == null) {
+                            return;
+                        }
+
+                        /* urls */
+                        if (urls != null && urls.length > 0 && allow_urls) {
+                            for (final String url : urls) {
+                                final DownloadLink dl = this.createDownloadlink(url);
+                                /* Do not add to decryptedLinks array to lower RAM consumption. */
+                                distribute(dl);
+                            }
+                        }
+
+                        /* Audiofiles */
+                        if (audioInfo != null && audioInfo.length > 0 && allow_audio) {
+                            for (String audioInfoSingle : audioInfo) {
+                                audioInfoSingle = Encoding.htmlDecode(audioInfoSingle).replace("\"", "");
+                                final String[] audioInfoArray = audioInfoSingle.split(",");
+                                final String audioOwnerID = audioInfoArray[0];
+                                final String audioContentID = audioInfoArray[1];
+                                final DownloadLink dl = this.createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + audioOwnerID + "_" + audioContentID);
+                                final String artist = audioInfoArray[4];
+                                final String title = audioInfoArray[3];
+                                dl.setFinalFileName(Encoding.htmlDecode(artist + " - " + title) + ".mp3");
+                                if (fastcheck_audio) {
+                                    dl.setAvailable(true);
+                                }
+                                distribute(dl);
+                            }
+                        }
+
+                        /* Photos */
+                        if (photoInfo != null && photoInfo.length > 0 && allow_photos) {
+                            for (final String photoInfoSingle : photoInfo) {
+                                final DownloadLink dl = this.getSinglePhotoDownloadLink(photoInfoSingle);
+                                dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
+                                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                                dl.setProperty("photo_module", "wall");
+                                dl.setProperty("photo_list_id", "wall" + single_wall_post_response_id);
+                                distribute(dl);
+                            }
+                        }
+
+                        /* Videos */
+                        if (videoInfo != null && videoInfo.length > 0 && allow_videos) {
+                            for (final String videoInfoSingle : videoInfo) {
+                                final DownloadLink dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + videoInfoSingle);
+                                distribute(dl);
+                            }
+                        }
+                    }
+
                     /*
                      * 2016-11-10: To get more information e.g. for audio content not only the url but also the artist & songname, we need
                      * to use the API with authentification so that we can use "extended=1"
                      */
-                    /* Additional, optional parameters: need_likes=0&start_comment_id=&offset=0&count=1000&extended=1 */
-                    apiGetPageSafe(this.getProtocol() + "api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID + "&offset=" + offset);
-                    Map<String, Object> entry = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-
-                    /* First Object typically is an Integer representing the number of (following) comment objects --> Skip that */
-                    final ArrayList<Object> commentList = (ArrayList<Object>) entry.get("response");
-                    final boolean tryToGetTrackInformation = commentsHtml.length == commentList.size() - 1;
-                    int commentCounter = 0;
-                    for (final Object comment_o : commentList) {
-                        if (comment_o instanceof Integer) {
-                            continue;
-                        }
-                        entry = (Map<String, Object>) comment_o;
-                        int audioUrlCounter = 0;
-                        final String postText = (String) entry.get("text");
-                        final String urls[] = HTMLParser.getHttpLinks(postText, null);
-                        /* Get html of current comment --> Get information for all eventually pposted audio urls of that comment! */
-                        final String[] audioInfo = tryToGetTrackInformation ? new Regex(commentsHtml[commentCounter], "data\\-audio=\"\\[([^<>\"]+)\\]\"").getColumn(0) : null;
-                        if (urls != null && urls.length > 0) {
-                            /* Hmm most times we will have audio urls here ... but it could be ANYTHING(!!) */
-                            for (final String url : urls) {
-                                final DownloadLink dl;
-                                if (url.matches(".+/audio(?:\\-)?\\d+_\\d+")) {
-                                    if (!allow_audio) {
-                                        continue;
-                                    }
-                                    final Regex audioInfoRegex = new Regex(url, "audio((?:\\-)?\\d+)_(\\d+)");
-                                    final String audioOwnerID = audioInfoRegex.getMatch(0);
-                                    final String audioContentID = audioInfoRegex.getMatch(1);
-                                    dl = this.createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + audioOwnerID + "_" + audioContentID);
-                                    if (tryToGetTrackInformation && audioInfo != null && audioUrlCounter <= audioInfo.length - 1) {
-                                        String informationAboutThisAudio = audioInfo[audioUrlCounter];
-                                        informationAboutThisAudio = Encoding.htmlDecode(informationAboutThisAudio).replace("\"", "");
-                                        final String[] audioInfoArray = informationAboutThisAudio.split(",");
-                                        final String artist = audioInfoArray[4];
-                                        final String title = audioInfoArray[3];
-                                        dl.setFinalFileName(artist + " - " + title + ".mp3");
-                                    } else {
-                                        dl.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-                                    }
-                                    if (fastcheck_audio) {
-                                        dl.setAvailable(true);
-                                    }
-                                    audioUrlCounter++;
-                                } else if (url.matches(PATTERN_PHOTO_SINGLE)) {
-                                    if (!allow_photos) {
-                                        continue;
-                                    }
-                                    dl = this.createDownloadlink(url);
-                                } else if (url.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
-                                    if (!allow_video) {
-                                        continue;
-                                    }
-                                    dl = this.createDownloadlink(url);
-                                } else {
-                                    if (!allow_urls) {
-                                        continue;
-                                    }
-                                    dl = this.createDownloadlink(url);
-                                }/* else --> Unsupported/unselected content (url). */
-                                if (dl != null) {
-                                    decryptedLinks.add(dl);
-                                    /* Do not add to decryptedLinks array to lower RAM consumption. */
-                                    distribute(dl);
-                                }
-                            }
-                        }
-                        commentCounter++;
-                    }
+                    /* 2016-12-06: API does not fit our needs --> Do not use it at all for comments decryption. */
+                    // apiGetPageSafe(this.getProtocol() + "api.vk.com/method/wall.getComments?owner_id=" + ownerID + "&post_id=" + postID +
+                    // "&offset=" + offset);
                     /* Increase offset by the number of comments regardless of how many urls we found. */
                     offset += commentsHtml.length;
                     last_offset_increase = commentsHtml.length;
@@ -1497,8 +1493,6 @@ public class VKontakteRu extends PluginForDecrypt {
         final String linkid = owner_id + "_" + content_id;
         dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-        dl.setProperty("owner_id", owner_id);
-        dl.setProperty("content_id", content_id);
         dl.setProperty("photo_module", module);
         dl.setProperty("photo_list_id", list_id);
         dl.setLinkID(linkid);

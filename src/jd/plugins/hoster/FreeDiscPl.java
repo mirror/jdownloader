@@ -47,7 +47,7 @@ public class FreeDiscPl extends PluginForHost {
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://freedisc.pl/start");
-        this.setStartIntervall(10000);
+        this.setStartIntervall(3000);
     }
 
     @Override

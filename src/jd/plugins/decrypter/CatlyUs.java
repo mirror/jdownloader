@@ -40,7 +40,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us", "paylinks.xyz" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?paylinks\\.xyz/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us", "paylinks.xyz", "akorto.eu" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?paylinks\\.xyz/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
 
     public CatlyUs(PluginWrapper wrapper) {
