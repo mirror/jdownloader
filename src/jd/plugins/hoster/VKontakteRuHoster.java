@@ -69,7 +69,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                  = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]";
-    private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/(?:\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                                       = 1;
     public static final long    trust_cookie_age                                = 300000l;
@@ -1123,6 +1123,8 @@ public class VKontakteRuHoster extends PluginForHost {
         if (ownerID == null && dl.getDownloadURL().matches(TYPE_AUDIOLINK)) {
             /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
             ownerID = new Regex(dl.getDownloadURL(), TYPE_AUDIOLINK).getMatch(0);
+        } else if (ownerID == null && dl.getDownloadURL().matches(TYPE_PICTURELINK)) {
+            ownerID = new Regex(dl.getDownloadURL(), TYPE_PICTURELINK).getMatch(0);
         }
         return ownerID;
     }
@@ -1132,6 +1134,8 @@ public class VKontakteRuHoster extends PluginForHost {
         if (contentID == null && dl.getDownloadURL().matches(TYPE_AUDIOLINK)) {
             /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
             contentID = new Regex(dl.getDownloadURL(), TYPE_AUDIOLINK).getMatch(1);
+        } else if (contentID == null && dl.getDownloadURL().matches(TYPE_PICTURELINK)) {
+            contentID = new Regex(dl.getDownloadURL(), TYPE_PICTURELINK).getMatch(1);
         }
         return contentID;
     }
