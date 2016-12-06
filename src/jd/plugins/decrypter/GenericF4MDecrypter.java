@@ -43,7 +43,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m[^\\s<>\"']*" })
+@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
 
     @Override

@@ -20,7 +20,8 @@ import jd.plugins.components.NZBSAXHandler;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb" }) public class GenericNZBDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|\\?[^\\s<>\"']*)" })
+public class GenericNZBDecrypter extends PluginForDecrypt {
 
     @Override
     public Boolean siteTesterDisabled() {
