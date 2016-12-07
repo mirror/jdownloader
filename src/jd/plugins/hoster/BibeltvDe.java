@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -33,6 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "http://(?:www\\.)?bibeltv\\.de/mediathek/video/[a-z0-9\\-]+/\\?no_cache=1\\&cHash=[a-f0-9]{32}" })
 public class BibeltvDe extends PluginForHost {
@@ -52,6 +52,7 @@ public class BibeltvDe extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
+    private boolean              tempunavailable   = false;
 
     @Override
     public String getAGBLink() {
@@ -64,12 +65,20 @@ public class BibeltvDe extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String url_filename = new Regex(link.getDownloadURL(), "/mediathek/video/([^/]*?)(?:\\-\\d+)?/").getMatch(0).replace("-", " ");
+        link.setName(url_filename);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("An error occurred while trying to")) {
+            /* Wrong url */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML(">Das Video ist derzeit nicht öffentlich|<h1>Video nicht verfügbar</h1>")) {
+            /* Video not available at this moment. */
+            tempunavailable = true;
+            return AvailableStatus.TRUE;
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/mediathek/video/([^/]*?)(?:\\-\\d+)?/").getMatch(0).replace("-", " ");
-        String filename = br.getRegex("<div class=\"inner\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
@@ -83,6 +92,10 @@ public class BibeltvDe extends PluginForHost {
         if (partner_id == null) {
             partner_id = "107";
         }
+        String uiconf_id = this.br.getRegex("uiconf_id/(\\d+)").getMatch(0);
+        if (uiconf_id == null) {
+            uiconf_id = "11601650";
+        }
         String sp = new Regex(player_embed_url, "/sp/(\\d+)/").getMatch(0);
         if (sp == null) {
             sp = "10700";
@@ -91,12 +104,15 @@ public class BibeltvDe extends PluginForHost {
         if (entry_id == null) {
             entry_id = new Regex(player_embed_url, "entry_id=([^\\&=]+)").getMatch(0);
         }
+        if (entry_id == null) {
+            /* New 2016-12-07 */
+            entry_id = this.br.getRegex("/entry_id/([^/]+)").getMatch(0);
+        }
 
         if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        this.br.getPage(player_embed_url);
+        this.br.getPage("http://api.medianac.com/html5/html5lib/v2.39/mwEmbedFrame.php?&wid=_" + partner_id + "&uiconf_id=" + uiconf_id + "&cache_st=0&entry_id=" + entry_id + "&flashvars[streamerType]=auto&playerId=kaltura_player_664&ServiceUrl=http%3A%2F%2Fapi.medianac.com&CdnUrl=http%3A%2F%2Fapi.medianac.com&ServiceBase=%2Fapi_v3%2Findex.php%3Fservice%3D&UseManifestUrls=false&forceMobileHTML5=true&urid=2.39&callback=mwi_kalturaplayer6640");
         String js = this.br.getRegex("kalturaIframePackageData = (\\{.*?\\}\\}\\});").getMatch(0);
         if (js == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -169,6 +185,9 @@ public class BibeltvDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (tempunavailable) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video not available at the moment", 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

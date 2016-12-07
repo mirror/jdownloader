@@ -22,10 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +41,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -93,6 +93,7 @@ public class UlozTo extends PluginForHost {
     private Browser prepBR(final Browser br) {
         br.setCustomCharset("utf-8");
         br.setAllowedResponseCodes(400);
+        br.setCookie(this.getHost(), "adblock_detected", "false");
         return br;
     }
 
@@ -157,7 +158,7 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
             }
             // Wrong links show the mainpage so here we check if we got the mainpage or not
-            if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = null;
@@ -440,12 +441,23 @@ public class UlozTo extends PluginForHost {
      * @param downloadLink
      * @throws Exception
      */
-    private void handlePassword(DownloadLink downloadLink) throws Exception {
+    private void handlePassword(final DownloadLink downloadLink) throws Exception {
         String passCode = downloadLink.getDownloadPassword();
         if (StringUtils.isEmpty(passCode)) {
             passCode = getUserInput("Password?", downloadLink);
         }
-        br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&password_send=Send&do=passwordProtectedForm-submit");
+        final boolean preferFormHandling = true;
+        if (preferFormHandling) {
+            /* 2016-12-07: Prefer this way to prevent failures due to wrong website language! */
+            final Form pwform = this.br.getFormbyKey("password_send");
+            if (pwform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            pwform.put("password", Encoding.urlEncode(passCode));
+            this.br.submitForm(pwform);
+        } else {
+            br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&password_send=Send&do=passwordProtectedForm-submit");
+        }
         if (br.toString().equals("No htmlCode read")) {
             // Benefit of statserv!
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -455,9 +467,12 @@ public class UlozTo extends PluginForHost {
             downloadLink.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         } else if (!br.containsHTML(PREMIUMONLYUSERTEXT)) {
+            logger.info("Correct password was entered");
+            downloadLink.setDownloadPassword(passCode);
             return;
         } else {
             logger.info("Correct password was entered");
+            downloadLink.setDownloadPassword(passCode);
             return;
         }
     }

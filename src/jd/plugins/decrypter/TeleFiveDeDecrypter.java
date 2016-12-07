@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,197 +53,172 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "https?://(?:www\\.)?tele5\\.de/re(?:\\-)?play/.+" })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
-    /* Tags: chip.de */
-    // we cannot do core updates right now, and should keep this class internal until we can do core updates
-    private static final String DOMAIN = "tele5.de";
-
-    public class SWFDecompressor {
-        public SWFDecompressor() {
-            super();
-        }
-
-        public byte[] decompress(String s) { // ~2000ms
-            byte[] enc = null;
-            URLConnectionAdapter con = null;
-            try {
-                con = new Browser().openGetConnection(s);
-                final InputStream input = con.getInputStream();
-                final ByteArrayOutputStream result = new ByteArrayOutputStream();
-                try {
-                    final byte[] buffer = new byte[512];
-                    int amount;
-                    while ((amount = input.read(buffer)) != -1) { // ~1500ms
-                        result.write(buffer, 0, amount);
-                    }
-                } finally {
-                    try {
-                        result.close();
-                    } catch (Throwable e2) {
-                    }
-                    enc = result.toByteArray();
-                }
-            } catch (Throwable e3) {
-                e3.getStackTrace();
-                return null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-            return uncompress(enc);
-        }
-
-        /**
-         * Strips the uncompressed header bytes from a swf file byte array
-         *
-         * @param bytes
-         *            of the swf
-         * @return bytes array minus the uncompressed header bytes
-         */
-        private byte[] strip(byte[] bytes) {
-            byte[] compressable = new byte[bytes.length - 8];
-            System.arraycopy(bytes, 8, compressable, 0, bytes.length - 8);
-            return compressable;
-        }
-
-        private byte[] uncompress(byte[] b) {
-            Inflater decompressor = new Inflater();
-            decompressor.setInput(strip(b));
-            ByteArrayOutputStream bos = new ByteArrayOutputStream(b.length - 8);
-            byte[] buffer = new byte[1024];
-
-            try {
-                while (true) {
-                    int count = decompressor.inflate(buffer);
-                    if (count == 0 && decompressor.finished()) {
-                        break;
-                    } else if (count == 0) {
-                        return null;
-                    } else {
-                        bos.write(buffer, 0, count);
-                    }
-                }
-            } catch (Throwable t) {
-            } finally {
-                decompressor.end();
-            }
-
-            byte[] swf = new byte[8 + bos.size()];
-            System.arraycopy(b, 0, swf, 0, 8);
-            System.arraycopy(bos.toByteArray(), 0, swf, 8, bos.size());
-            swf[0] = 70; // F
-            return swf;
-        }
-
-    }
 
     @SuppressWarnings("deprecation")
     public TeleFiveDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Example http url: http://dl.mnac-p-000000102.c.nmdn.net/mnac-p-000000102/12345678/0/0_moyme6yj_0_tfjmbp2l_2.mp4 */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load sister-host plugin */
-        JDUtilities.getPluginForHost("tele5.de");
+        JDUtilities.getPluginForHost(this.getHost());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
-        final String decryptedhost = "http://" + nicehost + "decrypted";
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.TeleFiveDe.formats;
+        /* Videoids with releasedate */
+        final HashMap<String, String> videoidsToDecrypt = new HashMap<String, String>();
+        final String parameter = param.toString();
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final boolean fastlinkcheck = cfg.getBooleanProperty("FAST_LINKCHECK", false);
+        final String videoid_inside_url = new Regex(parameter, "v=(\\d+)").getMatch(0);
+        LinkedHashMap<String, Object> entries = null;
+        String json_source;
+        FilePackage fp = null;
         br.setFollowRedirects(true);
-        br.getPage(parameter);
 
-        String fpName = br.getRegex("class=\"grid_10\"><h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (fpName == null) {
-            fpName = new Regex(parameter, "tele5\\.de/([\\w/\\-]+)\\.html").getMatch(0);
-        }
+        if (videoid_inside_url != null) {
+            /* Single video (date unknown) */
+            videoidsToDecrypt.put(videoid_inside_url, null);
+        } else {
+            /* Multiple videos */
+            br.getPage(parameter);
 
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-
-        final ArrayList<String> titleArray = new ArrayList<String>();
-        final String firstTitle = this.br.getRegex("itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (firstTitle != null && !firstTitle.isEmpty()) {
-            titleArray.add(firstTitle);
-        }
-        final String[] youtubeurls = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
-        String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\((\\{.*?\\})\\);[\t\n\r ]*?</script>").getColumn(0);
-        if (videosinfo == null || videosinfo.length == 0) {
-            /* Trailers are available via embed urls */
-            videosinfo = br.getRegex("\"(https?://api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/uiconf_id/\\d+/partner_id/[^<>\"/]*?)\"").getColumn(0);
-        }
-        if ((videosinfo == null || videosinfo.length == 0) && (youtubeurls == null || youtubeurls.length == 0)) {
-            logger.info("Failed to find any downloadable content --> Trying to find URLs to videos e.g. all episodes of the current series");
-            final String[] articles = this.br.getRegex("(<a href=\"http[^\"]+\">\\s+<article.*?)</article>").getColumn(0);
-            if (articles != null && articles.length > 0) {
-                logger.info("Found articles - let's see if any of them are videos");
-                for (final String article : articles) {
-                    boolean isVideo = article.contains("class=\"playButton\"");
-                    final String url = new Regex(article, "<a href=\"(https?://(?:www\\.)?tele5\\.de/[^<>\"]+\\.html)\">").getMatch(0);
-                    if (isVideo && url != null) {
-                        isVideo = url.contains("/video/");
-                    }
-                    if (url != null && isVideo) {
-                        decryptedLinks.add(this.createDownloadlink(url));
-                    }
-                }
-                if (decryptedLinks.size() > 0) {
-                    logger.info("Found potentially downloadable content");
-                }
-            } else {
-                logger.info("Failed to find any videos --> There is nothing to download");
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
-            return decryptedLinks;
-        }
 
-        if (videosinfo != null && videosinfo.length > 0) {
-            int counter = 0;
-            for (final String videosource : videosinfo) {
-                String thistitle = null;
-                if (counter <= titleArray.size() - 1) {
-                    thistitle = titleArray.get(counter);
-                }
-                HashMap<String, DownloadLink> foundLinks = getUrlsWithoutFlash(br, videosource, formats, "http://tele5.dedecrypted", null, "102", "10200", thistitle);
+            final String player_id = this.br.getRegex("pid=\"(vplayer_\\d+)\"").getMatch(0);
+            final String cid = this.br.getRegex("cid=\"(\\d+)\"").getMatch(0);
+            String lid = this.br.getRegex("lid=\"(vplayer_\\d+)\"").getMatch(0);
+            if ((player_id == null || lid == null) && cid == null) {
+                /* Probably not a json/player/video page --> Offline */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
 
-                if (foundLinks.isEmpty()) {
+            if (player_id == null || lid == null) {
+                /* Single video */
+                videoidsToDecrypt.put(cid, null);
+            } else {
+                /* Category/Season */
+                /* Access series main url and get name of the series. */
+                this.br.getPage("http://tele5.flowcenter.de/gg/play/l/" + lid + ":pid=" + player_id + "&tt=1&se=1&rpl=1&ssd=1&ssp=1&sst=1&lbt=1&");
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
 
-                /* Now add the links the user wants. */
-                final Iterator<Entry<String, DownloadLink>> it = foundLinks.entrySet().iterator();
-                while (it.hasNext()) {
-                    final Entry<String, DownloadLink> next = it.next();
-                    final String qualityInfo = next.getKey();
-                    final DownloadLink dl = next.getValue();
-                    if (cfg.getBooleanProperty(qualityInfo, true)) {
-                        decryptedLinks.add(dl);
-                    }
+                json_source = this.br.getRegex("\\d+\\s*?:\\s*?(\\{.*?\\}),\\s*?\\}\\);").getMatch(0);
+
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                final String name_category_or_series = (String) entries.get("title");
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("entries");
+
+                /* Use FilePackage */
+                if (name_category_or_series != null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(name_category_or_series);
                 }
-                counter++;
+
+                /* Find videoids (episodes). */
+                for (final Object episodeo : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) episodeo;
+                    final String videoid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
+                    final String date = (String) entries.get("vodate");
+                    if (videoid.equals("0") || date == null || date.equals("")) {
+                        continue;
+                    }
+                    videoidsToDecrypt.put(videoid, date);
+                }
             }
         }
 
-        if (youtubeurls != null && youtubeurls.length > 0) {
-            for (final String yturl : youtubeurls) {
-                decryptedLinks.add(createDownloadlink(yturl));
-            }
-        }
+        /* Crawl videos. */
+        final DecimalFormat df = new DecimalFormat("00");
 
-        if (decryptedLinks.size() > 1) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+        final Iterator<Entry<String, String>> it = videoidsToDecrypt.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, String> videoidEntry = it.next();
+            final String videoid = videoidEntry.getKey();
+            final String date = videoidEntry.getValue();
+
+            if (this.isAbort()) {
+                return decryptedLinks;
+            }
+            this.br.getPage("http://tele5.flowcenter.de/gg/play/p/" + videoid + ":mobile=0&");
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                /* Skip offline content */
+                continue;
+            }
+            json_source = this.br.getRegex("setup:(\\{.*?\\}\\})\\s*?},").getMatch(0);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+
+            /* Find dash master url. */
+            final String dash_master_url = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/file");
+            final String akamaized_videoid = new Regex(dash_master_url, "kamaized.net/([^/]+)/").getMatch(0);
+
+            /* Find information about that video. */
+            entries = (LinkedHashMap<String, Object>) entries.get("fw");
+            final String name_episode = (String) entries.get("title");
+            final Object seasono = entries.get("season");
+            final Object episodeo = entries.get("episode");
+            final long season;
+            final long episode;
+            if (seasono instanceof Boolean || episodeo instanceof Boolean) {
+                /* Not part of a series. */
+                season = 0;
+                episode = 0;
+            } else {
+                /* Episode of a series. */
+                season = JavaScriptEngineFactory.toLong(entries.get("season"), 0);
+                episode = JavaScriptEngineFactory.toLong(entries.get("episode"), 0);
+            }
+            if (dash_master_url == null || akamaized_videoid == null || !dash_master_url.startsWith("http")) {
+                continue;
+            }
+            String date_formatted = null;
+            if (date != null) {
+                date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            }
+
+            String filename_part = date_formatted != null ? date_formatted + "_" : "";
+            filename_part += "tele5_" + name_episode + "_";
+            if (season > 0 && episode > 0) {
+                filename_part += "S" + df.format(season) + "E" + df.format(episode) + "_";
+            }
+            this.br.getPage(dash_master_url);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                /* Skip offline content - some content seems to be online from the main page but actually it is offline. */
+                /* E.g. response: "File not found."" */
+                final DownloadLink offline = this.createOfflinelink(dash_master_url);
+                offline.setFinalFileName(filename_part);
+                decryptedLinks.add(offline);
+                /* No distribute() here! */
+                continue;
+            }
+            final String[] quality_entries = this.br.getRegex("<BaseURL>([^<>\"]+)</BaseURL>").getColumn(0);
+            for (final String quality_entry : quality_entries) {
+                final String quality_key = new Regex(quality_entry, "_(\\d+k)").getMatch(0);
+                if (quality_key == null || !cfg.getBooleanProperty("GRAB_" + quality_key, true)) {
+                    /* Error or quality is not wished by user --> Skip it. */
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink("tele5decrypted://tele5.akamaized.net/" + akamaized_videoid + "/" + quality_entry);
+                final String filename_final = filename_part + "_" + quality_key + ".mp4";
+                dl.setFinalFileName(filename_final);
+                if (fastlinkcheck) {
+                    dl.setAvailable(true);
+                }
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
+
         }
-        decryptedLinks.addAll(decryptedLinks);
 
         return decryptedLinks;
     }
@@ -631,6 +607,87 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
         }
         return new String(swfdec, "UTF8");
+    }
+
+    public class SWFDecompressor {
+        public SWFDecompressor() {
+            super();
+        }
+
+        public byte[] decompress(String s) { // ~2000ms
+            byte[] enc = null;
+            URLConnectionAdapter con = null;
+            try {
+                con = new Browser().openGetConnection(s);
+                final InputStream input = con.getInputStream();
+                final ByteArrayOutputStream result = new ByteArrayOutputStream();
+                try {
+                    final byte[] buffer = new byte[512];
+                    int amount;
+                    while ((amount = input.read(buffer)) != -1) { // ~1500ms
+                        result.write(buffer, 0, amount);
+                    }
+                } finally {
+                    try {
+                        result.close();
+                    } catch (Throwable e2) {
+                    }
+                    enc = result.toByteArray();
+                }
+            } catch (Throwable e3) {
+                e3.getStackTrace();
+                return null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+            return uncompress(enc);
+        }
+
+        /**
+         * Strips the uncompressed header bytes from a swf file byte array
+         *
+         * @param bytes
+         *            of the swf
+         * @return bytes array minus the uncompressed header bytes
+         */
+        private byte[] strip(byte[] bytes) {
+            byte[] compressable = new byte[bytes.length - 8];
+            System.arraycopy(bytes, 8, compressable, 0, bytes.length - 8);
+            return compressable;
+        }
+
+        private byte[] uncompress(byte[] b) {
+            Inflater decompressor = new Inflater();
+            decompressor.setInput(strip(b));
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(b.length - 8);
+            byte[] buffer = new byte[1024];
+
+            try {
+                while (true) {
+                    int count = decompressor.inflate(buffer);
+                    if (count == 0 && decompressor.finished()) {
+                        break;
+                    } else if (count == 0) {
+                        return null;
+                    } else {
+                        bos.write(buffer, 0, count);
+                    }
+                }
+            } catch (Throwable t) {
+            } finally {
+                decompressor.end();
+            }
+
+            byte[] swf = new byte[8 + bos.size()];
+            System.arraycopy(b, 0, swf, 0, 8);
+            System.arraycopy(bos.toByteArray(), 0, swf, 8, bos.size());
+            swf[0] = 70; // F
+            return swf;
+        }
+
     }
 
     private static boolean isEmpty(String ip) {
