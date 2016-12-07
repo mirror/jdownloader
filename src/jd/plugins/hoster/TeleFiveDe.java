@@ -17,14 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,29 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://tele5\\.dedecrypted\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "tele5decrypted://.+" })
 public class TeleFiveDe extends PluginForHost {
 
-    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-             * audioBitrate
-             */
-            /*
-             * Video-bitrates and resultions here are not exact as they vary. Correct
-             * values will be in the filenames!
-             */
-            put("4_4_2", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
-            put("6_6_3", new String[] { "AVC", "600", "640x360", "AAC LC", "64" });
-            put("9_6_3", new String[] { "AVC", "900", "640x360", "AAC LC", "64" });
-
-        }
-    });
-
-    private String                                DLLINK  = null;
+    private String dllink = null;
 
     @SuppressWarnings("deprecation")
     public TeleFiveDe(final PluginWrapper wrapper) {
@@ -73,27 +51,23 @@ public class TeleFiveDe extends PluginForHost {
         return -1;
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("tele5decrypted://", "http://"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = downloadLink.getStringProperty("directURL");
-        if (DLLINK == null) {
-            DLLINK = downloadLink.getStringProperty("directRTMPURL");
-        }
-        if (DLLINK.startsWith("http")) {
+        dllink = downloadLink.getDownloadURL();
+        if (dllink.startsWith("http")) {
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = this.br.openHeadConnection(DLLINK);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                con = this.br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setProperty("directlink", DLLINK);
-                return AvailableStatus.TRUE;
+                downloadLink.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -113,20 +87,17 @@ public class TeleFiveDe extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (DLLINK.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, DLLINK);
+        if (dllink.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
 
         } else {
             br.setFollowRedirects(true);
-            if (DLLINK == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (DLLINK.startsWith("mms")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -140,7 +111,7 @@ public class TeleFiveDe extends PluginForHost {
 
     private void setupRTMPConnection(DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        String[] streamValue = DLLINK.split("@");
+        String[] streamValue = dllink.split("@");
         rtmp.setUrl(streamValue[0]);
         rtmp.setPlayPath(streamValue[1]);
         // rtmp.setLive(true);
@@ -155,48 +126,13 @@ public class TeleFiveDe extends PluginForHost {
     }
 
     private void setConfigElements() {
-        /* Fast linkcheck not needed as we get the filesize via API inside the decrypter. */
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK,
-        // JDL.L("plugins.hoster.TeleFiveDe.FastLinkcheck",
-        // "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
-        final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
-        while (it.hasNext()) {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
-             */
-            String usertext = "Load ";
-            final Entry<String, String[]> videntry = it.next();
-            final String internalname = videntry.getKey();
-            final String[] vidinfo = videntry.getValue();
-            final String videoCodec = vidinfo[0];
-            final String videoBitrate = vidinfo[1];
-            final String videoResolution = vidinfo[2];
-            final String audioCodec = vidinfo[3];
-            final String audioBitrate = vidinfo[4];
-            if (videoCodec != null) {
-                usertext += videoCodec + " ";
-            }
-            if (videoBitrate != null) {
-                usertext += videoBitrate + " ";
-            }
-            if (videoResolution != null) {
-                usertext += videoResolution + " ";
-            }
-            if (audioCodec != null || audioBitrate != null) {
-                usertext += "with audio ";
-                if (audioCodec != null) {
-                    usertext += audioCodec + " ";
-                }
-                if (audioBitrate != null) {
-                    usertext += audioBitrate;
-                }
-            }
-            if (usertext.endsWith(" ")) {
-                usertext = usertext.substring(0, usertext.lastIndexOf(" "));
-            }
-            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.TeleFiveDe.ALLOW_" + internalname, usertext)).setDefaultValue(true);
-            getConfig().addEntry(vidcfg);
-        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FAST_LINKCHECK", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_225k", "Grab 225k 420x230?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_620k", "Grab 620k 640x360?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_225k", "Grab 1250k 850x480?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_1650k", "Grab 1625k 1024x576?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_2400k", "Grab 2400k 1280x720?").setDefaultValue(true));
+
     }
 
     @Override
