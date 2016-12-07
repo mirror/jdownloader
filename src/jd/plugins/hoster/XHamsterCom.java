@@ -278,7 +278,7 @@ public class XHamsterCom extends PluginForHost {
             try {
                 br.getPage(downloadLink.getDownloadURL());
             } catch (final BrowserException e) {
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 410) {
+                if (br.getHttpConnection() != null && (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 423)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 throw e;
