@@ -41,7 +41,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe|toplist).*?/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe|toplist).*?/.+" })
 public class SrnnksCategory extends PluginForDecrypt {
 
     public SrnnksCategory(PluginWrapper wrapper) {
@@ -90,6 +90,7 @@ public class SrnnksCategory extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
+        parameter.setDecrypterPassword("serienjunkies.org");
         if (!lng_loaded) {
             setLanguageConstants();
         }

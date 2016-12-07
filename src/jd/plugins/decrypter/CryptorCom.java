@@ -51,7 +51,7 @@ public class CryptorCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
+        String password = param.getDecrypterPassword();
         if (this.br.containsHTML(html_passwordrequired)) {
             boolean failed = true;
             for (int i = 0; i <= 3; i++) {
@@ -61,7 +61,13 @@ public class CryptorCom extends PluginForDecrypt {
                     postData += "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
                 if (this.br.containsHTML("\"folder_access_password_check\"")) {
-                    final String passCode = getUserInput("Password?", param);
+                    final String passCode;
+                    if (password != null) {
+                        passCode = password;
+                        password = null;
+                    } else {
+                        passCode = getUserInput("Password?", param);
+                    }
                     if (postData.length() == 0) {
                         postData += "folder_access%5Bpassword_check%5D=" + Encoding.urlEncode(passCode);
                     } else {
