@@ -38,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
@@ -334,9 +335,9 @@ public class FilerNet extends PluginForHost {
                 final Form loginform = this.br.getFormbyKey("_username");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
                     }
                 }
                 loginform.put("_username", Encoding.urlEncode(account.getUser()));
@@ -378,6 +379,7 @@ public class FilerNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium User");
             ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
+            ai.setTrafficMax(SizeFormatter.getSize("50gb"));
             ai.setValidUntil(Long.parseLong(getJson("until", br.toString())) * 1000);
         }
         account.setValid(true);
@@ -398,7 +400,7 @@ public class FilerNet extends PluginForHost {
             callAPI(account, "http://filer.net/api/dl/" + fuid + ".json");
             if (statusCode == 504) {
                 logger.info("No traffic available!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (statusCode == STATUSCODE_UNKNOWNERROR) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, ERRORMESSAGE_UNKNOWNERRORTEXT);
             }
