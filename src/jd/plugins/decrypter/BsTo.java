@@ -21,13 +21,17 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(www\\.)?bs\\.to/(serie/[^/]+/\\d+/[^/]+(/[^/]+)?|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
@@ -44,6 +48,15 @@ public class BsTo extends PluginForDecrypt {
         if (StringUtils.contains(parameter, "bs.to/out")) {
             this.br.setFollowRedirects(false);
             br.getPage(parameter);
+            if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
+                final Form form = this.br.getForm(0);
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                form.put("response", recaptchaV2Response);
+                this.br.submitForm(form);
+            }
             final String finallink = br.getRedirectLocation();
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
@@ -65,6 +78,15 @@ public class BsTo extends PluginForDecrypt {
             } else if (finallink.contains("bs.to/out/")) {
                 br.setFollowRedirects(false);
                 br.getPage(finallink);
+                if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
+                    final Form form = this.br.getForm(0);
+                    if (form == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    form.put("response", recaptchaV2Response);
+                    this.br.submitForm(form);
+                }
                 finallink = br.getRedirectLocation();
             }
             decryptedLinks.add(createDownloadlink(finallink));
