@@ -31,7 +31,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "hotmovs.com", "porndreamer.com", "cartoontube.xxx", "hotamateurs.xxx", "theclassicporn.com", "faplust.com", "alotporn.com", "alphaporno.com", "updatetube.com", "thenewporn.com", "pinkrod.com", "hotshame.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "pornalized.com", "myxvids.com", "hellporno.com", "h2porn.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "wetplace.com", "xbabe.com", "xfig.net", "hdzog.com", "sex3.com", "egbo.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com",
         "bravotube.net", "upornia.com", "xcafe.com", "txxx.com", "camvideos.org" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?hotmovs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?porndreamer\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?cartoontube\\.xxx/video\\d+/[a-z0-9\\-]+/?", "http://(?:www\\.)?hotamateurs\\.xxx/pornvideos/\\d+\\-[a-z0-9\\-]+/", "http://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?faplust\\.com/watch/\\d+/", "http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+/",
@@ -279,7 +281,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         isDownload = true;
         requestFileInformation(downloadLink);
-        if (dllink == null || dllink.contains(".m3u8")) {
+        if (dllink == null) {
             /* 2016-12-02: At this stage we should have a working hls to http workaround so we should never get hls urls. */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
@@ -287,21 +289,37 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+        if (this.dllink.contains(".m3u8")) {
+            /* hls download */
+            /* Access hls master. */
+            this.br.getPage(this.dllink);
+            if (this.br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, hlsbest.downloadurl);
+            dl.startDownload();
+        } else {
+            /* http download */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     public static String getDllink(final DownloadLink dl, final Browser br) throws PluginException {
@@ -312,6 +330,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
          *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
+        String httpurl_temp = null;
         String dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
             /* E.g. yourlust.com */
@@ -362,14 +381,18 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                     final int quality_temp = Integer.parseInt(quality_temp_str);
                     if (quality_temp > quality_max) {
                         quality_max = quality_temp;
-                        dllink = quality_url_temp;
+                        httpurl_temp = quality_url_temp;
                     }
                 }
             } catch (final Throwable e) {
             }
             /* Last chance */
-            if (dllink == null) {
-                dllink = br.getRegex("\\.on\\(\\'setupError\\',function\\(\\)\\{[^>]*?\\'file\\'\\s*?:\\s*?\\'(http[^<>\"\\']*?\\.mp4[^<>\"\\']*?)\\'").getMatch(0);
+            if (httpurl_temp == null) {
+                httpurl_temp = br.getRegex("\\.on\\(\\'setupError\\',function\\(\\)\\{[^>]*?\\'file\\'\\s*?:\\s*?\\'(http[^<>\"\\']*?\\.mp4[^<>\"\\']*?)\\'").getMatch(0);
+            }
+            if (httpurl_temp != null) {
+                /* Prefer http over hls */
+                dllink = httpurl_temp;
             }
         }
         if (dllink == null) {
