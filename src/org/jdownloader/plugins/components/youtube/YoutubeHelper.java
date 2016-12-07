@@ -1237,6 +1237,7 @@ public class YoutubeHelper {
     }
 
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
+        login(false, false);
         this.vid = vid;
         final Map<YoutubeITAG, StreamCollection> ret = new HashMap<YoutubeITAG, StreamCollection>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -1284,7 +1285,8 @@ public class YoutubeHelper {
         Browser apiBrowser = null;
         boolean apiRequired = br.getRegex(REGEX_FMT_MAP_FROM_JSPLAYER_SETUP).getMatch(0) == null;
         apiBrowser = this.br.cloneBrowser();
-        apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&el=info&ps=default&eurl=&gl=US&hl=en");
+        // sts=17141 <<<... bypass age check
+        apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&el=info&ps=default&eurl=&gl=US&hl=en&sts=17141");
         collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
         if (apiRequired) {
             apiBrowser = this.br.cloneBrowser();
@@ -2217,12 +2219,14 @@ public class YoutubeHelper {
             return null;
         }
         String url = query.getDecoded("url");
+       
         if (url == null) {
             String fallback_host = query.getDecoded("fallback_host");
             if (fallback_host != null) {
                 url = new Regex(fallback_host, "url=(.+)").getMatch(0);
             }
         }
+     //if an ei=... parameter is missing, the url is invalid and will probably return a 403 response code
         if (StringUtils.isEmpty(url)) {
             throw new WTFException("No Url found " + query);
         }
