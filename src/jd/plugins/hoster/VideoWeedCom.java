@@ -46,7 +46,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx", "videoweed.es", "videoweed.com" }, urls = { "http://(?:www\\.)?(?:bitvid\\.sx|videoweed\\.(?:com|es)/(?:file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(?:com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-xjahyasbs" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitvid.sx" }, urls = { "https?://(?:www\\.)?bitvid\\.sx/file/[a-z0-9]+|https?://(?:www\\.)?videoweed\\.(?:com|es)/.+[a-z0-9]+" })
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {
@@ -86,7 +86,7 @@ public class VideoWeedCom extends PluginForHost {
         br.setReadTimeout(180 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        checkForThis();
+        checkForContinueForm(this.br);
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -150,7 +150,7 @@ public class VideoWeedCom extends PluginForHost {
         return filename;
     }
 
-    private final void checkForThis() throws Exception {
+    public static final void checkForContinueForm(final Browser br) throws Exception {
         // some bullshit here 20151121
         final Form f = br.getFormbyKey("stepkey");
         if (f != null) {
@@ -164,10 +164,10 @@ public class VideoWeedCom extends PluginForHost {
         doFree(downloadLink, true, 0, "free_directlink");
     }
 
-    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            /* Old errorhandling! */
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
             } else if (br.containsHTML("error_msg=The video has failed to convert")) {
@@ -175,63 +175,17 @@ public class VideoWeedCom extends PluginForHost {
             } else if (br.containsHTML("error_msg=The video is converting")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
             }
-            String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
-            String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-            if (key == null && br.containsHTML("w,i,s,e")) {
-                String result = unWise();
-                key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
-            }
-            if (key == null) {
+            dllink = this.br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (cid2 == null) {
-                cid2 = "undefined";
-            }
-            key = Encoding.urlEncode(key);
-            final String fid = new Regex(downloadLink.getDownloadURL(), "/file/(.+)").getMatch(0);
-            String lastdllink = null;
-            boolean success = false;
-            for (int i = 0; i <= 3; i++) {
-                if (this.isAbort()) {
-                    return;
-                }
-                if (i > 0) {
-                    br.getPage("/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
-                } else {
-                    br.getPage("/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
-                }
-                dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-                    if (!dl.getConnection().getContentType().contains("html")) {
-                        success = true;
-                        break;
-                    } else {
-                        lastdllink = dllink;
-                        try {
-                            dl.getConnection().disconnect();
-                        } catch (final Throwable e) {
-                        }
-                        continue;
-                    }
-                } catch (final Throwable e) {
-                    logger.info("Download attempt failed:\r\n");
-                    e.printStackTrace();
-                    continue;
-                }
-            }
-            if (!success) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            }
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 

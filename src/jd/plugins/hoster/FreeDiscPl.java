@@ -217,6 +217,9 @@ public class FreeDiscPl extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (this.br.containsHTML("Ten plik jest chwilowo niedos")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             if (br.getURL().contains("freedisc.pl/pierrw,f-")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }

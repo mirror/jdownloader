@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "http://(www\\.)?libgen\\.net/view\\.php\\?id=\\d+|http://libgen\\.in/get\\.php\\?md5=[A-Za-z0-9]{32}|https?://(?:www\\.)?libgen\\.io/(?:ads|get)\\.php\\?md5=[a-f0-9]{32}|https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "https?://(?:www\\.)?libgen\\.net/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)|https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
 
     @Override
@@ -54,11 +54,11 @@ public class LibGenInfo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("libgen\\.net/", "golibgen.io/"));
+        link.setUrlDownload(link.getDownloadURL().replace("libgen.net/", "golibgen.io/"));
     }
 
-    private static final String  type_picture      = "https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
-    public static final String   type_libgen_in    = "/get\\.php\\?md5=[A-Za-z0-9]{32}";
+    private static final String  type_picture      = ".+/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
+    public static final String   type_libgen_get   = "/get\\.php\\?md5=[A-Za-z0-9]{32}";
 
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
@@ -77,7 +77,7 @@ public class LibGenInfo extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openGetConnection(link.getDownloadURL());
+                con = br.openHeadConnection(link.getDownloadURL());
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

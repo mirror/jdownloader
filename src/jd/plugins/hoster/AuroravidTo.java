@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auroravid.to" }, urls = { "http://(?:www\\.)?(?:(novamov\\.com|novaup\\.com|auroravid\\.to)/(?:download|sound|video)/[a-z0-9]+|(?:embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" })
 public class AuroravidTo extends PluginForHost {
 
     @Override
@@ -176,6 +176,7 @@ public class AuroravidTo extends PluginForHost {
             if (downloadLink.getDownloadURL().contains("video")) {
                 /* Generate new link */
                 br.getPage(downloadLink.getDownloadURL());
+                jd.plugins.hoster.VideoWeedCom.checkForContinueForm(this.br);
                 if (br.containsHTML("error_msg=The video is being transfered")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
                 } else if (br.containsHTML("error_msg=The video has failed to convert")) {

@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/doc/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/doc/\\d+" })
 public class ScribdCom extends PluginForHost {
 
     private final String        formats            = "formats";
@@ -114,6 +114,10 @@ public class ScribdCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw e;
+        }
+        if (this.br.containsHTML("<p>The document .* has been deleted.*?</p>")) {
+            /* Offline message without corresponding http response. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         ORIGURL = br.getURL();
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
