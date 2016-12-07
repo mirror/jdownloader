@@ -105,6 +105,11 @@ public class YouJizzCom extends PluginForHost {
         br.getPage(embed);
         DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (DLLINK == null) {
+            // 02.dec.2016
+            DLLINK = br.getRegex("<source src=\"([^\"]+)").getMatch(0);
+        }
+        if (DLLINK == null) {
+            // 02.dec.2016
             DLLINK = br.getRegex("newLink\\.setAttribute\\(\\'href\\'\\,\\'([^']+)").getMatch(0);
         }
         if (DLLINK == null) {
