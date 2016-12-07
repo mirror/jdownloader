@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -584,19 +585,56 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         });
     }
 
-    private class LoadedPackage {
-        private FilePackage                          filePackage   = null;
-        private final HashMap<Integer, DownloadLink> downloadLinks = new HashMap<Integer, DownloadLink>();
+    private final static class LoadedPackage {
+        private FilePackage filePackage = null;
+
+        protected final static class IndexedDownloadLink {
+            private final int          index;
+            private final DownloadLink downloadLink;
+
+            private IndexedDownloadLink(int index, DownloadLink downloadLink) {
+                this.index = index;
+                this.downloadLink = downloadLink;
+            }
+
+            private final int getIndex() {
+                return index;
+            }
+
+            private final DownloadLink getDownloadLink() {
+                return downloadLink;
+            }
+        }
+
+        private LoadedPackage(FilePackage filePackage) {
+            this.setFilePackage(filePackage);
+        }
+
+        private final void setFilePackage(FilePackage filePackage) {
+            this.filePackage = filePackage;
+        }
+
+        private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
+        private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
+            private final int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+        };
 
         private FilePackage getLoadedPackage() {
+            final FilePackage filePackage = this.filePackage;
             if (filePackage != null) {
                 if (filePackage.getChildren().size() == 0) {
-                    final List<Integer> childIndices = new ArrayList<Integer>(downloadLinks.keySet());
-                    Collections.sort(childIndices);
-                    for (final Integer childIndex : childIndices) {
-                        final DownloadLink child = downloadLinks.get(childIndex);
-                        filePackage.getChildren().add(child);
-                        child.setParentNode(filePackage);
+                    Collections.sort(downloadLinks, COMPARATOR);
+                    for (int index = 0; index < downloadLinks.size(); index++) {
+                        final DownloadLink downloadLink = downloadLinks.get(index).getDownloadLink();
+                        filePackage.getChildren().add(downloadLink);
+                        downloadLink.setParentNode(filePackage);
                     }
                 }
                 return filePackage;
@@ -693,15 +731,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             if (entryName.group(2) != null) {
                                 // \\d+_\\d+ DownloadLinkStorable
                                 final Integer packageIndex = Integer.valueOf(entryName.group(1));
-                                final Integer childIndex = Integer.valueOf(entryName.group(2));
+                                final int childIndex = Integer.parseInt(entryName.group(2));
                                 LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                 if (loadedPackage == null) {
-                                    loadedPackage = new LoadedPackage();
+                                    loadedPackage = new LoadedPackage(null);
                                     packageMap.put(packageIndex, loadedPackage);
                                 }
                                 final DownloadLinkStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, downloadLinkStorableTypeRef);
                                 if (storable != null) {
-                                    loadedPackage.downloadLinks.put(childIndex, storable._getDownloadLink());
+                                    loadedPackage.downloadLinks.add(new LoadedPackage.IndexedDownloadLink(childIndex, storable._getDownloadLink()));
                                 } else {
                                     throw new WTFException("restored a null DownloadLinkLinkStorable");
                                 }
@@ -710,12 +748,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 final Integer packageIndex = Integer.valueOf(entry.getName());
                                 final FilePackageStorable storable = JSonStorage.getMapper().inputStreamToObject(entryInputStream, filePackageStorable);
                                 if (storable != null) {
-                                    LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                                    final LoadedPackage loadedPackage = packageMap.get(packageIndex);
                                     if (loadedPackage == null) {
-                                        loadedPackage = new LoadedPackage();
-                                        packageMap.put(packageIndex, loadedPackage);
+                                        packageMap.put(packageIndex, new LoadedPackage(storable._getFilePackage()));
                                     }
-                                    loadedPackage.filePackage = storable._getFilePackage();
                                 } else {
                                     throw new WTFException("restored a null FilePackageStorable");
                                 }
@@ -727,7 +763,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     } catch (Throwable e) {
                         logger.log(e);
                         if (entry != null) {
-                            logger.info("Entry:" + entry + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
+                            logger.info("Entry:" + entry + "|EntryIndex:" + entries + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
                         }
                         throw e;
                     }
