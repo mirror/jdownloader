@@ -1334,7 +1334,7 @@ public enum ArchiveType {
      * http://www.rarlab.com/technote.htm
      */
     private static ArchiveFormat getRARArchiveFormat(final Archive archive) throws IOException {
-        if (isRAR5Supported() && archive != null && archive.getArchiveFiles() != null && archive.getArchiveFiles().size() > 0) {
+        if (Multi.isRAR5Supported() && archive != null && archive.getArchiveFiles() != null && archive.getArchiveFiles().size() > 0) {
             final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
             final String signatureString = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()), 14);
             if (signatureString.length() >= 16 && StringUtils.startsWithCaseInsensitive(signatureString, "526172211a070100")) {
@@ -1342,14 +1342,6 @@ public enum ArchiveType {
             }
         }
         return ArchiveFormat.RAR;
-    }
-
-    public static boolean isRAR5Supported() {
-        try {
-            return ArchiveFormat.valueOf("RAR5") != null;
-        } catch (Throwable e) {
-            return false;
-        }
     }
 
     public abstract ArchiveFormat getArchiveFormat(Archive archive) throws IOException;

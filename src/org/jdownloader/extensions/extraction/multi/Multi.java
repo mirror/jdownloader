@@ -393,13 +393,30 @@ public class Multi extends IExtraction {
         }
     }
 
+    public static final String getSevenZipJBindingVersion() {
+        try {
+            final Method method = SevenZip.class.getMethod("getSevenZipJBindingVersion");
+            return (String) method.invoke(null, new Object[0]);
+        } catch (Throwable e) {
+            return "4.65";
+        }
+    }
+
+    public static boolean isRAR5Supported() {
+        try {
+            return ArchiveFormat.valueOf("RAR5") != null;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
     @Override
     public boolean isAvailable(ExtractionExtension extractionExtension) {
         final boolean ret = hasLibrarySupport(extractionExtension);
         if (!ret) {
             logger.info("Unsupported SevenZipJBinding|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
         } else {
-            logger.info("Supported SevenZipJBinding|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Supported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
         }
         return ret;
     }
@@ -1142,7 +1159,7 @@ public class Multi extends IExtraction {
                     final String signatureString = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()), 14);
                     if (signatureString.length() >= 16 && StringUtils.startsWithCaseInsensitive(signatureString, "526172211a070100")) {
                         /* check for rar5 */
-                        if (ArchiveType.isRAR5Supported()) {
+                        if (isRAR5Supported()) {
                             logger.severe("RAR5 is supported:" + signatureString);
                         } else {
                             logger.severe("RAR5 is not supported:" + signatureString);
