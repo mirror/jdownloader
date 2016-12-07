@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net(/?:at/.+|/videos/.+|:\\d+/.+|/.+\\.(?:mp4|flv).*)|http://(www\\.)?video44\\.net/gogo/\\?.+|http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)|http://gateway.*\\.videofun\\.me/videos/.+" })
 public class PlayFourtyFourNet extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -103,7 +103,7 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
         if (rc == 403 || rc == 404 || rc == -1) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Content has been removed due to copyright or from users")) {
+        } else if (br.containsHTML("Content has been removed due to copyright or from users") || "Not found".equals(br.toString())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();
