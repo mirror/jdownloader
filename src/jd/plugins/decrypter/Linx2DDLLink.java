@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.2ddl.link" }, urls = { "https?://(?:www\\.)?linx\\.2ddl\\.(?:link|ag|io)/(?:[;\\.A-Za-z0-9]+|%27)+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.2ddl.link" }, urls = { "https?://(?:www\\.)?(?:linx\\.2ddl\\.(?:link|ag|io)|linx\\.twoddl\\.tv)/(?:[;\\.A-Za-z0-9]+|%27)+" })
 public class Linx2DDLLink extends PluginForDecrypt {
 
     public Linx2DDLLink(PluginWrapper wrapper) {
