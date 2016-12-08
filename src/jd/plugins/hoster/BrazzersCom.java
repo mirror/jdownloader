@@ -16,8 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.util.List;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,10 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "brazzers.com" }, urls = { "http://brazzersdecrypted\\.com/scenes/view/id/\\d+/|https?://ma\\.brazzers\\.com/download/\\d+/\\d+/mp4_\\d+_\\d+/|https?://brazzersdecrypted\\.photos\\.[a-z0-9]+\\.contentdef\\.com/\\d+/pics/img/\\d+\\.jpg\\?.+" })
 public class BrazzersCom extends antiDDoSForHost {
@@ -319,17 +318,12 @@ public class BrazzersCom extends antiDDoSForHost {
                 br.getPage("http://ma." + account.getHoster() + "/access/login/");
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("google\\.com/recaptcha")) {
+                if (br.containsHTML("div class=\"g-recaptcha\"")) {
                     if (dlinkbefore == null) {
                         this.setDownloadLink(new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true));
                     }
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, this.getDownloadLink());
-                    postdata += "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge());
-                    postdata += "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
                 br.postPage("/access/submit/", postdata);
                 final Form continueform = br.getFormbyKey("response");
@@ -386,7 +380,9 @@ public class BrazzersCom extends antiDDoSForHost {
         } else {
             handleGeneralErrors();
             if (isMOCHUrlOnly(link)) {
-                /* Only downloadable via multihoster - if a user owns a premiumaccount for this service he will usually never add such URLs! */
+                /*
+                 * Only downloadable via multihoster - if a user owns a premiumaccount for this service he will usually never add such URLs!
+                 */
                 logger.info("This url is only downloadable via MOCH account");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
