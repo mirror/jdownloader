@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -172,6 +173,14 @@ public class ClipboardMonitoring {
 
     protected static class ClipboardChangeDetector {
 
+        protected static enum CHANGE_FLAG {
+            DETECTED,
+            TIMEOUT,
+            SKIP,
+            BLACKLISTED,
+            FALSE
+        }
+
         protected volatile int        waitTimeout;
         protected final AtomicBoolean skipChangeFlag;
 
@@ -180,15 +189,24 @@ public class ClipboardMonitoring {
             waitTimeout = getMinWaitTimeout();
         }
 
-        protected void waitForClipboardChanges() throws InterruptedException {
+        protected CHANGE_FLAG waitForClipboardChanges() throws InterruptedException {
             while (true) {
-                synchronized (this) {
-                    this.wait(waitTimeout);
-                }
-                if (hasChanges()) {
-                    return;
+                final CHANGE_FLAG ret = hasChanges();
+                switch (ret) {
+                case DETECTED:
+                case TIMEOUT:
+                    return ret;
+                default:
+                    synchronized (this) {
+                        this.wait(getCurrentWaitTimeout());
+                    }
+                    break;
                 }
             }
+        }
+
+        protected int getCurrentWaitTimeout() {
+            return waitTimeout;
         }
 
         protected int getMinWaitTimeout() {
@@ -203,13 +221,13 @@ public class ClipboardMonitoring {
             return 200;
         }
 
-        protected boolean hasChanges() {
+        protected CHANGE_FLAG hasChanges() {
             if (skipChangeFlag.get()) {
                 waitTimeout = getMinWaitTimeout();
-                return false;
+                return CHANGE_FLAG.SKIP;
             } else {
                 waitTimeout = Math.min(waitTimeout + getWaitTimeoutInc(), getMaxWaitTimeout());
-                return true;
+                return CHANGE_FLAG.TIMEOUT;
             }
         }
 
@@ -241,8 +259,26 @@ public class ClipboardMonitoring {
     }
 
     private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
-    private static DataFlavor                                                                URLFLAVOR           = null;
-    private static DataFlavor                                                                URILISTFLAVOR       = null;
+    private static final DataFlavor                                                          URLFLAVOR;
+    private static final DataFlavor                                                          URILISTFLAVOR;
+    static {
+        DataFlavor ret = null;
+        try {
+            ret = new DataFlavor("application/x-java-url; class=java.net.URL");
+        } catch (final Throwable e) {
+            LogController.CL().info("urlFlavor not supported");
+        } finally {
+            URLFLAVOR = ret;
+        }
+        try {
+            ret = null;
+            ret = new DataFlavor("text/uri-list; class=java.lang.String");
+        } catch (final Throwable e) {
+            LogController.CL().info("uriListFlavor not supported");
+        } finally {
+            URILISTFLAVOR = ret;
+        }
+    }
     private volatile Thread                                                                  monitoringThread    = null;
     private final Clipboard                                                                  clipboard;
     private static final AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE> CLIPBOARD_SKIP_MODE = new AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE>(GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP);
@@ -278,7 +314,7 @@ public class ClipboardMonitoring {
         }
         try {
             if (transferable.getClass().getName().contains("TransferableProxy")) {
-                Field isLocal = transferable.getClass().getDeclaredField("isLocal");
+                final Field isLocal = transferable.getClass().getDeclaredField("isLocal");
                 if (isLocal != null) {
                     isLocal.setAccessible(true);
                     if (Boolean.TRUE.equals(isLocal.getBoolean(transferable))) {
@@ -312,8 +348,9 @@ public class ClipboardMonitoring {
                 public void run() {
                     try {
                         while (Thread.currentThread() == monitoringThread) {
+                            final CHANGE_FLAG changeFlag;
                             try {
-                                clipboardChangeDetector.waitForClipboardChanges();
+                                changeFlag = clipboardChangeDetector.waitForClipboardChanges();
                                 if (Thread.currentThread() != monitoringThread) {
                                     return;
                                 }
@@ -407,7 +444,7 @@ public class ClipboardMonitoring {
                                         oldStringContent = new ClipboardHash(newStringContent);
                                     }
                                 }
-                                if (handleThisRound != null) {
+                                if (handleThisRound != null || CHANGE_FLAG.DETECTED.equals(changeFlag)) {
                                     final long round = roundIndex.getAndIncrement();
                                     if (StringUtils.isNotEmpty(handleThisRound) && (round > 0 || !skipFirstRound)) {
                                         clipboardChangeDetector.restart();
@@ -581,19 +618,6 @@ public class ClipboardMonitoring {
             }
         } else {
             this.clipboardChangeDetector = null;
-        }
-    }
-
-    static {
-        try {
-            URLFLAVOR = new DataFlavor("application/x-java-url; class=java.net.URL");
-        } catch (final Throwable e) {
-            LogController.CL().info("urlFlavor not supported");
-        }
-        try {
-            URILISTFLAVOR = new DataFlavor("text/uri-list; class=java.lang.String");
-        } catch (final Throwable e) {
-            LogController.CL().info("uriListFlavor not supported");
         }
     }
 

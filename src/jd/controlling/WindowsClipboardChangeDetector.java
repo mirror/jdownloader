@@ -65,7 +65,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     }
 
     // http://stackoverflow.com/questions/7521693/converting-c-sharp-to-java-jna-getmodulefilename-from-hwnd
-    protected String getClipboardOwnerProcess() {
+    private final String getClipboardOwnerProcess() {
         final HWND hWnd = user32.GetClipboardOwner();
         if (hWnd != null) {
             final IntByReference pid = new IntByReference();
@@ -88,7 +88,7 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
         return null;
     }
 
-    protected boolean isProcessBlacklisted(final String process) {
+    private final boolean isProcessBlacklisted(final String process) {
         for (final Pattern blackListPattern : blackListPatterns) {
             if (blackListPattern.matcher(process).matches()) {
                 return true;
@@ -101,32 +101,33 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
     protected void slowDown(Throwable e) {
     }
 
-    protected void waitForClipboardChanges() throws InterruptedException {
-        while (true) {
-            if (hasChanges()) {
-                return;
-            }
-            synchronized (this) {
-                this.wait(100);
-            }
+    @Override
+    protected int getCurrentWaitTimeout() {
+        return 100;
+    }
+
+    private final boolean isChangeBlacklisted() {
+        if (isProcessBlacklisted) {
+            final String process = getClipboardOwnerProcess();
+            return process != null && isProcessBlacklisted(process);
+        } else {
+            return false;
         }
     }
 
     @Override
-    protected boolean hasChanges() {
+    protected CHANGE_FLAG hasChanges() {
         final int currentClipboardSequenceNumber = user32.GetClipboardSequenceNumber();
         if (currentClipboardSequenceNumber != 0) {
             if (lastClipboardSequenceNumber == null || (currentClipboardSequenceNumber != lastClipboardSequenceNumber.intValue())) {
                 lastClipboardSequenceNumber = currentClipboardSequenceNumber;
-                if (isProcessBlacklisted) {
-                    final String process = getClipboardOwnerProcess();
-                    if (process != null) {
-                        return !isProcessBlacklisted(process);
-                    }
+                if (isChangeBlacklisted()) {
+                    return CHANGE_FLAG.BLACKLISTED;
+                } else {
+                    return CHANGE_FLAG.DETECTED;
                 }
-                return true;
             }
         }
-        return false;
+        return CHANGE_FLAG.FALSE;
     }
 }
