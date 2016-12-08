@@ -90,8 +90,10 @@ public class MotherLessCom extends PluginForHost {
                 return AvailableStatus.FALSE;
             } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberOnly)) {
                 // requires account!
+                logger.info("The upload is subscriber only.");
                 return AvailableStatus.UNCHECKABLE;
             } else if (br.containsHTML(html_contentFriendsOnly)) {
+                logger.info("The content you are trying to view is for friends only.");
                 return AvailableStatus.UNCHECKABLE;
             } else if (br.containsHTML(html_OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
                 // should be last
@@ -116,6 +118,7 @@ public class MotherLessCom extends PluginForHost {
             if (br.containsHTML(html_OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(html_contentFriendsOnly)) {
+                logger.info("The content you are trying to view is for friends only.");
                 return AvailableStatus.UNCHECKABLE;
             }
             title = getUploadTitle();
