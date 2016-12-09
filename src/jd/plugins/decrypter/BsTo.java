@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -38,6 +39,7 @@ public class BsTo extends PluginForDecrypt {
 
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal("bs.to", 200);
     }
 
     private static final String TYPE_SINGLE = "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+/[^/]+";
@@ -76,7 +78,6 @@ public class BsTo extends PluginForDecrypt {
             if (finallink == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
             } else if (finallink.contains("bs.to/out/")) {
-                Thread.sleep(200);
                 br.setFollowRedirects(false);
                 br.getPage(finallink);
                 if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
