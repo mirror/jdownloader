@@ -482,20 +482,8 @@ public class DirectHTTP extends antiDDoSForHost {
             /* convert property to auth */
             pwTries.add("Basic " + Encoding.Base64Encode(authProperty));
         }
-
-        try {
-            // jd2 only
-
-            for (org.jdownloader.auth.Login l : org.jdownloader.auth.AuthenticationController.getInstance().getSortedLoginsList(getDownloadURL(downloadLink))) {
-                pwTries.add(l.toBasicAuth());
-            }
-        } catch (Throwable e) {
-
-            // /jd1
-            if ((authSaved = HTACCESSController.getInstance().get(getDownloadURL(downloadLink))) != null) {
-                /* use auth from saved ones */
-                pwTries.add("Basic " + Encoding.Base64Encode(authSaved));
-            }
+        for (org.jdownloader.auth.Login l : org.jdownloader.auth.AuthenticationController.getInstance().getSortedLoginsList(getDownloadURL(downloadLink))) {
+            pwTries.add(l.toBasicAuth());
         }
         this.br.setFollowRedirects(true);
         URLConnectionAdapter urlConnection = null;
@@ -564,17 +552,34 @@ public class DirectHTTP extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("auth", basicauth);
-
             this.contentType = urlConnection.getContentType();
-            if (this.contentType != null && this.contentType.startsWith("application/pls") && downloadLink.getName().endsWith("mp3")) {
-                this.br.followConnection();
-                final String mp3URL = this.br.getRegex("(https?://.*?\\.mp3)").getMatch(0);
-                if (hasCustomDownloadURL()) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (contentType != null) {
+                if (StringUtils.equalsIgnoreCase(contentType, "application/pls") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".mp3")) {
+                    this.br.followConnection();
+                    final String mp3URL = this.br.getRegex("(https?://.*?\\.mp3)").getMatch(0);
+                    if (hasCustomDownloadURL()) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (mp3URL != null) {
+                        setDownloadURL(mp3URL, null);
+                        return this.requestFileInformation(downloadLink, retry + 1);
+                    }
                 }
-                if (mp3URL != null) {
-                    setDownloadURL(mp3URL, null);
-                    return this.requestFileInformation(downloadLink, retry + 1);
+                if (StringUtils.equalsIgnoreCase(contentType, "audio/x-pn-realaudio") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".ram")) {
+                    // special handling for ram (RealMedia Meta) files
+                    br.followConnection();
+                    if (urlConnection.getRequest() instanceof HeadRequest) {
+                        preferHeadRequest = false;
+                        return this.requestFileInformation(downloadLink, retry + 1);
+                    }
+                    final String videoURL = br.getRegex("(https?://.*rm)").getMatch(0);
+                    if (videoURL != null && !hasCustomDownloadURL()) {
+                        setDownloadURL(videoURL, null);
+                        return this.requestFileInformation(downloadLink);
+                    }
+                    if (hasCustomDownloadURL()) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
             }
             final long length = urlConnection.getLongContentLength();
