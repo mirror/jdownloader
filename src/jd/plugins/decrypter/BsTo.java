@@ -76,6 +76,7 @@ public class BsTo extends PluginForDecrypt {
             if (finallink == null) {
                 throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
             } else if (finallink.contains("bs.to/out/")) {
+                Thread.sleep(200);
                 br.setFollowRedirects(false);
                 br.getPage(finallink);
                 if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
@@ -91,7 +92,6 @@ public class BsTo extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            String fpName = null;
             final String[] links = br.getRegex("class=\"v\\-centered icon [^<>\"]+\"[\t\n\r ]+href=\"(" + urlpart + "/[^/]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -103,5 +103,10 @@ public class BsTo extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 5;
     }
 }
