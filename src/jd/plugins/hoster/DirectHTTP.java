@@ -572,7 +572,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         preferHeadRequest = false;
                         return this.requestFileInformation(downloadLink, retry + 1);
                     }
-                    final String videoURL = br.getRegex("(https?://.*rm)").getMatch(0);
+                    final String videoURL = br.getRegex("(https?://.*(rm|ra|rmvb))").getMatch(0);
                     if (videoURL != null && !hasCustomDownloadURL()) {
                         setDownloadURL(videoURL, null);
                         return this.requestFileInformation(downloadLink);
