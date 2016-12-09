@@ -509,6 +509,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             free_maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl.setFilenameFix(true);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -564,6 +565,7 @@ public class ChoMikujPl extends antiDDoSForHost {
             account_maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_resume, account_maxchunks);
+        dl.setFilenameFix(true);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
