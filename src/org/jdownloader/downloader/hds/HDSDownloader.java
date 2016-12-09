@@ -132,6 +132,8 @@ public class HDSDownloader extends DownloadInterface {
                 }
             }
             if (bytesWritten.get() == 0) {
+                // outStream has end of file position because of FileInputStream(..,true)
+                outStream.getChannel().position(0);
                 aacHeaderWritten = false;
                 avcHeaderWritten = false;
                 fragmentIndex.set(1);
@@ -381,10 +383,12 @@ public class HDSDownloader extends DownloadInterface {
             return inputStream;
         } else {
             currentConnection.disconnect();
-            if (currentConnection.getResponseCode() == 404) {
-                return null;
-            } else {
+            final URLConnectionAdapter missingFrameCheck = br.openGetConnection(buildFragmentURL(fragmentIndex.get() + 1));
+            missingFrameCheck.disconnect();
+            if (missingFrameCheck.getResponseCode() == 200) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                return null;
             }
         }
     }
