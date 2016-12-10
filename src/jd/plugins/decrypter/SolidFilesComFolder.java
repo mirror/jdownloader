@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" })
 public class SolidFilesComFolder extends PluginForDecrypt {
 
     public SolidFilesComFolder(PluginWrapper wrapper) {
@@ -45,22 +45,22 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested|>This folder is empty.<") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Not found<|>We couldn't find the file you requested|>This folder is empty\\.<")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?)(\\-|\\|) Solidfiles</title>").getMatch(0);
+        String fpName = br.getRegex("<title>([^<>\"]*?)(?:-|\\|) Solidfiles</title>").getMatch(0);
         if (fpName == null) {
             fpName = new Regex(parameter, "([a-z0-9]+)/$").getMatch(0);
         }
         final PluginForHost solidfiles_host = JDUtilities.getPluginForHost("solidfiles.com");
         final boolean decryptFolders = solidfiles_host.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
         String filelist = br.getRegex("<ul>(.+?)</ul>").getMatch(0);
-        String[] finfos = new Regex(filelist, "(<a href=[^\"]+?</a>)").getColumn(0);
+        String[] finfos = new Regex(filelist, "(<a href=(?:'|\"|).*?</a>)").getColumn(0);
         final String[] folders = br.getRegex("<a href=\"(/folder/[a-z0-9]+/?)\"").getColumn(0);
         if ((folders == null || folders.length == 0) && (finfos == null || finfos.length == 0)) {
-            if (br.containsHTML("id=\"file\\-list\"")) {
+            if (br.containsHTML("id=\"file-list\"")) {
                 logger.info("Empty folder: " + parameter);
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
