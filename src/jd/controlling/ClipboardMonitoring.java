@@ -24,14 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -44,6 +36,13 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControl
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
@@ -175,6 +174,7 @@ public class ClipboardMonitoring {
 
         protected static enum CHANGE_FLAG {
             DETECTED,
+            INTERRUPTED,
             TIMEOUT,
             SKIP,
             BLACKLISTED,
@@ -189,17 +189,15 @@ public class ClipboardMonitoring {
             waitTimeout = getMinWaitTimeout();
         }
 
-        protected CHANGE_FLAG waitForClipboardChanges() throws InterruptedException {
+        protected CHANGE_FLAG waitForClipboardChanges() {
             while (true) {
                 final CHANGE_FLAG ret = hasChanges();
                 switch (ret) {
                 case DETECTED:
                 case TIMEOUT:
+                case INTERRUPTED:
                     return ret;
                 default:
-                    synchronized (this) {
-                        this.wait(getCurrentWaitTimeout());
-                    }
                     break;
                 }
             }
@@ -222,12 +220,21 @@ public class ClipboardMonitoring {
         }
 
         protected CHANGE_FLAG hasChanges() {
+            final CHANGE_FLAG ret;
             if (skipChangeFlag.get()) {
                 waitTimeout = getMinWaitTimeout();
-                return CHANGE_FLAG.SKIP;
+                ret = CHANGE_FLAG.SKIP;
             } else {
                 waitTimeout = Math.min(waitTimeout + getWaitTimeoutInc(), getMaxWaitTimeout());
-                return CHANGE_FLAG.TIMEOUT;
+                ret = CHANGE_FLAG.TIMEOUT;
+            }
+            try {
+                synchronized (this) {
+                    this.wait(getCurrentWaitTimeout());
+                }
+                return ret;
+            } catch (InterruptedException e) {
+                return CHANGE_FLAG.INTERRUPTED;
             }
         }
 
@@ -258,9 +265,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
-    private static final DataFlavor                                                          URLFLAVOR;
-    private static final DataFlavor                                                          URILISTFLAVOR;
+    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
+    private static final DataFlavor          URLFLAVOR;
+    private static final DataFlavor          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -348,13 +355,10 @@ public class ClipboardMonitoring {
                 public void run() {
                     try {
                         while (Thread.currentThread() == monitoringThread) {
-                            final CHANGE_FLAG changeFlag;
-                            try {
-                                changeFlag = clipboardChangeDetector.waitForClipboardChanges();
-                                if (Thread.currentThread() != monitoringThread) {
-                                    return;
-                                }
-                            } catch (InterruptedException e) {
+                            final CHANGE_FLAG changeFlag = clipboardChangeDetector.waitForClipboardChanges();
+                            if (Thread.currentThread() != monitoringThread) {
+                                return;
+                            } else if (CHANGE_FLAG.INTERRUPTED.equals(changeFlag)) {
                                 logger.finer("Interrupted ClipBoard Monitoring Thread");
                                 return;
                             }
