@@ -539,7 +539,6 @@ public class SaleFilesCom extends PluginForHost {
                         code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     } else {
                         // by raztoki
-                        final String[] imageBase64 = new Regex(captchaTable, "<img src=\"data:image/([0-9a-zA-Z]+);base64,(.*?)\"").getRow(0);
                         // image to file
                         final File imageFile = getLocalCaptchaFile("." + imageBase64[0]);
                         // ensure that the file is created
@@ -645,13 +644,13 @@ public class SaleFilesCom extends PluginForHost {
         }
     }
 
-    final String captchaImageBase64 = ".*(<\\s*table\\s*[^>]*>.*?>\\s*Enter code below:\\s*<.*?class=\"captcha_code\">.*?<\\s*/table\\s*>)";
-    String       captchaTable       = null;
+    private String[] imageBase64 = null;
 
     private boolean containsCaptchaWithinImageBase64() {
-        captchaTable = br.getRegex(captchaImageBase64).getMatch(0);
+        final String captchaTable = br.getRegex(".*(<\\s*table\\s*[^>]*>.*?>\\s*Enter code below:\\s*<.*?class=\"captcha_code\">.*?<\\s*/table\\s*>)").getMatch(0);
         if (captchaTable != null) {
-            if (new Regex(captchaTable, "src=\"data:image/[a-z0-9]+;base64,").matches()) {
+            imageBase64 = new Regex(captchaTable, "<img src=\"data:image/([0-9a-zA-Z]+);base64,(.*?)\"").getRow(0);
+            if (imageBase64 != null && imageBase64.length == 2) {
                 return true;
             }
         }
