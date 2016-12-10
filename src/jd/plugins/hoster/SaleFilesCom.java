@@ -539,23 +539,20 @@ public class SaleFilesCom extends PluginForHost {
                         code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     } else {
                         // by raztoki
-                        final String captcha = br.getRegex(captchaImageBase64).getMatch(0);
-                        if (captcha != null) {
-                            final String[] imageBase64 = new Regex(captcha, "<img src=\"data:image/([0-9a-zA-Z]+);base64,(.*?)\"").getRow(0);
-                            // image to file
-                            final File imageFile = getLocalCaptchaFile("." + imageBase64[0]);
-                            // ensure that the file is created
-                            if (!imageFile.exists()) {
-                                imageFile.createNewFile();
-                            }
-                            final byte[] decoded = Base64.decode(imageBase64[1]);
-                            // write to file
-                            Files.write(imageFile.toPath(), decoded, StandardOpenOption.WRITE);
-                            code = getCaptchaCode(imageFile, downloadLink);
-                            // it's crazy i know we return "" from captcha refresher/reloader AND empty submission...
-                            if ("".equals(code)) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            }
+                        final String[] imageBase64 = new Regex(captchaTable, "<img src=\"data:image/([0-9a-zA-Z]+);base64,(.*?)\"").getRow(0);
+                        // image to file
+                        final File imageFile = getLocalCaptchaFile("." + imageBase64[0]);
+                        // ensure that the file is created
+                        if (!imageFile.exists()) {
+                            imageFile.createNewFile();
+                        }
+                        final byte[] decoded = Base64.decode(imageBase64[1]);
+                        // write to file
+                        Files.write(imageFile.toPath(), decoded, StandardOpenOption.WRITE);
+                        code = getCaptchaCode("xfilesharingprobasic", imageFile, downloadLink);
+                        // it's crazy i know we return "" from captcha refresher/reloader AND empty submission...
+                        if ("".equals(code)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                     }
                     dlForm.put("code", Encoding.urlEncode(code));
@@ -649,11 +646,12 @@ public class SaleFilesCom extends PluginForHost {
     }
 
     final String captchaImageBase64 = ".*(<\\s*table\\s*[^>]*>.*?>\\s*Enter code below:\\s*<.*?class=\"captcha_code\">.*?<\\s*/table\\s*>)";
+    String       captchaTable       = null;
 
     private boolean containsCaptchaWithinImageBase64() {
-        final String table = br.getRegex(captchaImageBase64).getMatch(0);
-        if (table != null) {
-            if (new Regex(table, "src=\"data:image/[a-z0-9]+;base64,").matches()) {
+        captchaTable = br.getRegex(captchaImageBase64).getMatch(0);
+        if (captchaTable != null) {
+            if (new Regex(captchaTable, "src=\"data:image/[a-z0-9]+;base64,").matches()) {
                 return true;
             }
         }
