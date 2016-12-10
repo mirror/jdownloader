@@ -58,7 +58,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
 
     private final String language = System.getProperty("user.language");
@@ -262,9 +262,6 @@ public class NitroFlareCom extends antiDDoSForHost {
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
             requestFileInformationApi(downloadLink);
-            if (downloadLink.getBooleanProperty("premiumRequired", false)) {
-                throwPremiumRequiredException(downloadLink, true);
-            }
             doFree(null, downloadLink);
         }
     }
@@ -272,6 +269,9 @@ public class NitroFlareCom extends antiDDoSForHost {
     private final void doFree(final Account account, final DownloadLink downloadLink) throws Exception {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
+        }
+        if (downloadLink.getBooleanProperty("premiumRequired", false)) {
+            throwPremiumRequiredException(downloadLink, true);
         }
         freedl = true;
         br = new Browser();
@@ -373,7 +373,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
+        if (br.containsHTML("This file is available with premium key only|This file is available with Premium only")) {
             throwPremiumRequiredException(this.getDownloadLink(), false);
         }
         if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
@@ -719,6 +719,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         fetchAccountInfoWeb(account, false, false);
         // is free user?
         if (account.getType() == AccountType.FREE) {
+            requestFileInformationApi(downloadLink); // Required, to do checkLinks to check premiumOnly
             doFree(account, downloadLink);
             return;
         }
