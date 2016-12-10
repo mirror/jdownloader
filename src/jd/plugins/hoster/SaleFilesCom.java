@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
@@ -26,11 +28,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -49,12 +57,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "salefiles.com" }, urls = { "https?://(www\\.)?salefiles\\.com/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "salefiles.com" }, urls = { "https?://(www\\.)?salefiles\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class SaleFilesCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -513,26 +516,49 @@ public class SaleFilesCom extends PluginForHost {
                     }
                     dlForm.put("code", code.toString());
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
+                } else if (correctedBR.contains("/captchas/") || containsCaptchaWithinImageBase64()) {
                     logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                    String captchaurl = null;
-                    if (sitelinks == null || sitelinks.length == 0) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (String link : sitelinks) {
-                        if (link.contains("/captchas/")) {
-                            captchaurl = link;
-                            break;
+                    String code = null;
+                    if (correctedBR.contains("/captchas/")) {
+                        String captchaurl = null;
+                        final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                        if (sitelinks == null || sitelinks.length == 0) {
+                            logger.warning("Standard captcha captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        for (String link : sitelinks) {
+                            if (link.contains("/captchas/")) {
+                                captchaurl = link;
+                                break;
+                            }
+                        }
+                        if (captchaurl == null) {
+                            logger.warning("Standard captcha captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                    } else {
+                        // by raztoki
+                        final String captcha = br.getRegex(captchaImageBase64).getMatch(0);
+                        if (captcha != null) {
+                            final String[] imageBase64 = new Regex(captcha, "<img src=\"data:image/([0-9a-zA-Z]+);base64,(.*?)\"").getRow(0);
+                            // image to file
+                            final File imageFile = getLocalCaptchaFile("." + imageBase64[0]);
+                            // ensure that the file is created
+                            if (!imageFile.exists()) {
+                                imageFile.createNewFile();
+                            }
+                            final byte[] decoded = Base64.decode(imageBase64[1]);
+                            // write to file
+                            Files.write(imageFile.toPath(), decoded, StandardOpenOption.WRITE);
+                            code = getCaptchaCode(imageFile, downloadLink);
+                            // it's crazy i know we return "" from captcha refresher/reloader AND empty submission...
+                            if ("".equals(code)) {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
                         }
                     }
-                    if (captchaurl == null) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    dlForm.put("code", code);
+                    dlForm.put("code", Encoding.urlEncode(code));
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
@@ -620,6 +646,18 @@ public class SaleFilesCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    final String captchaImageBase64 = ".*(<\\s*table\\s*[^>]*>.*?>\\s*Enter code below:\\s*<.*?class=\"captcha_code\">.*?<\\s*/table\\s*>)";
+
+    private boolean containsCaptchaWithinImageBase64() {
+        final String table = br.getRegex(captchaImageBase64).getMatch(0);
+        if (table != null) {
+            if (new Regex(table, "src=\"data:image/[a-z0-9]+;base64,").matches()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -869,10 +907,10 @@ public class SaleFilesCom extends PluginForHost {
 
         wait -= passedTime;
         if (wait > 0) {
-            logger.info("Waiting waittime: " + wait);
+            logger.info("Waiting: " + wait);
             sleep(wait * 1000l, downloadLink);
         } else {
-            logger.info("Found no waittime");
+            logger.info("No waittime applied");
         }
     }
 
