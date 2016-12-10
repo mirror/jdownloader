@@ -128,6 +128,13 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
                 }
             }
         }
-        return CHANGE_FLAG.FALSE;
+        try {
+            synchronized (this) {
+                this.wait(getCurrentWaitTimeout());
+            }
+            return CHANGE_FLAG.FALSE;
+        } catch (InterruptedException e) {
+            return CHANGE_FLAG.INTERRUPTED;
+        }
     }
 }
