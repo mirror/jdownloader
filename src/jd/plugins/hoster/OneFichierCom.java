@@ -393,6 +393,8 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
         } else if (ibr.containsHTML(">Votre adresse IP ouvre trop de connexions vers le serveur")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
+        } else if (ibr.containsHTML("not possible to free unregistered users")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         errorIpBlockedHandling(ibr);
     }
