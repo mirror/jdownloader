@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(www\\.)?(libgen\\.org|gen\\.lib\\.rus\\.ec|libgen\\.io)/book/index\\.php\\?md5=[a-f0-9]{32}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(www\\.)?(libgen\\.org|gen\\.lib\\.rus\\.ec|libgen\\.io)/book/index\\.php\\?md5=[a-f0-9]{32}" })
 public class LibGen extends PluginForDecrypt {
 
     @Override
@@ -62,13 +62,14 @@ public class LibGen extends PluginForDecrypt {
         String[] links = br.getRegex("<url\\d+>(https?://[^<]+)</url\\d+>").getColumn(0);
         // Hmm maybe just try to get all mirrors
         if (links == null || links.length == 0) {
-            links = br.getRegex("<td align='center' width='11,1%'><a href='(http[^<>\"]*?)'").getColumn(0);
+            links = br.getRegex("<td align='center' width='11,1%'><a href='((?:http|/)[^<>\"]*?)'").getColumn(0);
         }
         if (links == null || links.length == 0) {
             return null;
         }
         for (final String dl : links) {
-            decryptedLinks.add(createDownloadlink(dl));
+            final String link = Request.getLocation(dl, br.getRequest());
+            decryptedLinks.add(createDownloadlink(link));
         }
         final String cover_url = br.getRegex("(\\'|\")((?:https?:)?(?://libgen\\.(?:in|net))?/covers/\\d+/.*?\\.(?:jpg|jpeg|png|gif))\\1").getMatch(1);
         if (cover_url != null) {

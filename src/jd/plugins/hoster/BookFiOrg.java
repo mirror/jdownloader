@@ -16,6 +16,10 @@
 
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,11 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "http://(www\\.)?([a-z]+\\.)?bookfi\\.(?:org|net)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.net" }, urls = { "http://(www\\.)?([a-z]+\\.)?(?:bookfi\\.(?:org|net)|bookzz\\.org)/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})" })
 public class BookFiOrg extends antiDDoSForHost {
 
     // DEV NOTES
@@ -75,10 +75,10 @@ public class BookFiOrg extends antiDDoSForHost {
         }
         if (parameter.contains("/md5/")) {
             // bookfi
-            String bookid = br.getRegex("<a href=\"(book/\\d+)\" ><h3").getMatch(0);
+            String bookid = br.getRegex("<a href=\"/?(book/\\d+)\" ><h3").getMatch(0);
             if (bookid == null) {
-                // bookos
-                bookid = br.getRegex("<a href=\"(book/\\d+/[a-z0-9]+)\"><h3").getMatch(0);
+                // bookos && bookzz
+                bookid = br.getRegex("<a href=\"/?(book/\\d+/[a-z0-9]+)\"><h3").getMatch(0);
                 if (bookid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

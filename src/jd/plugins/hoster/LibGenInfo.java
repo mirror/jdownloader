@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -32,9 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "https?://(?:www\\.)?libgen\\.net/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)|https?://libgen\\.(?:net|io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "https?://(?:www\\.)?(?:libgen\\.net|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)|https?://(?:libgen\\.(?:net|io)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
 
     @Override
