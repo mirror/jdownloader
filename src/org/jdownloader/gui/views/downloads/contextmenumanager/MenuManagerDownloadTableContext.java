@@ -88,7 +88,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
     }
 
     public MenuContainerRoot createDefaultStructure() {
-        MenuContainerRoot mr = new MenuContainerRoot();
+        final MenuContainerRoot mr = new MenuContainerRoot();
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
 
@@ -121,7 +121,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(new SeparatorData());
 
         mr.add(new MenuItemData(new ActionData(MenuManagerAction.class)));
-        OptionalContainer opt;
+        final OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
         opt.add(CollapseExpandContextAction.class);
         opt.add(CopyGenericContextAction.class);

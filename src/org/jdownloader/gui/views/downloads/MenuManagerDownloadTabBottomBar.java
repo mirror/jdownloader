@@ -18,6 +18,7 @@ import org.jdownloader.gui.mainmenu.SpeedlimitEditorLink;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
+import org.jdownloader.gui.views.downloads.action.ResetAction;
 import org.jdownloader.gui.views.downloads.bottombar.AbstractBottomBarMenuManager;
 import org.jdownloader.gui.views.downloads.bottombar.AddLinksContainer;
 import org.jdownloader.gui.views.downloads.bottombar.BottomBarMenuManagerAction;
@@ -96,9 +97,9 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
 
         mr.add(quicksettings);
 
-        OptionalContainer opt;
+        final OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
-
+        opt.add(new MenuItemData(new ActionData(ResetAction.class)));
         opt.add(AutoConfirmStopAction.class);
 
         return mr;
