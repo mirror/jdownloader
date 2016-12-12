@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me|mobi)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me|mobi)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" })
 public class Mangafox extends PluginForDecrypt {
 
     public Mangafox(PluginWrapper wrapper) {
@@ -71,7 +71,7 @@ public class Mangafox extends PluginForDecrypt {
             if (i != 1) {
                 br.getPage(i + ".html");
             }
-            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(http://[^\"]+(\\.[a-z]+))\"").getRow(0);
+            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(http://[^\"]+(\\.[a-z]+)(?:\\?token=[a-f0-9]{32}&ttl=\\d+)?)\"").getRow(0);
             if (unformattedSource == null || unformattedSource.length == 0) {
                 skippedPics++;
                 if (skippedPics > 5) {
