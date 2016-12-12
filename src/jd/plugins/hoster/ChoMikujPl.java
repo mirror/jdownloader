@@ -45,6 +45,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -510,7 +511,8 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         dl.setFilenameFix(true);
-        if (dl.getConnection().getContentType().contains("html")) {
+        final URLConnectionAdapter con = dl.getConnection();
+        if ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK()) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleServerErrors();
@@ -519,7 +521,6 @@ public class ChoMikujPl extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -566,7 +567,9 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_resume, account_maxchunks);
         dl.setFilenameFix(true);
-        if (dl.getConnection().getContentType().contains("html")) {
+        final URLConnectionAdapter con = dl.getConnection();
+        if ((StringUtils.containsIgnoreCase(con.getContentType(), "text") && con.getResponseCode() == 200) || !con.isOK()) {
+            // 206 Partitial Content might have text/html content-type
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleServerErrors();
