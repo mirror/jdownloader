@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,10 +120,17 @@ public class InstaGramCom extends PluginForHost {
             getlink += "/";
         }
         br.getPage(getlink);
-        if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
             /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
+        /* Set releasedate as property */
+        final String date = PluginJSonUtils.getJson(this.br, "date");
+        if (date != null && date.matches("\\d+")) {
+            setReleaseDate(downloadLink, Long.parseLong(date));
+        }
+
         String ext = ".mp4";
         dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
         // Maybe we have a picture
@@ -175,6 +184,14 @@ public class InstaGramCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static void setReleaseDate(final DownloadLink dl, final long date) {
+        final String targetFormat = "yyyy-MM-dd";
+        final Date theDate = new Date(date * 1000);
+        final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+        final String formattedDate = formatter.format(theDate);
+        dl.setProperty("date", formattedDate);
     }
 
     public static String fixServerFilename(String server_filename, final String correctExtension) {

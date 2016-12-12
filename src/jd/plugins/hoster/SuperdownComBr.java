@@ -19,15 +19,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,8 +35,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class SuperdownComBr extends antiDDoSForHost {
+
+    /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
@@ -49,9 +52,10 @@ public class SuperdownComBr extends antiDDoSForHost {
     private static final String                            NICE_HOST          = "superdown.com.br";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
+    private final String                                   html_loggedin      = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
     private static Object                                  LOCK               = new Object();
     private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "Letitbit", "letitbit.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "mightyupload", "mightyupload.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" },
-            { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
+        { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uploading", "uploading.com" }, { "Uptobox", "uptobox.com" }, { "Vip-file", "vip-file.com" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,12 +68,13 @@ public class SuperdownComBr extends antiDDoSForHost {
     }
 
     @Override
-    protected Browser prepBrowser(Browser prepBr, String host) {
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             /* define custom browser headers and language settings */
             prepBr.setCustomCharset("utf-8");
             prepBr.setCookie(DOMAIN, "locale", "en");
+            prepBr.setFollowRedirects(true);
         }
         return prepBr;
 
@@ -341,51 +346,58 @@ public class SuperdownComBr extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
-                br = new Browser();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(DOMAIN, key, value);
-                        }
+                br.setCookiesExclusive(true);
+                this.br = prepBrowser(this.br, this.getHost());
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* Re-use cookies whenever possible to avoid login captcha prompts. */
+                    this.br.setCookies(this.getHost(), cookies);
+                    br.getPage("https://www." + this.getHost());
+                    if (br.containsHTML(html_loggedin)) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
+                    /* Clear cookies/headers to prevent unknown errors as we'll perform a full login below now. */
+                    this.br = prepBrowser(this.br, this.getHost());
                 }
-                br.setFollowRedirects(true);
-                postPage("https://www.superdown.com.br/login", "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
-                final String lang = System.getProperty("user.language");
-                /* Check if we have a free account (free accounts cannot download anything anyways) */
-                if (br.containsHTML("style=\"font-size:15px\">Buy a Plan</a>")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                this.br.getPage("https://www." + this.getHost() + "/login");
+                String postData = "lembrar=on&email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
+
+                if (this.br.containsHTML("g\\-recaptcha")) {
+                    /* Handle login captcha */
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
+                    final String siteKey = this.br.getRegex("var key\\s*?=\\s*?\"([^<>\"]+)\";").getMatch(0);
+                    final String recaptchaV2Response;
+                    if (siteKey != null) {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                    } else {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    }
+
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-                if (br.getCookie(DOMAIN, "key") == null || !br.containsHTML("class=\"pull\\-left expira\"")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+                postPage("/login", postData);
+                if (!this.br.containsHTML(html_loggedin)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(DOMAIN));
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }

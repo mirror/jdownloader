@@ -223,7 +223,15 @@ public class NaughtyamericaCom extends PluginForHost {
                     br = prepBR(new Browser());
                 }
                 br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/login");
-                String postdata = "dest=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                Form loginform = br.getFormbyKey("username");
+                if (loginform == null) {
+                    loginform = br.getForm(0);
+                }
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("g\\-recaptcha")) {
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
@@ -233,9 +241,9 @@ public class NaughtyamericaCom extends PluginForHost {
                     if (dlinkbefore != null) {
                         this.setDownloadLink(dlinkbefore);
                     }
-                    postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                br.postPage("/login", postdata);
+                br.submitForm(loginform);
                 final String loginCookie = br.getCookie("nrc", jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                 final Form continueform = br.getFormbyKey("response");
                 if (continueform != null) {
@@ -244,6 +252,10 @@ public class NaughtyamericaCom extends PluginForHost {
                 }
                 if (br.getURL().contains("/postLogin")) {
                     br.getPage("//" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + br.getHost());
+                }
+                if (br.getURL().contains("beta.") || br.getURL().contains("/login")) {
+                    /* 2016-12-12: Redirects to their beta-page might happen --> Go back to the old/stable version of their webpage. */
+                    br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                 }
                 if (!br.containsHTML(html_loggedin) && loginCookie == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

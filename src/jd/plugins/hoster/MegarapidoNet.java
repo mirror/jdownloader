@@ -44,7 +44,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class MegarapidoNet extends PluginForHost {
 
-    /* Tags: conexaomega.com.br, megarapido.net */
+    /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
 
     private static final String                            DOMAIN                       = "https://megarapido.net/";
     private static final String                            NICE_HOST                    = "megarapido.net";

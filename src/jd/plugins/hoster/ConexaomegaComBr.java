@@ -38,12 +38,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class ConexaomegaComBr extends PluginForHost {
 
-    /* Tags: conexaomega.com.br, megarapido.net */
+    /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
 
     private static final String                            DOMAIN                       = "http://conexaomega.com.br/";
     private static final String                            NICE_HOST                    = "conexaomega.com.br";
@@ -66,7 +67,7 @@ public class ConexaomegaComBr extends PluginForHost {
 
     public ConexaomegaComBr(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://conexaomega.com.br/");
+        this.enablePremium("https://conexaomega.com.br/");
     }
 
     @Override
@@ -259,22 +260,42 @@ public class ConexaomegaComBr extends PluginForHost {
                 this.br = newBrowser();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    /* Re-use cookies whenever possible to avoid login captcha prompts. */
                     this.br.setCookies(this.getHost(), cookies);
                     br.getPage("https://www." + this.getHost() + "/planos");
                     if (br.containsHTML(html_loggedin)) {
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
-                    /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                    if (br.getCookies(DOMAIN) != null) {
-                        br.clearCookies(DOMAIN);
-                    }
+                    /* Clear cookies/headers to prevent unknown errors as we'll perform a full login below now. */
+                    this.br = newBrowser();
                 }
+                this.br.getPage("https://www." + this.getHost() + "/login");
                 String postData = "lembrar=on&email=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
-                this.postAPISafe("https://www." + this.getHost() + "/login", postData);
-                final String userLanguage = System.getProperty("user.language");
+
+                if (this.br.containsHTML("g\\-recaptcha")) {
+                    /* Handle login captcha */
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                    }
+                    final String siteKey = this.br.getRegex("var key\\s*?=\\s*?\"([^<>\"]+)\";").getMatch(0);
+                    final String recaptchaV2Response;
+                    if (siteKey != null) {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                    } else {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    }
+
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                }
+
+                this.postAPISafe("/login", postData);
                 if (!this.br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(userLanguage)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);

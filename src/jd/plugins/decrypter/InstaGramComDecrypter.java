@@ -179,6 +179,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             for (final Object o : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) o;
+                final long date = JavaScriptEngineFactory.toLong(entries.get("date"), 0);
                 String server_filename = null;
                 final String linkid = (String) entries.get("code");
                 final boolean isVideo = ((Boolean) entries.get("is_video")).booleanValue();
@@ -219,6 +220,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                      * errorhandling.
                      */
                     dl.setProperty("private_url", true);
+                }
+                if (date > 0) {
+                    jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, date);
                 }
                 decryptedLinks.add(dl);
                 distribute(dl);
