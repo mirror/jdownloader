@@ -145,7 +145,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         // opt.add(ShowInputDialogDebugAction.class);
         //
         // }
-        OptionalContainer opt;
+        final OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
         opt.add(MyJDownloaderStatusAction.class);
         if (!Application.isJared(MainToolBar.class)) {
