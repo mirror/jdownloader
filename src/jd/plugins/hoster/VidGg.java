@@ -15,11 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,8 +24,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "vid.gg" }, urls = { "http://(?:www\\.)?(?:vid\\.gg|vidgg\\.to)/(?:video/|embed\\?id=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class VidGg extends PluginForHost {
@@ -99,54 +93,16 @@ public class VidGg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
-        String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-        if (key == null && br.containsHTML("w,i,s,e")) {
-            String result = unWise();
-            key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
-        }
-        if (key == null) {
+        /* 2016-12-12: Crypto stuff (and unwise js function) has been removed */
+        String dllink = this.br.getRegex("<source[^>]*?src=\"(http[^\"]+)\"[^>]*?type=\\'video/mp4\\'[^>]*?>").getMatch(0);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (cid2 == null) {
-            cid2 = "undefined";
-        }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        String lastdllink = null;
-        boolean success = false;
-        for (int i = 0; i <= 3; i++) {
-            if (i > 0) {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
-            } else {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
-            }
-            String dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-                if (!dl.getConnection().getContentType().contains("html")) {
-                    success = true;
-                    break;
-                } else {
-                    lastdllink = dllink;
-                    continue;
-                }
-            } finally {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        if (!success) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
@@ -155,30 +111,6 @@ public class VidGg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl.startDownload();
-    }
-
-    private String unWise() {
-        String result = null;
-        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
-        if (fn == null) {
-            return null;
-        }
-        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            engine.eval("var res = " + fn);
-            result = (String) engine.get("res");
-            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
-            engine.eval("res = " + result);
-            result = (String) engine.get("res");
-            String res[] = result.split(";\\s;");
-            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
-            result = (String) engine.get("res");
-        } catch (final Exception e) {
-            logger.log(e);
-            return null;
-        }
-        return result;
     }
 
     @Override

@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "https?://(?:members|tour)\\.naughtyamerica\\.com/scene/[a-z0-9\\-]+\\-\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "https?://(?:beta\\.)?(?:members|tour)\\.naughtyamerica\\.com/scene/[a-z0-9\\-]+\\-\\d+" })
 public class NaughtyamericaCom extends PluginForDecrypt {
 
     public NaughtyamericaCom(PluginWrapper wrapper) {
@@ -48,7 +48,8 @@ public class NaughtyamericaCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* 2016-12-12: Prefer current website instead of beta */
+        final String parameter = param.toString().replace("beta.", "");
         final String filename_url = new Regex(parameter, "/([a-z0-9\\-]+)$").getMatch(0);
         final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
