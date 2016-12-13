@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "https?://(www\\.)?naughtyblog\\.org/(?!webmasters|contact)[a-z0-9\\-]+" })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -128,13 +128,13 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         }
 
         for (final String link : links) {
-            if (!link.matches("http://(www\\.)?naughtyblog\\.org/.+")) {
+            if (!link.matches("https?://(www\\.)?naughtyblog\\.org/.+")) {
                 final DownloadLink dl = createDownloadlink(link);
                 decryptedLinks.add(dl);
             }
         }
 
-        final String[] imgs = br.getRegex("(http://([\\w\\.]+)?pixhost\\.org/show/[^\"]+)").getColumn(0);
+        final String[] imgs = br.getRegex("(https?://([\\w\\.]+)?pixhost\\.org/show/[^\"]+)").getColumn(0);
         if (links != null && links.length != 0) {
             for (final String img : imgs) {
                 final DownloadLink dl = createDownloadlink(img);
