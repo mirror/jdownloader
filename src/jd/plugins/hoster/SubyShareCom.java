@@ -27,12 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -57,6 +51,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
@@ -212,6 +212,7 @@ public class SubyShareCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        checkForPremiumonlyNew();
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
@@ -837,6 +838,16 @@ public class SubyShareCom extends PluginForHost {
         checkResponseCodeErrors(this.br.getHttpConnection());
     }
 
+    private void checkForPremiumonlyNew() throws PluginException {
+        if (isPremiumonlyNew()) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
+    }
+
+    private boolean isPremiumonlyNew() {
+        return this.br.getURL().contains("/predownload.php");
+    }
+
     /** Handles all kinds of error-responsecodes! */
     private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
         if (con == null) {
@@ -1033,6 +1044,16 @@ public class SubyShareCom extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
+                if (isPremiumonlyNew()) {
+                    if (downloadLink.getLinkStatus().getRetryCount() < 2) {
+                        logger.info("Possible cookie failure");
+                        this.login(account, true);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Possible cookie failure");
+                    } else {
+                        logger.info("Website failure or account is not premium anymore");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    }
+                }
                 /* Special: vidembed will also work for non-videos and via premium mode! */
                 dllink = handleVideoembed1(dllink);
                 if (dllink == null) {
