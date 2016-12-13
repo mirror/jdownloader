@@ -344,7 +344,7 @@ public class RtmpDump extends RTMPDownload {
             final List<String> cmdArgsMacAndLinux = new ArrayList<String>();
             if (CrossSystem.isWindows()) {
                 // MAX_PATH Fix --> \\?\ + Path
-                if (String.valueOf(tmpFile).length() >= 260) {
+                if (String.valueOf(tmpFile).length() >= 260 || config.isWindowsPathWorkaroundEnabled()) {
                     // https://msdn.microsoft.com/en-us/library/aa365247.aspx
                     cmdArgsWindows += " \"\\\\?\\" + String.valueOf(tmpFile) + "\"";
                 } else {
