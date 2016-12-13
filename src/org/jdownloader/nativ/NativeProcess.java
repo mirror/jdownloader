@@ -22,23 +22,27 @@ public class NativeProcess {
     private final FileDescriptor inStreamFd  = new FileDescriptor();
     private final FileDescriptor outStreamFd = new FileDescriptor();
     private final FileDescriptor errStreamFd = new FileDescriptor();
+    private final static boolean INIT        = INIT();
     private OutputStream         stdin_stream;
     private InputStream          stdout_stream;
     private InputStream          stderr_stream;
 
-    static {
-        /* these libs are 32bit */
-        try {
-            System.load(Application.getResource("tools/Windows/rtmpdump/NativeProcessx86.dll").getAbsolutePath());
-        } catch (final Throwable e) {
-            System.out.println("Error loading 32bit: " + e);
-            /* these libs are 64bit */
+    private static final boolean INIT() {
+        if (!Application.is64BitJvm()) {
             try {
-                System.load(Application.getResource("tools/Windows/rtmpdump/NativeProcessx64.dll").getAbsolutePath());
-            } catch (final Throwable e2) {
-                System.out.println("Error loading 64bit: " + e2);
+                System.load(Application.getResource("tools/Windows/rtmpdump/NativeProcessx86.dll").getAbsolutePath());
+                return true;
+            } catch (final Throwable e) {
+                System.out.println("Error loading 32bit: " + e);
             }
         }
+        try {
+            System.load(Application.getResource("tools/Windows/rtmpdump/NativeProcessx64.dll").getAbsolutePath());
+            return true;
+        } catch (final Throwable e2) {
+            System.out.println("Error loading 64bit: " + e2);
+        }
+        return false;
     }
 
     private static native int createProcess(String cmd, String param, boolean hidden, FileDescriptor in, FileDescriptor out, FileDescriptor err);
@@ -48,8 +52,12 @@ public class NativeProcess {
     private static native boolean terminateProcessTree(int pid);
 
     public NativeProcess(final String cmd, final String param) throws Exception {
-
-        if ((pid = createProcess(cmd, param, true, inStreamFd, outStreamFd, errStreamFd)) < 0) { throw new Exception("Error invalid PID while creating process - (pid < 0)"); }
+        if (!INIT) {
+            throw new Exception("Failed to load NativeProcess(x86|x64).dll!");
+        }
+        if ((pid = createProcess(cmd, param, true, inStreamFd, outStreamFd, errStreamFd)) < 0) {
+            throw new Exception("Error invalid PID while creating process - (pid < 0)");
+        }
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {

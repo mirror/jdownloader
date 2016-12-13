@@ -122,8 +122,7 @@ public class SubyShareCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
         setFUID(link);
@@ -149,6 +148,9 @@ public class SubyShareCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
+            if (account != null && br.getURL().contains("/predownload")) {
+                return AvailableStatus.UNCHECKABLE;
+            }
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -161,6 +163,11 @@ public class SubyShareCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
     }
 
     private String[] scanInfo(final String[] fileInfo) {
@@ -206,7 +213,7 @@ public class SubyShareCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, null);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
@@ -1034,10 +1041,10 @@ public class SubyShareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink, account);
         login(account, false);
         if (AccountType.FREE.equals(account.getType())) {
-            requestFileInformation(downloadLink);
+            requestFileInformation(downloadLink, account);
             doFree(downloadLink, false, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");

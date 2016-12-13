@@ -21,4 +21,10 @@ public interface RtmpdumpSettings extends ConfigInterface {
 
     void setFlvFixerDebugModeEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isWindowsPathWorkaroundEnabled();
+
+    void setWindowsPathWorkaroundEnabled(boolean b);
+
 }
