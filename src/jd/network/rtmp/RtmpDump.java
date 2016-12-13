@@ -231,7 +231,9 @@ public class RtmpDump extends RTMPDownload {
 
     private void kill() {
         if (CrossSystem.isWindows()) {
-            NP.sendCtrlCSignal();
+            if (NP != null) {
+                NP.sendCtrlCSignal();
+            }
         } else {
             sendSIGINT();
         }
