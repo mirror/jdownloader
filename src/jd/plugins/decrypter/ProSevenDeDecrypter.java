@@ -63,11 +63,11 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         final String json = this.br.getRegex("var contentResources = (\\[.+\\]);").getMatch(0);
         String fpName = br.getRegex("itemprop=\"title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
-            fpName = new Regex(parameter, "([^/]+)$").getMatch(0);
+            fpName = new Regex(parameter, "([^/]+)/?$").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName.trim());
         if (json == null || date == null) {
-            /* Probably this is not a video - return nothing */
+            /* Probably this is not a video - return nothing! */
             return decryptedLinks;
         }
         final DecimalFormat df = new DecimalFormat("00");
@@ -79,12 +79,13 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
 
         for (final Object video_o : ressources) {
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) video_o;
+            /* E.g. skip invalid ContentType 'live'. */
             final String contentType = (String) entries.get("contentType");
             final String formatName = (String) entries.get("formatName");
             String title = (String) entries.get("title");
             final String videoid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             if (contentType == null || title == null || videoid.equals("-1")) {
-                return null;
+                continue;
             }
             String filename = date_formatted + "_" + brand + "_" + formatName;
             if (formatName != null && formatName.length() > 0) {

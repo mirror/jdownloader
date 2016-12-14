@@ -16,9 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.util.Random;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,7 +24,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -39,18 +35,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "http://bangbrosdecrypted.+" })
-public class BangbrosCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "http://czechavdecrypted.+" })
+public class CzechavCom extends PluginForHost {
 
-    public BangbrosCom(PluginWrapper wrapper) {
+    public CzechavCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.bangbrosnetwork.com/bangbrothers/join");
+        this.enablePremium("http://www.czechav.com/en/join/");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.bangbros.com/terms.htm";
+        return "http://www.czechav.com/en/tos/";
     }
 
     /* Connection stuff */
@@ -61,24 +57,19 @@ public class BangbrosCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private final String         type_zip                     = ".+\\.zip.*?";
-
-    private final String         DOMAIN_PREFIX_PREMIUM        = "members.";
-
-    public static final String   html_loggedin                = "class=\"thumbsMN thumbsMN\\-urPrchs\"";
+    public static final String   html_loggedin                = "/members/logout";
 
     private String               dllink                       = null;
     private boolean              server_issues                = false;
     private boolean              logged_in                    = false;
 
     public static Browser prepBR(final Browser br) {
-        /* This may happen after logging in but usually login process will be okay anways. */
-        br.setAllowedResponseCodes(500);
+        br.setFollowRedirects(true);
         return br;
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://bangbrosdecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://czechavdecrypted", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -89,10 +80,6 @@ public class BangbrosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null && !link.getDownloadURL().matches(type_zip)) {
-            link.getLinkStatus().setStatusText("Cannot check links without valid premium account");
-            return AvailableStatus.UNCHECKABLE;
-        }
         if (aa != null) {
             this.login(this.br, aa, false);
             logged_in = true;
@@ -100,22 +87,18 @@ public class BangbrosCom extends PluginForHost {
             logged_in = false;
         }
         if (!logged_in) {
+            logger.info("Login required to proceed");
             return AvailableStatus.UNCHECKABLE;
         }
         dllink = link.getDownloadURL();
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
-                /* Refresh directurl */
-                refreshDirecturl(link);
-                con = br.openHeadConnection(dllink);
+            if (con.getContentType().contains("html")) {
                 if (con.getContentType().contains("html")) {
                     server_issues = true;
                     return AvailableStatus.TRUE;
                 }
-                /* If user copies url he should always get a valid one too :) */
-                link.setContentUrl(dllink);
             }
             link.setDownloadSize(con.getLongContentLength());
             link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
@@ -128,48 +111,23 @@ public class BangbrosCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
-        final String fid = getFID(link);
-        final String quality = link.getStringProperty("quality", null);
-        String product = link.getStringProperty("productid", null);
-        if (product == null) {
-            /* Fallback to most popular product 'bangbros'. */
-            product = "1";
-        }
-        if (fid == null || quality == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        this.br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/product/" + product + "/movie/" + fid);
-        if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (link.getDownloadURL().matches(type_zip)) {
-            dllink = jd.plugins.decrypter.BangbrosCom.regexZipUrl(this.br, quality);
-        } else {
-            final String[] htmls_videourls = jd.plugins.decrypter.BangbrosCom.getVideourls(this.br);
-            for (final String html_videourl : htmls_videourls) {
-                final String videourl = jd.plugins.decrypter.BangbrosCom.getVideourlFromHtml(html_videourl);
-                if (videourl == null) {
-                    continue;
-                }
-                final String quality_url = new Regex(videourl, "(\\d+p)").getMatch(0);
-                if (quality_url == null) {
-                    continue;
-                }
-                if (quality_url.equalsIgnoreCase(quality)) {
-                    dllink = videourl;
-                    break;
-                }
-            }
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
+    /* Might be required in the future. */
+    // private void refreshDirecturl(final DownloadLink link) throws PluginException, IOException {
+    // final String fid = getFID(link);
+    // final String quality = link.getStringProperty("quality", null);
+    // final String photonumber = link.getStringProperty("photonumber", null);
+    // final String urlpart = link.getStringProperty("urlpart", null);
+    // if (fid == null || quality == null || photonumber == null || urlpart == null) {
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // }
+    // if (dllink == null) {
+    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // }
+    // }
 
-    private String getFID(final DownloadLink dl) {
-        return dl.getStringProperty("fid", null);
-    }
+    // private String getFID(final DownloadLink dl) {
+    // return dl.getStringProperty("fid", null);
+    // }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -200,7 +158,7 @@ public class BangbrosCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
+                    br.getPage("http://" + account.getHoster() + "/library");
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
                         return;
@@ -208,20 +166,20 @@ public class BangbrosCom extends PluginForHost {
                     logger.info("Cookie login failed --> Performing full login");
                     br = prepBR(new Browser());
                 }
-                br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
-                final Form loginform = br.getForm(0);
-                loginform.put("login%5Busername%5D", Encoding.urlEncode(account.getUser()));
-                loginform.put("login%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
-                loginform.put("profiler_input", Integer.toString(new Random().nextInt(1000)));
-                br.submitForm(loginform);
-                if (!br.getURL().contains("/library")) {
-                    br.getPage("/library");
+                br.getPage("http://" + this.getHost() + "/de/members/login/");
+                Form loginform = br.getFormbyProperty("id", "login_form");
+                if (loginform == null) {
+                    loginform = br.getForm(0);
                 }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("remember_me", "on");
+                br.submitForm(loginform);
                 if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername,Passwort und/oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password/login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -281,15 +239,16 @@ public class BangbrosCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "Download videos- and pictures with the bangbros.com plugin.";
+        return "Download videos- and pictures with the czechav.com plugin.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_480p", "Grab 480p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_720p", "Grab 720p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1080p", "Grab 1080p (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_photos", "Grab photos (.zip containing images)?").setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_screencaps", "Grab screencaps (.zip containing images)?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FAST_LINKCHECK", "Enable fast linkcheck?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_960x540", "Grab 960x540 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_960x540", "Grab 960x540 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1280x720", "Grab 1280x720 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1920x1080", "Grab 1920x1080 (mp4)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_380x2160", "Grab 380x2160 (mp4)?").setDefaultValue(true));
     }
 
     @Override

@@ -41,7 +41,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/(?-i)[a-zA-Z0-9]{5}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(www\\.)?shink\\.in/(?-i)[a-zA-Z0-9]{5}" })
 public class ShinkIn extends antiDDoSForDecrypt {
 
     private static Object CTRLLOCK = new Object();
@@ -53,7 +53,7 @@ public class ShinkIn extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         Form dform = null;
         // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
         // that are cached are cloudflare and they are only kept in memory, and restarting will flush it)
@@ -78,6 +78,7 @@ public class ShinkIn extends antiDDoSForDecrypt {
                 dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
         }
+        br.setFollowRedirects(false);
         submitForm(dform);
         String finallink = br.getRedirectLocation();
         if (inValidate(finallink)) {
