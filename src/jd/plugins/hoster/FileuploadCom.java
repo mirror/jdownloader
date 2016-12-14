@@ -58,7 +58,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-upload.com" }, urls = { "https?://(?:www\\.)?file\\-upload\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-upload.com" }, urls = { "https?://(?:www\\.)?file\\-upload\\.(?:com|cc)/(?:embed\\-)?[a-z0-9]{12}" })
 public class FileuploadCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -67,7 +67,7 @@ public class FileuploadCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://file-upload.com";
+    private static final String            COOKIE_HOST                        = "http://file-upload.cc";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
