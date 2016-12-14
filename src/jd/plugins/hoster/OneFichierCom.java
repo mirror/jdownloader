@@ -325,8 +325,7 @@ public class OneFichierCom extends PluginForHost {
                     dllink = br2.getRegex(regex_dllink_middle).getMatch(1);
                 }
                 if (dllink == null) {
-                    sleep(2000, downloadLink);
-                    Form a2 = br2.getForm(0);
+                    final Form a2 = br2.getForm(0);
                     if (a2 == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -334,6 +333,7 @@ public class OneFichierCom extends PluginForHost {
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
                     br3.submitForm(a2);
+
                     errorHandling(downloadLink, br3);
                     if (dllink == null) {
                         dllink = br3.getRedirectLocation();

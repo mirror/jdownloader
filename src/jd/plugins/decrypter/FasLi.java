@@ -62,6 +62,7 @@ public class FasLi extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         parameter = "http://" + Browser.getHost(parameter) + "/" + this.fuid;
+        br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(fuid)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
