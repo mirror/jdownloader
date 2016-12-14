@@ -99,7 +99,7 @@ public class DeluxemusicTv extends PluginForHost {
         } else {
             dllink = "https://deluxetv-vimp.mivitec.net/getMedium/" + fid + ".mp4";
         }
-        final String discodeluxe_setnumber_str = new Regex(filename, Pattern.compile("DISCO.*?DELUXE.*?Set.{0,3}(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String discodeluxe_setnumber_str = new Regex(filename, Pattern.compile("DISCO.*?DELUXE.*?Set.{0,}?(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (discodeluxe_setnumber_str != null) {
             final int discodeluxe_setnumber = Integer.parseInt(discodeluxe_setnumber_str);
             final String discodeluxe_setnumber_str_formatted = new DecimalFormat("000").format(discodeluxe_setnumber);
