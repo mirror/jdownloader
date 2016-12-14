@@ -148,11 +148,16 @@ public class SubyShareCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            if (account != null && br.getURL().contains("/predownload")) {
-                return AvailableStatus.UNCHECKABLE;
+
+            if (br.containsHTML("You need upgrade to premium account before download") || br.getURL().contains("/predownload")) {
+                if (account != null) {
+                    return AvailableStatus.UNCHECKABLE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());

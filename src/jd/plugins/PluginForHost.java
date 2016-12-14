@@ -713,6 +713,14 @@ public abstract class PluginForHost extends Plugin {
         return -1;
     }
 
+    public boolean isResumeable(DownloadLink link, final Account account) {
+        if (link != null) {
+            return link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false);
+        } else {
+            return false;
+        }
+    }
+
     public int getMaxSimultanDownload(DownloadLink link, final Account account, AbstractProxySelectorImpl proxy) {
         return getMaxSimultanDownload(link, account);
     }

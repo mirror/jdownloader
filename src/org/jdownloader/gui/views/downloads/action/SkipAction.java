@@ -13,6 +13,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -94,50 +95,60 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) {
-            return;
-        }
-        final SelectionInfo<FilePackage, DownloadLink> lSelection = getSelection();
-        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        if (isEnabled()) {
+            final SelectionInfo<FilePackage, DownloadLink> lSelection = getSelection();
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            @Override
-            protected Void run() throws RuntimeException {
-                boolean enable = state.equals(State.ALL_UNSKIPPED);
-                if (enable) {
-                    int count = 0;
-                    if (DownloadWatchDog.getInstance().isRunning()) {
+                @Override
+                protected Void run() throws RuntimeException {
+                    if (isEnabled()) {
+                        final boolean enable = state.equals(State.ALL_UNSKIPPED);
+                        if (enable) {
+                            int nonResumableDownloads = 0;
+                            long estimatedLostDownloadedBytes = 0;
+                            if (DownloadWatchDog.getInstance().isRunning()) {
+                                for (final DownloadLink downloadLink : lSelection.getChildren()) {
+                                    final SingleDownloadController con = downloadLink.getDownloadLinkController();
+                                    if (con != null) {
+                                        final DownloadInterface dl = con.getDownloadInstance();
+                                        if (dl != null && !con.getDownloadLink().isResumeable()) {
+                                            nonResumableDownloads++;
+                                            estimatedLostDownloadedBytes += Math.max(0, con.getDownloadLink().getView().getBytesLoaded());
+                                        }
+                                    }
+                                }
+                            }
+                            if (nonResumableDownloads > 0) {
+                                final WarnLevel level;
+                                if (estimatedLostDownloadedBytes > 0) {
+                                    level = WarnLevel.SEVERE;
+                                } else {
+                                    level = WarnLevel.LOW;
+                                }
+                                if (JDGui.bugme(level)) {
+                                    if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.SkipAction_run_msg_(SizeFormatter.formatBytes(estimatedLostDownloadedBytes), nonResumableDownloads), new AbstractIcon(IconKey.ICON_SKIPPED, 32), _GUI.T.lit_yes(), _GUI.T.lit_no(), "org.jdownloader.gui.views.downloads.action.SkipAction")) {
+                                        return null;
+                                    }
+                                }
+                            }
+                        }
+                        final List<DownloadLink> unSkip = new ArrayList<DownloadLink>();
                         for (DownloadLink a : lSelection.getChildren()) {
-                            DownloadLink link = a;
-                            SingleDownloadController slc = link.getDownloadLinkController();
-                            if (slc != null && slc.getDownloadInstance() != null && !link.isResumeable()) {
-                                count++;
+                            // keep skipreason if a reason is set
+                            if (enable) {
+                                if (!a.isSkipped()) {
+                                    a.setSkipReason(SkipReason.MANUAL);
+                                }
+                            } else {
+                                unSkip.add(a);
                             }
                         }
+                        DownloadWatchDog.getInstance().unSkip(unSkip);
                     }
-                    if (count > 0 && DownloadWatchDog.getInstance().getNonResumableBytes(lSelection) > 0) {
-                        if (JDGui.bugme(WarnLevel.SEVERE)) {
-                            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.lit_are_you_sure(), _GUI.T.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes(selection)), count), new AbstractIcon(IconKey.ICON_SKIPPED, 32), _GUI.T.lit_yes(), _GUI.T.lit_no(), "org.jdownloader.gui.views.downloads.action.SkipAction")) {
-                                return null;
-                            }
-
-                        }
-                    }
+                    return null;
                 }
-                List<DownloadLink> unSkip = new ArrayList<DownloadLink>();
-                for (DownloadLink a : lSelection.getChildren()) {
-                    // keep skipreason if a reason is set
-                    if (enable) {
-                        if (!a.isSkipped()) {
-                            a.setSkipReason(SkipReason.MANUAL);
-                        }
-                    } else {
-                        unSkip.add(a);
-                    }
-                }
-                DownloadWatchDog.getInstance().unSkip(unSkip);
-                return null;
-            }
-        });
+            });
+        }
     }
 
     @Override
