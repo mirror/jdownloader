@@ -151,11 +151,14 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     public static final void checkForContinueForm(final Browser br) throws Exception {
-        // some bullshit here 20151121
         final Form f = br.getFormbyKey("stepkey");
         if (f != null) {
             br.submitForm(f);
         }
+    }
+
+    public static String getDllink(final Browser br) {
+        return br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
     }
 
     @Override
@@ -167,15 +170,7 @@ public class VideoWeedCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            /* Old errorhandling! */
-            if (br.containsHTML("error_msg=The video is being transfered")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
-            } else if (br.containsHTML("error_msg=The video has failed to convert")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
-            } else if (br.containsHTML("error_msg=The video is converting")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
-            }
-            dllink = this.br.getRegex("(/download\\.php\\?file=[^<>\"]+)").getMatch(0);
+            dllink = getDllink(this.br);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -49,12 +49,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?(?:m\\.xhamster\\.com/(?:preview|movies)/\\d+(?:/[^/]+\\.html)?|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+//[^/]+\\.html))" })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -84,9 +83,9 @@ public class XHamsterCom extends PluginForHost {
         } else {
             user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
         }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, user_text).setDefaultValue(default_allow_multihoster_usage));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, JDL.L("plugins.hoster.SaveTv.prefer_format", "Preferred Format")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Preferred Format").setDefaultValue(0));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -103,7 +102,7 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE = "^https?://(?:www\\.)?m\\.xhamster\\.com/preview/\\d+$";
+    private static final String TYPE_MOBILE = ".+m\\.xhamster\\.com/[^/]+/(\\d+)(?:/.+\\.html)?$";
     private static final String TYPE_EMBED  = "^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
     private static Object       ctrlLock    = new Object();
@@ -125,10 +124,12 @@ public class XHamsterCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
         final String fid;
-        if (dl.getDownloadURL().matches(TYPE_MOBILE) || dl.getDownloadURL().matches(TYPE_EMBED)) {
-            fid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (dl.getDownloadURL().matches(TYPE_EMBED)) {
+            fid = new Regex(dl.getDownloadURL(), "(\\d+)").getMatch(0);
+        } else if (dl.getDownloadURL().matches(TYPE_MOBILE)) {
+            fid = new Regex(dl.getDownloadURL(), TYPE_MOBILE).getMatch(0);
         } else {
-            fid = new Regex(dl.getDownloadURL(), "movies/([0-9]+)/").getMatch(0);
+            fid = new Regex(dl.getDownloadURL(), "movies/(\\d+)/").getMatch(0);
         }
         return fid;
     }

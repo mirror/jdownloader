@@ -35,6 +35,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,7 +52,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" })
 public class EmuParadiseMe extends PluginForHost {
 
     public EmuParadiseMe(PluginWrapper wrapper) {
@@ -60,16 +61,32 @@ public class EmuParadiseMe extends PluginForHost {
     }
 
     @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new EmuParadiseMeAccountFactory(callback);
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.emuparadise.me/contact.php";
     }
 
-    private static Object        LOCK             = new Object();
-    private static final String  COOKIE_HOST      = "http://emuparadise.me/";
-    private static AtomicInteger maxFree          = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
+    private static final String  COOKIE_HOST                  = "http://emuparadise.me/";
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+
+    /* Connection stuff */
+    private final boolean        FREE_RESUME                  = true;
+    private final int            FREE_MAXCHUNKS               = 1;
+    private final int            FREE_MAXDOWNLOADS            = 2;
+    private final boolean        ACCOUNT_FREE_RESUME          = true;
+    private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private final int            ACCOUNT_FREE_MAXDOWNLOADS    = 2;
+    private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
+    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 4;
 
     /* Books, movies and specials are "directlinks" (no captcha/waittime) */
-    private static final String  HTML_TYPE_DIRECT = "Direct Download:</h2>";
+    private static final String  HTML_TYPE_DIRECT             = "Direct Download:</h2>";
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
@@ -89,7 +106,7 @@ public class EmuParadiseMe extends PluginForHost {
                     this.br.setCookie(COOKIE_HOST, key, value);
                 }
             } else {
-                /* Skips the captcha (tries to) */
+                /* Skips the captcha (tries to). */
                 br.setCookie(COOKIE_HOST, "downloadcaptcha", "1");
             }
         }
@@ -120,21 +137,24 @@ public class EmuParadiseMe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String dllink = null;
         requestFileInformation(downloadLink);
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "directlink");
+    }
+
+    public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = null;
         if (br.containsHTML(HTML_TYPE_DIRECT)) {
             dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/[^<>\"/]*?)\"").getMatch(0);
         } else {
             synchronized (LOCK) {
-                dllink = checkDirectLink(downloadLink, "directlink");
-                dllink = null;
+                dllink = checkDirectLink(downloadLink, directlinkproperty);
                 if (dllink == null) {
                     br.getPage(br.getURL() + "-download");
                     /* As long as the static cookie set captcha workaround works fine, */
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        /* Premium users should of course not have to enter captchas here! */
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = null;
@@ -180,15 +200,14 @@ public class EmuParadiseMe extends PluginForHost {
                 }
             }
             if (happyHour) {
-                maxFree.set(2);
+                maxFree.set(FREE_MAXDOWNLOADS);
             } else {
                 maxFree.set(1);
             }
-
         }
         /* Without this the directlink won't be accepted! */
         br.getHeaders().put("Referer", this.br.getURL());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             final long responsecode = dl.getConnection().getResponseCode();
             if (responsecode == 400) {
@@ -201,9 +220,10 @@ public class EmuParadiseMe extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        downloadLink.setProperty(directlinkproperty, dllink);
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).trim());
         dl.startDownload();
+
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -227,16 +247,81 @@ public class EmuParadiseMe extends PluginForHost {
         return dllink;
     }
 
+    private static Object LOCK_ACC = new Object();
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK_ACC) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.getPage("http://www." + this.getHost() + "/");
+                    if (this.br.containsHTML("logout=1")) {
+                        return;
+                    }
+                    /* Full login */
+                }
+                final String txnId = account.getStringProperty("txnid", null);
+                if (txnId != null) {
+                    br.getPage("http://www." + this.getHost() + "/premium-login.php?txn_id=" + txnId);
+                    /* premuser value == txnId */
+                    if (br.getCookie(this.getHost(), "premuser") == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                } else {
+                    /* Case not yet supported! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        super.handlePremium(link, account);
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        /* 2016-12-14: Every account gets treated as premium - I guess if an account expires, login is not possible anymore. */
+        account.setType(AccountType.PREMIUM);
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Premium account");
+        account.setValid(true);
+        return ai;
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (account.getType() == AccountType.FREE) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_premium_directlink");
+        }
+    }
 
-        return ai;
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     public static class EmuParadiseMeAccountFactory extends MigPanel implements AccountBuilderInterface {
@@ -338,33 +423,42 @@ public class EmuParadiseMe extends PluginForHost {
 
         @Override
         public boolean validateInputs() {
-            // username cant be invalid
             final String username = getUsername();
-            if (StringUtils.isEmpty(username)) {
-                jlUsername.setForeground(Color.RED);
+            final String password = getPassword();
+            final String txnId = getTxnId();
+            /* Either username & password or txnId only. */
+            if ((StringUtils.isEmpty(username) && StringUtils.isEmpty(password)) && (!validatetxnId(txnId))) {
+                if (StringUtils.isEmpty(username)) {
+                    jlUsername.setForeground(Color.RED);
+                }
+                if (StringUtils.isEmpty(password)) {
+                    jlPassword.setForeground(Color.RED);
+                }
+                if (!validatetxnId(txnId)) {
+                    jlTxnId.setForeground(Color.RED);
+                }
                 return false;
             }
             jlUsername.setForeground(Color.BLACK);
-            // password can not be invalid
-            final String password = getPassword();
-            if (StringUtils.isEmpty(password)) {
-                jlPassword.setForeground(Color.RED);
-                return false;
-            }
             jlPassword.setForeground(Color.BLACK);
-            // txnid cant be invalid
-            final String txnId = getTxnId();
-            if (txnId == null || !txnId.trim().matches("^\\d{9}$")) {
-                jlTxnId.setForeground(Color.RED);
-                return false;
-            }
             jlTxnId.setForeground(Color.BLACK);
             return true;
         }
 
+        private boolean validatetxnId(final String txnId) {
+            return !StringUtils.isEmpty(txnId) && txnId.matches("\\d+") && txnId.length() == 9;
+        }
+
         @Override
         public Account getAccount() {
-            return new Account(getUsername(), getPassword());
+            final String txnId = getTxnId();
+            final Account account = new Account(getUsername(), getPassword());
+            if (this.validatetxnId(txnId)) {
+                account.setProperty("txnid", txnId);
+            } else {
+                account.setProperty("txnid", Property.NULL);
+            }
+            return account;
         }
 
         public boolean updateAccount(Account input, Account output) {
