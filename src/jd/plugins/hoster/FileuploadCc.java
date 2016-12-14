@@ -58,8 +58,8 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-upload.com" }, urls = { "https?://(?:www\\.)?file\\-upload\\.(?:com|cc)/(?:embed\\-)?[a-z0-9]{12}" })
-public class FileuploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-upload.cc" }, urls = { "https?://(?:www\\.)?file\\-upload\\.(?:com|cc)/(?:embed\\-)?[a-z0-9]{12}" })
+public class FileuploadCc extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -149,6 +149,16 @@ public class FileuploadCom extends PluginForHost {
      * other:<br />
      */
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("file-upload.com".equals(getHost())) {
+            if (host == null || "file-upload.com".equals(host)) {
+                return "file-upload.cc";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     @SuppressWarnings({ "deprecation" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -170,7 +180,7 @@ public class FileuploadCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public FileuploadCom(PluginWrapper wrapper) {
+    public FileuploadCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
