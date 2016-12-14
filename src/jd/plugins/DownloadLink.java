@@ -36,6 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -177,7 +178,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient AbstractNodeNotifier              propertyListener;
 
     private transient DomainInfo                        domainInfo                          = null;
-    private transient Boolean                           resumeable                          = null;
     private transient volatile SkipReason               skipReason                          = null;
     private transient volatile ConditionalSkipReason    conditionalSkipReason               = null;
     private transient volatile FinalLinkState           finalLinkState                      = null;
@@ -1970,7 +1970,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (b == isResumeable()) {
             return;
         }
-        resumeable = b;
         setProperty(PROPERTY_RESUMEABLE, b);
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESUMABLE, b));
@@ -1978,10 +1977,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public boolean isResumeable() {
-        if (resumeable == null) {
-            resumeable = getBooleanProperty(PROPERTY_RESUMEABLE, false);
+        final SingleDownloadController controller = getDownloadLinkController();
+        if (controller != null) {
+            final DownloadLinkCandidate candidate = controller.getDownloadLinkCandidate();
+            return candidate.getCachedAccount().getPlugin().isResumeable(this, candidate.getCachedAccount().getAccount());
+        } else {
+            final PluginForHost plugin = getDefaultPlugin();
+            if (plugin != null) {
+                return plugin.isResumeable(this, null);
+            }
         }
-        return Boolean.TRUE.equals(resumeable);
+        return false;
     }
 
     public DomainInfo getDomainInfo() {

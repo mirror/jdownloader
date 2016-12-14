@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "http://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youjizz.com" }, urls = { "https?://(www\\.)?youjizz\\.com/videos/(embed/\\d+|.*?\\-\\d+\\.html)" })
 public class YouJizzCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -77,14 +77,14 @@ public class YouJizzCom extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().contains("/embed/")) {
-            link.setUrlDownload("http://www.youjizz.com/videos/x-" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".html");
+            link.setUrlDownload("https://www.youjizz.com/videos/x-" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".html");
         }
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // if (!br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
@@ -103,7 +103,7 @@ public class YouJizzCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(embed);
-        DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (DLLINK == null) {
             // 02.dec.2016
             DLLINK = br.getRegex("<source src=\"([^\"]+)").getMatch(0);
@@ -113,7 +113,7 @@ public class YouJizzCom extends PluginForHost {
             DLLINK = br.getRegex("newLink\\.setAttribute\\(\\'href\\'\\,\\'([^']+)").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
             if (DLLINK == null) {
                 // class="buttona" >Download This Video</
                 DLLINK = br.getRegex("\"(http://im\\.[^<>\"]+)\"").getMatch(0);
