@@ -1072,7 +1072,7 @@ public class SubyShareCom extends PluginForHost {
                     dllink = getDllink();
                 }
                 if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
+                    final Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
