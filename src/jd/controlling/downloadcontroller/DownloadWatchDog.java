@@ -141,7 +141,6 @@ import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
@@ -3405,39 +3404,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
 
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
 
-                                    @Override
-                                    public boolean isHighPriority() {
-                                        return false;
-                                    }
-                                });
-                            }
-                        };
+                                                                  @Override
+                                                                  public boolean isHighPriority() {
+                                                                      return false;
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -4369,44 +4368,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     @Override
     public long getShutdownVetoPriority() {
         return 0;
-    }
-
-    public long getNonResumableBytes(SelectionInfo<FilePackage, DownloadLink> selection) {
-        long i = 0;
-        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
-            for (final SingleDownloadController con : getSession().getControllers()) {
-                DownloadInterface dl = con.getDownloadInstance();
-                if (dl != null && !con.getDownloadLink().isResumeable() && selection.contains(con.getDownloadLink())) {
-                    i += con.getDownloadLink().getView().getBytesLoaded();
-                }
-            }
-        }
-        return i;
-    }
-
-    public int getNonResumableRunningCount() {
-        int i = 0;
-        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
-            for (final SingleDownloadController con : getSession().getControllers()) {
-                if (!con.getDownloadLink().isResumeable()) {
-                    i++;
-                }
-            }
-        }
-        return i;
-    }
-
-    public long getNonResumableBytes() {
-        long i = 0;
-        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
-            for (final SingleDownloadController con : getSession().getControllers()) {
-                DownloadInterface dl = con.getDownloadInstance();
-                if (dl != null && !con.getDownloadLink().isResumeable()) {
-                    i += con.getDownloadLink().getView().getBytesLoaded();
-                }
-            }
-        }
-        return i;
     }
 
     public boolean isLinkForced(DownloadLink dlLink) {
