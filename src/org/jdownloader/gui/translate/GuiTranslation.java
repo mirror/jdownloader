@@ -724,6 +724,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Abort Linkgrabber" })
     String StatusBarImpl_initGUI_abort_linkgrabber();
 
+    @Default(lngs = { "en" }, values = { "Abort all Linkgrabber" })
+    String StatusBarImpl_initGUI_abort_linkgrabber_all();
+
     @Default(lngs = { "en" }, values = { "Onlinecheck..." })
     String StatusBarImpl_initGUI_linkchecker_left();
 
