@@ -262,8 +262,8 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                         }
                         for (final FilePackage fp : fps) {
                             DownloadController.removePackageIfFinished(controller, controller.getLogger(), fp);
-                            invalidateExists();
                         }
+                        invalidateExists();
                         return null;
                     }
 

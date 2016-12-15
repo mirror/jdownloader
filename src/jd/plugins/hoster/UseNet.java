@@ -189,6 +189,14 @@ public class UseNet extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(DownloadLink link, Account account) {
+        if (isUsenetLink(link)) {
+            return true;
+        }
+        return super.isResumeable(link, account);
+    }
+
+    @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.USENET };
     }
