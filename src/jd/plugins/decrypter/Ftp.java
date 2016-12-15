@@ -22,6 +22,7 @@ import jd.http.SocketConnectionFactory;
 import jd.nutils.SimpleFTP;
 import jd.nutils.SimpleFTP.SimpleFTPListEntry;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -33,7 +34,8 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.auth.Login;
 
-@DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" }) public class Ftp extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
+public class Ftp extends PluginForDecrypt {
 
     private static final HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
 
@@ -101,9 +103,17 @@ import org.jdownloader.auth.Login;
                         if (port <= 0) {
                             port = 21;
                         }
-                        ftp.connect(host, port, login.getUsername(), login.getPassword());
+                        try {
+                            ftp.connect(host, port, login.getUsername(), login.getPassword());
+                        } catch (IOException e2) {
+                            if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
+                                throw new DecrypterException(DecrypterException.ACCOUNT, e2);
+                            } else {
+                                throw e2;
+                            }
+                        }
                     } else {
-                        throw e;
+                        throw new DecrypterException(DecrypterException.ACCOUNT, e);
                     }
                 } else {
                     throw e;
