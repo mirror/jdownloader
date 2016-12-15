@@ -7,6 +7,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.api.RemoteAPIConfig;
+import org.jdownloader.api.myjdownloader.OptionsRequestHandler;
 
 public class ExternInterface {
 
@@ -23,7 +24,8 @@ public class ExternInterface {
                         remoteAPI.register(new ExternInterfaceImpl());
                         while (config.isExternInterfaceEnabled() && !Thread.currentThread().isInterrupted()) {
                             try {
-                                final HttpHandlerInfo handler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(9666, config.isExternInterfaceLocalhostOnly(), remoteAPI);
+                                final HttpHandlerInfo handler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(9666, config.isExternInterfaceLocalhostOnly(), new OptionsRequestHandler());
+                                handler.getHttpServer().registerRequestHandler(remoteAPI);
                                 // handler.getHttpServer().registerRequestHandler(new HttpRequestHandler() {
                                 //
                                 // @Override

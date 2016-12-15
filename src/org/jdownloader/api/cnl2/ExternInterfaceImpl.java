@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -127,6 +128,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 writeString(response, request, "failed\r\n", true);
                 return;
             }
+            String passwords[] = request.getParametersbyKey("passwords[]");
+            if (passwords == null) {
+                passwords = request.getParametersbyKey("passwords");
+            }
+            if (passwords != null) {
+                cnl.setPasswords(Arrays.asList(passwords));
+            }
+            cnl.setSource(request.getParameterbyKey("source"));
             addcnl(response, request, cnl);
         } catch (Throwable e) {
             e.printStackTrace();

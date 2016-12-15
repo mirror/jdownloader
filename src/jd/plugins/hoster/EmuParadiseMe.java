@@ -45,7 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -275,8 +274,7 @@ public class EmuParadiseMe extends PluginForHost {
                         }
                     }
                 } else {
-                    /* Case not yet supported! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -331,26 +329,7 @@ public class EmuParadiseMe extends PluginForHost {
          */
         private static final long serialVersionUID = 1L;
 
-        private final String      userHelp         = "Enter in your Username";
-        private final String      passwordHelp     = "Enter in your Password";
         private final String      txnIdHelp        = "Enter in your TxnId";
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
-        }
-
-        private String getUsername() {
-            if (userHelp.equals(this.name.getText())) {
-                return null;
-            }
-            return this.name.getText();
-        }
 
         private String getTxnId() {
             if (txnIdHelp.equals(this.txnId.getText())) {
@@ -359,40 +338,12 @@ public class EmuParadiseMe extends PluginForHost {
             return this.txnId.getText();
         }
 
-        private ExtTextField     name;
-        private ExtPasswordField pass;
-        private ExtTextField     txnId;
+        private final ExtTextField txnId;
 
-        private static String    EMPTYPW = "                 ";
-        private final JLabel     jlUsername;
-        private final JLabel     jlPassword;
-        private final JLabel     jlTxnId;
+        private final JLabel       jlTxnId;
 
         public EmuParadiseMeAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(jlUsername = new JLabel("Username:"));
-            add(this.name = new ExtTextField() {
-
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-
-            });
-
-            name.setHelpText(userHelp);
-
-            add(jlPassword = new JLabel("Password:"));
-            add(this.pass = new ExtPasswordField() {
-
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-
-            }, "");
-            pass.setHelpText(passwordHelp);
-
             // txnid
             add(jlTxnId = new JLabel("TxnId: (must be 9 digits)"));
             add(this.txnId = new ExtTextField() {
@@ -403,7 +354,6 @@ public class EmuParadiseMe extends PluginForHost {
                 }
 
             });
-
             txnId.setHelpText(txnIdHelp);
         }
 
@@ -415,44 +365,31 @@ public class EmuParadiseMe extends PluginForHost {
         @Override
         public void setAccount(Account defaultAccount) {
             if (defaultAccount != null) {
-                name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
                 txnId.setText(defaultAccount.getStringProperty("txnId", null));
             }
         }
 
         @Override
         public boolean validateInputs() {
-            final String username = getUsername();
-            final String password = getPassword();
             final String txnId = getTxnId();
             /* Either username & password or txnId only. */
-            if ((StringUtils.isEmpty(username) && StringUtils.isEmpty(password)) && (!validatetxnId(txnId))) {
-                if (StringUtils.isEmpty(username)) {
-                    jlUsername.setForeground(Color.RED);
-                }
-                if (StringUtils.isEmpty(password)) {
-                    jlPassword.setForeground(Color.RED);
-                }
-                if (!validatetxnId(txnId)) {
-                    jlTxnId.setForeground(Color.RED);
-                }
+            if (!validatetxnId(txnId)) {
+                jlTxnId.setForeground(Color.RED);
                 return false;
+            } else {
+                jlTxnId.setForeground(Color.BLACK);
+                return true;
             }
-            jlUsername.setForeground(Color.BLACK);
-            jlPassword.setForeground(Color.BLACK);
-            jlTxnId.setForeground(Color.BLACK);
-            return true;
         }
 
         private boolean validatetxnId(final String txnId) {
-            return !StringUtils.isEmpty(txnId) && txnId.matches("\\d+") && txnId.length() == 9;
+            return txnId != null && txnId.matches("^\\d{9}$");
         }
 
         @Override
         public Account getAccount() {
             final String txnId = getTxnId();
-            final Account account = new Account(getUsername(), getPassword());
+            final Account account = new Account(txnId, "");
             if (this.validatetxnId(txnId)) {
                 account.setProperty("txnid", txnId);
             } else {
