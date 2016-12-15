@@ -1243,6 +1243,7 @@ StatsManager_run_upload_error_title=Coletar & enviar informações do bug
 StatusBarImpl_add_premium=Adicionar conta premium...
 StatusBarImpl_initGUI_abort_linkchecker=Cancelar verificação de links
 StatusBarImpl_initGUI_abort_linkgrabber=Cancelar Captura de Links
+StatusBarImpl_initGUI_abort_linkgrabber_all=Abortar todas as capturas de links
 StatusBarImpl_initGUI_extract=Atividade da Extração
 StatusBarImpl_initGUI_linkchecker=Atividade da verificação de links
 StatusBarImpl_initGUI_linkchecker_left=Verificação online...
