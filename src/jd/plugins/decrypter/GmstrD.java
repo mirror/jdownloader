@@ -20,30 +20,49 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamestar.de" }, urls = { "https?://(www\\.)?gamestar\\.de/videos/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamestar.de" }, urls = { "https?://(www\\.)?gamestar\\.de/videos/.+" })
 public class GmstrD extends PluginForDecrypt {
 
     public GmstrD(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
-        String getVideoUrl = br.getRegex("'file': '(.*?)'").getMatch(0);
-        br.setFollowRedirects(false);
-        br.getPage(getVideoUrl);
-        String url = br.getRedirectLocation();
-        if (url != null) {
-            decryptedLinks.add(createDownloadlink(url));
-
+        String videoURLs[] = br.getRegex("'file'\\s*:\\s*'(/videos/media.*?)'").getColumn(0);
+        if (videoURLs == null || videoURLs.length == 0) {
+            videoURLs = br.getRegex("\"file\"\\s*:\\s*\"(/videos/media.*?)\"").getColumn(0);
         }
-
+        if (videoURLs != null) {
+            final String title = br.getRegex("og:title\"\\s*content=\"(.*?)\"").getMatch(0);
+            for (final String videoURL : videoURLs) {
+                br.setFollowRedirects(false);
+                br.getPage(videoURL);
+                final String url = br.getRedirectLocation();
+                if (url != null) {
+                    decryptedLinks.add(createDownloadlink(url));
+                } else {
+                    final String contentURL = br.getRegex("content url=\"(https?://.*?)\"\\s*type=\"video").getMatch(0);
+                    if (contentURL != null) {
+                        decryptedLinks.add(createDownloadlink("directhttp://" + contentURL));
+                    }
+                }
+            }
+            if (title != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                fp.addLinks(decryptedLinks);
+            }
+        }
         return decryptedLinks;
     }
 
