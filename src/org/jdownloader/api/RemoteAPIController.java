@@ -542,6 +542,11 @@ public class RemoteAPIController {
             public String getParameterbyKey(String key) throws IOException {
                 return null;
             }
+
+            @Override
+            public String[] getParametersbyKey(String key) throws IOException {
+                return null;
+            }
         });
         InterfaceHandler<?> iface = dummyMethod.getInterfaceHandler();
         Method method = iface.getMethod(methodName, params.length);
