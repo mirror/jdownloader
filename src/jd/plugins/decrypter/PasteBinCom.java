@@ -27,23 +27,19 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/)?[0-9A-Za-z]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/)?[0-9A-Za-z]+" })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
+    private final String type_invalid = "http://(www\\.)?pastebin\\.com/(messages|report|dl|scraping|languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(type_invalid)) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (parameter.contains("/download.php?i=")) {
             decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
@@ -65,6 +61,9 @@ public class PasteBinCom extends PluginForDecrypt {
             plaintxt = br.toString();
         }
         if (plaintxt == null) {
+            if (!br.containsHTML("</textarea>")) {
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
