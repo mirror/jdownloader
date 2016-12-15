@@ -41,19 +41,7 @@
 
 	}
 	clickVerify = function() {
-
-		var evt = document.createEvent("MouseEvents");
-		evt.initEvent("mouseover", true, true);
-		verifyButton = document.getElementById("recaptcha-verify-button");
-		verifyButton.dispatchEvent(evt);
-		console.log("Dispatch Click event on verify Button " + verifyButton);
-		var evt = document.createEvent("MouseEvents");
-		evt.initEvent("mousedown", true, true);
-		verifyButton.dispatchEvent(evt);
-
-		var evt = document.createEvent("MouseEvents");
-		evt.initEvent("mouseup", true, true);
-		verifyButton.dispatchEvent(evt);
+		document.getElementById("recaptcha-verify-button").click();
 
 	}
 })()
