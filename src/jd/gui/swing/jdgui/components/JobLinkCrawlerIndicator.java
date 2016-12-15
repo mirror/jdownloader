@@ -8,6 +8,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkOrigin;
 
@@ -103,11 +104,9 @@ public class JobLinkCrawlerIndicator extends IconedProcessIndicator implements A
     public void mouseReleased(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             final JPopupMenu popup = new JPopupMenu();
-
             popup.add(new AppAction() {
 
                 private static final long serialVersionUID = -968768342263254431L;
-
                 {
                     this.setIconKey(IconKey.ICON_CANCEL);
                     this.setName(_GUI.T.StatusBarImpl_initGUI_abort_linkgrabber());
@@ -119,7 +118,20 @@ public class JobLinkCrawlerIndicator extends IconedProcessIndicator implements A
                 }
 
             });
+            popup.addSeparator();
+            popup.add(new AppAction() {
+                private static final long serialVersionUID = -968768342263254431L;
+                {
+                    this.setIconKey(IconKey.ICON_CANCEL);
+                    this.setName(_GUI.T.StatusBarImpl_initGUI_abort_linkgrabber_all());
+                    this.setEnabled(LinkCollector.getInstance().isCollecting());
+                }
 
+                public void actionPerformed(ActionEvent e) {
+                    LinkCollector.getInstance().abort();
+                }
+
+            });
             popup.show(JobLinkCrawlerIndicator.this, e.getPoint().x, 0 - popup.getPreferredSize().height);
         }
     }
