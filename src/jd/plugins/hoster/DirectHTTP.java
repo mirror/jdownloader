@@ -138,6 +138,19 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     @Override
+    public boolean isResumeable(DownloadLink link, Account account) {
+        if (link != null) {
+            if (link.getBooleanProperty(DirectHTTP.NORESUME, false) || link.getBooleanProperty(DirectHTTP.FORCE_NORESUME, false)) {
+                return false;
+            } else {
+                return link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+            }
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean isSpeedLimited(DownloadLink link, Account account) {
         return false;
     }

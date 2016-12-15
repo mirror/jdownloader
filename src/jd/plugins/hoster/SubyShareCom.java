@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -148,12 +149,15 @@ public class SubyShareCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-
             if (br.containsHTML("You need upgrade to premium account before download") || br.getURL().contains("/predownload")) {
-                if (account != null) {
+                if (Thread.currentThread() instanceof LinkCheckerThread) {
                     return AvailableStatus.UNCHECKABLE;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    if (account != null) {
+                        return AvailableStatus.UNCHECKABLE;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    }
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -224,6 +228,9 @@ public class SubyShareCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            super.showFreeDialog(getHost());
+        }
         checkForPremiumonlyNew();
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");

@@ -31,6 +31,10 @@ public class DecrypterException extends Exception {
         super(_JDT.T.decrypter_unknownerror());
     }
 
+    public DecrypterException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
     public DecrypterException(String errorMessage) {
         super(errorMessage);
     }

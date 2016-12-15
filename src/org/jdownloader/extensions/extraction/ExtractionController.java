@@ -517,7 +517,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             remove = getExtension().getRemoveFilesAfterExtractAction(getArchive());
         }
         if (remove != null && !DeleteOption.NO_DELETE.equals(remove)) {
-            for (ArchiveFile link : archive.getArchiveFiles()) {
+            for (final ArchiveFile link : archive.getArchiveFiles()) {
                 link.deleteFile(remove);
             }
         }

@@ -66,6 +66,11 @@ public class GenericF4M extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(DownloadLink link, Account account) {
+        return true;
+    }
+
+    @Override
     public boolean isSpeedLimited(DownloadLink link, Account account) {
         return false;
     }
