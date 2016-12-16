@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(?:www\\.)?porn\\.com/videos/[^<>\"/]+-\\d+(?:\\.html)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/(embed/)?[^<>\"/]+-?\\d+(\\.html)?" })
 public class PornCom extends antiDDoSForHost {
 
     /* DEV NOTES */
