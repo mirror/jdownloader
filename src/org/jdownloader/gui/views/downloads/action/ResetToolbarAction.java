@@ -64,7 +64,7 @@ public class ResetToolbarAction extends AbstractToolBarAction implements ExtTabl
 
     @Override
     protected String createTooltip() {
-        return null;
+        return NAME;
     }
 
     @Override
