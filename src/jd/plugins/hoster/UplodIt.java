@@ -26,6 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,14 +51,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploads.to", "ourupload.com" }, urls = { "https?://(?:www\\.)?(?:uplod\\.it|uploads\\.to)/(?:embed\\-)?[a-z0-9]{12}", "https?://(?:www\\.)?(?:uploadex\\.com|ourupload\\.com)/(?:embed\\-)?[a-z0-9]{12}" })
 public class UplodIt extends antiDDoSForHost {
@@ -63,7 +62,7 @@ public class UplodIt extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private final String                   COOKIE_HOST                     = "http://" + getHost();
+    private final String                   COOKIE_HOST                     = (SUPPORTS_HTTPS_FORCED ? "https://" : "http://") + getHost();
     private final String                   NICE_HOST                       = getHost().replaceAll("(https://|http://)", "");
     private final String                   NICE_HOSTproperty               = getHost().replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -89,7 +88,6 @@ public class UplodIt extends antiDDoSForHost {
     private static final boolean           SUPPORTS_HTTPS_FORCED           = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
-    private static final boolean           ENABLE_RANDOM_UA                = false;
     private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
 
     /* Waittime stuff */
@@ -153,6 +151,16 @@ public class UplodIt extends antiDDoSForHost {
         return super.rewriteHost(host);
     }
 
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(this.COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
+    }
+
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -191,7 +199,6 @@ public class UplodIt extends antiDDoSForHost {
         Browser altbr = null;
         this.br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
@@ -353,7 +360,7 @@ public class UplodIt extends antiDDoSForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
+        getPage(br, COOKIE_HOST + "/?op=report_file&id=" + fuid, false);
         final String result = br.getRegex("<b>Filename:</b></td><td[^>]*>([^<>\"]*?)</td>").getMatch(0);
         return result;
     }
@@ -430,7 +437,7 @@ public class UplodIt extends antiDDoSForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                final String embed_access = "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
@@ -692,18 +699,6 @@ public class UplodIt extends antiDDoSForHost {
             return true;
         }
         return false;
-    }
-
-    private void prepBrowser(final Browser br) {
-        /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
     }
 
     /**
@@ -1179,7 +1174,6 @@ public class UplodIt extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
