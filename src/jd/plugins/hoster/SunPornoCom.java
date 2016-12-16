@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "http://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "https?://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" })
 public class SunPornoCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -72,12 +72,12 @@ public class SunPornoCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?)\\'\\)").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(https?://.*?)\\'\\)").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/v/[a-z0-9]+/.*?)\\'").getMatch(0);
+            DLLINK = br.getRegex("\\'(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/v/[a-z0-9]+/.*?)\\'").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://vstreamcdn\\.com/[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"(https?://vstreamcdn\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -86,7 +86,7 @@ public class SunPornoCom extends PluginForHost {
         final String key = new Regex(DLLINK, "(key=.+)").getMatch(0);
         if (key != null) {
             /* Avoids 403 issues. */
-            this.br.getPage("http://www.sunporno.com/?area=movieFilePather&callback=movieFileCallbackFunc&id=1135032&url=" + Encoding.urlEncode(key) + "&_=" + System.currentTimeMillis());
+            this.br.getPage("//www.sunporno.com/?area=movieFilePather&callback=movieFileCallbackFunc&id=1135032&url=" + Encoding.urlEncode(key) + "&_=" + System.currentTimeMillis());
             DLLINK = PluginJSonUtils.getJsonValue(this.br, "path");
             betterDllink = PluginJSonUtils.getJsonValue(this.br, "path");
             if (betterDllink != null && betterDllink.startsWith("http")) {
