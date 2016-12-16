@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(?:www\\.)?upload\\.ee/files/\\d+/.*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(?:www\\.)?upload\\.ee/files/\\d+/.*?\\.html" })
 public class UploadEe extends PluginForHost {
 
     // DEV NOTES:
@@ -99,21 +99,22 @@ public class UploadEe extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://www.upload.ee/", "lng", "eng");
         br.setCookie("http://www.upload.ee/", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(?i)(>[\r\n\t]+There is no such file\\.[\r\n\t]+<|<title>UPLOAD\\.EE \\- File does not exist</title>|File was deleted by user|File was deleted automatically because of long time after last downloads)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("(?i)File: <b>(.*?)</b>").getMatch(0);
+        String filename = br.getRegex("(?i)(File|Файл): <b>(.*?)</b>").getMatch(1);
         if (filename == null) {
-            filename = br.getRegex("(?i)<title>UPLOAD.EE \\- Download (.*?)</title>").getMatch(0);
+            filename = br.getRegex("(?i)<title>UPLOAD.EE\\s+\\-\\s+(?:Download|Закачать)?\\s*(.*?)\\s*-\\s*(Download|Закачать)\\s*</title>").getMatch(0);
             if (filename == null) {
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
-        String filesize = br.getRegex("(?i)Size: (.*?)<br />").getMatch(0);
+        String filesize = br.getRegex("(?i)(Size|Размер): (.*?)<br />").getMatch(1);
         link.setName(filename.trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
