@@ -34,13 +34,8 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
         setName(NAME);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) {
-            return;
-        }
-        final SelectionInfo<FilePackage, DownloadLink> rawSelection = getSelection();
-        final List<DownloadLink> selection = rawSelection.getChildren();
-        if (!selection.isEmpty()) {
+    protected static void reset(final List<DownloadLink> selection) {
+        if (selection != null && !selection.isEmpty()) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
@@ -72,6 +67,13 @@ public class ResetAction extends CustomizableTableContextAppAction<FilePackage, 
                     return null;
                 };
             });
+        }
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (isEnabled()) {
+            final SelectionInfo<FilePackage, DownloadLink> rawSelection = getSelection();
+            reset(rawSelection.getChildren());
         }
     }
 }

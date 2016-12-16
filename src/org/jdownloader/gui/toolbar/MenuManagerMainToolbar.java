@@ -62,6 +62,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.downloads.action.ResetToolbarAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
@@ -122,6 +123,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         mr.add(PauseDownloadsAction.class);
         mr.add(StopDownloadsAction.class);
         mr.add(optional(new MenuItemData(new ActionData(StopDownloadsButFinishRunningOnesAction.class))));
+        mr.add(optional(new MenuItemData(new ActionData(ResetToolbarAction.class))));
         mr.add(new SeparatorData());
         mr.add(new MenuItemData(new ActionData(MoveToTopAction.class)));
         mr.add(new MenuItemData(new ActionData(MoveUpAction.class)));
