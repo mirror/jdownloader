@@ -34,7 +34,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.auth.Login;
 
-@DecrypterPlugin(revision = "$Revision: 32330$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
+@DecrypterPlugin(revision = "$Revision: 32330 $", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
 public class Ftp extends PluginForDecrypt {
 
     private static final HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
@@ -107,13 +107,13 @@ public class Ftp extends PluginForDecrypt {
                             ftp.connect(host, port, login.getUsername(), login.getPassword());
                         } catch (IOException e2) {
                             if (StringUtils.contains(message, "was unable to log in with the supplied") || StringUtils.contains(message, "530 Login or Password incorrect")) {
-                                throw new DecrypterException(DecrypterException.ACCOUNT, e2);
+                                throw new DecrypterException(DecrypterException.PASSWORD, e2);
                             } else {
                                 throw e2;
                             }
                         }
                     } else {
-                        throw new DecrypterException(DecrypterException.ACCOUNT, e);
+                        throw new DecrypterException(DecrypterException.PASSWORD, e);
                     }
                 } else {
                     throw e;
