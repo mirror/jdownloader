@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "http://(www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/[a-z0-9\\-]+(/\\d+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/[a-z0-9\\-]+(/\\d+)?" })
 public class BurningCamelCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -68,7 +68,6 @@ public class BurningCamelCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("(https?://burningcamel.com/media/videos/.*?)(\\'|\")").getMatch(0);
         }
-
         // if (filename == null || DLLINK == null || token == null) {
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
