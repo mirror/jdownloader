@@ -261,7 +261,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(CRYPTEDLINK_ORIGINAL, "photo((?:\\-)?\\d+_\\d+)").getMatch(0));
             decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
-        } else if (isSingeVideo(CRYPTEDLINK_ORIGINAL)) {
+        } else if (isSingleVideo(CRYPTEDLINK_ORIGINAL)) {
             loginrequired = false;
             if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
                 CRYPTEDLINK_FUNCTIONAL = MAINPAGE + "/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(?:\\-)?\\d+_\\d+)").getMatch(0);
@@ -352,7 +352,7 @@ public class VKontakteRu extends PluginForDecrypt {
             } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE_oid)) {
                 /* Audio page */
                 decryptAudioPage();
-            } else if (isSingeVideo(CRYPTEDLINK_FUNCTIONAL)) {
+            } else if (isSingleVideo(CRYPTEDLINK_FUNCTIONAL)) {
                 /* Single video */
                 decryptSingleVideo(CRYPTEDLINK_FUNCTIONAL);
             } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_VIDEO_ALBUM)) {
@@ -443,7 +443,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Checks if the type of a link is clear, meaning we're sure we have no vk.com/username link if this is returns true. */
     private boolean isKnownType() {
-        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingeVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_DOCS);
+        final boolean isKnown = CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE) || isSingleVideo(CRYPTEDLINK_ORIGINAL) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_WALL_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_GENERAL_AUDIO) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_COMMUNITY_ALBUM) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_POST_LINK) || CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_AUDIO_PAGE_oid) || this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_DOCS);
         return isKnown;
     }
 
@@ -701,7 +701,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String[] rutube = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(ajax, "params"));
                     if (rutube != null) {
                         // usually the first entry
-                        String url;
                         for (final String p : rutube) {
                             if (p.startsWith("//") || p.startsWith("http")) {
                                 decryptedLinks.add(createDownloadlink(Request.getLocation(p, br.getRequest())));
@@ -713,12 +712,12 @@ public class VKontakteRu extends PluginForDecrypt {
                     correctedBR = ajax;
                 }
             }
-            embedHash = new Regex(correctedBR, "\"hash\":\"([a-z0-9]+)\"").getMatch(0);
+            embedHash = PluginJSonUtils.getJsonValue(correctedBR, "hash");
             if (embedHash == null) {
                 decryptedLinks = null;
                 return;
             }
-            filename = new Regex(correctedBR, "\"md_title\":\"([^<>\"]*?)\"").getMatch(0);
+            filename = embedHash = PluginJSonUtils.getJsonValue(correctedBR, "md_title");
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 decryptedLinks = null;
@@ -2102,7 +2101,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return offline;
     }
 
-    public static boolean isSingeVideo(final String input) {
+    public static boolean isSingleVideo(final String input) {
         return (input.matches(PATTERN_VIDEO_SINGLE_Z) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH));
     }
 
