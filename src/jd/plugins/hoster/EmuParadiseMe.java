@@ -51,7 +51,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" })
 public class EmuParadiseMe extends PluginForHost {
 
     public EmuParadiseMe(PluginWrapper wrapper) {
@@ -116,7 +116,7 @@ public class EmuParadiseMe extends PluginForHost {
         String filename = null;
         String filesize = null;
         if (br.containsHTML(HTML_TYPE_DIRECT)) {
-            filename = br.getRegex("\"http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/([^<>\"/]*?)\"").getMatch(0);
+            filename = br.getRegex("\"https?://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/([^<>\"/]*?)\"").getMatch(0);
             filesize = br.getRegex("Size:\\s*(\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})<br>").getMatch(0);
         } else {
             if (!br.containsHTML("id=\"Download\"")) {
@@ -145,7 +145,7 @@ public class EmuParadiseMe extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = null;
         if (br.containsHTML(HTML_TYPE_DIRECT)) {
-            dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/[^<>\"/]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/[^<>\"/]*?)\"").getMatch(0);
         } else {
             synchronized (LOCK) {
                 dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -345,7 +345,7 @@ public class EmuParadiseMe extends PluginForHost {
         public EmuParadiseMeAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             // txnid
-            add(jlTxnId = new JLabel("TxnId: (must be 9 digits)"));
+            add(jlTxnId = new JLabel("TxnId: (must be at least 8 digits)"));
             add(this.txnId = new ExtTextField() {
 
                 @Override
@@ -383,7 +383,7 @@ public class EmuParadiseMe extends PluginForHost {
         }
 
         private boolean validatetxnId(final String txnId) {
-            return txnId != null && txnId.matches("^\\d{9}$");
+            return txnId != null && txnId.matches("^\\d{8,}$");
         }
 
         @Override
