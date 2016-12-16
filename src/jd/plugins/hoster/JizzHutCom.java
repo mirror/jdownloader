@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jizzhut.com" }, urls = { "http://(www\\.)?jizzhut\\.com/videos/.*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jizzhut.com" }, urls = { "https?://(www\\.)?jizzhut\\.com/videos/.*?\\.html" })
 public class JizzHutCom extends PluginForHost {
 
     private String dllink = null;
@@ -64,11 +64,11 @@ public class JizzHutCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         // Link offline
-        if (br.containsHTML("Datei nicht gefunden")) {
+        if (br.containsHTML("Datei nicht gefunden") || br.containsHTML("<p>This video does not exist or has been removed.</p>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Link offline without any errormessage
-        if (!br.containsHTML("(\\'|\")http://(www\\.)?jizzhut\\.com/videos/embed/")) {
+        if (!br.containsHTML("(\\'|\")https?://(www\\.)?jizzhut\\.com/videos/embed/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -81,11 +81,14 @@ public class JizzHutCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String Embed = br.getRegex("src=(?:\\'|\")(http://(www\\.)?jizzhut\\.com/videos/embed/[0-9]+)(?:\\'|\")").getMatch(0);
+        String Embed = br.getRegex("src=(?:\\'|\")(https?://(www\\.)?jizzhut\\.com/videos/embed/[0-9]+)(?:\\'|\")").getMatch(0);
         br.getPage(Embed);
-        dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\"file\",.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("'href','(https?://[^'<>]*?\\.(?:mp4|flv)(\\?.*?)?)'").getMatch(0);
+            }
             if (dllink == null) {
                 String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?(jizzhut|youjizz)\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
                 if (playlist == null) {
