@@ -84,6 +84,9 @@ public class WoodrocketCom extends PluginForHost {
                 break;
             }
         }
+        if (dllink == null) {
+            dllink = br.getRegex("wrvideo\\s*=\\s*\"(https?://videos\\.woodrocket\\.com/.*?\\.mp4)\"").getMatch(0);
+        }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
