@@ -1243,6 +1243,7 @@ StatsManager_run_upload_error_title=Sakupi i Pošalji Informacije o Greški
 StatusBarImpl_add_premium=Dodaj Premimum Nalog...
 StatusBarImpl_initGUI_abort_linkchecker=Prekini Linkchecker
 StatusBarImpl_initGUI_abort_linkgrabber=Prekini GrabilacLinkova
+StatusBarImpl_initGUI_abort_linkgrabber_all=Prekini sve iz Grabioca linkova
 StatusBarImpl_initGUI_extract=Akcija Ekstrakcije
 StatusBarImpl_initGUI_linkchecker=Aktivnost Linkchecker-a
 StatusBarImpl_initGUI_linkchecker_left=Online provjera...
