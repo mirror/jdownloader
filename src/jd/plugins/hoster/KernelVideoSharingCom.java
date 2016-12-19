@@ -225,6 +225,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         downloadLink.setName(filename);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
             /* Definitly offline */
+            downloadLink.setName(filename_url);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = getDllink(downloadLink, this.br);
