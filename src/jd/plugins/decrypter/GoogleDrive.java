@@ -16,11 +16,9 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,6 +38,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/folders/[a-z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
@@ -158,19 +159,24 @@ public class GoogleDrive extends PluginForDecrypt {
             do {
                 addedlinks = 0;
                 if (decryptedLinks.size() >= 50) {
-                    if (firstRequest) {
-                        /* Required to get the first "nextPageToken". */
-                        this.br.getPage("https://clients6.google.com/drive/v2internal/files?q=trashed%20%3D%20false%20and%20%27"
-                                + fid
-                                + "%27%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2Csubscribed%2CfolderColor%2ChasChildFolders%2CfileExtension%2CprimarySyncParentId%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CflaggedForAbuse%2CfolderFeatures%2Cspaces%2CsourceAppId%2Ceditable%2Crecency%2CrecencyReason%2Cversion%2CactionItems%2ChasAugmentedPermissions%2CprimaryDomainName%2CorganizationDisplayName%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&openDrive=true&reason=102&syncType=0&errorRecovery=false&orderBy=folder%2Ctitle%20asc&key="
-                                + key);
-                        firstRequest = false;
-                    } else {
-                        String test = "https://clients6.google.com/drive/v2internal/files?q=trashed%20%3D%20false%20and%20%27"
-                                + fid
-                                + "%27%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2Csubscribed%2CfolderColor%2ChasChildFolders%2CfileExtension%2CprimarySyncParentId%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CflaggedForAbuse%2CfolderFeatures%2Cspaces%2CsourceAppId%2Ceditable%2Crecency%2CrecencyReason%2ChasAugmentedPermissions%2CprimaryDomainName%2CorganizationDisplayName%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))&appDataFilter=NO_APP_DATA&spaces=DRIVE&pageToken="
-                                + nextPageToken + "&maxResults=50&openDrive=true&reason=102&syncType=0&errorRecovery=false&orderBy=folder%2Ctitle%20asc&key=" + key;
-                        this.br.getPage(test);
+                    try {
+                        if (firstRequest) {
+                            /* Required to get the first "nextPageToken". */
+                            this.br.getPage("https://clients6.google.com/drive/v2internal/files?q=trashed%20%3D%20false%20and%20%27"
+                                    + fid
+                                    + "%27%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2Csubscribed%2CfolderColor%2ChasChildFolders%2CfileExtension%2CprimarySyncParentId%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CflaggedForAbuse%2CfolderFeatures%2Cspaces%2CsourceAppId%2Ceditable%2Crecency%2CrecencyReason%2Cversion%2CactionItems%2ChasAugmentedPermissions%2CprimaryDomainName%2CorganizationDisplayName%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&openDrive=true&reason=102&syncType=0&errorRecovery=false&orderBy=folder%2Ctitle%20asc&key="
+                                    + key);
+                            firstRequest = false;
+                        } else {
+                            String test = "https://clients6.google.com/drive/v2internal/files?q=trashed%20%3D%20false%20and%20%27"
+                                    + fid
+                                    + "%27%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2Csubscribed%2CfolderColor%2ChasChildFolders%2CfileExtension%2CprimarySyncParentId%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CflaggedForAbuse%2CfolderFeatures%2Cspaces%2CsourceAppId%2Ceditable%2Crecency%2CrecencyReason%2ChasAugmentedPermissions%2CprimaryDomainName%2CorganizationDisplayName%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))&appDataFilter=NO_APP_DATA&spaces=DRIVE&pageToken="
+                                    + nextPageToken + "&maxResults=50&openDrive=true&reason=102&syncType=0&errorRecovery=false&orderBy=folder%2Ctitle%20asc&key=" + key;
+                            this.br.getPage(test);
+                        }
+                    } catch (final IOException e) {
+                        logger.log(e);
+                        break;
                     }
                     LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                     final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
