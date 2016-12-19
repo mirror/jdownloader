@@ -241,6 +241,11 @@ public class GoogleDrive extends PluginForDecrypt {
                     }
                 }
             } while (key != null && addedlinks >= 50);
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
             return decryptedLinks;
         }
         if (decryptedLinks.size() == 0) {
