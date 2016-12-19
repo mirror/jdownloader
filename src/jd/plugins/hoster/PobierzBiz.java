@@ -21,6 +21,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
@@ -40,12 +45,7 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class PobierzBiz extends PluginForHost {
     /* Tags: pobierz.biz, rapidtraffic.pl */
     private String                                         MAINPAGE           = "http://pobierz.biz/";
@@ -193,11 +193,11 @@ public class PobierzBiz extends PluginForHost {
             showMessage(link, "Phase 2/4: Checking Link");
             br.postPage(MAINPAGE + "index.php", postData);
             sleep(2 * 1000l, link);
-            if (!br.containsHTML("<td class='file_ok' id='linkstatus_1'>OK</td>")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
             if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            if (!br.containsHTML("<td class='file_ok' id='linkstatus_1'>OK</td>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("INVALID_LINK"));
             }
             postData = "v=usr%2Cpliki%7Cusr%2Clinki&c=pob&f=zapiszRozpoczete&usr=" + userId + "&progress_type=verified&link_ok%5B1%5D=" + url;
             br.postPage(MAINPAGE + "index.php", postData);
@@ -378,6 +378,7 @@ public class PobierzBiz extends PluginForHost {
                                                       put("TRAFFIC_LEFT", "Traffic Left");
                                                       put("PREMIUM_EXPIRED", "Premium expired");
                                                       put("ACCOUNT_TYPE", "Account type");
+                                                      put("INVALID_LINK", "Pobierz.biz reports: Invalid link");
                                                   }
                                               };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
@@ -394,6 +395,7 @@ public class PobierzBiz extends PluginForHost {
                                                       put("TRAFFIC_LEFT", "Pozostały transfer");
                                                       put("PREMIUM_EXPIRED", "Konto Premium wygasło");
                                                       put("ACCOUNT_TYPE", "Typ konta");
+                                                      put("INVALID_LINK", "Pobierz.biz zwraca: Błędny link");
                                                   }
                                               };
 
