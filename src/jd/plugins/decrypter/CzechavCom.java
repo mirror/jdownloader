@@ -52,7 +52,7 @@ public class CzechavCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String urlpart = new Regex(parameter, "/video/([a-z0-9\\-]+)").getMatch(0);
+        final String urlpart = new Regex(parameter, "/video/([a-z0-9\\-]+)-\\d+").getMatch(0);
         final String fid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean fastlinkcheck = cfg.getBooleanProperty("FAST_LINKCHECK", true);

@@ -162,6 +162,8 @@ public class LinkifierCom extends PluginForHost {
             if (StringUtils.isEmpty(url)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setConnectTimeout(120 * 1000);
+            br.setReadTimeout(120 * 1000);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
             if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                 br.followConnection();

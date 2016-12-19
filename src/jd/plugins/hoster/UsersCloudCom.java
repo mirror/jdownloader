@@ -250,7 +250,7 @@ public class UsersCloudCom extends PluginForHost {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
                     // fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    fileInfo[0] = new Regex(correctedBR, "<h2[^<>]+>(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "<h2[^<>]*>(<b>)?(.*?)(</b>)?</h2>").getMatch(1);
                     /* traits from download1 page below */
                     if (fileInfo[0] == null || fileInfo[0].contains("...") /* they can truncate the previous result. */) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
@@ -269,9 +269,7 @@ public class UsersCloudCom extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<Title>Download ([^<>]+)</Title>").getMatch(0);
-        }
+
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "ribbon\">([^<>]+)<").getMatch(0);
         }
