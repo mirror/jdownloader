@@ -164,7 +164,26 @@ public class LinkifierCom extends PluginForHost {
             }
             br.setConnectTimeout(120 * 1000);
             br.setReadTimeout(120 * 1000);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            final Number con_max = (Number) downloadResponse.get("con_max");
+            final Boolean con_resume = (Boolean) downloadResponse.get("con_resume");
+            final boolean resume;
+            final int maxChunks;
+            if (Boolean.FALSE.equals(con_resume)) {
+                maxChunks = 1;
+                resume = false;
+            } else {
+                resume = true;
+                if (con_max != null) {
+                    if (con_max.intValue() <= 1) {
+                        maxChunks = 1;
+                    } else {
+                        maxChunks = -con_max.intValue();
+                    }
+                } else {
+                    maxChunks = 1;
+                }
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, resume, maxChunks);
             if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
