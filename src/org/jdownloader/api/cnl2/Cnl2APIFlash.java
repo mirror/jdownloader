@@ -77,8 +77,10 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      * @param response
      * @param request
      */
-    
-    @APIParameterNames({"request","response","password","source","url"})
-    
+
+    @APIParameterNames({ "request", "response", "password", "source", "url" })
+
     public void add(RemoteAPIRequest request, RemoteAPIResponse response, String password, String source, String url) throws InternalApiException;
+
+    public void add(RemoteAPIRequest request, RemoteAPIResponse response, String fromFallback, String password, String source, String url) throws InternalApiException;
 }
