@@ -85,6 +85,12 @@ public class LinkifierCom extends PluginForHost {
         if (StringUtils.containsIgnoreCase(errorMsg, "Error verifying api key")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (errorMsg == null) {
+            final Number expiryDate = (Number) userResponse.get("expirydate");
+            if (expiryDate != null && expiryDate.longValue() < System.currentTimeMillis()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
@@ -214,6 +220,11 @@ public class LinkifierCom extends PluginForHost {
             }
             if (StringUtils.containsIgnoreCase(errorMsg, "Downloads blocked until")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+        } else {
+            final Number expiryDate = (Number) downloadResponse.get("expirydate");
+            if (expiryDate != null && expiryDate.longValue() < System.currentTimeMillis()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMsg);
