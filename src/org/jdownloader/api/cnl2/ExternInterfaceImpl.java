@@ -16,20 +16,6 @@ import java.util.Locale;
 
 import javax.swing.Icon;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-import net.sf.image4j.codec.ico.ICOEncoder;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -58,6 +44,20 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
+import net.sf.image4j.codec.ico.ICOEncoder;
 
 public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
@@ -363,7 +363,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request, null, null);
-            final String urls = request.getParameterbyKey("urls");
+            String urls = request.getParameterbyKey("urls");
+            if (StringUtils.isEmpty(urls) && request.getParameters() != null && request.getParameters().length >= 4) {
+                urls = request.getParameters()[3];
+            }
             if (StringUtils.isNotEmpty(urls)) {
                 clickAndLoad2Add(LinkOriginDetails.getInstance(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             }
@@ -371,6 +374,12 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
+    }
+
+    // For My JD API
+    @Override
+    public void add(RemoteAPIRequest request, RemoteAPIResponse response, String fromFallback, String password, String source, String url) throws InternalApiException {
+        add(request, response, password, source, url);
     }
 
     // For My JD API
@@ -727,4 +736,5 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             throw new InternalApiException(e);
         }
     }
+
 }
