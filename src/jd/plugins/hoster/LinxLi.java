@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.li" }, urls = { "https?://(www\\.)?linx\\.li/[a-zA-Z0-9]+(?:\\.[a-z]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linx.li" }, urls = { "https?://(www\\.)?linx\\.li/[a-zA-Z0-9]+(?:\\.[a-z]+)?" })
 public class LinxLi extends PluginForHost {
 
     public LinxLi(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class LinxLi extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?linx\\.li/(paste|meta)[^<>\"/]*?";
+    private static final String INVALIDLINKS = "https?://(www\\.)?linx\\.li/(paste|meta|upload)[^<>\"/]*?";
 
     /* Uses API: https://linx.li/meta/API */
     @SuppressWarnings("deprecation")
