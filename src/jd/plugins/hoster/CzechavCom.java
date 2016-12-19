@@ -20,9 +20,9 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -59,7 +59,6 @@ public class CzechavCom extends PluginForHost {
 
     public static final String   html_loggedin                = "/members/logout";
 
-    private String               dllink                       = null;
     private boolean              server_issues                = false;
     private boolean              logged_in                    = false;
 
@@ -75,13 +74,14 @@ public class CzechavCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            this.login(this.br, aa, false);
+            if (Thread.currentThread() instanceof SingleDownloadController) {
+                this.login(this.br, aa, false);
+            }
             logged_in = true;
         } else {
             logged_in = false;
@@ -89,24 +89,6 @@ public class CzechavCom extends PluginForHost {
         if (!logged_in) {
             logger.info("Login required to proceed");
             return AvailableStatus.UNCHECKABLE;
-        }
-        dllink = link.getDownloadURL();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (con.getContentType().contains("html")) {
-                if (con.getContentType().contains("html")) {
-                    server_issues = true;
-                    return AvailableStatus.TRUE;
-                }
-            }
-            link.setDownloadSize(con.getLongContentLength());
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
         }
         return AvailableStatus.TRUE;
     }
@@ -131,11 +113,6 @@ public class CzechavCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -211,6 +188,7 @@ public class CzechavCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        final String dllink = link.getDownloadURL();
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
