@@ -123,7 +123,9 @@ public class PornHubCom extends PluginForDecrypt {
         this.br.getPage(jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, this.br);
         if (isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            dl.setFinalFileName("viewkey=" + viewkey);
+            decryptedLinks.add(dl);
             return;
         }
 
