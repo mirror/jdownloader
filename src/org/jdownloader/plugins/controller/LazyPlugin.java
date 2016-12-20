@@ -57,7 +57,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (Application.getJavaVersion() >= Application.JAVA17) {
             this.displayName = displayName.toLowerCase(Locale.ENGLISH).intern();
         } else {
-            this.displayName = displayName;
+            this.displayName = displayName.toLowerCase(Locale.ENGLISH);
         }
         if (classLoader != null) {
             this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
