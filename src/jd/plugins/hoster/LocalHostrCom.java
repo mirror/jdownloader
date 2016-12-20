@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(www\\.)?(localhostr\\.com|lh\\.rs|hostr\\.co)/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(www\\.)?(localhostr\\.com|lh\\.rs|hostr\\.co)/[A-Za-z0-9]+" })
 public class LocalHostrCom extends PluginForHost {
 
     public LocalHostrCom(PluginWrapper wrapper) {
@@ -42,12 +42,17 @@ public class LocalHostrCom extends PluginForHost {
         return "http://localhostr.com/terms/";
     }
 
+    private static final String INVALIDLINKS = "https?://hostr\\.co/(apps|pricing|privacy|signin|signup|terms)";
+
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("https://hostr.co/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         // Correct previously added links
@@ -56,21 +61,31 @@ public class LocalHostrCom extends PluginForHost {
         // site has bad redirects happening. missing a slash within ://
         String rdr = br.getRedirectLocation();
         if (rdr != null) {
-            if (!rdr.contains("://")) rdr = rdr.replace(":/", "://");
+            if (!rdr.contains("://")) {
+                rdr = rdr.replace(":/", "://");
+            }
             br.getPage(rdr);
         }
         br.setFollowRedirects(true);
-        if (br.containsHTML("(>404<|>File not found|>We can\\'t find the file you\\'re looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>404<|>File not found|>We can\\'t find the file you\\'re looking for)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>.*?<h3>([^<>\"]*?)</h3>");
         final Regex gifLinkRegex = br.getRegex("<h1>([^<>\"]*?)<span class=\"bull\">\\&bull;</span> <a class=\"direct\" href=\"[^<>\"]*?\">Direct Link</a> \\(\\d+x\\d+ / ([^<>\"]*?)\\)<a");
         String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Hostr</title>").getMatch(0);
         if (filename == null) {
             filename = fInfo.getMatch(0);
-            if (filename == null) filename = gifLinkRegex.getMatch(0);
+            if (filename == null) {
+                filename = gifLinkRegex.getMatch(0);
+            }
         }
         String filesize = fInfo.getMatch(1);
-        if (filesize == null) filesize = gifLinkRegex.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = gifLinkRegex.getMatch(1);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -80,7 +95,9 @@ public class LocalHostrCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(/file/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "agreed=on", true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
