@@ -58,7 +58,8 @@ public class GirlfriendvideosCom extends PluginForHost {
         if (!br.getURL().contains("/members/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video has been removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>Girlfriend Videos \\- ([^<>\"]*?)</title>").getMatch(0);
+        // String filename = br.getRegex("<title>Girlfriend Videos \\- ([^<>\"]*?)</title>").getMatch(0); -> Free User-Submitted ...
+        String filename = br.getRegex("<font size=\"5\"><b>([^<>\"]*?)<").getMatch(0);
         /* Avoid rtmp streams */
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
