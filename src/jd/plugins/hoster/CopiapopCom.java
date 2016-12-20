@@ -48,6 +48,14 @@ public class CopiapopCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equals(getHost()) || "copiapop.es".equals(host)) {
+            return getHost();
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://copiapop.com/terms-of-service";
     }
