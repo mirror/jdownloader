@@ -1040,7 +1040,24 @@ public class LinkCrawler {
                                             final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                                             final String crawlContent;
                                             if (matchingRule != null && matchingRule._getDeepPattern() != null) {
-                                                crawlContent = br.getRegex(matchingRule._getDeepPattern()).getMatch(0);
+                                                final String[][] matches = br.getRegex(matchingRule._getDeepPattern()).getMatches();
+                                                if (matches != null) {
+                                                    final HashSet<String> dups = new HashSet<String>();
+                                                    final StringBuilder sb = new StringBuilder();
+                                                    for (final String matcharray[] : matches) {
+                                                        for (final String match : matcharray) {
+                                                            if (match != null && !brURL.equals(match) && dups.add(match)) {
+                                                                if (sb.length() > 0) {
+                                                                    sb.append("\r\n");
+                                                                }
+                                                                sb.append(match);
+                                                            }
+                                                        }
+                                                    }
+                                                    crawlContent = sb.toString();
+                                                } else {
+                                                    crawlContent = "";
+                                                }
                                             } else {
                                                 crawlContent = br.toString();
                                             }
