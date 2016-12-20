@@ -28,6 +28,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -88,6 +89,16 @@ public class PremiumTo extends UseNet {
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setAllowedResponseCodes(new int[] { 400 });
         return prepBr;
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
+        if (link != null && "share-online.biz".equals(link.getHost())) {
+            // re admin: only 1 possible
+            return 1;
+        } else {
+            return super.getMaxSimultanDownload(link, account, proxy);
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -586,8 +597,13 @@ public class PremiumTo extends UseNet {
     }
 
     private int getConnections(String host) {
-        // default is up to 10 connections
-        return -10;
+        if ("share-online.biz".equals(host)) {
+            // re admin: only 1 possible
+            return 1;
+        } else {
+            // default is up to 10 connections
+            return -10;
+        }
     }
 
     @Override
