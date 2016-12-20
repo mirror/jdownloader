@@ -300,7 +300,9 @@ public class PremiumTo extends UseNet {
                 showMessage(link, "Phase 2/3: Get link");
                 int connections = getConnections(link.getHost());
                 if (link.getChunks() != -1) {
-                    connections = link.getChunks();
+                    if (connections < 1) {
+                        connections = link.getChunks();
+                    }
                 }
                 if (link.getBooleanProperty(noChunks, false)) {
                     connections = 1;
