@@ -79,7 +79,7 @@ public class CzechavCom extends PluginForDecrypt {
             if (quality_url == null || !cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
                 continue;
             }
-            final String ext = ".mp4";
+            final String ext = getFileNameExtensionFromURL(videourl, ".mp4");
             final DownloadLink dl = this.createDownloadlink(videourl, fid, urlpart, quality_url);
             if (fastlinkcheck) {
                 dl.setAvailable(true);
@@ -95,7 +95,7 @@ public class CzechavCom extends PluginForDecrypt {
     }
 
     public static String[] getVideourls(final Browser br) {
-        return br.getRegex("\"(/[^/]+/video/[^/]+/download/video\\-\\d+x\\d+\\.mp4)\"").getColumn(0);
+        return br.getRegex("\"(/[^/]+/video/[^/]+/download/video\\-\\d+x\\d+(-\\d+kbps)?\\.(mp4|wmv))\"").getColumn(0);
     }
 
     /**
