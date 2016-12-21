@@ -199,6 +199,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             if (season > 0 && episode > 0) {
                 filename_part += "S" + df.format(season) + "E" + df.format(episode) + "_";
             }
+
             this.br.getPage(dash_master_url);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 /* Skip offline content - some content seems to be online from the main page but actually it is offline. */
