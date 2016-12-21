@@ -123,7 +123,8 @@ public class CompiledFiletypeFilter {
         CSV,
         RTF,
         PDF,
-        NFO;
+        NFO,
+        SRT;
 
         private final Pattern  pattern;
         private static Pattern allPattern;
