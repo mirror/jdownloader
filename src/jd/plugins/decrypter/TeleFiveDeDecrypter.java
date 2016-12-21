@@ -66,11 +66,13 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         /* Load sister-host plugin */
         JDUtilities.getPluginForHost(this.getHost());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinksTemp = new ArrayList<DownloadLink>();
         /* Videoids with releasedate */
         final HashMap<String, String> videoidsToDecrypt = new HashMap<String, String>();
         final String parameter = param.toString();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean fastlinkcheck = cfg.getBooleanProperty("FAST_LINKCHECK", false);
+        final boolean bestonly = cfg.getBooleanProperty("BEST", false);
         final String videoid_inside_url = new Regex(parameter, "v=(\\d+)").getMatch(0);
         LinkedHashMap<String, Object> entries = null;
         String json_source;
@@ -140,6 +142,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
 
         final Iterator<Entry<String, String>> it = videoidsToDecrypt.entrySet().iterator();
         while (it.hasNext()) {
+            decryptedLinksTemp.clear();
             final Entry<String, String> videoidEntry = it.next();
             final String videoid = videoidEntry.getKey();
             final String date = videoidEntry.getValue();
@@ -188,6 +191,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
             }
 
+            DownloadLink bestQuality = null;
+            int bitrateMax = 0;
+            int bitrateTemp = 0;
             String filename_part = date_formatted != null ? date_formatted + "_" : "";
             filename_part += "tele5_" + name_episode + "_";
             if (season > 0 && episode > 0) {
@@ -205,8 +211,13 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             }
             final String[] quality_entries = this.br.getRegex("<BaseURL>([^<>\"]+)</BaseURL>").getColumn(0);
             for (final String quality_entry : quality_entries) {
-                final String quality_key = new Regex(quality_entry, "_(\\d+k)").getMatch(0);
-                if (quality_key == null || !cfg.getBooleanProperty("GRAB_" + quality_key, true)) {
+                final String bitrate_str = new Regex(quality_entry, "_(\\d+)k").getMatch(0);
+                if (bitrate_str == null) {
+                    continue;
+                }
+                bitrateTemp = Integer.parseInt(bitrate_str);
+                final String quality_key = bitrate_str + "k";
+                if (!cfg.getBooleanProperty("GRAB_" + quality_key, true) && !bestonly) {
                     /* Error or quality is not wished by user --> Skip it. */
                     continue;
                 }
@@ -219,8 +230,23 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
-                decryptedLinks.add(dl);
-                distribute(dl);
+                decryptedLinksTemp.add(dl);
+                if (!bestonly) {
+                    distribute(dl);
+                } else if (bitrateTemp > bitrateMax) {
+                    /* Save highest quality DownloadLink. */
+                    bitrateMax = bitrateTemp;
+                    bestQuality = dl;
+                }
+            }
+
+            if (bestonly && bestQuality != null) {
+                /* Add best only. */
+                decryptedLinks.add(bestQuality);
+                distribute(bestQuality);
+            } else {
+                /* Add everything we found. */
+                decryptedLinks.addAll(decryptedLinksTemp);
             }
 
         }
