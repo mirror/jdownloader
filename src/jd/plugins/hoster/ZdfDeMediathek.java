@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "tivi.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de", "tivi.de" }, urls = { "decryptedmediathek://.+", "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+|decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" })
 public class ZdfDeMediathek extends PluginForHost {
 
     private String  dllink        = null;
@@ -69,9 +69,16 @@ public class ZdfDeMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         server_issues = false;
-        final String filename = link.getStringProperty("directName", null);
+        final String filename;
         prepBR(this.br);
-        dllink = link.getStringProperty("directURL", null);
+        if (link.getDownloadURL().contains("decryptedmediathek://")) {
+            /* New urls 2016-12-21 */
+            dllink = link.getDownloadURL().replace("decryptedmediathek://", "http://");
+        } else {
+            /* Old urls (tivi, phoenix) */
+            dllink = link.getStringProperty("directURL", null);
+        }
+        filename = link.getStringProperty("directName", null);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -107,7 +114,10 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        final String dllink = downloadLink.getStringProperty("directURL", null);
+        if (dllink == null) {
+            /* For old urls & phoenix.de. */
+            dllink = downloadLink.getStringProperty("directURL", null);
+        }
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {

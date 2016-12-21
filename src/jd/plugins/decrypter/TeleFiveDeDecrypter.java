@@ -91,14 +91,14 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
 
             final String player_id = this.br.getRegex("pid=\"(vplayer_\\d+)\"").getMatch(0);
             final String cid = this.br.getRegex("cid=\"(\\d+)\"").getMatch(0);
-            String lid = this.br.getRegex("lid=\"(vplayer_\\d+)\"").getMatch(0);
+            String lid = this.br.getRegex("lid=\"([A-Za-z0-9\\-_]+)\"").getMatch(0);
             if ((player_id == null || lid == null) && cid == null) {
                 /* Probably not a json/player/video page --> Offline */
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
 
-            if (player_id == null || lid == null) {
+            if ((player_id == null || lid == null) && !"0".equals(cid)) {
                 /* Single video */
                 videoidsToDecrypt.put(cid, null);
             } else {
@@ -156,7 +156,12 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
 
             /* Find dash master url. */
-            final String dash_master_url = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/file");
+            final Object dash_master_url_o = JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/file");
+            if (!(dash_master_url_o instanceof String)) {
+                /* Very rare offline case ... */
+                continue;
+            }
+            final String dash_master_url = (String) dash_master_url_o;
             final String akamaized_videoid = new Regex(dash_master_url, "kamaized.net/([^/]+)/").getMatch(0);
 
             /* Find information about that video. */
