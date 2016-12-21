@@ -23,11 +23,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,6 +42,11 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class StreaminTo extends antiDDoSForHost {
@@ -263,6 +263,9 @@ public class StreaminTo extends antiDDoSForHost {
             if (download1 != null) {
                 download1.remove("method_premium");
                 download1.remove("imhuman");
+
+                download1.put("imhuman", "");
+
                 /*
                  * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                  */
@@ -544,7 +547,9 @@ public class StreaminTo extends antiDDoSForHost {
 
     public String getDllink() {
         String dllink = null;
-        if (false) {
+        /* 2016-12-22: Switched back from rtmp to http (flv videofiles) */
+        final boolean preferRtmp = false;
+        if (!preferRtmp) {
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/((files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?|[a-z0-9]{20,}/v\\.(?:flv|mp4)))\\1").getMatch(1);
