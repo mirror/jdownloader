@@ -68,6 +68,7 @@ import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
 import org.jdownloader.auth.AuthenticationController;
@@ -586,6 +587,16 @@ public class LinkCrawler {
                     return ret;
                 };
 
+                private LogSource logger = null;
+
+                @Override
+                public LogInterface getLogger() {
+                    if (logger == null) {
+                        logger = LogController.getInstance().getClassLogger(LinkCrawler.class);
+                    }
+                    return logger;
+                }
+
                 @Override
                 protected LinkedHashSet<String> exportResults() {
                     final LinkedHashSet<String> ret = new LinkedHashSet<String>();
@@ -607,7 +618,17 @@ public class LinkCrawler {
                 }
             };
         } else {
-            resultSet = new HtmlParserResultSet();
+            resultSet = new HtmlParserResultSet() {
+                private LogSource logger = null;
+
+                @Override
+                public LogInterface getLogger() {
+                    if (logger == null) {
+                        logger = LogController.getInstance().getClassLogger(LinkCrawler.class);
+                    }
+                    return logger;
+                }
+            };
         }
         final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, url, allowDeep), url, resultSet);
         if (possibleLinks != null && possibleLinks.length > 0) {

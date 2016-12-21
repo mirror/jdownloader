@@ -14,6 +14,7 @@ import javax.swing.Timer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.swing.jdgui.JDGui;
 
@@ -152,8 +153,11 @@ public class AddLinksProgress extends AbstractDialog<Object> {
             // cancel
             final LinkCrawler lc = lcReference.get();
             if (lc != null) {
-                LinkCollector.getInstance().abort();
-                // lc.stopCrawling();
+                if (lc instanceof JobLinkCrawler) {
+                    ((JobLinkCrawler) lc).abort();
+                } else {
+                    lc.stopCrawling();
+                }
             }
         }
         super.setReturnmask(b);
