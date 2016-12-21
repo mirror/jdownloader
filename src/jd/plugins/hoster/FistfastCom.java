@@ -55,10 +55,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "katfile.com" }, urls = { "https?://(?:www\\.)?katfile\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class KatfileCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fistfast.com" }, urls = { "https?://(?:www\\.)?fistfast\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+public class FistfastCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -66,11 +67,11 @@ public class KatfileCom extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://katfile.com";
+    private static final String            COOKIE_HOST                        = "http://fistfast.com";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(katfile\\.com)";
+    private static final String            DOMAINS                            = "(fistfast\\.com)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -102,7 +103,7 @@ public class KatfileCom extends PluginForHost {
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
+    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = false;
 
     /* Pre-Download waittime stuff */
     private final boolean                  WAITFORCED                         = false;
@@ -132,33 +133,28 @@ public class KatfileCom extends PluginForHost {
 
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(3);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.2.4<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.2<br />
      * mods:<br />
-     * limit-info: premium untested, set free account limits<br />
+     * limit-info: 2016-12-21: Premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null<br />
+     * captchatype: reCaptchaV2<br />
      * other:<br />
      */
 
-    @SuppressWarnings({ "deprecation", "unused" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
-        final String protocol;
         /* link cleanup, prefer https if possible */
-        if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
-            protocol = "https://";
-        } else {
-            protocol = "http://";
-        }
+        final String protocol = correctProtocol("https://");
         final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
@@ -174,7 +170,7 @@ public class KatfileCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public KatfileCom(PluginWrapper wrapper) {
+    public FistfastCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -245,7 +241,7 @@ public class KatfileCom extends PluginForHost {
         scanInfo(fileInfo);
 
         /* Filename abbreviated over x chars long --> Use getFnameViaAbuseLink as a workaround to find the full-length filename! */
-        if (!inValidate(fileInfo[0]) && fileInfo[0].endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
+        if (!inValidate(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && SUPPORTS_AVAILABLECHECK_ABUSE) {
             logger.warning("filename length is larrrge");
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
         } else if (inValidate(fileInfo[0]) && SUPPORTS_AVAILABLECHECK_ABUSE) {
@@ -260,6 +256,7 @@ public class KatfileCom extends PluginForHost {
              * ".jpg" extension so that linkgrabber filtering is possible although we do not y<et have our final filename.
              */
             fileInfo[0] = this.fuid + ".jpg";
+            link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         }
         if (inValidate(fileInfo[0])) {
             /*
@@ -333,25 +330,21 @@ public class KatfileCom extends PluginForHost {
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            }
-            if (inValidate(fileInfo[1])) {
-                /* 2016-12-21: Special - filesize is only available in commented-out html! */
-                fileInfo[1] = new Regex(this.br.toString(), "\\(\\s*?Size:</b>([^<>\"\\']+)\\)").getMatch(0);
-            }
-            if (inValidate(fileInfo[1])) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                // next two are details from sharing box
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    // next two are details from sharing box
                     if (inValidate(fileInfo[1])) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                        // generic failover#1
+                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
                         if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                        }
-                        // generic failover#2
-                        if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                            // generic failover#1
+                            if (inValidate(fileInfo[1])) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                            }
+                            // generic failover#2
+                            if (inValidate(fileInfo[1])) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -373,7 +366,7 @@ public class KatfileCom extends PluginForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid, false);
+        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -387,8 +380,8 @@ public class KatfileCom extends PluginForHost {
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
         String filesize = null;
         try {
-            postPage(br, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
-            filesize = br.getRegex(">" + dl.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
+            filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
         return filesize;
@@ -412,7 +405,7 @@ public class KatfileCom extends PluginForHost {
             /* First let's remove all common video extensions */
             index = filename.lastIndexOf(".");
             ext_temp = filename.substring(index);
-            if (ext_temp != null && ext_temp.matches("\\.(avi|divx|flv|mkv|mov|mp4)")) {
+            if (ext_temp != null && new Regex(ext_temp, Pattern.compile("\\.(avi|divx|flv|mkv|mov|mp4)", Pattern.CASE_INSENSITIVE)).matches()) {
                 filename = filename.substring(0, index);
                 continue;
             }
@@ -422,13 +415,13 @@ public class KatfileCom extends PluginForHost {
         if (!filename.endsWith("." + defaultExtension)) {
             filename += "." + defaultExtension;
         }
-        return null;
+        return filename;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -480,7 +473,7 @@ public class KatfileCom extends PluginForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                final String embed_access = correctProtocol(COOKIE_HOST) + "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
@@ -532,6 +525,14 @@ public class KatfileCom extends PluginForHost {
                         logger.warning("Could not find 'fname'");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                }
+                /* Fix/Add "method_free" value if necessary. */
+                if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
+                    String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
+                    if (method_free_value == null || method_free_value.equals("")) {
+                        method_free_value = "Free Download";
+                    }
+                    download1.put("method_free", method_free_value);
                 }
                 /* end of backward compatibility */
                 submitForm(download1);
@@ -789,8 +790,7 @@ public class KatfileCom extends PluginForHost {
 
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        /* 2016-09-14: Removed this RegEx as it caused problems */
-        // regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
@@ -808,7 +808,7 @@ public class KatfileCom extends PluginForHost {
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(this.correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -820,10 +820,6 @@ public class KatfileCom extends PluginForHost {
                     }
                 }
             }
-        }
-        if (dllink == null) {
-            /* 2016-10-07: Added this */
-            dllink = new Regex(this.correctedBR, "(https?://[^/]+/d/[^<>\"]+)\"").getMatch(0);
         }
         if (dllink == null) {
             /* RegExes sometimes used for streaming */
@@ -863,22 +859,18 @@ public class KatfileCom extends PluginForHost {
         }
         if (dllink == null && IMAGEHOSTER) {
             /* Used for image-hosts */
-            dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\']+)").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/\\d+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
-            }
-            if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
-                /* Do NOT download thumbnails! */
-                dllink = null;
+            final String[] regexes = { "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/img/[a-z0-9]+/[^<>\"\\'\\[\\]]+)", "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\'\\[\\]]+)", "(https?://[^/]+/i/\\d+/[^<>\"\\'\\[\\]]+(?!_t\\.[A-Za-z]{3,4}))" };
+            for (final String regex : regexes) {
+                final String[] possibleDllinks = new Regex(this.correctedBR, regex).getColumn(0);
+                for (final String possibleDllink : possibleDllinks) {
+                    /* Do NOT download thumbnails! */
+                    if (possibleDllink != null && !possibleDllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
+                        dllink = possibleDllink;
+                    }
+                }
+                if (dllink != null) {
+                    break;
+                }
             }
         }
         return dllink;
@@ -914,26 +906,51 @@ public class KatfileCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    private void getPage(String page) throws Exception {
+        page = correctProtocol(page);
         getPage(br, page, true);
     }
 
-    private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
+    private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.getPage(page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
-    private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
+    private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.postPage(page, postdata);
         if (correctBr) {
             correctBR();
         }
+    }
+
+    // /* Handles redirects to prevent getDllink method from picking invalid final download_url in case of a redirect. */
+    // private void handleRedirects(final Browser br, final boolean correctBr) throws Exception {
+    // String redirect = br.getRedirectLocation();
+    // final int redirect_limit = 5;
+    // int counter = 0;
+    // while (redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}.*?") && counter <= redirect_limit) {
+    // br.getPage(redirect);
+    // redirect = br.getRedirectLocation();
+    // counter++;
+    // }
+    // }
+
+    private String correctProtocol(String url) {
+        if (SUPPORTS_HTTPS && SUPPORTS_HTTPS_FORCED) {
+            url = url.replaceFirst("http://", "https://");
+        } else if (!SUPPORTS_HTTPS) {
+            url = url.replaceFirst("https://", "http://");
+        }
+        return url;
     }
 
     private void submitForm(final Form form) throws Exception {
@@ -963,7 +980,11 @@ public class KatfileCom extends PluginForHost {
             ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>(\\d+)</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            /* More open RegEx */
+            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?<").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
@@ -1270,14 +1291,14 @@ public class KatfileCom extends PluginForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(3);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(3);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
@@ -1299,11 +1320,11 @@ public class KatfileCom extends PluginForHost {
                 final Form loginform = this.br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
                     }
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
@@ -1370,7 +1391,7 @@ public class KatfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, -2);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");

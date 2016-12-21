@@ -145,7 +145,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.2<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.3<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -986,7 +986,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
         }
         if (ttt == null) {
             /* More open RegEx */
