@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2.challenge.geetest;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
@@ -92,8 +93,15 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
                 break;
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {
-                    LinkCollector.getInstance().abort();
-                    // Just to be sure
+                    final LinkCrawler linkCrawler = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
+                    if (linkCrawler instanceof JobLinkCrawler) {
+                        final JobLinkCrawler jobLinkCrawler = ((JobLinkCrawler) linkCrawler);
+                        logger.info("Abort JobLinkCrawler:" + jobLinkCrawler.getUniqueAlltimeID().toString());
+                        jobLinkCrawler.abort();
+                    } else {
+                        logger.info("Abort global LinkCollector");
+                        LinkCollector.getInstance().abort();
+                    }
                     CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getPlugin().getCrawler()));
                 }
                 break;
