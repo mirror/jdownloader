@@ -33,7 +33,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onecloud.media" }, urls = { "http://(?:www\\.)?onecloud\\.media/file/[a-f0-9]{16}\\-[a-f0-9]{16}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onecloud.media" }, urls = { "https?://(?:www\\.)?onecloud\\.media/file/([a-f0-9]{16}\\-[a-f0-9]{16}|[a-zA-Z0-9]+)" })
 public class OnecloudMedia extends PluginForHost {
 
     public OnecloudMedia(PluginWrapper wrapper) {
@@ -54,6 +54,7 @@ public class OnecloudMedia extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
+        br.followRedirect();
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Tệp tin kh")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
