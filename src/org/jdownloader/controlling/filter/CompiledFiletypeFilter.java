@@ -124,7 +124,8 @@ public class CompiledFiletypeFilter {
         RTF,
         PDF,
         NFO,
-        SRT;
+        SRT,
+        USF;
 
         private final Pattern  pattern;
         private static Pattern allPattern;
