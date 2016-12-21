@@ -503,23 +503,33 @@ public class UlozTo extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /* First access downloadurl without logging in. */
+        requestFileInformation(link);
+        if (this.passwordProtected) {
+            /*
+             * 2016-12-21: passwordProtected + BasicAuth header = We'll get an empty page so we have to handle the password without the
+             * 'Authorization' Header and set it afterwards, then a download is possible without any issues.
+             */
+            handlePassword(link);
+        }
+        /* Now login, repeat the filecheck and download! */
         br.getHeaders().put("Authorization", login(account, null));
-        requestFileInformation(parameter);
+        requestFileInformation(link);
         String dllink = finalDirectDownloadURL;
         if (dllink == null) {
             // since login evaulates traffic left!
-            if (account.getAccountInfo().getTrafficLeft() < parameter.getDownloadSize()) {
+            if (account.getAccountInfo().getTrafficLeft() < link.getDownloadSize()) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
             }
             br.setFollowRedirects(false);
-            if (parameter.getDownloadURL().matches(QUICKDOWNLOAD)) {
-                dllink = parameter.getDownloadURL();
+            if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
+                dllink = link.getDownloadURL();
             } else {
                 if (passwordProtected) {
-                    handlePassword(parameter);
+                    handlePassword(link);
                 } else {
-                    br.getPage(parameter.getDownloadURL());
+                    br.getPage(link.getDownloadURL());
                 }
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
@@ -527,9 +537,9 @@ public class UlozTo extends PluginForHost {
                         /*
                          * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                          * 1800542995541.log; 2422576; jdlog://1800542995541
-                         *
+                         * 
                          * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                         *
+                         * 
                          * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                          */
                         // logger.info("No traffic available!");
@@ -540,7 +550,7 @@ public class UlozTo extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

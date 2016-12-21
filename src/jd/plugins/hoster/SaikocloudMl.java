@@ -58,7 +58,7 @@ public class SaikocloudMl extends PluginForHost {
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareBasic Version 0.7.8-psp<br />
      * mods:<br />
-     * limit-info:<br />
+     * limit-info: 2016-12-21: Limited maxChunks to 1, more is possible but unstable and very likely to cause http response 429<br />
      * protocol: no https<br />
      * captchatype: null<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
@@ -97,13 +97,13 @@ public class SaikocloudMl extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = 0;
+    private static final int               free_MAXCHUNKS                               = 1;
     private static final int               free_MAXDOWNLOADS                            = 20;
     private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = 0;
+    private static final int               account_FREE_MAXCHUNKS                       = 1;
     private static final int               account_FREE_MAXDOWNLOADS                    = 20;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
     private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
@@ -137,9 +137,13 @@ public class SaikocloudMl extends PluginForHost {
             /* Sometimes we get crippled results with the 2nd RegEx so use this one first */
             filename = this.br.getRegex("data\\-animation\\-delay=\"\\d+\">(?:Information about|Informacion) ([^<>\"]*?)</div>").getMatch(0);
             if (filename == null) {
-                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+                /* "Information about"-filename-trait without the animation(delay). */
+                filename = this.br.getRegex("class=\"description\\-1\">Information about ([^<>\"]+)<").getMatch(0);
             }
-            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            if (filename == null) {
+                filename = this.br.getRegex("(?:Filename|Dateiname|اسم الملف|Nome):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
+            filesize = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             try {
                 /* Language-independant attempt ... */
                 if (filename == null) {
