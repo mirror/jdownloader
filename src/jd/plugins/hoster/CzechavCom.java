@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -35,13 +33,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "http://czechavdecrypted.+" })
 public class CzechavCom extends PluginForHost {
 
     public CzechavCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.czechav.com/en/join/");
-        setConfigElements();
     }
 
     @Override
@@ -216,17 +217,59 @@ public class CzechavCom extends PluginForHost {
     }
 
     @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return CzechavComConfigInterface.class;
+    }
+
+    @Override
     public String getDescription() {
         return "Download videos- and pictures with the czechav.com plugin.";
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FAST_LINKCHECK", "Enable fast linkcheck?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_960x540", "Grab 960x540 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_960x540", "Grab 960x540 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1280x720", "Grab 1280x720 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_1920x1080", "Grab 1920x1080 (mp4)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_380x2160", "Grab 380x2160 (mp4)?").setDefaultValue(true));
+    public static interface CzechavComConfigInterface extends PluginConfigInterface {
+
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isGrabBestVideoVersionEnabled();
+
+        void setGrabBestVideoVersionEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(20)
+        boolean isGrab2160pVideoEnabled();
+
+        void setGrab2160pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrab1080pVideoEnabled();
+
+        void setGrab1080pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isGrab720pVideoEnabled();
+
+        void setGrab720pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(50)
+        boolean isGrab540pVideoEnabled();
+
+        void setGrab540pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(60)
+        boolean isGrab360pVideoEnabled();
+
+        void setGrab360pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(70)
+        boolean isGrabOtherResolutionsVideoEnabled();
+
+        void setGrabOtherResolutionsVideoEnabled(boolean b);
+
     }
 
     @Override

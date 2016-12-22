@@ -17,9 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,7 +35,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.CzechavCom.CzechavComConfigInterface;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "https?://(?:www\\.)?czechav\\.com/(?:de|en)/video/[a-z0-9\\-]+\\-\\d+/?" })
 public class CzechavCom extends PluginForDecrypt {
@@ -54,8 +60,6 @@ public class CzechavCom extends PluginForDecrypt {
         final String parameter = param.toString();
         final String urlpart = new Regex(parameter, "/video/([a-z0-9\\-]+)-\\d+").getMatch(0);
         final String fid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean fastlinkcheck = cfg.getBooleanProperty("FAST_LINKCHECK", true);
         final boolean is_logged_in = getUserLogin(false);
         if (!is_logged_in) {
             logger.info("Account required");
@@ -73,19 +77,62 @@ public class CzechavCom extends PluginForDecrypt {
             title = fid;
         }
         final String[] videourls = getVideourls(this.br);
+        final HashMap<String, List<DownloadLink>> qualities = new HashMap<String, List<DownloadLink>>();
         for (String videourl : videourls) {
             videourl = "https://" + this.getHost() + videourl;
-            final String quality_url = new Regex(videourl, "(\\d+x\\d+)").getMatch(0);
-            if (quality_url == null || !cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
-                continue;
-            }
-            final String ext = getFileNameExtensionFromURL(videourl, ".mp4");
-            final DownloadLink dl = this.createDownloadlink(videourl, fid, urlpart, quality_url);
-            if (fastlinkcheck) {
+            final String quality = new Regex(videourl, "x(\\d+)").getMatch(0);
+            if (quality != null) {
+                final String quality_url = new Regex(videourl, "(\\d+x\\d+)").getMatch(0);
+                final String ext = getFileNameExtensionFromURL(videourl, ".mp4");
+                final DownloadLink dl = this.createDownloadlink(videourl, fid, urlpart, quality_url);
                 dl.setAvailable(true);
+                dl.setName(title + "_" + quality_url + ext);
+                List<DownloadLink> list = qualities.get(quality);
+                if (list == null) {
+                    list = new ArrayList<DownloadLink>();
+                    qualities.put(quality, list);
+                }
+                list.add(dl);
             }
-            dl.setName(title + "_" + quality_url + ext);
-            decryptedLinks.add(dl);
+        }
+        final CzechavComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.CzechavCom.CzechavComConfigInterface.class);
+
+        final boolean allQualities = !(cfg.isGrab1080pVideoEnabled() || cfg.isGrab2160pVideoEnabled() || cfg.isGrab360pVideoEnabled() || cfg.isGrab540pVideoEnabled() || cfg.isGrab720pVideoEnabled() || cfg.isGrabOtherResolutionsVideoEnabled());
+        final boolean bestOnly = cfg.isGrabBestVideoVersionEnabled();
+
+        if ((allQualities || cfg.isGrab2160pVideoEnabled()) && qualities.containsKey("2160")) {
+            decryptedLinks.addAll(qualities.get("2160"));
+        }
+        if ((!bestOnly || decryptedLinks.isEmpty()) && (allQualities || cfg.isGrab1080pVideoEnabled()) && qualities.containsKey("1080")) {
+            decryptedLinks.addAll(qualities.get("1080"));
+        }
+        if ((!bestOnly || decryptedLinks.isEmpty()) && (allQualities || cfg.isGrab720pVideoEnabled()) && qualities.containsKey("720")) {
+            decryptedLinks.addAll(qualities.get("720"));
+        }
+        if ((!bestOnly || decryptedLinks.isEmpty()) && (allQualities || cfg.isGrab540pVideoEnabled()) && qualities.containsKey("540")) {
+            decryptedLinks.addAll(qualities.get("540"));
+        }
+        if ((!bestOnly || decryptedLinks.isEmpty()) && (allQualities || cfg.isGrab360pVideoEnabled()) && qualities.containsKey("360")) {
+            decryptedLinks.addAll(qualities.get("360"));
+        }
+        if ((!bestOnly || decryptedLinks.isEmpty()) && (allQualities || cfg.isGrabOtherResolutionsVideoEnabled())) {
+            final Iterator<Entry<String, List<DownloadLink>>> it = qualities.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, List<DownloadLink>> next = it.next();
+                final int q = Integer.valueOf(next.getKey());
+                switch (q) {
+                case 2160:
+                case 1080:
+                case 720:
+                case 540:
+                case 360:
+                    continue;
+                default:
+                    decryptedLinks.addAll(next.getValue());
+                    break;
+                }
+            }
+
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
