@@ -251,7 +251,7 @@ public class XArt extends PluginForDecrypt {
             if ((!bestOnly || results.isEmpty()) && (allQualities || cfg.isGrab540pVideoEnabled()) && qualities.containsKey("540")) {
                 results.addAll(qualities.get("540"));
             }
-            if ((!bestOnly || results.isEmpty()) && (allQualities || cfg.isGrab540pVideoEnabled()) && qualities.containsKey("360")) {
+            if ((!bestOnly || results.isEmpty()) && (allQualities || cfg.isGrab360pVideoEnabled()) && qualities.containsKey("360")) {
                 results.addAll(qualities.get("360"));
             }
             if (fp != null) {
