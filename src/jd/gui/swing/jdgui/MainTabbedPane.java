@@ -234,45 +234,45 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     }
 
     private void updateDonateButton() {
+        final boolean isVisible = DonationManager.getInstance().isButtonVisible();
+        if (isVisible) {
+            if (donatePanel == null) {
+                donatePanel = new View() {
 
-        if (donatePanel == null && DonationManager.getInstance().isButtonVisible()) {
-            donatePanel = new View() {
+                    @Override
+                    protected void onShow() {
+                    }
 
-                @Override
-                protected void onShow() {
-                }
+                    @Override
+                    protected void onHide() {
+                    }
 
-                @Override
-                protected void onHide() {
-                }
+                    @Override
+                    public String getTooltip() {
+                        return null;
+                    }
 
-                @Override
-                public String getTooltip() {
-                    return null;
-                }
+                    @Override
+                    public String getTitle() {
+                        return _GUI.T.DonateAction();
+                    }
 
-                @Override
-                public String getTitle() {
-                    return _GUI.T.DonateAction();
-                }
+                    @Override
+                    public Icon getIcon() {
+                        return new AbstractIcon("heart", 16);
+                    }
 
-                @Override
-                public Icon getIcon() {
-                    return new AbstractIcon("heart", 16);
-                }
-
-                @Override
-                public String getID() {
-                    return "DONATE";
-                }
-            };
+                    @Override
+                    public String getID() {
+                        return "DONATE";
+                    }
+                };
+            }
             super.addTab("DONATE", null, donatePanel, null);
             setTabComponentAt(this.getTabCount() - 1, donateHeader = new DonateTabHeader(donatePanel));
-        } else if (DonationManager.getInstance().isButtonVisible()) {
-            super.addTab("DONATE", null, donatePanel, null);
-            setTabComponentAt(this.getTabCount() - 1, donateHeader = new DonateTabHeader(donatePanel));
-        } else if (!DonationManager.getInstance().isButtonVisible()) {
+        } else if (donatePanel != null) {
             remove(donatePanel);
+            donatePanel = null;
         }
     }
 
