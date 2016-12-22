@@ -39,9 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)" })
 public class WebShareCz extends PluginForHost {
 
     public WebShareCz(PluginWrapper wrapper) {
@@ -153,9 +154,9 @@ public class WebShareCz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                String pw = crypt_md5(account.getPass().getBytes("UTF-8"), salt);
-                pw = JDHash.getSHA1(pw);
-                br.postPage("https://webshare.cz/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&keep_logged_in=true&wst=");
+                final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
+                final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
+                br.postPage("https://webshare.cz/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
                 final String token = getXMLtagValue("token");
                 if (token == null) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -241,26 +242,26 @@ public class WebShareCz extends PluginForHost {
 
     /*
      * Copyright (c) 1999 University of California. All rights reserved.
-     *
+     * 
      * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
      * are met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following
      * disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
      * disclaimer in the documentation and/or other materials provided with the distribution. 3. Neither the name of the author nor the
      * names of any co-contributors may be used to endorse or promote products derived from this software without specific prior written
      * permission.
-     *
+     * 
      * THIS SOFTWARE IS PROVIDED BY CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
      * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL CONTRIBUTORS BE LIABLE FOR ANY
      * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
      * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
      * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
      * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-     *
+     * 
      * $FreeBSD: src/lib/libcrypt/misc.c,v 1.1 1999/09/20 12:45:49 markm Exp $
      */
 
     static char[] itoa64 = /* 0 ... 63 => ascii - 64 */
-            "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+                         "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
 
     private static String cryptTo64(long v, int n) {
         StringBuilder result = new StringBuilder();
@@ -276,12 +277,12 @@ public class WebShareCz extends PluginForHost {
      * <phk@login.dknet.dk> wrote this file. As long as you retain this notice you can do whatever you want with this stuff. If we meet some
      * day, and you think this stuff is worth it, you can buy me a beer in return. Poul-Henning Kamp
      * ----------------------------------------------------------------------------
-     *
+     * 
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
     private static String magic    = "$1$"; /*
-     * This string is magic for this algorithm. Having it this way, we can get get better later on
-     */
+                                             * This string is magic for this algorithm. Having it this way, we can get get better later on
+                                             */
     private static int    MD5_SIZE = 16;
 
     private static void memset(byte[] array) {
