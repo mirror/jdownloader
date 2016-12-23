@@ -24,7 +24,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 35512 $", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
 
     private static final String API_KEY = "d046c4309bb7cabd19f49118a2ab25e0";
