@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 import javax.swing.Timer;
@@ -11,31 +12,40 @@ import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.TabHeader;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.donate.DONATE_EVENT;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
 
-    private static final String NOTIFY_ID = "xmas.22.12.2016.1";
+    /**
+     *
+     */
+    private static final long   serialVersionUID = 1L;
+    private final DONATE_EVENT  event;
+    private final Icon          eventIcon;
+    private final AtomicBoolean flashFlag        = new AtomicBoolean(false);
 
     public DonateTabHeader(final View view) {
         super(view);
-        if (doFlash()) {
+        event = DONATE_EVENT.getNow();
+        eventIcon = event.getIcon();
+        labelIcon.setIcon(eventIcon);
+        flashFlag.set(!event.matchesID(CFG_GUI.CFG.getDonationNotifyID()));
+        if (isFlashing()) {
             final Timer blinker = new Timer(1500, new ActionListener() {
                 private int        i               = 0;
-                private final Icon iconNormal      = view.getIcon();
-                private final Icon iconTransparent = IconIO.getTransparentIcon(IconIO.toBufferedImage(iconNormal), 0.5f);
+                private final Icon iconTransparent = IconIO.getTransparentIcon(IconIO.toBufferedImage(eventIcon), 0.5f);
 
                 @Override
                 public void actionPerformed(final ActionEvent e) {
-                    if (!doFlash()) {
-                        labelIcon.setIcon(iconNormal);
+                    if (!isFlashing()) {
+                        labelIcon.setIcon(eventIcon);
                         ((Timer) e.getSource()).stop();
                     } else {
                         if (i++ % 2 == 0) {
-                            labelIcon.setIcon(iconNormal);
+                            labelIcon.setIcon(eventIcon);
                         } else {
                             labelIcon.setIcon(iconTransparent);
                         }
@@ -47,8 +57,8 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
         }
     }
 
-    private boolean doFlash() {
-        return !StringUtils.equalsIgnoreCase(CFG_GUI.CFG.getDonationNotifyID(), NOTIFY_ID);
+    private boolean isFlashing() {
+        return flashFlag.get();
     }
 
     @Override
@@ -82,7 +92,8 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             @Override
             public void mousePressed(MouseEvent e) {
                 setShown();
-                CFG_GUI.CFG.setDonationNotifyID(NOTIFY_ID);
+                flashFlag.set(false);
+                CFG_GUI.CFG.setDonationNotifyID(event.getID());
                 new DonateAction().actionPerformed(null);
             }
 

@@ -6,26 +6,25 @@ import org.jdownloader.plugins.components.youtube.YT_STATICS;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
-public enum VideoFrameRate implements IntegerInterface,LabelInterface {
+public enum VideoFrameRate implements IntegerInterface, LabelInterface {
     FPS_60(60),
+    FPS_50(50),
     FPS_30(30),
     FPS_24(24),
     FPS_15(15),
     FPS_6(6);
 
-    private double fps;
+    private final double fps;
 
-    public double getFps() {
+    public final double getFps() {
         return fps;
     }
 
     private VideoFrameRate(double fps) {
-
         this.fps = fps;
     }
 
     public String getLabel() {
-
         return (int) Math.ceil(getFps()) + "fps";
     }
 
@@ -42,8 +41,7 @@ public enum VideoFrameRate implements IntegerInterface,LabelInterface {
     }
 
     public static int getSortId(AbstractVariant v) {
-
-        VideoFrameRate res = getByVariant(v);
+        final VideoFrameRate res = getByVariant(v);
         if (res == null) {
             return -1;
         }

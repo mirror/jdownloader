@@ -59,6 +59,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.donate.DonationManager;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.translate._GUI;
@@ -259,7 +260,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
                     @Override
                     public Icon getIcon() {
-                        return new AbstractIcon("heart", 16);
+                        return new AbstractIcon(IconKey.ICON_HEART, 16);
                     }
 
                     @Override
