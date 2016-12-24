@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -47,6 +48,7 @@ import jd.utils.locale.JDL;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
@@ -320,6 +322,19 @@ public class OneFichierCom extends PluginForHost {
                 // br2.submitForm(a1);
                 br2.postPageRaw(br.getURL(), "");
                 errorHandling(downloadLink, br2);
+                if (br2.containsHTML("not possible to unregistered users")) {
+                    final Account aa = AccountController.getInstance().getValidAccount(this);
+                    if (aa != null) {
+                        try {
+                            login(true);
+                            ensureSiteLogin();
+                        } catch (final PluginException e) {
+                            LogSource.exception(logger, e);
+                        }
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    }
+                }
                 dllink = br2.getRedirectLocation();
                 if (dllink == null) {
                     dllink = br2.getRegex(regex_dllink_middle).getMatch(1);
