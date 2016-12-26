@@ -171,6 +171,9 @@ public class VimeoCom extends PluginForHost {
                 }
             }
 
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                br.getPage("http://player.vimeo.com/video/" + ID);
+            }
             if (br.containsHTML(containsPass)) {
                 handlePW(downloadLink, br, "https://vimeo.com/" + ID + "/password");
             }
