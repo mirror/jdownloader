@@ -39,7 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(?:www\\.)?(?:(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/video/|embed\\.(?:divxstage\\.(?:net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(?:www\\.)?(?:(?:divxstage\\.(?:net|eu|to)|cloudtime\\.(?:co|to))/video/|embed\\.(?:divxstage\\.(?:net|eu|to)|cloudtime\\.(?:co|to))/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class DivxStageNet extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
@@ -101,12 +101,18 @@ public class DivxStageNet extends PluginForHost {
         }
         String filename = br.getRegex("class=\"video_det\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) {
+            filename = br.getRegex("<title>(.*?)( - CloudTime)?</title>").getMatch(0);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename.trim().equals("Untitled")) {
             downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".avi");
         } else {
-            downloadLink.setFinalFileName(filename + ".flv");
+            // Check filename from decrypter first
+            if (downloadLink.getFinalFileName() == null) {
+                downloadLink.setFinalFileName(filename + ".mp4");
+            }
         }
         return AvailableStatus.TRUE;
     }
