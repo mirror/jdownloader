@@ -392,7 +392,7 @@ public class FourSharedCom extends PluginForHost {
         // cau2=0759nousr&ua=LINUX&sop=true', title:"<div>You should log in to download this file.
         String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^\\&]+)").getMatch(0);
         logger.info("cau2=" + cau2);
-        if (br.containsHTML("0759nousr")) {
+        if (br.containsHTML("0759nousr|>You should log in to download this")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -691,7 +691,7 @@ public class FourSharedCom extends PluginForHost {
                 }
             }
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim")) {
+            if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim|This file was deleted.</")) {
                 /* Find out of this is always there for offline links */
                 if (br.containsHTML("class=\"warn\"")) {
                     logger.info("WARN class-element exists.");
