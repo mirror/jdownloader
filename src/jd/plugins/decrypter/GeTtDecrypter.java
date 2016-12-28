@@ -41,7 +41,7 @@ public class GeTtDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString().replace("#", "");
 
-        if (parameter.matches("https?://(?:www\\.)?ge\\.tt/(?:developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api).*?")) {
+        if (parameter.matches("https?://(?:www\\.)?ge\\.tt/(?:developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api|m).*?")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
