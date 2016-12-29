@@ -439,7 +439,7 @@ public class PowVideoNet extends antiDDoSForHost {
             }
             rtmp.setPageUrl(downloadLink.getDownloadURL());
             if (tcurl != null) {
-                rtmp.setTcUrl("rtmp://46.105.110.12:19350/vod/");
+                rtmp.setTcUrl(tcurl);
             }
             rtmp.setApp("vod/");
             rtmp.setSwfUrl("http://powvideo.net/player6/jwplayer.flash.swf");
@@ -1388,11 +1388,12 @@ public class PowVideoNet extends antiDDoSForHost {
                 }
             }
         }
-        /* 2016-11-29: Do NOT prefer rtmp anymore as http urls work fine again! */
-        // final String url_rtmp = new Regex(source, "src:\\s*?\\'(rtmp://[^<>\"\\']+mp4:[^<>\"\\']+)\\'").getMatch(0);
-        // if (url_rtmp != null) {
-        // result = url_rtmp;
-        // }
+        /* 2016-12-29: rtmp is forced again! */
+        final boolean preferRTMP = true;
+        final String url_rtmp = new Regex(source, "src:\\s*?\\'(rtmp://[^<>\"\\']+mp4:[^<>\"\\']+)\\'").getMatch(0);
+        if (url_rtmp != null && preferRTMP) {
+            result = url_rtmp;
+        }
 
         if (inValidate(result)) {
             /* 2016-11-04: Special */

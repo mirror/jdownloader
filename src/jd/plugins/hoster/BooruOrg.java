@@ -32,10 +32,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "https?://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" })
-public class GelbooruCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "booru.org" }, urls = { "https?://[a-z0-9]+\\.booru\\.org/index\\.php\\?page=post\\&s=view\\&id=\\d+" })
+public class BooruOrg extends PluginForHost {
 
-    public GelbooruCom(PluginWrapper wrapper) {
+    public BooruOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -53,7 +53,7 @@ public class GelbooruCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://gelbooru.com/tos.php";
+        return "http://booru.org/tos.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -67,7 +67,7 @@ public class GelbooruCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "id=(\\d+)$").getMatch(0);
-        String filename = br.getRegex("<title>Gelbooru\\- Image View \\- ([^<>\"]+) \\| \\d+</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
         } else {
@@ -75,7 +75,7 @@ public class GelbooruCom extends PluginForHost {
         }
         dllink = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://img\\.gelbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://img\\.booru\\.org//images/\\d+/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
                 // can be a video!
                 dllink = br.getRegex("<\\s*source\\s+[^>]*src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);

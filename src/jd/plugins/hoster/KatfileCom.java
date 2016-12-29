@@ -50,11 +50,15 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "katfile.com" }, urls = { "https?://(?:www\\.)?katfile\\.com/(?:embed\\-)?[a-z0-9]{12}" })
@@ -918,18 +922,21 @@ public class KatfileCom extends PluginForHost {
         getPage(br, page, true);
     }
 
-    private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
+    private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.getPage(page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
-    private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
+    private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        page = correctProtocol(page);
         br.postPage(page, postdata);
         if (correctBr) {
             correctBR();
@@ -1383,6 +1390,30 @@ public class KatfileCom extends PluginForHost {
             downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
         }
+    }
+
+    private String correctProtocol(String url) {
+        final KatfileComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.KatfileCom.KatfileComConfigInterface.class);
+        final boolean forceHttps = cfg.isForceHttpsEnabled();
+        if (forceHttps) {
+            url = url.replace("http://", "https://");
+        } else {
+            url = url.replace("https://", "http://");
+        }
+        return url;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return KatfileComConfigInterface.class;
+    }
+
+    public static interface KatfileComConfigInterface extends PluginConfigInterface {
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isForceHttpsEnabled();
+
+        void setForceHttpsEnabled(boolean b);
     }
 
     @Override
