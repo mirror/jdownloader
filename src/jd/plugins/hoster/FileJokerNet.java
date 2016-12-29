@@ -155,8 +155,12 @@ public class FileJokerNet extends antiDDoSForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        /* Server sometimes returns bad filenames */
-        link.setFinalFileName(fileInfo[0].trim());
+        if (fileInfo[0].contains("&#8230;")) { // …
+            link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+        } else {
+            /* Server sometimes returns bad filenames */
+            link.setFinalFileName(fileInfo[0].trim());
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -438,7 +442,9 @@ public class FileJokerNet extends antiDDoSForHost {
             handlePluginBroken(downloadLink, "dllinknofile", 3);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        fixFilename(downloadLink);
+        if (!downloadLink.getName().contains("…")) {
+            fixFilename(downloadLink);
+        }
         try {
             /* add a download slot */
             controlFree(+1);
