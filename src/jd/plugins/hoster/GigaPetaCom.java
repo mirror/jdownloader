@@ -68,6 +68,13 @@ public class GigaPetaCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
+        if (this.br.containsHTML("To download this file please")) {
+            /*
+             * E.g. html:
+             * "To download this file please <a href=/reg>register</a>. It is fast, free, and assumes no obligations.        </p>"
+             */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         String captchaKey = (int) (Math.random() * 100000000) + "";
         String captchaUrl = "/img/captcha.gif?x=" + captchaKey;
         for (int i = 1; i <= 3; i++) {
