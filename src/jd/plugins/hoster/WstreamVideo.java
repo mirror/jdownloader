@@ -52,7 +52,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wstream.video" }, urls = { "https?://(?:www\\.)?wstream\\.video/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wstream.video" }, urls = { "https?://(?:www\\.)?wstream\\.video/(?:embed\\-)?[a-z0-9]{12}" })
 public class WstreamVideo extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -324,6 +324,9 @@ public class WstreamVideo extends PluginForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "var strn = \"([^<>\"]*?)\"\\;").getMatch(0);
         }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
