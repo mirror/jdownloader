@@ -792,6 +792,8 @@ public class FiledotXyz extends PluginForHost {
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        /* 2016-12-29: Fix for html: "<h1 class="hidden">File not found</h1>" */
+        regexStuff.add("(<[A-Za-z0-9]+[^>]*?class=\"hidden\"[^>]*?>File not found</[A-Za-z0-9]+>)");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);

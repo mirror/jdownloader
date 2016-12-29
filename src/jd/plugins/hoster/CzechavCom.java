@@ -227,6 +227,11 @@ public class CzechavCom extends PluginForHost {
     }
 
     public static interface CzechavComConfigInterface extends PluginConfigInterface {
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
 
         @DefaultBooleanValue(false)
         @Order(10)

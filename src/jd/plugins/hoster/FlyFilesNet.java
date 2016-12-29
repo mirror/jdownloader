@@ -40,8 +40,9 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" })
 public class FlyFilesNet extends PluginForHost {
 
     private static final String HOST     = "http://flyfiles.net";
@@ -110,6 +111,9 @@ public class FlyFilesNet extends PluginForHost {
             requestFileInformation(downloadLink);
             String captchaurl = this.br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
             final String waittime = this.br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
+            final String reCaptchaV2ID = this.br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
+            final String postURL = HOST + "/";
+            String postata = "getDownLink=" + fid;
             if (waittime != null) {
                 final long wait = Long.parseLong(waittime);
                 /* Usually if there is a waittime it is a long waittime (1-2 hours). */
@@ -119,12 +123,18 @@ public class FlyFilesNet extends PluginForHost {
             }
             if (captchaurl != null) {
                 final String code = this.getCaptchaCode(captchaurl, downloadLink);
-                br.postPage(HOST + "/", "getDownLink=" + fid + "&captcha_value=" + Encoding.urlEncode(code));
+                postata += "&captcha_value=" + Encoding.urlEncode(code);
+                br.postPage(postURL, postata);
                 if (this.br.containsHTML("#downlinkCaptcha\\|0")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+            } else if (this.br.containsHTML("ReCaptchaDownload") && reCaptchaV2ID != null) {
+                /* 2016-12-29 */
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2ID).getToken();
+                postata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+                br.postPage(postURL, postata);
             } else {
-                br.postPage(HOST + "/", "getDownLink=" + fid);
+                br.postPage(postURL, postata);
             }
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.

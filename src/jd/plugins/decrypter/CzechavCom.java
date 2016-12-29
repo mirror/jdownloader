@@ -55,12 +55,20 @@ public class CzechavCom extends PluginForDecrypt {
         return dl;
     }
 
+    /* 2016-12-29: Prevent serverside IP ban. */
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String urlpart = new Regex(parameter, "/video/([a-z0-9\\-]+)-\\d+").getMatch(0);
         final String fid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
         final boolean is_logged_in = getUserLogin(false);
+        final CzechavComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.CzechavCom.CzechavComConfigInterface.class);
+        final boolean fastLinkcheck = cfg.isFastLinkcheckEnabled();
         if (!is_logged_in) {
             logger.info("Account required");
             return decryptedLinks;
@@ -85,7 +93,9 @@ public class CzechavCom extends PluginForDecrypt {
                 final String quality_url = new Regex(videourl, "(\\d+x\\d+)").getMatch(0);
                 final String ext = getFileNameExtensionFromURL(videourl, ".mp4");
                 final DownloadLink dl = this.createDownloadlink(videourl, fid, urlpart, quality_url);
-                dl.setAvailable(true);
+                if (fastLinkcheck) {
+                    dl.setAvailable(true);
+                }
                 dl.setName(title + "_" + quality_url + ext);
                 List<DownloadLink> list = qualities.get(quality);
                 if (list == null) {
@@ -95,7 +105,6 @@ public class CzechavCom extends PluginForDecrypt {
                 list.add(dl);
             }
         }
-        final CzechavComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.CzechavCom.CzechavComConfigInterface.class);
 
         final boolean allQualities = !(cfg.isGrab1080pVideoEnabled() || cfg.isGrab2160pVideoEnabled() || cfg.isGrab360pVideoEnabled() || cfg.isGrab540pVideoEnabled() || cfg.isGrab720pVideoEnabled() || cfg.isGrabOtherResolutionsVideoEnabled());
         final boolean bestOnly = cfg.isGrabBestVideoVersionEnabled();
