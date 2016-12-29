@@ -226,7 +226,7 @@ public class UsersCloudCom extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(fileInfo[0].trim());
+        link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
