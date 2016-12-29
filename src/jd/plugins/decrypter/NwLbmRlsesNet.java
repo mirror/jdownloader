@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newalbumreleases.net" }, urls = { "http://(www\\.)?newalbumreleases\\.net/[A-Za-z0-9=/]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newalbumreleases.net" }, urls = { "http://(www\\.)?newalbumreleases\\.net/(?!pic/)[A-Za-z0-9=/]+" })
 public class NwLbmRlsesNet extends PluginForDecrypt {
 
     public NwLbmRlsesNet(PluginWrapper wrapper) {
