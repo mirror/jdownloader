@@ -29,19 +29,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "https?://(?:www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\d+(\\-\\d+)?\\.html|https?://spon\\.de/[A-Za-z0-9]+" })
-public class SpglD extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spon.de" }, urls = { "https?://(?:www\\.)?spiegel\\.de/(?:fotostrecke/[a-z0-9\\-]+\\d+(\\-\\d+)?\\.html|artikel/a\\-\\d+\\.html)", "https?://(?:www\\.)?spon\\.de/[A-Za-z0-9]+" })
+public class SpiegelDe extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORED_FOTOSTRECKE         = Pattern.compile("https?://(?:www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\.html", Pattern.CASE_INSENSITIVE);
     private static final String  PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE = "https?://(?:www\\.)?spiegel\\.de/fotostrecke/[a-z0-9\\-]+\\d+\\-\\d+\\.html";
 
-    private static final String  PATTERN_SUPPORTED_SPON_SHORT_URL     = "https?://spon\\.de/[A-Za-z0-9]+";
+    private static final String  PATTERN_SUPPORTED_SPON_SHORT_URL     = ".+spon\\.de/[A-Za-z0-9]+";
+    private static final String  PATTERN_SUPPORTED_REDIRECT_ARTICLE   = ".+/artikel/.+";
 
     // Patterns für Fotostrecken
     private static final Pattern PATTERN_IMG_URL                      = Pattern.compile("<a id=\"spFotostreckeControlImg\" href=\"(/fotostrecke/fotostrecke-\\d+-\\d+.html)\"><img src=\"(http://www.spiegel.de/img/.+?(\\.\\w+?))\"");
     private static final Pattern PATTERN_IMG_TITLE                    = Pattern.compile("<meta name=\"description\" content=\"(.+?)\" />");
 
-    public SpglD(final PluginWrapper wrapper) {
+    public SpiegelDe(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -49,12 +50,13 @@ public class SpglD extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String url = cryptedLink.getCryptedUrl();
-        if (new Regex(url, PATTERN_SUPPORTED_SPON_SHORT_URL).matches()) {
-            /* SpiegelOnline short urls (edirect urls) */
+        if (new Regex(url, PATTERN_SUPPORTED_SPON_SHORT_URL).matches() || new Regex(url, PATTERN_SUPPORTED_REDIRECT_ARTICLE).matches()) {
+            /* SpiegelOnline short urls (redirect urls) */
             br.setFollowRedirects(false);
             this.br.getPage(url);
             final String finallink = this.br.getRedirectLocation();
             if (finallink == null) {
+                /* Probably offline */
                 return null;
             }
             decryptedLinks.add(this.createDownloadlink(finallink));
@@ -62,13 +64,13 @@ public class SpglD extends PluginForDecrypt {
             /* Picture galleries */
             br.setFollowRedirects(true);
             this.br.getPage(url);
-            String title = br.getRegex(SpglD.PATTERN_IMG_TITLE).getMatch(0);
+            String title = br.getRegex(SpiegelDe.PATTERN_IMG_TITLE).getMatch(0);
             if (title == null) {
                 logger.warning("Decrypter broken for link: " + cryptedLink.toString());
                 return null;
             }
             title = Encoding.htmlDecode(title.trim());
-            if (new Regex(cryptedLink.getCryptedUrl(), SpglD.PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE).matches()) {
+            if (new Regex(cryptedLink.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE).matches()) {
                 final String finallink = br.getRegex("<div class=\"biga\\-image\".*?<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + cryptedLink.toString());
@@ -79,7 +81,7 @@ public class SpglD extends PluginForDecrypt {
                 dlLink.setProperty("decryptedfilename", finalname);
                 dlLink.setFinalFileName(finalname);
                 decryptedLinks.add(dlLink);
-            } else if (new Regex(cryptedLink.getCryptedUrl(), SpglD.PATTERN_SUPPORED_FOTOSTRECKE).matches()) {
+            } else if (new Regex(cryptedLink.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORED_FOTOSTRECKE).matches()) {
                 int count = 1;
                 final FilePackage filePackage = FilePackage.getInstance();
                 filePackage.setName(title.trim());

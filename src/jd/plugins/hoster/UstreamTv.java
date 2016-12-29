@@ -35,7 +35,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" })
 public class UstreamTv extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public UstreamTv(final PluginWrapper wrapper) {
         super(wrapper);
@@ -89,29 +89,26 @@ public class UstreamTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = (LinkedHashMap<String, Object>) entries.get("video");
-        DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/smoothStreamingUrl");
-        if (DLLINK == null) {
+        dllink = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/smoothStreamingUrl");
+        if (dllink == null) {
             /* Sometimes only lower quality mp4's are available??! */
-            DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/mp4");
+            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/mp4");
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* Sometimes only lower quality flv's are available! */
-            DLLINK = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/flv");
-        }
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "media_urls/flv");
         }
         final String user = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
         String title = (String) entries.get("title");
         final String description = (String) entries.get("description");
         long filesize = JavaScriptEngineFactory.toLong(entries.get("file_size"), -1);
-        if (DLLINK == null || user == null || title == null) {
+        if (user == null || title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         title = encodeUnicode(title);
 
         final String ext;
-        if (DLLINK.contains(".mp4")) {
+        if (dllink != null && dllink.contains(".mp4")) {
             ext = ".mp4";
         } else {
             ext = ".flv";
@@ -123,11 +120,11 @@ public class UstreamTv extends PluginForHost {
             link.setComment(description);
         }
 
-        if (filesize == -1) {
+        if (filesize == -1 && dllink != null) {
             /* Only check if the json source did not contain filesize information */
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     filesize = con.getLongContentLength();
                 } else {
@@ -149,10 +146,13 @@ public class UstreamTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (is_private) {
+        if (dllink == null) {
+            /* 2016-12-29: For some streams, we do not get any downloadurl via API e.g. 98355455 and 98364293. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not downloadable");
+        } else if (is_private) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video which only the owner can watch/download");
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

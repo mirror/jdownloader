@@ -172,6 +172,7 @@ public class VimeoCom extends PluginForHost {
             }
 
             if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2016-12-26: Workaround related for forum report 72025 */
                 br.getPage("http://player.vimeo.com/video/" + ID);
             }
             if (br.containsHTML(containsPass)) {
