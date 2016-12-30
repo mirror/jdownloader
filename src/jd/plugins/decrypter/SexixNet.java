@@ -17,21 +17,32 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexix.net" }, urls = { "https?://(?:www\\.)?sexix\\.net/video\\d+[a-z0-9\\-_]+/" }) 
+import org.jdownloader.plugins.components.config.SexixNetConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexix.net" }, urls = { "https?://(?:www\\.)?sexix\\.net/video\\d+[a-z0-9\\-_]+/" })
 public class SexixNet extends PluginForDecrypt {
 
     public SexixNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return SexixNetConfig.class;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -43,6 +54,14 @@ public class SexixNet extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+
+        final boolean grabBEST = PluginJsonConfig.get(SexixNetConfig.class).isGrabBestVideoVersionEnabled();
+        final boolean grab1080p = PluginJsonConfig.get(SexixNetConfig.class).isGrab1080pVideoEnabled();
+        final boolean grab720p = PluginJsonConfig.get(SexixNetConfig.class).isGrab720pVideoEnabled();
+        final boolean grab480p = PluginJsonConfig.get(SexixNetConfig.class).isGrab480pVideoEnabled();
+        final boolean grab360p = PluginJsonConfig.get(SexixNetConfig.class).isGrab360pVideoEnabled();
+        final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
+
         String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
         String embedurl = this.br.getRegex("(/v\\.php\\?u=[^<>\"\\']+)").getMatch(0);
         if (embedurl == null) {
@@ -55,13 +74,39 @@ public class SexixNet extends PluginForDecrypt {
         }
         this.br.getPage(embedurl);
         /* Content is usually hosted on googlevideo (Google drive) */
-        final String[] links = br.getRegex("<jwplayer:source file=\"(http[^<>\"]+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        final String[] xmls = br.getRegex("<jwplayer:source file=[^>]+>").getColumn(-1);
+        if (xmls == null || xmls.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+        for (final String xml : xmls) {
+            final String directurl = new Regex(xml, "file=\"(http[^\"<>]+)").getMatch(0);
+            final String quality = new Regex(xml, "(\\d+p)").getMatch(0);
+            if (directurl == null || quality == null) {
+                continue;
+            }
+            final DownloadLink dl = createDownloadlink(directurl);
+            /* Best comes first --> Simply quit the loop if user wants best quality. */
+            if (grabBEST) {
+                decryptedLinks.add(dl);
+                break;
+            }
+            qualities.put(quality, dl);
+        }
+
+        if (!grabBEST) {
+            if (grab1080p && qualities.containsKey("1080p")) {
+                decryptedLinks.add(qualities.get("1080p"));
+            }
+            if (grab720p && qualities.containsKey("720p")) {
+                decryptedLinks.add(qualities.get("720p"));
+            }
+            if (grab480p && qualities.containsKey("480p")) {
+                decryptedLinks.add(qualities.get("480p"));
+            }
+            if (grab360p && qualities.containsKey("360p")) {
+                decryptedLinks.add(qualities.get("360p"));
+            }
         }
 
         if (fpName != null) {
