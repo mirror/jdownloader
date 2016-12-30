@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -68,8 +69,13 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String selectedQualities = PluginJsonConfig.get(KissanimeToConfig.class).getQualities();
-        final boolean grabBEST = selectedQualities.equalsIgnoreCase("best");
+        final boolean grabBEST = PluginJsonConfig.get(KissanimeToConfig.class).isGrabBestVideoVersionEnabled();
+        final boolean grab1080p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab1080pVideoEnabled();
+        final boolean grab720p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab720pVideoEnabled();
+        final boolean grab480p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab480pVideoEnabled();
+        final boolean grab360p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab360pVideoEnabled();
+
+        final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
         handleHumanCheck(this.br);
         String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
         if (title == null) {
@@ -83,9 +89,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             for (final String qual[] : quals) {
                 String decode = decodeSingleURL(qual[1]);
                 final String quality = qual[2];
-                if (!selectedQualities.contains(quality) && !grabBEST) {
-                    continue;
-                }
                 final DownloadLink dl = createDownloadlink(decode);
                 /* md5 of "kissanime.com" */
                 dl.setProperty("refresh_url_plugin", getHost());
@@ -93,10 +96,25 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
                 dl.setProperty("source_quality", quality);
                 dl.setFinalFileName(title + "-" + quality + ".mp4");
                 dl.setAvailableStatus(AvailableStatus.TRUE);
-                decryptedLinks.add(dl);
                 /* Best comes first --> Simply quit the loop if user wants best quality. */
                 if (grabBEST) {
+                    decryptedLinks.add(dl);
                     break;
+                }
+                qualities.put(quality, dl);
+            }
+            if (!grabBEST) {
+                if (grab1080p && qualities.containsKey("1080p")) {
+                    decryptedLinks.add(qualities.get("1080p"));
+                }
+                if (grab720p && qualities.containsKey("720p")) {
+                    decryptedLinks.add(qualities.get("720p"));
+                }
+                if (grab480p && qualities.containsKey("480p")) {
+                    decryptedLinks.add(qualities.get("480p"));
+                }
+                if (grab360p && qualities.containsKey("360p")) {
+                    decryptedLinks.add(qualities.get("360p"));
                 }
             }
         } else {

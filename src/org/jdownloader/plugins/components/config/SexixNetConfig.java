@@ -6,14 +6,8 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "kissanime.to", type = Type.CRAWLER)
-public interface KissanimeToConfig extends PluginConfigInterface {
-    public static class TRANSLATION {
-
-        public String selectQuality() {
-            return "Select qualities to download:";
-        }
-    }
+@PluginHost(host = "sexix.net", type = Type.CRAWLER)
+public interface SexixNetConfig extends PluginConfigInterface {
 
     @DefaultBooleanValue(false)
     @Order(10)
