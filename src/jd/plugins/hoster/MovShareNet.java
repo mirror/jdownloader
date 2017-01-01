@@ -32,7 +32,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "https?://(?:www\\.)?(?:movshare|wholecloud)\\.net/video/[a-z0-9]+|https?://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "https?://(?:www\\.)?epornik\\.com/video/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wholecloud.net", "epornik.com" }, urls = { "https?://(?:www\\.)?(?:movshare|wholecloud)\\.net/video/[a-z0-9]+|https?://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "https?://(?:www\\.)?epornik\\.com/video/[a-z0-9]+" })
 public class MovShareNet extends PluginForHost {
 
     private static final String FILE_TRANSFERRED = ">The file is being transfered";
@@ -45,7 +45,7 @@ public class MovShareNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.movshare.net/terms.php";
+        return "http://www.wholecloud.net/terms.php";
     }
 
     @Override
@@ -82,10 +82,10 @@ public class MovShareNet extends PluginForHost {
         }
         String filename = br.getRegex("Title:[\t\n\r ]*?</strong>([^<>\"]+)<").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| MovShare</title>").getMatch(0);
+            filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| wholecloud</title>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("name=\"title\" content=\"Watch ([^<>\"]*?) online \\| WholeCloud").getMatch(0);
+            filename = br.getRegex("name=\"title\" content=\"Watch ([^<>\"]*?) online \\| WholeCloud").getMatch(0); // <===
         }
         if (filename == null) {
             filename = br.getRegex("<h4 class=\"vidtitle\">([^<>\"]*?)</h4>").getMatch(0);
@@ -97,11 +97,11 @@ public class MovShareNet extends PluginForHost {
             filename = linkid;
         }
         filename = filename.trim();
-        if (br.getURL().contains("movshare.net/")) {
+        if (br.getURL().contains("wholecloud.net/")) {
             if (filename.equals("Untitled") || filename.equals("Title")) {
-                downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)$").getMatch(0) + ".avi");
+                downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "wholecloud\\.net/video/(.+)$").getMatch(0) + ".flv");
             } else {
-                downloadLink.setFinalFileName(filename + (!filename.endsWith(".avi") ? ".avi" : ""));
+                downloadLink.setFinalFileName(filename + (!filename.endsWith(".avi") ? ".mp4" : ""));
             }
         } else {
             if (filename.equals("Untitled") || filename.equals("Title")) {
