@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
@@ -36,6 +34,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class ConexaomegaCom extends PluginForHost {
@@ -90,8 +90,8 @@ public class ConexaomegaCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.conexaomega.com/login");
-                br.postPage("http://www.conexaomega.com/login", "email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()) + "&remember=1&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
+                br.getPage("https://www.conexaomega.com/login");
+                br.postPage("https://www.conexaomega.com/login", "email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()) + "&remember=1&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
                 if (br.getCookie(COOKIE_HOST, "cm_auth") == null) {
                     return false;
                 }
