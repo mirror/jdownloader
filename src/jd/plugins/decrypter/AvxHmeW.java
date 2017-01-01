@@ -61,7 +61,7 @@ public class AvxHmeW extends PluginForDecrypt {
         if (!parameter.contains("avaxhome.pro/")) {
             // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
             // images/self site refs + imdb refs
-            String[] links = br.getRegex("<a href=\"(" + notThis + ")\"\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*").getColumn(0);
+            String[] links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
             if (links != null && links.length != 0) {
                 for (String link : links) {
                     if (!link.matches(this.getSupportedLinks().pattern())) {
