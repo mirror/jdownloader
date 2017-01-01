@@ -32,7 +32,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "http://(?:www\\.)?(?:movshare|wholecloud)\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(?:www\\.)?epornik\\.com/video/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "https?://(?:www\\.)?(?:movshare|wholecloud)\\.net/video/[a-z0-9]+|https?://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "https?://(?:www\\.)?epornik\\.com/video/[a-z0-9]+" })
 public class MovShareNet extends PluginForHost {
 
     private static final String FILE_TRANSFERRED = ">The file is being transfered";
@@ -126,6 +126,9 @@ public class MovShareNet extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        } else if (br.containsHTML("/download.php\\?file=")) {
+            dllink = br.getRegex("(/download.php\\?file=[^<>\"]*?)\"").getMatch(0);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         } else {
             if (br.containsHTML("The file is beeing transfered to our other servers")) {
