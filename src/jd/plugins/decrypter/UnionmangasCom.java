@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,28 +28,27 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(com|net)/leitor/[^/]+/\\d+([\\.,]\\d+)?" }) 
-public class UnionmangasCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?unionmangas\\.(com|net)/leitor/[^/]+/\\d+([.,a-z]\\d*)?" })
+public class UnionmangasCom extends antiDDoSForDecrypt {
 
     public UnionmangasCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/leitor/")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "unionmangas\\.(?:com|net)/leitor/([^/]+)/(\\d+([\\.,]\\d+)?)");
+        final Regex urlinfo = new Regex(parameter, "unionmangas\\.(?:com|net)/leitor/([^/]+)/(\\d+([\\.,a-z]\\d*)?)");
         final String chapter_str = urlinfo.getMatch(1);
         final String url_name = urlinfo.getMatch(0);
-        final String url_fpname = url_name + "_chapter_" + chapter_str;
+        final String url_fpname = Encoding.urlDecode(url_name + "_chapter_" + chapter_str, false);
 
         final String[] links = this.br.getRegex("data\\-lazy=\"(http[^<>\"]+)\"").getColumn(0);
 
