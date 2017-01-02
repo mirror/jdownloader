@@ -26,6 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,12 +55,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cosmobox.org" }, urls = { "https?://(?:www\\.)?cosmobox\\.org/(?:(?:embed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" })
 public class CosmoBoxOrg extends PluginForHost {
 
@@ -64,7 +64,7 @@ public class CosmoBoxOrg extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://cosmobox.org";
+    private static final String            COOKIE_HOST                     = "https://cosmobox.org";
     private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -86,8 +86,8 @@ public class CosmoBoxOrg extends PluginForHost {
     /* Enable this for imagehosts */
     private static final boolean           IMAGEHOSTER                     = false;
 
-    private static final boolean           SUPPORTS_HTTPS                  = false;
-    private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
+    private static final boolean           SUPPORTS_HTTPS                  = true;
+    private static final boolean           SUPPORTS_HTTPS_FORCED           = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
     private static final boolean           ENABLE_RANDOM_UA                = false;
@@ -1144,16 +1144,14 @@ public class CosmoBoxOrg extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:?</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:?</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String[] av = new Regex(correctedBR, ">Traffic Avaliable</h6>\\s*<h2[^>]*><span data-plugin=\"counterup\">([-0-9]+)</span>\\s*([GMT]*B)</h2>").getRow(0);
+        String availabletraffic = "";
+        if (av != null) {
+            for (final String a : av) {
+                availabletraffic += a;
+            }
+        }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
