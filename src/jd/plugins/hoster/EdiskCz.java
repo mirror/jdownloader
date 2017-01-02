@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -149,35 +150,40 @@ public class EdiskCz extends PluginForHost {
     /* 2016-11-24: This might be broken as website has ben renewed! */
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
         login(account, null);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        String fileID = new Regex(link.getDownloadURL(), "/(\\d+)/[^/]+\\.html$").getMatch(0);
-        String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
-        if (fileID == null || premiumPage == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("/cz/" + premiumPage, "");
-        String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("(/stahni-rychle/\\d+/.*?\\.html)\"").getMatch(0);
+        if (account.getType() == AccountType.FREE) {
+            requestFileInformation(link);
+            handleFree(link);
+        } else {
+            requestFileInformation(link);
+            br.setFollowRedirects(true);
+            br.getPage(link.getDownloadURL());
+            String fileID = new Regex(link.getDownloadURL(), "/(\\d+)/[^/]+\\.html$").getMatch(0);
+            String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
+            if (fileID == null || premiumPage == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("/cz/" + premiumPage, "");
+            String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("(/stahni-rychle/\\d+/.*?\\.html)\"").getMatch(0);
+                }
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -195,30 +201,31 @@ public class EdiskCz extends PluginForHost {
         this.setBrowserExclusive();
         prepBr();
         br.setFollowRedirects(true);
-        br.postPage("http://www.edisk.cz/prihlaseni", "email=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&rememberMe=on&set_auth=true");
-        if (br.getCookie(MAINPAGE, "randStr") == null || br.getCookie(MAINPAGE, "email") == null) {
+        br.postPage("http://www.edisk.cz/account/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&form_id=Form_Login");
+        // if (br.getCookie(MAINPAGE, "randStr") == null || br.getCookie(MAINPAGE, "email") == null) {
+        if (br.getURL().contains("/account/login/")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (!br.getURL().endsWith("/moje-soubory")) {
-            br.getPage("/moje-soubory");
+        if (!br.getURL().endsWith("/account/stats/")) {
+            br.getPage("/account/stats/");
         }
         String availabletraffic = br.getRegex("<strong>Kredit\\s*:\\s*</strong>\\s*(\\d+)\\s*</span>").getMatch(0);
         if (availabletraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "MB"));
-        }
-        if (availabletraffic == null || ai.getTrafficLeft() <= 0) {
-            account.setValid(false);
-            /* Check if credit = zero == free account - till now there is no better way to verify this!. */
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            account.setValid(true);
+            ai.setStatus("Premium Account");
+            if (ia == null) {
+                account.setAccountInfo(ai);
             }
         }
-        account.setValid(true);
-        ai.setStatus("Premium Account");
-        if (ia == null) {
-            account.setAccountInfo(ai);
+        if (availabletraffic == null || ai.getTrafficLeft() <= 0) {
+            /* Check if credit = zero == free account - till now there is no better way to verify this!. */
+            /* 20170102 If revert is needed, revert to revision: 35520 */
+            account.setValid(true);
+            ai.setStatus("Free Account");
+            if (ia == null) {
+                account.setAccountInfo(ai);
+            }
         }
     }
 
