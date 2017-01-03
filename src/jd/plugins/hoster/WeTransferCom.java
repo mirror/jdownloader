@@ -23,6 +23,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -68,6 +69,7 @@ public class WeTransferCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         br.addAllowedResponseCodes(410);
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
@@ -102,8 +104,7 @@ public class WeTransferCom extends PluginForHost {
 
         String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
         final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
-        final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
-        br.getPage(mainpage + "api/v1/transfers/" + code + "/download?recipient_id=" + recepientID + "&security_hash=" + hash + "&password=&ie=false&ts=" + System.currentTimeMillis());
+        br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
