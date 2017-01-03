@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,9 +33,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
@@ -68,6 +68,7 @@ public class WeTransferCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br.addAllowedResponseCodes(410);
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
         if (dlink.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
@@ -89,6 +90,9 @@ public class WeTransferCom extends PluginForHost {
         // Allow redirects for change to https
         br.setFollowRedirects(true);
         br.getPage(dlink);
+        if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);
         if (recepientID == null) {
             recepientID = "";
