@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -41,7 +41,7 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro)))[\\S&]+";
+    private final String notThis = "(?:https?:)?(?://(?!(www\\.imdb\\.com|(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro))))?[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -64,6 +64,12 @@ public class AvxHmeW extends PluginForDecrypt {
             String[] links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
             if (links != null && links.length != 0) {
                 for (String link : links) {
+                    if (link.startsWith("/go/")) {
+                        final Browser br2 = br.cloneBrowser();
+                        br2.setFollowRedirects(false);
+                        br2.getPage(link);
+                        link = br2.getRedirectLocation();
+                    }
                     if (!link.matches(this.getSupportedLinks().pattern())) {
                         decryptedLinks.add(createDownloadlink(link));
                     }
