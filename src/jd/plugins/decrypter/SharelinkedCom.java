@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -45,12 +46,19 @@ public class SharelinkedCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
-        final String[] links = br.getRegex("href=\"(https?://(?!sharelinked\\.com/)[^<>\"]+)\"").getColumn(0);
+        final String[] links = br.getRegex("href=\"(https?://(?!sharelinked\\.com/)[^<>\"]+|https?://sharelinked\\.com/\\?across[^\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links) {
+        for (String singleLink : links) {
+            if (singleLink.contains("sharelinked.com/?across")) {
+                // single link
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(false);
+                br2.getPage(singleLink);
+                singleLink = br2.getRedirectLocation();
+            }
             decryptedLinks.add(createDownloadlink(singleLink));
         }
 
