@@ -379,7 +379,7 @@ public class FilerNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium User");
             ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
-            ai.setTrafficMax(SizeFormatter.getSize("50gb"));
+            ai.setTrafficMax(SizeFormatter.getSize("100gb"));// http://filer.net/faq
             ai.setValidUntil(Long.parseLong(getJson("until", br.toString())) * 1000);
         }
         account.setValid(true);

@@ -1720,15 +1720,26 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     String ext = Files.getExtension(child.getFinalFileName());
                                     if (StringUtils.isNotEmpty(ext)) {
                                         String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
-                                        Locale locale = new SubtitleVariantOld(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, ""))._getLocale();
-                                        File newFile;
-                                        IO.copyFile(finalFile, newFile = new File(finalFile.getParentFile(), base + "." + locale.getDisplayLanguage() + ".srt"));
+                                        final String displayLanguage;
+                                        if (variant instanceof SubtitleVariant) {
+                                            displayLanguage = ((SubtitleVariant) variant).getDisplayLanguage();
+                                        } else {
+                                            final Locale locale = new SubtitleVariantOld(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, ""))._getLocale();
+                                            displayLanguage = locale.getDisplayLanguage();
+                                        }
+                                        final File newFile;
+                                        if (StringUtils.isEmpty(displayLanguage)) {
+                                            newFile = new File(finalFile.getParentFile(), base + ".srt");
+                                        } else {
+                                            newFile = new File(finalFile.getParentFile(), base + "." + displayLanguage + ".srt");
+                                        }
+                                        IO.copyFile(finalFile, newFile);
                                         try {
                                             if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                                                 newFile.setLastModified(finalFile.lastModified());
                                             }
                                         } catch (final Throwable e) {
-                                            LogSource.exception(logger, e);
+                                            getLogger().log(e);
                                         }
                                         downloadLink.setFinalFileName(newFile.getName());
                                         copied = true;

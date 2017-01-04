@@ -103,7 +103,6 @@ public abstract class Challenge<T> {
         }
         final PluginForHost currentPlugin = (PluginForHost) plugin;
         final DownloadLink currentLink = currentPlugin.getDownloadLink();
-
         switch (skipRequest) {
         case BLOCK_ALL_CAPTCHAS:
             /* user wants to block all captchas (current session) */
