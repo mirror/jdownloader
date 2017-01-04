@@ -8,12 +8,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -25,7 +23,6 @@ import org.jdownloader.captcha.v2.challenge.oauth.AccountOAuthSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.OAuthDialogSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
-import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsConfigInterface;
 import org.jdownloader.captcha.v2.solver.captchasolutions.CaptchaSolutionsSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
@@ -123,9 +120,9 @@ public class ChallengeResponseController {
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());
-            if (StringUtils.isNotEmpty(JsonConfig.create(CaptchaSolutionsConfigInterface.class).getAPISecret())) {
-                addSolver(CaptchaSolutionsSolver.getInstance());
-            }
+            // if (StringUtils.isNotEmpty(JsonConfig.create(CaptchaSolutionsConfigInterface.class).getAPISecret())) {
+            addSolver(CaptchaSolutionsSolver.getInstance());
+            // }
             // if (StringUtils.isNotEmpty(JsonConfig.create(TwoCaptchaConfigInterface.class).getApiKey())) {
             addSolver(TwoCaptchaSolver.getInstance());
             // }
