@@ -7,6 +7,8 @@ import java.util.regex.Pattern;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.StringUtils;
+
 public abstract class YoutubeReplacer {
 
     public static enum TagTasks {
@@ -68,16 +70,26 @@ public abstract class YoutubeReplacer {
                     continue;
                 }
             }
-            String v = getValue(link, helper, null);
-            if (v != null && performTasks.contains(TagTasks.TO_LOWERCASE)) {
-                v = v.toLowerCase(Locale.ENGLISH);
-            } else if (v != null && performTasks.contains(TagTasks.TO_UPPERCASE)) {
-                v = v.toUpperCase(Locale.ENGLISH);
+            String value = getValue(link, helper, null);
+            if (value != null) {
+                if (value != null && performTasks.contains(TagTasks.TO_LOWERCASE)) {
+                    value = value.toLowerCase(Locale.ENGLISH);
+                } else if (performTasks.contains(TagTasks.TO_UPPERCASE)) {
+                    value = value.toUpperCase(Locale.ENGLISH);
+                }
+                if (performTasks.contains(TagTasks.WHITESPACE_TO_UNDERSCORE)) {
+                    value = value.replaceAll("\\s+", "_");
+                }
             }
-            if (v != null && performTasks.contains(TagTasks.WHITESPACE_TO_UNDERSCORE)) {
-                v = v.replaceAll("\\s+", "_");
+            if (StringUtils.isEmpty(value)) {
+                if (name.contains("." + usedTag)) {
+                    name = name.replace("." + usedTag, "");
+                } else {
+                    name = name.replace(usedTag, "");
+                }
+            } else {
+                name = name.replace(usedTag, value);
             }
-            name = name.replace(usedTag, v == null ? "" : v);
         }
         return name;
     }

@@ -43,7 +43,12 @@ public class AggregatedNumbersAPIStorable implements Storable {
     }
 
     public Long getETA() {
-        return aggregated.getEta();
+        final Long ret = aggregated.getEta();
+        if (ret == null || ret.longValue() < 0) {
+            return 0l;
+        } else {
+            return ret.longValue();
+        }
     }
 
     public Integer getRunning() {

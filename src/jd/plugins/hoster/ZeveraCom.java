@@ -446,7 +446,7 @@ public class ZeveraCom extends antiDDoSForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        getPage("//www.zevera.com/members/dashboard");
+        getPage("https://www.zevera.com/members/dashboard");
         final String expire = br.getRegex(">Expiration date:</span>.+?txExpirationDate\">(.*?)</span").getMatch(0);
         if (expire != null) {
             final String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);

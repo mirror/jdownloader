@@ -318,8 +318,8 @@ public class AggregatedNumbers {
             final long bytesLeft = Math.max(-1, totalBytes - loadedBytes);
             eta = bytesLeft / downloadSpeed;
         } else {
-            /* no filesize is known, we use Integer.Min_value to signal this */
-            eta = Integer.MIN_VALUE;
+            /* no filesize is known, we use -1 to signal this */
+            eta = -1;
         }
 
         this.connections = connections;

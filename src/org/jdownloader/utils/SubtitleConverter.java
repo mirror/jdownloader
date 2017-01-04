@@ -20,7 +20,7 @@ import jd.parser.Regex;
 public class SubtitleConverter {
 
     private final static String     LINE_SEPERATOR = System.getProperty("line.separator");
-    private final static String[][] REPLACE        = { { LINE_SEPERATOR, " " }, { "&amp;", "&" }, { "&quot;", "\"" }, { "&#39;", "'" } };
+    private final static String[][] REPLACE        = { { LINE_SEPERATOR, " " }, { "&gt;", ">" }, { "&lt;", "<" }, { "&amp;", "&" }, { "&quot;", "\"" }, { "&#39;", "'" } };
 
     /**
      * Converts the the time of the Google format to the SRT format.
