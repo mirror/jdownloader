@@ -11,6 +11,7 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -47,15 +48,20 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         if (offline != null) {
             offline.setVisible(false);
         }
-        startProgressCircle();
     }
 
-    protected void addProgress() {
+    protected IconedProcessIndicator progressCircle = null;
+
+    @Override
+    public void stop() {
+        stopProgressCircle();
+        super.stop();
     }
 
     protected void layoutComponents() {
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ANIMATED_ICON_VISIBLE.isEnabled()) {
             setLayout(new MigLayout("ins 3 3 0 3,wrap 3", "[][fill][grow,fill]", "[]"));
+            progressCircle = createProgress(IconKey.ICON_LINKGRABBER);
             String iconKey = IconKey.ICON_LINKGRABBER;
             if (origin != null) {
                 switch (origin) {
@@ -256,7 +262,8 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     }
 
     private void stopProgressCircle() {
-        if (progressCircle != null) {
+        final IconedProcessIndicator progressCircle = this.progressCircle;
+        if (progressCircle != null && progressCircle.isIndeterminate()) {
             progressCircle.setIndeterminate(false);
             progressCircle.setMaximum(100);
             progressCircle.setValue(100);
@@ -264,9 +271,10 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     }
 
     private void startProgressCircle() {
-        if (progressCircle != null) {
+        final IconedProcessIndicator progressCircle = this.progressCircle;
+        if (progressCircle != null && !progressCircle.isIndeterminate()) {
+            progressCircle.setValue(1);
             progressCircle.setIndeterminate(true);
-            progressCircle.setValue(0);
         }
     }
 

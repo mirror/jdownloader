@@ -8,6 +8,7 @@ import javax.swing.JLabel;
 import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
@@ -19,19 +20,29 @@ import org.jdownloader.images.AbstractIcon;
 
 public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
 
-    private final JLabel newIP;
-    private final JLabel old;
+    private final JLabel             newIP;
+    private final JLabel             old;
 
-    private final long   startTime = System.currentTimeMillis();
+    private final long               startTime      = System.currentTimeMillis();
 
-    private final JLabel duration;
+    private final JLabel             duration;
+    protected IconedProcessIndicator progressCircle = null;
+
+    @Override
+    public void stop() {
+        final IconedProcessIndicator progressCircle = this.progressCircle;
+        if (progressCircle != null) {
+            progressCircle.setIndeterminate(false);
+            progressCircle.setMaximum(100);
+            progressCircle.setValue(100);
+        }
+        super.stop();
+    }
 
     public ReconnectBubbleContent() {
         super("auto-reconnect");
-        // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
-
-        // , _GUI.T.balloon_reconnect_start_msg(), new AbstractIcon(IconKey.ICON_RECONNECT, 32)
-
+        progressCircle = createProgress("auto-reconnect");
+        add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
         add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_duration())));
         add(duration = new JLabel("-"));
         add(createHeaderLabel((_GUI.T.ReconnectDialog_layoutDialogContent_old())));

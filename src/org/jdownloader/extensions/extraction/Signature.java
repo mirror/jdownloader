@@ -20,20 +20,22 @@ import java.util.regex.Pattern;
 
 public class Signature {
 
-    private String  id;
+    private final String  id;
 
-    private Pattern signatur;
+    private final Pattern signatur;
 
-    private String  desc;
+    private final String  desc;
 
-    private Pattern extensionSure;
-    private Pattern extensionUnsure;
+    private final Pattern extensionSure;
+    private final Pattern extensionUnsure;
 
     public Signature(String id, String signaturPattern, String desc, String ext) {
         this.id = id;
         this.signatur = signaturPattern != null ? Pattern.compile(signaturPattern, Pattern.CASE_INSENSITIVE) : null;
+        this.extensionUnsure = null;
         this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
         this.desc = desc;
+
     }
 
     public Signature(String id, String signaturPattern, String desc, String ext, String unsureext) {
@@ -42,6 +44,10 @@ public class Signature {
         this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
         this.extensionUnsure = ext != null ? Pattern.compile(unsureext, Pattern.CASE_INSENSITIVE) : null;
         this.desc = desc;
+    }
+
+    public boolean isPrecisePatternStart() {
+        return signatur != null && !signatur.pattern().startsWith(".");
     }
 
     public String getDesc() {
@@ -66,26 +72,6 @@ public class Signature {
 
     public boolean matches(String sig) {
         return signatur.matcher(sig).matches();
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public void setExtensionSure(Pattern extension) {
-        this.extensionSure = extension;
-    }
-
-    public void setExtensionUnSure(Pattern extension) {
-        this.extensionUnsure = extension;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setSignatur(Pattern signatur) {
-        this.signatur = signatur;
     }
 
 }

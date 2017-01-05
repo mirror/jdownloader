@@ -22,10 +22,8 @@ public class CaptchaNotify extends AbstractNotifyWindow<BasicContentPanel> imple
 
     public CaptchaNotify(CaptchaBubbleSupport captchaBubbleSupport, SolverJob<?> job) {
         super(captchaBubbleSupport, _GUI.T.CaptchaNotify_CaptchaNotify_title_(job.getChallenge().getHost()), new BasicContentPanel(_GUI.T.CaptchaNotify_CaptchaNotifyPanel_text(), NewTheme.I().getIcon(IconKey.ICON_OCR, 32)));
-
         job.getEventSender().addListener(this, true);
         this.job = job;
-
     }
 
     @Override
