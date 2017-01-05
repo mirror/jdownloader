@@ -27,9 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -52,12 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
@@ -123,11 +122,23 @@ public class SubyShareCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
+        if (antiddosEnforced()) {
+            if (!isDownload) {
+                link.getLinkStatus().setStatusText("Captcha event present within linkchecking");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            // recaptchaV2 event!
+            logger.info("Detected captcha method \"reCaptchaV2\"");
+            final Form form = br.getFormbyProperty("id", "checkDDOS");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            sendForm(form);
+        }
         if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "IP blocked by service");
         }
@@ -150,18 +161,15 @@ public class SubyShareCom extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
             if (br.containsHTML("You need upgrade to premium account before download") || br.getURL().contains("/predownload")) {
-                if (Thread.currentThread() instanceof LinkCheckerThread) {
+                if (!isDownload) {
                     return AvailableStatus.UNCHECKABLE;
-                } else {
-                    if (account != null) {
-                        return AvailableStatus.UNCHECKABLE;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    }
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (account != null) {
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());
@@ -174,9 +182,15 @@ public class SubyShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean antiddosEnforced() {
+        final Form f = br.getFormbyProperty("id", "checkDDOS");
+        final boolean captchaEvent = br.containsHTML("<center><h1>Your browser is computing access to [\\w.]+</h1></center>");
+        return f != null && captchaEvent ? true : false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        return requestFileInformation(link, null, false);
     }
 
     private String[] scanInfo(final String[] fileInfo) {
@@ -222,7 +236,7 @@ public class SubyShareCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink, null);
+        requestFileInformation(downloadLink, null, true);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
@@ -1053,10 +1067,10 @@ public class SubyShareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink, account);
+        requestFileInformation(downloadLink, account, true);
         login(account, false);
         if (AccountType.FREE.equals(account.getType())) {
-            requestFileInformation(downloadLink, account);
+            requestFileInformation(downloadLink, account, true);
             doFree(downloadLink, false, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
