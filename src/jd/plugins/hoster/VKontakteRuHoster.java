@@ -26,12 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +54,12 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" })
@@ -144,7 +144,7 @@ public class VKontakteRuHoster extends PluginForHost {
         final CrawledLink ret = super.convert(link);
         final String url = link.getDownloadURL();
         if (url != null && url.matches(TYPE_DIRECT)) {
-            final String filename = getFilenameFromDirecturl(url);
+            final String filename = audioGetFilenameFromDirecturl(url);
             if (filename != null) {
                 try {
                     final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
@@ -183,7 +183,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_DIRECT)) {
             finalUrl = link.getDownloadURL();
             /* Prefer filename inside url */
-            filename = getFilenameFromDirecturl(finalUrl);
+            filename = audioGetFilenameFromDirecturl(finalUrl);
             checkstatus = linkOk(link, filename, isDownload);
             if (checkstatus != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -249,7 +249,11 @@ public class VKontakteRuHoster extends PluginForHost {
                     finalFilename = link.getName();
                 }
                 finalUrl = link.getStringProperty("directlink", null);
-                checkstatus = linkOk(link, finalFilename, isDownload);
+                if (!audioIsValidDirecturl(finalUrl)) {
+                    checkstatus = 0;
+                } else {
+                    checkstatus = linkOk(link, finalFilename, isDownload);
+                }
                 if (checkstatus != 1) {
                     String url = null;
                     final Browser br = this.br.cloneBrowser();
@@ -264,8 +268,8 @@ public class VKontakteRuHoster extends PluginForHost {
                         br.postPage(getBaseURL() + "/audio", post);
                         url = br.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
                         if (url == null) {
+                            /* Try other way below. */
                             failed = true;
-                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else {
                             /* Decodes the json string */
                             url = (String) JavaScriptEngineFactory.jsonToJavaObject(url);
@@ -278,18 +282,27 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
+                        /*
+                         * 2017-01-05: They often change the order of the ownerID and contentID parameters here so from now on, let's try
+                         * both variants.
+                         */
                         postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
-                        url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
-                        if (url != null) {
-                            url = url.replace("\\", "");
+                        url = audioGetDirectURL();
+                        if (url == null) {
+                            postPageSafe(aa, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
+                            url = audioGetDirectURL();
                         }
                     }
                     if (url == null) {
                         if (failed) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            /*
+                             * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had a
+                             * good test case to identify offline urls.
+                             */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - track might be offline", 5 * 60 * 1000l);
                         }
                         logger.warning("Failed to refresh audiolink directlink");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -340,7 +353,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (module != null && photo_list_id != null) {
                         /* Access photo inside wall-post */
                         setHeadersPhoto(this.br);
-                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&list=" + photo_list_id + "&module=" + module + "&photo=" + photoID);
+                        postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&list=" + module + photo_list_id + "&module=" + module + "&photo=" + photoID);
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
@@ -432,6 +445,26 @@ public class VKontakteRuHoster extends PluginForHost {
         dl.startDownload();
     }
 
+    private String audioGetDirectURL() {
+        String url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
+        if (url != null) {
+            url = url.replace("\\", "");
+            if (!audioIsValidDirecturl(url)) {
+                url = null;
+            }
+        }
+        return url;
+    }
+
+    /* 2016-01-05: Check for invalid audioURL! */
+    public static boolean audioIsValidDirecturl(final String url) {
+        if (url == null || (url != null && url.matches(".+audio_api_unavailable\\.mp3.*?"))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private void setHeadersPhoto(final Browser br) {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -491,7 +524,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return ai;
     }
 
-    private String getFilenameFromDirecturl(final String directurl) {
+    private String audioGetFilenameFromDirecturl(final String directurl) {
         return new Regex(directurl, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
     }
 

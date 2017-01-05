@@ -19,10 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,6 +30,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "https?://(?:www\\.)?(?:libgen\\.net|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
@@ -57,36 +56,39 @@ public class LibGenInfo extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("libgen.net/", "golibgen.io/"));
     }
 
-    private static final String  type_picture      = ".+/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
-    public static final String   type_libgen_get   = "/get\\.php\\?md5=[A-Za-z0-9]{32}";
+    private static final String  type_picture        = ".+/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
+    public static final String   type_libgen_get     = "/get\\.php\\?md5=[A-Za-z0-9]{32}";
 
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 2;
+    private static final boolean FREE_RESUME         = false;
+    private static final int     FREE_MAXCHUNKS      = 1;
+    private static final int     FREE_MAXDOWNLOADS   = 2;
 
-    private String               dllink            = null;
+    private String               dllink              = null;
+    private boolean              allow_html_download = false;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
+        allow_html_download = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
 
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openGetConnection(link.getDownloadURL());
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            con = br.openGetConnection(link.getDownloadURL());
+            final String server_filename = getFileNameFromHeader(con);
+            if (server_filename != null && server_filename.contains(".html")) {
+                allow_html_download = true;
             }
-            if (!con.getContentType().contains("html")) {
+            final boolean is_a_downloadable_file = !con.getContentType().contains("html") || allow_html_download;
+            if (is_a_downloadable_file) {
                 dllink = link.getDownloadURL();
                 link.setDownloadSize(con.getLongContentLength());
                 /* Final filename is sometimes set in decrypter */
                 if (link.getFinalFileName() == null) {
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    link.setFinalFileName(Encoding.htmlDecode(server_filename));
                 }
                 return AvailableStatus.TRUE;
             } else {
@@ -152,7 +154,7 @@ public class LibGenInfo extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") && !allow_html_download) {
             br.followConnection();
             if (br.containsHTML(">Sorry, huge and large files are available to download in local network only, try later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -25,13 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,6 +37,7 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,6 +48,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bankupload.com" }, urls = { "https?://(www\\.)?bankupload\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class BankuploadCom extends PluginForHost {
@@ -128,7 +132,7 @@ public class BankuploadCom extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null<br />
+     * captchatype: reCaptchaV1<br />
      * other:<br />
      */
 
@@ -172,7 +176,7 @@ public class BankuploadCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public BankuploadCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -1147,173 +1151,157 @@ public class BankuploadCom extends PluginForHost {
         }
     }
 
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (final PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-    // if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-    // /* free users it's provided by default */
-    // ai.setUsedSpace(space[0] + " " + space[1]);
-    // } else if ((space != null && space.length != 0) && space[0] != null) {
-    // /* premium users the Mb value isn't provided for some reason... */
-    // ai.setUsedSpace(space[0] + "Mb");
-    // }
-    // account.setValid(true);
-    // final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-    // if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-    // availabletraffic.trim();
-    // /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-    // if (!availabletraffic.startsWith("-")) {
-    // ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-    // } else {
-    // ai.setTrafficLeft(0);
-    // }
-    // } else {
-    // ai.setUnlimitedTraffic();
-    // }
-    // /* If the premium account is expired we'll simply accept it as a free account. */
-    // final String expire = new Regex(correctedBR,
-    // "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-    // long expire_milliseconds = 0;
-    // if (expire != null) {
-    // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
-    // }
-    // if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-    // account.setType(AccountType.FREE);
-    // account.setMaxSimultanDownloads(-1);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Free Account");
-    // } else {
-    // ai.setValidUntil(expire_milliseconds);
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(-1);
-    // account.setConcurrentUsePossible(true);
-    // ai.setStatus("Premium Account");
-    // }
-    // return ai;
-    // }
-    //
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // /* Load cookies */
-    // br.setCookiesExclusive(true);
-    // prepBrowser(br);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.setFollowRedirects(true);
-    // getPage(COOKIE_HOST + "/login.html");
-    // final Form loginform = br.getFormbyProperty("name", "FL");
-    // if (loginform == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // loginform.put("login", Encoding.urlEncode(account.getUser()));
-    // loginform.put("password", Encoding.urlEncode(account.getPass()));
-    // submitForm(loginform);
-    // if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
-    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
-    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę
-    // użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i
-    // nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some
-    // hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your
-    // username/password by hand without copy & paste.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // if (!br.getURL().contains("/?op=my_account")) {
-    // getPage("/?op=my_account");
-    // }
-    // if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
-    // account.setType(AccountType.FREE);
-    // } else {
-    // account.setType(AccountType.PREMIUM);
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-    // passCode = downloadLink.getStringProperty(PROPERTY_PASS);
-    // requestFileInformation(downloadLink);
-    // login(account, false);
-    // if (account.getType() == AccountType.FREE) {
-    // requestFileInformation(downloadLink);
-    // doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
-    // } else {
-    // String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
-    // if (dllink == null) {
-    // br.setFollowRedirects(false);
-    // getPage(downloadLink.getDownloadURL());
-    // dllink = getDllink();
-    // if (dllink == null) {
-    // Form dlform = br.getFormbyProperty("name", "F1");
-    // if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
-    // passCode = handlePassword(dlform, downloadLink);
-    // }
-    // checkErrors(downloadLink, true);
-    // if (dlform == null) {
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // submitForm(dlform);
-    // checkErrors(downloadLink, true);
-    // dllink = getDllink();
-    // }
-    // }
-    // if (dllink == null) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // logger.info("Final downloadlink = " + dllink + " starting the download...");
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // checkResponseCodeErrors(dl.getConnection());
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // correctBR();
-    // checkServerErrors();
-    // handlePluginBroken(downloadLink, "dllinknofile", 3);
-    // }
-    // fixFilename(downloadLink);
-    // downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
-    // dl.startDownload();
-    // }
-    // }
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
+            /* free users it's provided by default */
+            ai.setUsedSpace(space[0] + " " + space[1]);
+        } else if ((space != null && space.length != 0) && space[0] != null) {
+            /* premium users the Mb value isn't provided for some reason... */
+            ai.setUsedSpace(space[0] + "Mb");
+        }
+        account.setValid(true);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+            availabletraffic.trim();
+            /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        /* If the premium account is expired we'll simply accept it as a free account. */
+        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        long expire_milliseconds = 0;
+        if (expire != null) {
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+        }
+        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Free Account");
+        } else {
+            ai.setValidUntil(expire_milliseconds);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(1);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Premium Account");
+        }
+        return ai;
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                prepBrowser(br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.setFollowRedirects(true);
+                getPage(COOKIE_HOST + "/login.html");
+                final Form loginform = this.br.getFormbyProperty("name", "FL");
+                if (loginform == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!");
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "\r\nPlugin broken, please contact the JDownloader Support!");
+                    }
+                }
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                submitForm(loginform);
+                if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (!br.getURL().contains("/?op=my_account")) {
+                    getPage("/?op=my_account");
+                }
+                if (!new Regex(correctedBR, "(Premium(-| )Account expire|>Renew premium<)").matches()) {
+                    account.setType(AccountType.FREE);
+                } else {
+                    account.setType(AccountType.PREMIUM);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        passCode = downloadLink.getStringProperty(PROPERTY_PASS);
+        requestFileInformation(downloadLink);
+        login(account, false);
+        if (account.getType() == AccountType.FREE) {
+            requestFileInformation(downloadLink);
+            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
+        } else {
+            String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
+            if (dllink == null) {
+                br.setFollowRedirects(false);
+                getPage(downloadLink.getDownloadURL());
+                dllink = getDllink();
+                if (dllink == null) {
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
+                        passCode = handlePassword(dlform, downloadLink);
+                    }
+                    checkErrors(downloadLink, true);
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    submitForm(dlform);
+                    checkErrors(downloadLink, true);
+                    dllink = getDllink();
+                }
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                checkResponseCodeErrors(dl.getConnection());
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                handlePluginBroken(downloadLink, "dllinknofile", 3);
+            }
+            fixFilename(downloadLink);
+            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
+            dl.startDownload();
+        }
+    }
 
     @Override
     public void reset() {
