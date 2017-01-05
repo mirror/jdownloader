@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,6 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "http://(www\\.)?tokyo\\-tube\\.com/video/\\d+" })
 public class TokyoTubeCom extends PluginForHost {
@@ -48,18 +49,6 @@ public class TokyoTubeCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -86,49 +75,25 @@ public class TokyoTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.trim();
-        br.getHeaders().put("Accept-Encoding", "identity");
-        br.getPage("http://www.tokyo-tube.com/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "tokyo\\-tube\\.com/video/(\\d+)").getMatch(0));
-        final String[] types = { "hd", "src" };
-        Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Accept-Encoding", "identity");
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            for (String type : types) {
-                dllink = br.getRegex("<" + type + ">(http://[^<>]+)</" + type + ">").getMatch(0);
-                if (dllink != null) {
-                    dllink = dllink.trim();
-                    // DLLINK = Encoding.htmlDecode(DLLINK);
-                    dllink = dllink.replaceAll("%0D%0A", "").trim();
-                    con = br2.openGetConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                        break;
-                    } else {
-                        try {
-                            con.disconnect();
-                        } catch (Throwable e) {
-                        }
-                        continue;
-                    }
-                }
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (con.getContentType().contains("html")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String ext = getFileNameExtensionFromString(dllink, ".flv");
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        /* 2017-01-05: Changed from: "http://www.tokyo-tube.com/media/player/config.php?vkey=" */
+        br.getPage("http://www.tokyo-tube.com/media/videojs/mediainfo.php?vid=" + new Regex(downloadLink.getDownloadURL(), "tokyo\\-tube\\.com/video/(\\d+)").getMatch(0));
+        dllink = PluginJSonUtils.getJsonValue(this.br, "src");
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // this.br.getPage(dllink);
+        // final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        // final String url_hls = hlsbest.downloadurl;
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, dllink);
+        dl.startDownload();
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

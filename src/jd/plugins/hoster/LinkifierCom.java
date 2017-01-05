@@ -9,6 +9,7 @@ import java.util.WeakHashMap;
 import jd.PluginWrapper;
 import jd.http.requests.PostRequest;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,6 +78,7 @@ public class LinkifierCom extends PluginForHost {
                         }
                         ai.setMultiHostSupport(this, supportedHosts);
                     }
+                    account.setType(AccountType.PREMIUM);
                     return ai;
                 }
             }
@@ -91,7 +93,18 @@ public class LinkifierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        /* 2017-01-05: Free accounts cannot download anything. */
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(1);
+        account.setConcurrentUsePossible(false);
+        ai.setStatus("Free Account");
+        ai.setTrafficLeft(0);
+        return ai;
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+        return account != null && account.getType() == AccountType.PREMIUM;
     }
 
     @Override

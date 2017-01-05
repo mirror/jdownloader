@@ -42,6 +42,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -313,19 +314,20 @@ public class MountFileNet extends antiDDoSForHost {
         } else {
             requestFileInformation(link);
             login(account, false);
+            /* First check if user has direct download enabled. */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
             if (!dl.getConnection().isContentDisposition()) {
+                /* No direct download? Manually get directurl ... */
                 br.followConnection();
                 errorhandlingPremium();
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                postPage("/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
                 errorhandlingPremium();
-                String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                String dllink = PluginJSonUtils.getJsonValue(this.br, "ok");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dllink = dllink.replace("\\", "");
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
                 if (!dl.getConnection().isContentDisposition()) {
                     br.followConnection();

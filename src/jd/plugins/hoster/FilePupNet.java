@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,6 +33,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepup.net" }, urls = { "https?://(?:www\\.|sp\\d+\\.)?filepup\\.net/(?:files|get)/[A-Za-z0-9]+/.+" })
 public class FilePupNet extends PluginForHost {
@@ -161,7 +161,10 @@ public class FilePupNet extends PluginForHost {
                 }
                 // br.getPage("");
                 br.postPage("http://www." + this.getHost() + "/loginaa.php", "task=dologin&return=.%2Fmembers%2Fmyfiles.php&submit=Sign+In&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedIn()) {
+                if (this.br.containsHTML("You are already logged in on another device")) {
+                    /* E.g. "<p class="description">You are already logged in on another device. Please log out first!</p> " */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "You are already logged in on another device. Please log out first!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (!isLoggedIn()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
