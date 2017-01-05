@@ -32,6 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onecloud.media" }, urls = { "https?://(?:www\\.)?onecloud\\.media/file/([a-f0-9]{16}\\-[a-f0-9]{16}|[a-zA-Z0-9]+)" })
 public class OnecloudMedia extends PluginForHost {
@@ -86,15 +87,18 @@ public class OnecloudMedia extends PluginForHost {
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             /* Important request! */
-            this.br.postPage(this.br.getURL(), "type=file_check");
-            this.br.postPage(this.br.getURL(), "type=file_download");
+            String additionalPostdata = "";
+            if (this.br.containsHTML("g\\-recaptcha")) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                additionalPostdata = "&reCapcha=" + Encoding.urlEncode(recaptchaV2Response);
+            }
+            this.br.postPage(this.br.getURL(), "type=file_check" + additionalPostdata);
+            handleErrors();
+            this.br.postPage(this.br.getURL(), "type=file_download" + additionalPostdata);
+            handleErrors();
             /* Usually directurl to file hosted on googleusercontent.com. */
             dllink = PluginJSonUtils.getJsonValue(this.br, "msg");
             if (dllink == null || !dllink.startsWith("http")) {
-                if (dllink != null && dllink.contains("Tệp tin chưa sẵn sàng")) {
-                    /* E.g. "Tệp tin chưa sẵn sàng, vui lòng thử lại sau" */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary server issue");
-                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -109,6 +113,16 @@ public class OnecloudMedia extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private void handleErrors() throws PluginException {
+        final String msg = PluginJSonUtils.getJsonValue(this.br, "msg");
+        if (msg != null) {
+            if (msg.contains("Tệp tin chưa sẵn sàng")) {
+                /* E.g. "Tệp tin chưa sẵn sàng, vui lòng thử lại sau" */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary server issue");
+            }
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

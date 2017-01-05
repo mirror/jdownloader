@@ -95,12 +95,24 @@ public class SextvxCom extends PluginForHost {
         if (path == null) {
             path = this.br.getRegex("path=\"[0-9,\\.]+(\\d+/[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || server == null || path == null) {
+        String flux = this.br.getRegex("(/flux[^\"]+)").getMatch(0);
+        if ((flux == null || flux.contains("'")) && server != null && path != null) {
+            path = path.replace(".", ",").replace("/", ",");
+            flux = "/flux?d=web.flv&s=" + server + "&p=" + path;
+        }
+        if (filename == null || flux == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        path = path.replace(".", ",").replace("/", ",");
-        br.getPage("http://sextvx.com/flux?d=web.flv&s=" + server + "&p=" + path);
-        dllink = this.br.toString();
+        this.br.setFollowRedirects(false);
+        br.getPage(flux);
+        /* 2017-01-05: 2 different types. */
+        final String redirect = this.br.getRedirectLocation();
+        if (redirect != null) {
+            dllink = redirect;
+        } else {
+            dllink = this.br.toString();
+        }
+        this.br.setFollowRedirects(true);
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

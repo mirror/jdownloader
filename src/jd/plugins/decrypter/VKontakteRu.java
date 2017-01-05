@@ -1227,7 +1227,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setProperty("postID", postID);
                     dl.setProperty("fromId", fromId);
                     dl.setProperty("toId", toId);
-                    dl.setProperty("directlink", url);
+                    if (jd.plugins.hoster.VKontakteRuHoster.audioIsValidDirecturl(url)) {
+                        dl.setProperty("directlink", url);
+                    }
                     if (fastcheck_audio) {
                         /* If the url e.g. equals "" --> Usually these tracks are GEO-blocked in the region in which the user is. */
                         dl.setAvailable(url != null && url.length() > 0);
