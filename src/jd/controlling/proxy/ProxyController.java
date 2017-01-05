@@ -109,11 +109,11 @@ public class ProxyController implements ProxySelectorInterface {
 
     public static final URLStreamHandler SOCKETURLSTREAMHANDLER = new URLStreamHandler() {
 
-                                                                    @Override
-                                                                    protected URLConnection openConnection(URL u) throws IOException {
-                                                                        throw new IOException("not implemented");
-                                                                    }
-                                                                };
+        @Override
+        protected URLConnection openConnection(URL u) throws IOException {
+            throw new IOException("not implemented");
+        }
+    };
 
     private static final ProxyController INSTANCE               = new ProxyController();
 
@@ -131,24 +131,24 @@ public class ProxyController implements ProxySelectorInterface {
 
     private final Queue                                                     QUEUE           = new Queue(getClass().getName()) {
 
-                                                                                                @Override
-                                                                                                public void killQueue() {
-                                                                                                    LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can't be killed
-                                                                                                     */
-                                                                                                }
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                                                                            };
+    };
 
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
     private final EventSuppressor<ConfigEvent>                              eventSuppressor = new EventSuppressor<ConfigEvent>() {
 
-                                                                                                @Override
-                                                                                                public boolean suppressEvent(ConfigEvent eventType) {
-                                                                                                    return true;
-                                                                                                }
-                                                                                            };
+        @Override
+        public boolean suppressEvent(ConfigEvent eventType) {
+            return true;
+        }
+    };
 
     public Queue getQUEUE() {
         return QUEUE;
@@ -205,16 +205,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -602,6 +602,9 @@ public class ProxyController implements ProxySelectorInterface {
                             proxy = new SingleDirectGatewaySelector(proxyData);
                             break;
                         case HTTP:
+                        case HTTPS:
+                            proxy = new SingleBasicProxySelectorImpl(proxyData);
+                            break;
                         case SOCKS4:
                         case SOCKS5:
                             proxy = new SingleBasicProxySelectorImpl(proxyData);
@@ -632,8 +635,10 @@ public class ProxyController implements ProxySelectorInterface {
                         crashTest.createNewFile();
                         final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
                         try {
-                            strategies.add(new DesktopProxySearchStrategy());
-                            strategies.add(new FirefoxProxySearchStrategy());
+                            if (!Application.isHeadless()) {
+                                strategies.add(new DesktopProxySearchStrategy());
+                                strategies.add(new FirefoxProxySearchStrategy());
+                            }
                             strategies.add(new EnvProxySearchStrategy());
                             strategies.add(new JavaProxySearchStrategy());
                         } catch (final Throwable e) {
@@ -758,6 +763,7 @@ public class ProxyController implements ProxySelectorInterface {
                         }
                         break;
                     case HTTP:
+                    case HTTPS:
                         final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(proxyData);
                         if (proxies.add(basic)) {
                             logger.info("Restore Basic: " + basic);

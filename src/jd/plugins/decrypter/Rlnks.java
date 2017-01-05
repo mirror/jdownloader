@@ -62,17 +62,6 @@ public class Rlnks extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
-        } catch (Throwable e) {
-
-        }
-        return ret;
-    }
-
     private String correctCryptedLink(final String input) {
         return input.replaceAll("(go|view|container_captcha)\\.php\\?id=", "f/");
         // they are not redirecting as of yet.
@@ -216,12 +205,14 @@ public class Rlnks extends antiDDoSForDecrypt {
                 }
                 if (brc.getRedirectLocation() != null) {
                     final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation()));
+                    dl.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
                     distribute(dl);
                     decryptedLinks.add(dl);
                 } else {
                     final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
-                    final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(url));
                     if (url != null) {
+                        final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(url));
+                        dl.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
                         distribute(dl);
                         decryptedLinks.add(dl);
                     } else {

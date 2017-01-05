@@ -156,7 +156,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         try {
             final DownloadLink dlLink = getLink(editing);
             if (!Application.isJared(null)) {
-                popup.add(SwingUtils.toBold(new JLabel("Debug View. Jared Version does not show  Identifier, Plugin Pattern & Null Entries")));
+                popup.add(SwingUtils.toBold(new JLabel("Debug View. Jared Version does not show  Identifier, Plugin Pattern & Null Entries|" + dlLink.getUrlProtection())));
             }
             for (UrlDisplayType dt : DefaultDownloadLinkViewImpl.DISPLAY_URL_TYPE) {
                 if (dt != null) {

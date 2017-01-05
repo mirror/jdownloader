@@ -17,20 +17,17 @@ public class DownloadStoppedContentPanel extends DownloadStartedContentPanel {
     public DownloadStoppedContentPanel(SingleDownloadController downloadController) {
         super(downloadController);
         add(new JSeparator(), "pushx,spanx");
-
     }
 
     @Override
     protected void layoutComponents() {
         super.layoutComponents();
-
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_STATUS_VISIBLE.isEnabled()) {
             DownloadLink downloadLink = downloadController.getDownloadLink();
             ColumnHelper ch = new ColumnHelper();
             DownloadsTableModel.getInstance().getTaskColumn().fillColumnHelper(ch, downloadLink);
             status = addPair(status, _GUI.T.lit_status() + ":", ch.getIcon());
             status.setText(ch.getString());
-
         }
     }
 }

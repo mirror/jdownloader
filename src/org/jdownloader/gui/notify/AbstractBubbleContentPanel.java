@@ -15,8 +15,7 @@ import org.jdownloader.images.NewTheme;
 
 public abstract class AbstractBubbleContentPanel extends MigPanel {
 
-    protected IconedProcessIndicator progressCircle;
-    private final long               startTime = System.currentTimeMillis();
+    private final long startTime = System.currentTimeMillis();
 
     public long getStartTime() {
         return startTime;
@@ -100,11 +99,6 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
     }
 
     public void stop() {
-        if (progressCircle != null) {
-            progressCircle.setIndeterminate(false);
-            progressCircle.setMaximum(100);
-            progressCircle.setValue(100);
-        }
     }
 
     protected JLabel createHeaderLabel(String lbl, Icon icon) {
@@ -137,16 +131,19 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
         if (icon instanceof AbstractIcon) {
             ((AbstractIcon) icon).setAutoDisabledIconEnabled(false);
         }
-        progressCircle = new IconedProcessIndicator(icon);
-        progressCircle.setIndeterminate(false);
-        progressCircle.setEnabled(false);
-        progressCircle.setValue(100);
-        addProgress();
         SwingUtils.setOpaque(this, false);
     }
 
-    protected void addProgress() {
-        add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
+    protected IconedProcessIndicator createProgress(final String iconKey) {
+        return createProgress(NewTheme.I().getIcon(iconKey, 20));
+    }
+
+    protected IconedProcessIndicator createProgress(final Icon icon) {
+        final IconedProcessIndicator progressCircle = new IconedProcessIndicator(icon);
+        progressCircle.setIndeterminate(false);
+        progressCircle.setEnabled(false);
+        progressCircle.setValue(100);
+        return progressCircle;
     }
 
     public AbstractBubbleContentPanel() {
