@@ -39,7 +39,7 @@ public class SflnkgNt extends abstractSafeLinking {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "i7q.com", "jessica.suyalynx.com", "linkler.us", "link.yify.info", "links.sceper.ws", "linkshield.org", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinknsn.net", "savelinks.net", "safelinking.mobi", "sf.anime4u.ir", "slinx.tk", "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "yls.re", "sflk.in" };
+        return new String[] { "linklocker.net", "rawfile.co", "3download.safelinking.net", "deni1743-safelink.tk", "cryptit.so", "i7q.com", "jessica.suyalynx.com", "linkler.us", "link.yify.info", "links.sceper.ws", "linkshield.org", "nexushd2urlprotector.tytung.com", "nsad.xcarlos.safelinking.net", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinknsn.net", "savelinks.net", "safelinking.mobi", "sf.anime4u.ir", "slinx.tk", "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "yls.re", "sflk.in" };
         // add new domains at the beginning of the array, not the END
     }
 
