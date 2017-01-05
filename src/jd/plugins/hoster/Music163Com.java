@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:song|mv)\\?id=\\d+|decrypted://music\\.163\\.comcover\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:song|mv)\\?id=\\d+|decrypted://music\\.163\\.comcover\\d+" })
 public class Music163Com extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -161,6 +161,9 @@ public class Music163Com extends PluginForHost {
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final ArrayList<Object> songs = (ArrayList) entries.get("songs");
+            if (songs == null || songs.size() == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             entries = (LinkedHashMap<String, Object>) songs.get(0);
             final ArrayList<Object> artists = (ArrayList) entries.get("artists");
             final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) entries.get("album");
@@ -347,6 +350,7 @@ public class Music163Com extends PluginForHost {
         /* API is very slow sometimes! */
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
+        br.setLoadLimit(br.getLoadLimit() * 3);
     }
 
     @Override

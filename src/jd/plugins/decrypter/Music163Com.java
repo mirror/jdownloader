@@ -22,18 +22,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" })
 public class Music163Com extends PluginForDecrypt {
@@ -54,7 +56,7 @@ public class Music163Com extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister host plugin */
-        JDUtilities.getPluginForHost("music.163.com");
+        JDUtilities.getPluginForHost(this.getHost());
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String lid = new Regex(parameter, "(\\d+)$").getMatch(0);
@@ -67,7 +69,7 @@ public class Music163Com extends PluginForDecrypt {
         jd.plugins.hoster.Music163Com.prepareAPI(this.br);
         if (parameter.matches(TYPE_ARTIST)) {
             br.getPage("http://music.163.com/api/artist/albums/" + lid + "?id=" + lid + "&offset=0&total=true&limit=1000");
-            if (br.getHttpConnection().getResponseCode() != 200) {
+            if (isApiOffline(this.br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -92,7 +94,7 @@ public class Music163Com extends PluginForDecrypt {
             if (parameter.matches(TYPE_PLAYLIST)) {
                 /* Playlist */
                 br.getPage("http://music.163.com/api/playlist/detail?id=" + lid);
-                if (br.getHttpConnection().getResponseCode() != 200) {
+                if (isApiOffline(this.br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
@@ -108,7 +110,7 @@ public class Music163Com extends PluginForDecrypt {
             } else {
                 /* Album */
                 br.getPage("http://music.163.com/api/album/" + lid + "/");
-                if (br.getHttpConnection().getResponseCode() != 200) {
+                if (isApiOffline(this.br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
@@ -218,5 +220,14 @@ public class Music163Com extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    public static boolean isApiOffline(final Browser br) {
+        final String msg = PluginJSonUtils.getJsonValue(br, "msg");
+        if (br.getHttpConnection().getResponseCode() != 200 || "no resource".equalsIgnoreCase(msg)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
