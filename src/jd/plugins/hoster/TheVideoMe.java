@@ -108,6 +108,8 @@ public class TheVideoMe extends antiDDoSForHost {
     // captchatype: null
     // other: VIDEOHOSTER_2-handling only works for "official" videos, returns "in conversion stage" error for all others - does not
     // matter, we try anyways
+    // They fight against DL-managers - other possibility to get dllink easier: https://thevideo.me/pair and
+    // https://thevideo.me/pair?file_code=<fuid>&check
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -525,7 +527,12 @@ public class TheVideoMe extends antiDDoSForHost {
         if (!is_correct_finallink && special_js_bullshit != null && dllink != null && !is_saved_directlink) {
             /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
             getPage(brv, "http://thevideo.me/jwv/" + special_js_bullshit);
-            final String extra_id = brv.getRegex("jwConfig\\|([A-Za-z0-9]+)").getMatch(0);
+            /* 2016-01-05: TODO: Improve this RegEx */
+            String extra_id = brv.getRegex("function\\|([A-Za-z0-9]{10,})").getMatch(0);
+            if (extra_id == null) {
+                /* 2016-01-05: Wider RegEx attempt */
+                extra_id = brv.getRegex("\\|([A-Za-z0-9]{10,})\\|").getMatch(0);
+            }
             if (extra_id != null) {
                 dllink += "?direct=false&ua=1&vt=" + extra_id;
             }
