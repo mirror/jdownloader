@@ -65,7 +65,8 @@ public class ThreeplusTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        final String sdnPlayoutId = this.br.getRegex("sdnPlayoutId\\s*?=\\s*?\"([^\"]+)\"").getMatch(0);
+        String sdnPlayoutId = getsdnPlayoutId();
+        final String vastid = this.br.getRegex("vastid=(\\d+)").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || sdnPlayoutId == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -74,7 +75,16 @@ public class ThreeplusTv extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        this.br.getPage("http://playout.3qsdn.com/" + sdnPlayoutId + "?timestamp=0&key=0&js=true&container=sdnPlayer&width=459&height=258&protocol=http&token=0");
+        String player_get_parameters = "?timestamp=0&key=0&js=true&autoplay=true&container=sdnPlayer_player&width=100%25&height=100%25&protocol=http&token=0&jscallback=sdnPlaylistBridge";
+        if (vastid != null) {
+            player_get_parameters += "&vastid=" + vastid;
+        }
+        this.br.getPage("http://playout.3qsdn.com/" + sdnPlayoutId + player_get_parameters);
+        sdnPlayoutId = getsdnPlayoutId();
+        if (sdnPlayoutId != null) {
+            /* First ID goes to second ID --> Access that */
+            this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
+        }
         final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
         for (final String possibleQuality : qualities) {
             dllink = this.br.getRegex("src\\s*?:\\s*?\\'(http[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*?type\\s*?:\\s*?\\'video/mp4\\',\\s*?quality\\s*?:\\s*?\\'" + possibleQuality + "\\'").getMatch(0);
@@ -123,6 +133,10 @@ public class ThreeplusTv extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getsdnPlayoutId() {
+        return this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([^\"\\']+)(?:\"|\\')").getMatch(0);
     }
 
     @Override

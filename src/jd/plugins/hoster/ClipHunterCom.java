@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" })
 public class ClipHunterCom extends PluginForHost {
 
     private String dllink = null;
@@ -61,7 +61,7 @@ public class ClipHunterCom extends PluginForHost {
     /**
      * sync with decrypter
      */
-    public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "p720.mp4" }, { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4", "_p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" }, { "unknown", "_s.flv", "_p.mp4" } };
+    public static final String[][] qualities     = jd.plugins.decrypter.ClipHunterComDecrypt.qualities;
 
     @Override
     public String getAGBLink() {
@@ -178,10 +178,11 @@ public class ClipHunterCom extends PluginForHost {
         if (json_full != null) {
             /* 2016-03-30: New json handling */
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
+            final boolean has_only_one_entry = entries.size() == 1;
             LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_full);
-            for (final Map.Entry<String, Object> cookieEntry : entries.entrySet()) {
-                final String videoname = cookieEntry.getKey();
-                videoinfo = (LinkedHashMap<String, Object>) cookieEntry.getValue();
+            for (final Map.Entry<String, Object> videoQualityEntry : entries.entrySet()) {
+                final String videoname = videoQualityEntry.getKey();
+                videoinfo = (LinkedHashMap<String, Object>) videoQualityEntry.getValue();
                 ext = (String) videoinfo.get("fmt");
                 final String url = (String) videoinfo.get("url");
                 tmpUrl = decryptUrl(decryptAlgo, url);
@@ -189,19 +190,25 @@ public class ClipHunterCom extends PluginForHost {
                 if (currentSr == null || tmpUrl == null) {
                     continue;
                 }
+                boolean foundKnownQuality = false;
                 for (final String quality[] : qualities) {
-                    if (quality.length == 3) {
+                    if (quality.length >= 3) {
                         if (currentSr.contains(quality[1]) || currentSr.contains(quality[2])) {
                             foundQualities.put(quality[0], tmpUrl);
+                            foundKnownQuality = true;
                             break;
                         }
 
                     } else {
                         if (currentSr.contains(quality[0])) {
                             foundQualities.put(quality[0], tmpUrl);
+                            foundKnownQuality = true;
                             break;
                         }
                     }
+                }
+                if (!foundKnownQuality && has_only_one_entry) {
+                    foundQualities.put(currentSr, tmpUrl);
                 }
             }
         } else {
