@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,14 +27,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -63,21 +56,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ex-load.com" }, urls = { "https?://(www\\.)?ex-load\\.com/((vid)?embed-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ex-load.com" }, urls = { "https?://(www\\.)?ex-load\\.com/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
-public class ExLoadCom extends PluginForHost {
+public class ExLoadCom extends antiDDoSForHost {
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://ex-load.com";
@@ -176,17 +167,6 @@ public class ExLoadCom extends PluginForHost {
      * defines custom browser requirements.
      */
     private Browser prepBrowser(final Browser prepBr) {
-        HashMap<String, String> map = null;
-        synchronized (cloudflareCookies) {
-            map = new HashMap<String, String>(cloudflareCookies);
-        }
-        if (!map.isEmpty()) {
-            for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                prepBr.setCookie(this.getHost(), key, value);
-            }
-        }
         if (useRUA) {
             if (userAgent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
@@ -335,9 +315,7 @@ public class ExLoadCom extends PluginForHost {
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
-        // cloudflare initial support is within getPage.. otherwise not needed.
-        alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
-        alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
+        postPage(alt, "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
@@ -1032,7 +1010,6 @@ public class ExLoadCom extends PluginForHost {
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
-    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
     private static Object                                     ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
@@ -1136,88 +1113,21 @@ public class ExLoadCom extends PluginForHost {
      *
      * @author raztoki
      */
-    private void getPage(final String page) throws Exception {
+    protected void getPage(final String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
-        }
-        // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
-            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) {
-                cloudflare = br.getFormbyProperty("id", "challenge-form");
-            }
-            if (cloudflare != null) {
-                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) {
-                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                }
-                if (math == null) {
-                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) {
-                        variableName = variableName.trim();
-                    }
-                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                }
-                if (math == null) {
-                    logger.warning("Couldn't find 'math'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                // author.
-                ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                cloudflare.put("jschl_answer", value + "");
-                Thread.sleep(5500);
-                br.submitForm(cloudflare);
-                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                    logger.warning("Possible plugin error within cloudflare handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-                synchronized (cloudflareCookies) {
-                    cloudflareCookies.clear();
-                    cloudflareCookies.putAll(cookies);
-                }
-            }
-        }
+        super.getPage(page);
         correctBR();
     }
 
-    @SuppressWarnings("unused")
-    private void postPage(String page, final String postData) throws Exception {
+    protected void postPage(String page, final String postData) throws Exception {
         if (page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // stable sucks
-        if (isJava7nJDStable() && page.startsWith("https")) {
-            page = page.replaceFirst("https://", "http://");
-        }
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         try {
-            br.postPage(page, postData);
+            super.postPage(page, postData);
         } finally {
             br.getHeaders().put("Content-Type", null);
         }
@@ -1228,40 +1138,8 @@ public class ExLoadCom extends PluginForHost {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
-        if (Form.MethodType.POST.equals(form.getMethod())) {
-            // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) {
-                form.setAction(br.getURL());
-            }
-            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
-                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
-                    // change relative path into full path, with protocol correction
-                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
-                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
-                    String path = form.getAction();
-                    String finalpath = null;
-                    if (path.startsWith("/")) {
-                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
-                    } else if (!path.startsWith(".")) {
-                        finalpath = basepath.replaceFirst("https://", "http://") + path;
-                    } else {
-                        // lacking builder for ../relative paths. this will do for now.
-                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    form.setAction(finalpath);
-                } else {
-                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
-                }
-                if (!stableSucks.get()) {
-                    showSSLWarning(this.getHost());
-                }
-            }
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        }
         try {
-            br.submitForm(form);
+            super.submitForm(form);
         } finally {
             br.getHeaders().put("Content-Type", null);
         }
@@ -1806,22 +1684,6 @@ public class ExLoadCom extends PluginForHost {
         return false;
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
@@ -1946,73 +1808,6 @@ public class ExLoadCom extends PluginForHost {
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     @Override
