@@ -20,7 +20,8 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
+import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,26 +30,49 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9_\\-]+,d\\-\\d+([A-Za-z0-9_,\\-]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9_\\-]+,d\\-\\d+([A-Za-z0-9_,\\-]+)?" })
 public class FreeDiscPlFolder extends PluginForDecrypt {
 
     public FreeDiscPlFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_FOLDER = "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d-\\d+";
+    private static final String TYPE_FOLDER    = "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d-\\d+";
+
+    protected static Cookies    botSafeCookies = new Cookies();
+
+    private Browser prepBR(final Browser br) {
+        jd.plugins.hoster.FreeDiscPl.prepBRStatic(br);
+
+        synchronized (botSafeCookies) {
+            if (!botSafeCookies.isEmpty()) {
+                br.setCookies(this.getHost(), botSafeCookies);
+            }
+        }
+
+        return br;
+    }
+
+    /* 2017-01-06: Bot-block captchas. */
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
+        prepBR(this.br);
+        getPage(parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 410) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -99,6 +123,32 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private void getPage(final String url) throws Exception {
+        this.br.getPage(url);
+        handleAntiBot(br);
+    }
+
+    private void handleAntiBot(final Browser br) throws Exception {
+        if (isBotBlocked()) {
+            /* Process anti-bot captcha */
+            logger.info("Spam protection detected");
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+            if (isBotBlocked()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
+            }
+
+            // save the session!
+            synchronized (botSafeCookies) {
+                botSafeCookies = br.getCookies(this.getHost());
+            }
+        }
+    }
+
+    private boolean isBotBlocked() {
+        return jd.plugins.hoster.FreeDiscPl.isBotBlocked(this.br);
     }
 
     /* NO OVERRIDE!! */

@@ -439,6 +439,7 @@ public class ImgmazeCom extends PluginForHost {
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
+                    fixImghost_next_form(this.br, imghost_next_form);
                     submitForm(imghost_next_form);
                     checkErrors(downloadLink, false);
                     dllink = getDllink();
@@ -630,6 +631,15 @@ public class ImgmazeCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    public static Form fixImghost_next_form(final Browser br, final Form imghost_next_form) {
+        /* 2017-01-06: New */
+        final String special_key = br.getRegex("name=\"([a-z0-9]{10,})\" value=\"1\"").getMatch(0);
+        if (special_key != null && !imghost_next_form.hasInputFieldByName(special_key)) {
+            imghost_next_form.put(special_key, "1");
+        }
+        return imghost_next_form;
     }
 
     /**

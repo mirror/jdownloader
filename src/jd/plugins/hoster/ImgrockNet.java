@@ -49,7 +49,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgrock.net" }, urls = { "https?://(www\\.)?imgrock\\.net/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgrock.net" }, urls = { "https?://(www\\.)?imgrock\\.net/(embed\\-)?[a-z0-9]{12}" })
 public class ImgrockNet extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -409,6 +409,7 @@ public class ImgrockNet extends antiDDoSForHost {
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
+                    jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, imghost_next_form);
                     submitForm(imghost_next_form);
                     checkErrors(downloadLink, false);
                     dllink = getDllink();

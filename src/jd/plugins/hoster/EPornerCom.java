@@ -32,10 +32,11 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\w+(/[^/]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/hd\\-porn/\\w+(/[^/]+)?" })
 public class EPornerCom extends PluginForHost {
 
-    public String dllink = null;
+    public String   dllink        = null;
+    private boolean server_issues = false;
 
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +44,7 @@ public class EPornerCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.eporner.com/terms/";
+        return "https://www.eporner.com/terms/";
     }
 
     @Override
@@ -54,10 +55,12 @@ public class EPornerCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.eporner.com/") || br.containsHTML("id=\"deletedfile\"")) {
+        if (!this.br.getURL().contains("porn/") || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
@@ -108,15 +111,15 @@ public class EPornerCom extends PluginForHost {
                 dllink = br.getRegex("<file>(https?://.*?)</file>").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("file:[\r\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                 }
             }
         }
+        if ("http://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
+            server_issues = true;
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
-        if (filesize == 0) {
+        if (filesize == 0 && dllink != null && !server_issues) {
             /* Only get filesize from url if we were not able to find it in html --> Saves us time! */
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -127,7 +130,7 @@ public class EPornerCom extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     filesize = con.getLongContentLength();
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
                 }
             } finally {
                 try {
@@ -143,6 +146,11 @@ public class EPornerCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

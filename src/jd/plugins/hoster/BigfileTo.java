@@ -282,6 +282,27 @@ public class BigfileTo extends PluginForHost {
     }
 
     private void handleErrorsWebsite() throws PluginException {
+
+        /* FREE-only errors */
+        if (this.br.containsHTML("Captcha error")) {
+            /* 2017-01-06 */
+            /*
+             * E.g.
+             * "<h1>Captcha error.<br>To enjoy maximum download speeds and unlimited parallel downloads,</h1> <a class="buyPremiumLink" href="
+             * /premium.php">upgrade to Premium account now</a>"
+             */
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        /* Account-only errors */
+        if (this.br.containsHTML("For security measures, we ask you to update your password")) {
+            /* 2017-01-06 */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Website says: 'For security measures, we ask you to update your password.'", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else if (this.br.containsHTML("You have exceeded your file size download limit")) {
+            /* 2017-01-06 */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Website says: 'You have exceeded your file size download limit'", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+
+        /* Other-errors */
         /*
          * <h1>File is not available<br>We are sorry...<br/>The page you requested cannot be displayed right now. The file may have removed
          * by the uploader or expired.</h1>
@@ -291,6 +312,7 @@ public class BigfileTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
+        /* GENERAL-errors (via errorcode) */
         /* Error-links: http://www.bigfile.to/l-error.php?error_code=ERRORCODE OR http://www.bigfile.to//landing-1406.html */
         String errorcode_str = new Regex(this.br.getURL(), "error_code=(\\d+)").getMatch(0);
         if (errorcode_str == null) {
