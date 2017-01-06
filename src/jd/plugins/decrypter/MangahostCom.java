@@ -18,28 +18,29 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?(br\\.)?mangahost\\.(com|net)/manga/[^/]+/[^\\s]*\\d+(\\.\\d+)?" })
-public class MangahostCom extends PluginForDecrypt {
+public class MangahostCom extends antiDDoSForDecrypt {
 
     public MangahostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403) {
             logger.info("GEO-blocked!!");
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -57,12 +58,15 @@ public class MangahostCom extends PluginForDecrypt {
                 links = br.getRegex("(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
             }
         } else {
-            String pages = br.getRegex("(var pages[^<>]+\\}\\]\\;)").getMatch(0);
-            pages = pages.replace("\\/", "/");
-            if (br.containsHTML("(jpg|png)\\.webp")) {
-                links = new Regex(pages, "(https?://img\\.mangahost.net/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
-            } else {
-                links = new Regex(pages, "(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
+            // this is JSON, DO NOT universally unescape it.
+            String pages = br.getRegex("var pages\\s*=\\s*(\\[\\{[^<>]+\\}\\])\\;").getMatch(0);
+            final ArrayList<Object> resource = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(pages);
+            if (links == null) {
+                links = new String[resource.size()];
+            }
+            int i = 0;
+            for (final Object page : resource) {
+                links[i++] = (String) JavaScriptEngineFactory.walkJson(page, "url");
             }
         }
         if (links == null || links.length == 0) {
