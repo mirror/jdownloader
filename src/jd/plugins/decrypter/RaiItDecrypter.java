@@ -16,9 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -70,15 +74,16 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
         final String[] channels = new Regex(parameter, "ch=(\\d+)").getColumn(0);
         final String[] videoids = new Regex(parameter, "v=(\\d+)").getColumn(0);
-        final String date = dates[dates.length - 1];
-        final String date_underscore = date.replace("-", "_");
+        final String date_user_input = dates[dates.length - 1];
+        final String date_user_input_underscore = date_user_input.replace("-", "_");
+        final String date_user_input_in_json_format = convertInputDateToJsonDateFormat(date_user_input);
 
         final DownloadLink offline = this.createOfflinelink(parameter);
         final String filename_offline;
         if (mainlink_urlpart != null) {
-            filename_offline = date + "_" + mainlink_urlpart + ".mp4";
+            filename_offline = date_user_input + "_" + mainlink_urlpart + ".mp4";
         } else {
-            filename_offline = date + ".mp4";
+            filename_offline = date_user_input + ".mp4";
         }
         offline.setFinalFileName(filename_offline);
 
@@ -95,13 +100,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
             id_of_single_video_which_user_wants_to_have_only = videoids[videoids.length - 1];
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(date_underscore);
+        fp.setName(date_user_input_underscore);
         LinkedHashMap<String, Object> entries = null;
         final String channel_name = "Rai" + chnumber_str;
         final String channel_name_with_space = "Rai " + chnumber_str;
 
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.br.getPage("http://www.rai.it/dl/palinsesti/Page-e120a813-1b92-4057-a214-15943d95aa68-json.html?canale=" + channel_name + "&giorno=" + date);
+        this.br.getPage("http://www.rai.it/dl/palinsesti/Page-e120a813-1b92-4057-a214-15943d95aa68-json.html?canale=" + channel_name + "&giorno=" + date_user_input);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(offline);
             return;
@@ -112,6 +117,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
         /* Walk through all days. */
         for (final Object dayO : daysList) {
             entries = (LinkedHashMap<String, Object>) dayO;
+            final String date_of_this_item = (String) entries.get("giorno");
+            if (date_of_this_item == null || !date_of_this_item.equals(date_user_input_in_json_format)) {
+                /* Date is missing or not the date we want? Skip item! */
+                continue;
+            }
             /* Get all items of the day. */
             final ArrayList<Object> itemsOfThatDayList = (ArrayList<Object>) entries.get("palinsesto");
             for (final Object itemsOfThatDayListO : itemsOfThatDayList) {
@@ -369,6 +379,29 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 this.decryptedLinks.add(dl);
             }
         }
+    }
+
+    private String convertInputDateToJsonDateFormat(final String input) {
+        if (input == null) {
+            return null;
+        }
+        final long date;
+        if (input.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.ENGLISH);
+        } else {
+            date = TimeFormatter.getMilliSeconds(input, "yyyy_MM_dd", Locale.ENGLISH);
+        }
+        String formattedDate = null;
+        final String targetFormat = "dd-MM-yyyy";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     private String findRelinkerUrl() {
