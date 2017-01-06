@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "rapidvideo.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(playernaut\\.com|rapidvideo\\.com)/\\?v=[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/\\?v=[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class BitvideoIo extends PluginForHost {
     /* DEV NOTES */
     // Tags:
     // protocol: no https
-    // other: playernaut.com -> redirect into rapidvideo.com
+    // other: playernaut.com -> redirect into rapidvideo.com --> redirects to raptu.com
     // other: same owner/sites I assume..
 
     /* Connection stuff */
@@ -61,6 +61,16 @@ public class BitvideoIo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.bitporno.sx/?c=tos";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("rapidvideo.com".equals(getHost())) {
+            if (host == null || "rapidvideo.com".equals(host)) {
+                return "raptu.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     /** 2016-05-18: playernaut.com uses crypted js, bitporno.sx doesn't! */
