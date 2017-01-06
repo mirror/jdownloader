@@ -431,7 +431,7 @@ public class PowVideoNet extends antiDDoSForHost {
         if (dllink.startsWith("rtmp")) {
             final String playpath = new Regex(this.dllink, "(mp4:.+)").getMatch(0);
             final String tcurl = new Regex(this.dllink, "(rtmpe?://[^/]+/[^/]+/)").getMatch(0);
-            dl = new RTMPDownload(this, downloadLink, dllink);
+            dl = new RTMPDownload(this, downloadLink, tcurl);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             if (playpath != null) {
@@ -443,10 +443,10 @@ public class PowVideoNet extends antiDDoSForHost {
             }
             rtmp.setApp("vod/");
             rtmp.setSwfUrl("http://powvideo.net/player6/jwplayer.flash.swf");
-            rtmp.setFlashVer("WIN 23,0,0,205");
+            rtmp.setFlashVer("WIN 24,0,0,186");
             rtmp.setUrl(dllink);
             rtmp.setResume(false);
-            rtmp.setLive(true);
+            // rtmp.setLive(true);
         } else {
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -542,6 +542,7 @@ public class PowVideoNet extends antiDDoSForHost {
             if (inValidate(dllink) && cbr.containsHTML("p,a,c,k,e,d")) {
                 final String[] packed = cbr.getRegex("eval\\((function\\(p,a,c,k,e,d\\).*?\\{.*?\\}.*?\\)\\))\\)").getColumn(0);
                 for (final String js : packed) {
+                    // final String h_value_of_current_js = new Regex(js, "m3u8\\|([a-z0-9]+)\\|").getMatch(0);
                     final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     String result = null;
@@ -550,6 +551,10 @@ public class PowVideoNet extends antiDDoSForHost {
                         result = (String) engine.get("res");
                         dllink = regexDllink(result);
                         if (!inValidate(dllink)) {
+                            // final String h_value_of_current_url = new Regex(dllink, "h=([a-z0-9]+)").getMatch(0);
+                            // if (h_value_of_current_url != null && h_value_of_current_js != null) {
+                            // dllink = dllink.replace(h_value_of_current_url, h_value_of_current_js);
+                            // }
                             break;
                         }
                     } catch (final Exception e) {

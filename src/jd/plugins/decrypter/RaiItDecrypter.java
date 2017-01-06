@@ -17,10 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -54,6 +52,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setFollowRedirects(true);
+        br.setLoadLimit(this.br.getLoadLimit() * 3);
         parameter = param.toString();
 
         if (parameter.matches(TYPE_DAY)) {
@@ -65,6 +64,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /* Old channel config url (see also rev 35204): http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html */
     private void decryptWholeDay() throws Exception {
         final String mainlink_urlpart = new Regex(parameter, "\\?(.+)").getMatch(0);
         final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
@@ -82,93 +82,63 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         offline.setFinalFileName(filename_offline);
 
-        try {
-            String id_of_single_video_which_user_wants_to_have_only = null;
-            String chnumber_str = null;
-            if (channels != null && channels.length > 0) {
-                chnumber_str = channels[channels.length - 1];
-            }
-            if (chnumber_str == null) {
-                /* Small fallback */
-                chnumber_str = "1";
-            }
-            if (videoids != null && videoids.length > 0) {
-                id_of_single_video_which_user_wants_to_have_only = videoids[videoids.length - 1];
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(date_underscore);
-            // fp.setProperty("ALLOW_MERGE", true);
-            LinkedHashMap<String, Object> tempmap = null;
-            LinkedHashMap<String, Object> entries = null;
-            ArrayList<Object> ressourcelist = null;
-            /* Find the name of our channel needed for the following requests */
-            this.br.getPage("http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html");
-            String channel_name = null;
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            ressourcelist = (ArrayList<Object>) entries.get("Channels");
-            for (final Object channelo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) channelo;
-                final String channelnumber = (String) entries.get("id");
-                if (channelnumber.equals(chnumber_str)) {
-                    channel_name = (String) entries.get("tag");
-                    break;
-                }
-            }
-            if (channel_name == null || channel_name.equals("")) {
-                channel_name = "RaiUno";
-            }
+        String id_of_single_video_which_user_wants_to_have_only = null;
+        String chnumber_str = null;
+        if (channels != null && channels.length > 0) {
+            chnumber_str = channels[channels.length - 1];
+        }
+        if (chnumber_str == null) {
+            /* Small fallback */
+            chnumber_str = "1";
+        }
+        if (videoids != null && videoids.length > 0) {
+            id_of_single_video_which_user_wants_to_have_only = videoids[videoids.length - 1];
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(date_underscore);
+        LinkedHashMap<String, Object> entries = null;
+        final String channel_name = "Rai" + chnumber_str;
+        final String channel_name_with_space = "Rai " + chnumber_str;
 
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getPage("http://www.rai.tv/dl/portale/html/palinsesti/replaytv/static/" + channel_name + "_" + date_underscore + ".html");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(offline);
-                return;
-            }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get(chnumber_str);
-            entries = (LinkedHashMap<String, Object>) entries.get(date);
+        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        this.br.getPage("http://www.rai.it/dl/palinsesti/Page-e120a813-1b92-4057-a214-15943d95aa68-json.html?canale=" + channel_name + "&giorno=" + date);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(offline);
+            return;
+        }
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        final ArrayList<Object> daysList = (ArrayList<Object>) entries.get(channel_name_with_space);
 
-            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
-            while (it.hasNext()) {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
-                    return;
-                }
-                final Entry<String, Object> entry = it.next();
-                tempmap = (LinkedHashMap<String, Object>) entry.getValue();
-                String title = (String) tempmap.get("t");
-                final String videoid_temp = (String) tempmap.get("i");
-                final String relinker = (String) tempmap.get("r");
-                final String description = (String) tempmap.get("d");
-                if (title == null || title.equals("") || relinker == null || relinker.equals("")) {
-                    if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
-                        logger.info("User wants to have a single video only but this appears to be offline");
-                        offline.setFinalFileName(id_of_single_video_which_user_wants_to_have_only + ".mp4");
-                        /* Remove previously found content */
-                        decryptedLinks.clear();
-                        /* Add offline */
-                        decryptedLinks.add(offline);
-                        return;
+        /* Walk through all days. */
+        for (final Object dayO : daysList) {
+            entries = (LinkedHashMap<String, Object>) dayO;
+            /* Get all items of the day. */
+            final ArrayList<Object> itemsOfThatDayList = (ArrayList<Object>) entries.get("palinsesto");
+            for (final Object itemsOfThatDayListO : itemsOfThatDayList) {
+                entries = (LinkedHashMap<String, Object>) itemsOfThatDayListO;
+                /* Get all programms of that day. */
+                final ArrayList<Object> programmsList = (ArrayList<Object>) entries.get("programmi");
+                /* Finally decrypt the programms. */
+                for (final Object programmO : programmsList) {
+                    entries = (LinkedHashMap<String, Object>) programmO;
+                    if (entries.isEmpty()) {
+                        continue;
                     }
-                    continue;
+                    final boolean hasVideo = ((Boolean) entries.get("hasVideo")).booleanValue();
+                    final String webLink = (String) entries.get("webLink");
+                    if (!hasVideo || webLink == null || !webLink.startsWith("/")) {
+                        continue;
+                    }
+                    final String url_for_user;
+                    final String url_rai_replay = new Regex(webLink, "raiplay/(video/.+)").getMatch(0);
+                    if (url_rai_replay != null) {
+                        url_for_user = "http://www.raiplay.it/" + url_rai_replay;
+                    } else {
+                        url_for_user = "http://www.rai.it" + webLink;
+                    }
+                    final DownloadLink dl = this.createDownloadlink(url_for_user);
+                    decryptedLinks.add(dl);
                 }
-                title = date_underscore + "_raitv_" + title;
-                if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
-                    /* User wants to have a specified video only and we found it. */
-                    decryptRelinker(relinker, title, null, fp, description);
-                    return;
-                } else if (id_of_single_video_which_user_wants_to_have_only != null && videoid_temp != null && !videoid_temp.equals(id_of_single_video_which_user_wants_to_have_only)) {
-                    /* User wants to have a specified video only but this is not the one he wants --> Skip this */
-                    continue;
-                } else {
-                    /* Simply add video */
-                    decryptRelinker(relinker, title, null, fp, description);
-                }
-            }
-        } finally {
-            if (decryptedLinks.size() == 0) {
-                /* Probably none of the urls was downloadable ... */
-                decryptedLinks.add(offline);
             }
         }
     }
@@ -220,6 +190,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             if (date == null) {
                 date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
+            }
+            if (date == null) {
+                /* 2017-01-06: New */
+                date = this.br.getRegex("property=\"gen\\-date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})\"").getMatch(0);
             }
             if (date == null) {
                 date = this.br.getRegex("data\\-date=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);

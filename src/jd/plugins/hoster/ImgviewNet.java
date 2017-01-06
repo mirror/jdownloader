@@ -53,7 +53,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgview.net" }, urls = { "https?://(www\\.)?imgview\\.net/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgview.net" }, urls = { "https?://(www\\.)?imgview\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class ImgviewNet extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -348,7 +348,7 @@ public class ImgviewNet extends antiDDoSForHost {
      * E.g. needed if officially only logged in users can see filenameor filename is missing for whatever reason.<br />
      * Especially often needed for <b>IMAGEHOSTER</b> ' s.<br />
      * Important: Only call this if <b>SUPPORTS_AVAILABLECHECK_ABUSE</b> is <b>true</b>!<br />
-     * 
+     *
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
@@ -453,6 +453,7 @@ public class ImgviewNet extends antiDDoSForHost {
                 if (imghost_next_form != null) {
                     imghost_next_form.remove("method_premium");
                     /* end of backward compatibility */
+                    jd.plugins.hoster.ImgmazeCom.fixImghost_next_form(this.br, imghost_next_form);
                     submitForm(imghost_next_form);
                     checkErrors(downloadLink, false);
                     dllink = getDllink();

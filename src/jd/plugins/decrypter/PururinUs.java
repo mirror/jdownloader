@@ -34,7 +34,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 /**
  * @author raztoki, psp
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.us" }, urls = { "https?://(?:www\\.)?pururin\\.us/(?:gallery|thumbs)/\\d+/[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.us" }, urls = { "https?://(?:www\\.)?pururin\\.us/gallery/\\d+/[a-z0-9\\-]+\\.html" })
 public class PururinUs extends antiDDoSForDecrypt {
 
     public PururinUs(PluginWrapper wrapper) {
@@ -43,14 +43,13 @@ public class PururinUs extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        parameter = parameter.replaceFirst("pururin\\.us/(gallery|thumbs)/", "pururin\\.us/gallery/");
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        parameter = br.getURL();
         // the uid can be determined by redirect after first page get. http://svn.jdownloader.org/issues/45635
         // http://pururin.com/gallery/55/alice-in-sexland.html -> http://pururin.com/gallery/12159/alice-first.html
-        final String uid = new Regex(parameter, "/(?:thumbs|gallery)/(\\d+)/").getMatch(0);
+        final String uid = new Regex(parameter, "/gallery/(\\d+)/").getMatch(0);
+        final String url_name = new Regex(parameter, "([^/]+)\\.html").getMatch(0);
         if (uid == null) {
             logger.warning("Plugin Defect 'uid' == null");
             return null;
@@ -74,7 +73,10 @@ public class PururinUs extends antiDDoSForDecrypt {
             } // self hosted content (goes to its own plugin), or hoster links
             decryptedLinks.add(createDownloadlink(downloadlink));
         }
-        final String fpName = br.getRegex("<h1>([^<>\"]*?) Thumbnails</h1>").getMatch(0);
+        String fpName = br.getRegex("class=\"otitle\"[^>]*?>([^<>]+)<").getMatch(0);
+        if (fpName == null) {
+            fpName = url_name;
+        }
         final String[] links = br.getRegex("\"(/view/\\d+/\\d+/[a-z0-9\\-_]+\\.html)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

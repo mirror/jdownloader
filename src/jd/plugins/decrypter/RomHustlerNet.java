@@ -27,13 +27,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" })
 public class RomHustlerNet extends PluginForDecrypt {
 
     public RomHustlerNet(PluginWrapper wrapper) {
@@ -43,14 +41,18 @@ public class RomHustlerNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        PluginForHost rhPlugin = JDUtilities.getPluginForHost("romhustler.net");
-        ((jd.plugins.hoster.RomHustlerNet) rhPlugin).prepBrowser(br);
+        final PluginForHost rhPlugin = JDUtilities.getPluginForHost(this.getHost());
+        ((jd.plugins.hoster.RomHustlerNet) rhPlugin).prepBrowser(this.br);
         br.getPage(parameter);
-        if (br.containsHTML(">404 - Page got lost")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<h1 style=\"font-size: 14pt;\">([^<>\"]*?)</h1>").getMatch(0);
+        final String url_name = new Regex(parameter, "/rom/(.+)").getMatch(0);
+        String fpName = br.getRegex("<h1 [^>]*?itemprop=\"name\"[^>]*?>([^<>\"]*?)</h1>").getMatch(0);
+        if (fpName == null) {
+            fpName = url_name;
+        }
         final String[] results = br.getRegex("(<a[^>]+/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+[^>]+)>").getColumn(0);
         if (results == null || results.length == 0 || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -61,7 +63,7 @@ public class RomHustlerNet extends PluginForDecrypt {
             final String link = new Regex(result, "href=\"((?:https?://(?:\\w\\.)?romhustler\\.net)?/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+[^>]+)\"").getMatch(0);
             final String name = fpName + "_" + counter;
             if (link == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return null;
             }
             final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
             dl.setName(name);

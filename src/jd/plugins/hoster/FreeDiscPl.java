@@ -74,7 +74,7 @@ public class FreeDiscPl extends PluginForHost {
     protected static Cookies     botSafeCookies               = new Cookies();
 
     private Browser prepBR(final Browser br) {
-        br.setAllowedResponseCodes(410);
+        prepBRStatic(br);
 
         synchronized (botSafeCookies) {
             if (!botSafeCookies.isEmpty()) {
@@ -82,6 +82,11 @@ public class FreeDiscPl extends PluginForHost {
             }
         }
 
+        return br;
+    }
+
+    public static Browser prepBRStatic(final Browser br) {
+        br.setAllowedResponseCodes(410);
         return br;
     }
 
@@ -93,7 +98,7 @@ public class FreeDiscPl extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         prepBR(this.br);
         br.getPage(link.getDownloadURL());
-        if (isBotBlocked()) {
+        if (isBotBlocked(this.br)) {
             return AvailableStatus.UNCHECKABLE;
         } else if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -145,7 +150,7 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (isBotBlocked()) {
+        if (isBotBlocked(this.br)) {
             this.handleAntiBot(this.br);
             /* Important! Check status if we were blocked before! */
             requestFileInformation(downloadLink);
@@ -239,7 +244,7 @@ public class FreeDiscPl extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean isBotBlocked() {
+    public static boolean isBotBlocked(final Browser br) {
         return br.containsHTML("Przez roboty internetowe nasze serwery się gotują|g\\-recaptcha");
     }
 
@@ -254,7 +259,7 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     private void handleAntiBot(final Browser br) throws Exception {
-        if (isBotBlocked()) {
+        if (isBotBlocked(this.br)) {
             /* Process anti-bot captcha */
             logger.info("Login captcha / spam protection detected");
             final DownloadLink originalDownloadLink = this.getDownloadLink();
@@ -269,7 +274,7 @@ public class FreeDiscPl extends PluginForHost {
                 this.setDownloadLink(downloadlinkToUse);
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-                if (isBotBlocked()) {
+                if (isBotBlocked(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
                 }
             } finally {
