@@ -15,11 +15,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,6 +34,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -157,20 +157,23 @@ public class GoogleDrive extends PluginForHost {
             filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
         }
         if (filename == null) {
+            filename = br.getRegex("<title>([^\"]+) - Google Drive</title>").getMatch(0);
+        }
+        if (filename == null) {
             /*
              * Chances are high that we have a non-officially-downloadable-document (pdf). PDF is displayed in browser via images (1 image
              * per page) - we would need a decrypter for this.
              */
             download_might_not_be_possible = true;
             final String type = this.br.getRegex("<meta property=\"og:type\" content=\"([^<>\"]+)\">").getMatch(0);
-            filename = this.br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
             if (filename != null && type != null) {
                 if (type.equals("article") && !filename.endsWith(".pdf")) {
                     filename += ".pdf";
                 }
             }
         }
-        final String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
+        String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
         if (filename == null) {
             if (this.br.containsHTML("initFolderLandingPageApplication")) {
                 logger.info("This looks like an empty folder ...");
@@ -182,6 +185,13 @@ public class GoogleDrive extends PluginForHost {
         if (size != null) {
             link.setVerifiedFileSize(Long.parseLong(size));
             link.setDownloadSize(SizeFormatter.getSize(size));
+        } else {
+            Browser br2 = br.cloneBrowser();
+            br2.getPage("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
+            size = br2.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
+            if (size != null) {
+                link.setDownloadSize(SizeFormatter.getSize(size + "b"));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -223,10 +233,6 @@ public class GoogleDrive extends PluginForHost {
             streamLink = Encoding.urlDecode(query.get("url"), false);
         }
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
-        final String fsize = br.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
-        if (fsize != null) {
-            downloadLink.setDownloadSize(SizeFormatter.getSize(fsize + "b"));
-        }
         if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
             // so its not possible to download at this time.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
