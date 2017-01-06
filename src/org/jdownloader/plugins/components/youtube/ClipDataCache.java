@@ -9,15 +9,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
-
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 public class ClipDataCache {
     private static final Object LOCK = new Object();
@@ -112,6 +112,10 @@ public class ClipDataCache {
 
                 if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is unavailable.")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
+                }
+
+                if (StringUtils.containsIgnoreCase(cachedData.clipData.error, "This video has been removed for violating")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, cachedData.clipData.error);
                 }
 
                 if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is not available.")) {
