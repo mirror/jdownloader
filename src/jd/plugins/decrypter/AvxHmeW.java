@@ -49,6 +49,15 @@ public class AvxHmeW extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br = new Browser();
+        if (cryptedLink.getCryptedUrl().matches(".*/go/\\d+/.*")) {
+            br.setFollowRedirects(false);
+            br.getPage(cryptedLink.getCryptedUrl());
+            final String link = br.getRedirectLocation();
+            if (!link.matches(this.getSupportedLinks().pattern())) {
+                decryptedLinks.add(createDownloadlink(link));
+            }
+            return decryptedLinks;
+        }
         // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
         final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
         br.setFollowRedirects(true);
