@@ -28,6 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,11 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class UsersCloudCom extends PluginForHost {
@@ -167,7 +167,7 @@ public class UsersCloudCom extends PluginForHost {
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
             if (fileInfo[0] != null) {
-                link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                link.setName(Encoding.htmlOnlyDecode(fileInfo[0]).trim());
                 return AvailableStatus.TRUE;
             }
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
@@ -197,7 +197,7 @@ public class UsersCloudCom extends PluginForHost {
                     /* We know the link is online, set all information we got */
                     link.setAvailable(true);
                     if (fileInfo[0] != null) {
-                        link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                        link.setName(Encoding.htmlOnlyDecode(fileInfo[0].trim()));
                     } else {
                         link.setName(fuid);
                     }
@@ -226,7 +226,7 @@ public class UsersCloudCom extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+        link.setName(Encoding.htmlOnlyDecode(fileInfo[0]).trim());
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
