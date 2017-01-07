@@ -27,6 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,14 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class XFileSharingProBasic extends PluginForHost {
@@ -201,7 +201,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
                 if (!inValidate(fileInfo[0])) {
-                    link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                    link.setName(Encoding.htmlOnlyDecode(fileInfo[0]).trim());
                     return AvailableStatus.TRUE;
                 }
             }
@@ -231,7 +231,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 /* We know the link must be online, lets set all information we got */
                 link.setAvailable(true);
                 if (!inValidate(fileInfo[0])) {
-                    link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    link.setName(Encoding.htmlOnlyDecode(fileInfo[0].trim()));
                 } else {
                     link.setName(fuid);
                 }
@@ -510,7 +510,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                     final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
                     if (image_filename != null) {
-                        downloadLink.setName(Encoding.htmlDecode(image_filename));
+                        downloadLink.setName(Encoding.htmlOnlyDecode(image_filename));
                     }
                 }
             } while (imghost_next_form != null);
