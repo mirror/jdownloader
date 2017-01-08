@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "http://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -49,17 +49,17 @@ public class AvxHmeW extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br = new Browser();
-        if (cryptedLink.getCryptedUrl().matches(".*/go/\\d+/.*")) {
+        // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
+        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
+        if (parameter.matches(".*/go/\\d+/.*")) {
             br.setFollowRedirects(false);
-            br.getPage(cryptedLink.getCryptedUrl());
+            br.getPage(parameter);
             final String link = br.getRedirectLocation();
             if (!link.matches(this.getSupportedLinks().pattern())) {
                 decryptedLinks.add(createDownloadlink(link));
             }
             return decryptedLinks;
         }
-        // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
