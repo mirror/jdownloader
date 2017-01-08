@@ -19,17 +19,19 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * @author raztoki, psp
@@ -77,24 +79,38 @@ public class PururinUs extends antiDDoSForDecrypt {
         if (fpName == null) {
             fpName = url_name;
         }
-        final String[] links = br.getRegex("\"(/view/\\d+/\\d+/[a-z0-9\\-_]+\\.html)\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        // they only seem to show 12 max on this page. we need to either open reader to get max page or parse total pages count and
+        // construct url.
+        String pages_string = br.getRegex("<li>(\\d+) Pages</li>").getMatch(0);
+        if (pages_string == null) {
+            pages_string = br.getRegex("<td>(\\d+)</td>\\s*</tr>\\s*</tbody>").getMatch(0);
+            if (pages_string == null) {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
+        }
+        final int pages_int = Integer.parseInt(pages_string);
+        // /view/chapternumber/pagenumber/.*?\.html ?
+        String link = br.getRegex("\"(/view/\\d+/\\d+/[a-z0-9\\-_]+\\.html)\"").getMatch(0);
+        if (link == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        link = Request.getLocation(link, br.getRequest()).replaceFirst("(/\\d+)(/[a-z0-9\\-_]+\\.html)", "/" + "*CHANGEME*" + "$2");
         DecimalFormat df_links = new DecimalFormat("00");
-        if (links.length > 999) {
+        if (pages_int > 999) {
             df_links = new DecimalFormat("0000");
-        } else if (links.length > 99) {
+        } else if (pages_int > 99) {
             df_links = new DecimalFormat("000");
         }
-        for (String link : links) {
-            final DownloadLink dl = createDownloadlink("http://pururin.us" + link);
+        // for rename
+        for (int i = 1; i <= pages_int; i++) {
+            final DownloadLink dl = createDownloadlink(link.replaceFirst("\\*CHANGEME\\*", i + ""));
             dl.setAvailable(true);
-            final String[] fn = new Regex(link, "/(\\d+)/(\\d+)/([^/]+)\\.html$").getRow(0);
-            // not final as this hasn't been confirmed. We give image extension so package customiser rules are easier to work with!
-            dl.setName(fn[0] + "_" + df_links.format(Integer.parseInt(fn[1])) + "_" + fn[2].replace(".html", ".jpg"));
-            dl.setProperty("links_length", links.length);
+            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
+            final String[] fn = new Regex(dl.getDownloadURL(), "/(\\d+)/(\\d+)/([^/]+)\\.html$").getRow(0);
+            // not final as this hasn't been confirmed.
+            dl.setName(fn[0] + "_" + df_links.format(Integer.parseInt(fn[1])) + "_" + fn[2]);
+            dl.setProperty("links_length", pages_string);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {
@@ -105,8 +121,6 @@ public class PururinUs extends antiDDoSForDecrypt {
 
         return decryptedLinks;
     }
-
-    private PluginForHost plugin = null;
 
     protected void getPage(final String parameter) throws Exception {
         super.getPage(parameter);

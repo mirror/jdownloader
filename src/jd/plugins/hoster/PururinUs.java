@@ -18,18 +18,18 @@ package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  * @author raztoki
@@ -79,14 +79,13 @@ public class PururinUs extends antiDDoSForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = dllink.replace("\\", "");
-            dllink = Encoding.urlDecode(dllink, false);
+            dllink = PluginJSonUtils.unescape(dllink);
             Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(dllink);
+                con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(dllink));
                 // only way to check for made up links... or offline is here
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -102,7 +101,7 @@ public class PururinUs extends antiDDoSForHost {
                     } else if (links_length > 99) {
                         df_links = new DecimalFormat("000");
                     }
-                    downloadLink.setFinalFileName(chapter_id + "_" + page_id + "_" + chapter_name_url + ext);
+                    downloadLink.setFinalFileName(chapter_id + "_" + df_links.format(Integer.parseInt(page_id)) + "_" + chapter_name_url + ext);
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
