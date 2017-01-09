@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,7 +42,7 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "(?:https?:)?(?://(?!(www\\.imdb\\.com|(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro))))?[\\S&]+";
+    private final String notThis = "(?:https?:)?(?://(?!(www\\.imdb\\.com|avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro|avxsearch\\.(?:se|pro))))[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -67,17 +68,27 @@ public class AvxHmeW extends PluginForDecrypt {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
         }
+        final HashSet<String> dupe = new HashSet<String>();
         if (!parameter.contains("avaxhome.pro/")) {
             // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
             // images/self site refs + imdb refs
-            String[] links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
+            String[] links = br.getRegex("<a href=\"(/go/\\d+/[^\"]+)").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
+            }
             if (links != null && links.length != 0) {
                 for (String link : links) {
+                    if (!dupe.add(link)) {
+                        continue;
+                    }
                     if (link.startsWith("/go/")) {
                         final Browser br2 = br.cloneBrowser();
                         br2.setFollowRedirects(false);
                         br2.getPage(link);
                         link = br2.getRedirectLocation();
+                        if (!dupe.add(link)) {
+                            continue;
+                        }
                     }
                     if (!link.matches(this.getSupportedLinks().pattern())) {
                         decryptedLinks.add(createDownloadlink(link));
@@ -87,9 +98,14 @@ public class AvxHmeW extends PluginForDecrypt {
 
             // try also LINK</br>, but ignore self site refs + imdb refs
             links = null;
-            links = br.getRegex("(" + notThis + ")<br/>").getColumn(0);
+            links = br.getRegex("(" + notThis + ")<br\\s*/\\s*>").getColumn(0);
             if (links != null && links.length != 0) {
                 for (String link : links) {
+                    // strip html tags
+                    link = link.replaceAll("<[^>]+>", "");
+                    if (!dupe.add(link)) {
+                        continue;
+                    }
                     if (!link.matches(this.getSupportedLinks().pattern())) {
                         decryptedLinks.add(createDownloadlink(link));
                     }
@@ -97,8 +113,12 @@ public class AvxHmeW extends PluginForDecrypt {
             }
             final String[] covers = br.getRegex("\"(//pi?xhst\\.(com|co)[^<>\"]*?)\"").getColumn(0);
             if (covers != null && covers.length != 0) {
-                for (final String coverlink : covers) {
-                    decryptedLinks.add(createDownloadlink(Request.getLocation(coverlink, br.getRequest())));
+                for (String coverlink : covers) {
+                    coverlink = Request.getLocation(coverlink, br.getRequest());
+                    if (!dupe.add(coverlink)) {
+                        continue;
+                    }
+                    decryptedLinks.add(createDownloadlink(coverlink));
                 }
             }
             String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
