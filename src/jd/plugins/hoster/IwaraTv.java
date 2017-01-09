@@ -36,6 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "http://(?:[A-Za-z0-9]+\\.)?iwaradecrypted\\.tv/.+" })
 public class IwaraTv extends PluginForHost {
@@ -129,6 +130,7 @@ public class IwaraTv extends PluginForHost {
             return AvailableStatus.TRUE;
         }
 
+        boolean useApi = false;
         boolean isVideo = true;
         if (this.br.getURL().matches(type_image)) {
             /* Picture */
@@ -140,6 +142,14 @@ public class IwaraTv extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://(?:www\\.)?iwara\\.tv/sites/default/files/videos/[^<>\"]+)\"").getMatch(0);
             }
+        } else if (this.br.containsHTML("jQuery\\.extend")) {
+            String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);
+            String videoHash = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(drupal, "theme"), "video_hash");
+            if (videoHash != null) {
+                useApi = true;
+                this.br.getPage("/api/video/" + videoHash);
+                dllink = PluginJSonUtils.getJson(this.br, "uri");
+            }
         } else {
             logger.info("Failed to find downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -148,8 +158,14 @@ public class IwaraTv extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, isVideo ? ".mp4" : ".png");
+        String filenameExt;
+        if (!useApi) {
+            dllink = Encoding.htmlDecode(dllink);
+            filenameExt = dllink;
+        } else {
+            filenameExt = filename;
+        }
+        final String ext = getFileNameExtensionFromString(filenameExt, isVideo ? ".mp4" : ".png");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
