@@ -41,6 +41,14 @@ public class ArchiveSandbox {
         return null;
     }
 
+    public boolean isPasswordProtected() {
+        if (archive != null) {
+            return archive.isProtected() || archive.isPasswordRequiredToOpen();
+        } else {
+            return false;
+        }
+    }
+
     public String getUsedPassword() {
         if (archive != null) {
             return archive.getFinalPassword();

@@ -293,7 +293,7 @@ public class FilesMonsterCom extends PluginForHost {
             /* request ticket for this file */
             br.getPage("http://filesmonster.com" + finalPage);
             String linkPart = br.getRegex("dlcode\":\"(.*?)\"").getMatch(0);
-            String firstPart = new Regex(postThat, "(http://filesmonster\\.com/dl/.*?/free/)").getMatch(0);
+            String firstPart = new Regex(postThat, "(https?://filesmonster\\.com/dl/.*?/free/)").getMatch(0);
             if (linkPart == null || firstPart == null) {
                 logger.warning("The following string could not be found: linkPart or firstPart");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -322,12 +322,13 @@ public class FilesMonsterCom extends PluginForHost {
         } catch (Exception e) {
         }
         handleErrors();
-        String dllink = br.getRegex("url\":\"(http:.*?)\"").getMatch(0);
+        String dllink = br.getRegex("url\":\"(https?:.*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("The following string could not be found: dllink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "");
+        dllink = dllink.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The downloadlink doesn't seem to refer to a file, following the connection...");
@@ -523,7 +524,7 @@ public class FilesMonsterCom extends PluginForHost {
             logger.info("Traffic limit reached!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?)\"").getMatch(0);
+        String premlink = br.getRegex("\"(https?://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) {
             logger.warning("Failed to find premium downloadlink");
             throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find premium downloadlink. Check if you can download this file via browser, if so, please report this as a bug.");
@@ -540,7 +541,7 @@ public class FilesMonsterCom extends PluginForHost {
         Browser ajax = br.cloneBrowser();
         ajax.getPage(ajaxurl);
 
-        String dllink = ajax.getRegex("url\":\"(http:.*?)\"").getMatch(0);
+        String dllink = ajax.getRegex("url\":\"(https?:.*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

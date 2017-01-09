@@ -45,6 +45,7 @@ public class CzechavCom extends PluginForDecrypt {
 
     public CzechavCom(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     protected DownloadLink createDownloadlink(String url, final String fid, final String urlpart, final String quality) {
