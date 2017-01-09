@@ -43,6 +43,7 @@ public class CzechavCom extends PluginForHost {
     public CzechavCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.czechav.com/en/join/");
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     @Override
