@@ -54,13 +54,17 @@ public class SrBoxLife extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(redirect);
         }
-        String fpName = br.getRegex("<h1><a href[^>]+>(.*?)</a></h1>").getMatch(0);
+
+        String fpName = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            fpName = br.getRegex("<h1><a href[^>]+>(.*?)</a></h1>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<b>Download Fast:(.*?)</b>").getMatch(0);
+                fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("color=\"#ffffff\" size=\"1\">(.*?)free from rapidshare").getMatch(0);
+                    fpName = br.getRegex("<b>Download Fast:(.*?)</b>").getMatch(0);
+                    if (fpName == null) {
+                        fpName = br.getRegex("color=\"#ffffff\" size=\"1\">(.*?)free from rapidshare").getMatch(0);
+                    }
                 }
             }
         }
