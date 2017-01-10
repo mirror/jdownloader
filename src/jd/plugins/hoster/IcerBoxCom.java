@@ -137,7 +137,7 @@ public class IcerBoxCom extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    if (links.size() > 100 || index == urls.length) {
+                    if (links.size() == 1 || index == urls.length) {
                         break;
                     }
                     links.add(urls[index]);
