@@ -501,13 +501,10 @@ public class UpstoRe extends antiDDoSForHost {
         // traffic is not unlimited they have 20GiB/day fair use. see ticket HZI-220-58438
         // ai.setUnlimitedTraffic();
         // this is in MiB, more accurate than the top rounded figure
-        String trafficUsed = br.getRegex(">Total:</td>\\s*<td>([\\d+\\.]+)<").getMatch(0);
-        if (trafficUsed == null) {
-            trafficUsed = "0";
-        }
-        final String trafficTotal = br.getRegex("Downloaded in last \\d+ hours: [\\d+\\.]+ of (\\d+) GB").getMatch(0);
-        final long trafficDaily = SizeFormatter.getSize(trafficTotal + "GiB");
-        final long trafficLeft = trafficDaily - SizeFormatter.getSize(trafficUsed + "MiB");
+        // final String trafficUsed = br.getRegex(">Total:</td>\\s*<td>([\\d+\\.]+)<").getMatch(0);
+        final String traffic[] = br.getRegex("Downloaded in last \\d+ hours: ([\\d+\\.]+) of ([\\d+\\.]+) GB").getRow(0);
+        final long trafficDaily = SizeFormatter.getSize(traffic[1] + "GiB");
+        final long trafficLeft = trafficDaily - SizeFormatter.getSize(traffic[0] + "GiB");
         ai.setTrafficLeft(trafficLeft);
         ai.setTrafficMax(trafficDaily);
         ai.setStatus("Premium Account");
