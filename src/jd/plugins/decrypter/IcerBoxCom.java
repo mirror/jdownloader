@@ -22,7 +22,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,33 +30,48 @@ import jd.plugins.FilePackage;
 import jd.plugins.components.PluginJSonUtils;
 
 /**
- *
  * @author raztoki
- *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/folder/(\\d+)/([A-Za-z0-9=]+)" })
-public class NitroFlareCom extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "icerbox.com" }, urls = { "https?://(?:www\\.)?icerbox\\.com/folder/([A-Za-z0-9]{8})" })
+public class IcerBoxCom extends antiDDoSForDecrypt {
 
-    public NitroFlareCom(PluginWrapper wrapper) {
+    public IcerBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String userid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(0);
-        final String folderid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(1);
-        postPage("https://nitroflare.com/ajax/folder.php", "userId=" + userid + "&folder=" + Encoding.urlEncode(folderid) + "&fetchAll=1");
+        final String folderid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(0);
+        getPage("https://icerbox.com/api/v1/folder?id=" + folderid);
         final String fpName = PluginJSonUtils.getJsonValue(br, "name");
         final String filesArray = PluginJSonUtils.getJsonArray(br, "files");
         if (!inValidate(filesArray)) {
-            String[] files = new Regex(filesArray, "\\{\"name\":.*?\\}(?:,|\\])").getColumn(-1);
+            final String[] files = PluginJSonUtils.getJsonResultsFromArray(filesArray);
+            if (files != null && files.length > 0) {
+                for (String file : files) {
+                    final String uid = PluginJSonUtils.getJsonValue(file, "id");
+                    final String name = PluginJSonUtils.getJsonValue(file, "name");
+                    final String size = PluginJSonUtils.getJsonValue(file, "size");
+                    if (!inValidate(uid)) {
+                        final DownloadLink d = createDownloadlink("https://icerbox.com/" + uid);
+                        d.setVerifiedFileSize(Long.parseLong(size));
+                        d.setName(name);
+                        d.setAvailable(true);
+                        decryptedLinks.add(d);
+                    }
+                }
+            }
+        }
+        final String directoryArray = PluginJSonUtils.getJsonArray(br, "folders");
+        if (!inValidate(directoryArray)) {
+            final String[] files = PluginJSonUtils.getJsonResultsFromArray(directoryArray);
             if (files != null && files.length > 0) {
                 for (String file : files) {
                     // for now just return uid, nitroflare mass linkcheck shows avialable status and other values we need!
-                    final String uid = PluginJSonUtils.getJsonValue(file, "url");
+                    final String uid = PluginJSonUtils.getJsonValue(file, "id");
                     if (!inValidate(uid)) {
-                        decryptedLinks.add(createDownloadlink("https://nitroflare.com/" + uid));
+                        decryptedLinks.add(createDownloadlink("https://icerbox.com/folder/" + uid));
                     }
                 }
             }
