@@ -123,7 +123,13 @@ public class EmuParadiseMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
-            filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            }
+            filesize = br.getRegex("\\s*title=\"Download.*?\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?[KMG]{1}[B]{0,1})\\)").getMatch(0);
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
