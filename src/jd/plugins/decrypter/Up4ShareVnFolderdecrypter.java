@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up.4share.vn" }, urls = { "http://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up.4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
 public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
 
     public Up4ShareVnFolderdecrypter(PluginWrapper wrapper) {

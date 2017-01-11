@@ -40,16 +40,16 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" })
 public class Up4ShareVn extends PluginForHost {
 
-    private static final String MAINPAGE = "http://up.4share.vn/";
+    private static final String MAINPAGE = "https://up.4share.vn/";
     private static Object       LOCK     = new Object();
     private static final String NOCHUNKS = "NOCHUNKS";
 
     public Up4ShareVn(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://up.4share.vn/?act=gold");
+        this.enablePremium("https://up.4share.vn/?act=gold");
     }
 
     @SuppressWarnings("deprecation")
@@ -201,9 +201,9 @@ public class Up4ShareVn extends PluginForHost {
         getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("class=''> <a href='(http://.*?)'").getMatch(0);
+            dllink = br.getRegex("class=''> <a href='(https?://.*?)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("('|\")(http://sv\\d+\\.4share\\.vn/[^<>\"]*?)\\1").getMatch(1);
+                dllink = br.getRegex("('|\")(https?://sv\\d+\\.4share\\.vn/[^<>\"]*?)\\1").getMatch(1);
             }
         }
         if (dllink == null) {
@@ -273,8 +273,8 @@ public class Up4ShareVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage("http://up.4share.vn/");
-                postPage("http://up.4share.vn/index/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_login=on");
+                getPage("https://up.4share.vn/");
+                postPage("https://up.4share.vn/index/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_login=on");
                 final String lang = System.getProperty("user.language");
                 if (br.getCookie(MAINPAGE, "info1") == null || br.getCookie(MAINPAGE, "info2") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
