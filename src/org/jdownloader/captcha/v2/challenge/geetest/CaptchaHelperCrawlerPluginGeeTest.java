@@ -60,7 +60,7 @@ public class CaptchaHelperCrawlerPluginGeeTest extends AbstractCaptchaHelperGeeT
         };
         c.setTimeout(getPlugin().getCaptchaTimeout());
         getPlugin().invalidateLastChallengeResponse();
-        final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+        final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
             logger.warning("Cancel. Blacklist Matching");
             throw new CaptchaException(blackListEntry);

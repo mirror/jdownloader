@@ -31,7 +31,6 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -119,12 +118,12 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                 }
             }
             getPlugin().invalidateLastChallengeResponse();
-            final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
+            final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(challenge);
             if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            final SolverJob<String> job = ChallengeResponseController.getInstance().handle(challenge);
+            ChallengeResponseController.getInstance().handle(challenge);
             if (!challenge.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

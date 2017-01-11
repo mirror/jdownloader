@@ -60,7 +60,7 @@ public class CaptchaHelperCrawlerPluginConfidentCaptcha extends AbstractCaptchaH
         int ct = plugin.getCaptchaTimeout();
         c.setTimeout(ct);
         plugin.invalidateLastChallengeResponse();
-        final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+        final BlacklistEntry<?> blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
             logger.warning("Cancel. Blacklist Matching");
             throw new CaptchaException(blackListEntry);
