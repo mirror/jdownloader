@@ -9,6 +9,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.plugins.DownloadLink;
@@ -22,6 +23,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -121,24 +123,63 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     @Override
     public void actionPerformed(ActionEvent e) {
         final StringBuilder sb = new StringBuilder();
+        final SelectionInfo<?, ?> selectionInfo = getTable().getSelectionInfo();
         if (isSmartSelection()) {
-            for (PackageView<?, ?> pv : getTable().getSelectionInfo().getPackageViews()) {
-                AbstractPackageNode<?, ?> pkg = pv.getPackage();
-                add(sb, pkg);
-                List<AbstractNode> childs = (List<AbstractNode>) pv.getChildren();
-                for (AbstractNode c : childs) {
-                    add(sb, c);
+            int children = 0;
+            for (final PackageView<?, ?> pv : selectionInfo.getPackageViews()) {
+                final List<AbstractNode> childs = (List<AbstractNode>) pv.getChildren();
+                children += childs.size();
+                if (children > 1) {
+                    break;
+                }
+            }
+            final boolean contentPermission = children == 1;
+            for (final PackageView<?, ?> pv : selectionInfo.getPackageViews()) {
+                final AbstractPackageNode<?, ?> pkg = pv.getPackage();
+                add(sb, pkg, false);
+                final List<AbstractNode> childs = (List<AbstractNode>) pv.getChildren();
+                for (final AbstractNode c : childs) {
+                    add(sb, c, contentPermission);
                 }
             }
         } else {
-            for (AbstractNode pv : getTable().getSelectionInfo().getRawSelection()) {
-                add(sb, pv);
+            final List<AbstractNode> selection = selectionInfo.getRawSelection();
+            final boolean contentPermission = selection.size() == 1 && selection.get(0) instanceof AbstractPackageChildrenNode;
+            for (final AbstractNode pv : selection) {
+                add(sb, pv, contentPermission);
             }
         }
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
     }
 
-    public void add(StringBuilder sb, AbstractNode pv) {
+    private final String getUrlByType(final UrlDisplayType dt, final AbstractNode node) {
+        final DownloadLink link;
+        if (node instanceof DownloadLink) {
+            link = (DownloadLink) node;
+        } else if (node instanceof CrawledLink) {
+            link = ((CrawledLink) node).getDownloadLink();
+        } else {
+            return null;
+        }
+        switch (dt) {
+        case CUSTOM:
+            return link.getCustomUrl();
+        case REFERRER:
+            return link.getReferrerUrl();
+        case CONTAINER:
+            return link.getContainerUrl();
+        case ORIGIN:
+            return link.getOriginUrl();
+        case CONTENT:
+            if (link.getContentUrl() != null) {
+                return link.getContentUrl();
+            }
+        default:
+            return null;
+        }
+    }
+
+    public void add(StringBuilder sb, AbstractNode pv, final boolean contentPermission) {
         String line = null;
         if (pv instanceof FilePackage) {
             line = getPatternPackages();
@@ -171,7 +212,11 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getView().getDisplayUrl()));
             line = line.replace(PATTERN_URL_CONTAINER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link)));
-            line = line.replace(PATTERN_URL_CONTENT, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link)));
+            if (contentPermission) {
+                line = line.replace(PATTERN_URL_CONTENT, nulltoString(getUrlByType(UrlDisplayType.CONTENT, link)));
+            } else {
+                line = line.replace(PATTERN_URL_CONTENT, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link)));
+            }
             line = line.replace(PATTERN_URL_ORIGIN, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, link)));
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledLink) {
@@ -187,7 +232,11 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_SHA256, nulltoString(link.getDownloadLink().getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getDownloadLink().getView().getDisplayUrl()));
             line = line.replace(PATTERN_URL_CONTAINER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTAINER, link)));
-            line = line.replace(PATTERN_URL_CONTENT, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link)));
+            if (contentPermission) {
+                line = line.replace(PATTERN_URL_CONTENT, nulltoString(getUrlByType(UrlDisplayType.CONTENT, link)));
+            } else {
+                line = line.replace(PATTERN_URL_CONTENT, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.CONTENT, link)));
+            }
             line = line.replace(PATTERN_URL_ORIGIN, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.ORIGIN, link)));
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledPackage) {

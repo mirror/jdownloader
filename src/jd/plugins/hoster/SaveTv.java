@@ -286,8 +286,11 @@ public class SaveTv extends PluginForHost {
         br.setFollowRedirects(true);
         link.setProperty(PROPERTY_type, EXTENSION_default);
         /* Show telecast-ID + extension as dummy name for all error cases */
-        if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
-            link.setName(getTelecastId(link) + EXTENSION_default);
+        final String telecast_ID = getTelecastId(link);
+        if (telecast_ID != null) {
+            if (link.getName() != null && (link.getName().contains(telecast_ID) && !link.getName().endsWith(EXTENSION_default) || link.getName().contains(".cfm"))) {
+                link.setName(telecast_ID + EXTENSION_default);
+            }
         }
         Account aa = null;
         final String account_username_via_which_url_is_downloadable = getDownloadableVia(link);
@@ -313,7 +316,10 @@ public class SaveTv extends PluginForHost {
         /* Set linkID for correct dupe-check */
         if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
             /* Every account has individual telecastIDs. */
-            link.setLinkID(aa.getUser() + getTelecastId(link));
+            if (telecast_ID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setLinkID(aa.getUser() + telecast_ID);
         }
         setConstants(aa, link);
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
@@ -332,7 +338,9 @@ public class SaveTv extends PluginForHost {
             parseQualityTag(link, null);
         } else {
             login_site(this.br, aa, false);
-            final String telecast_ID = getTelecastId(link);
+            if (telecast_ID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             getPageSafe("https://www." + this.getHost() + "/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
             if (!br.getURL().contains("/JSON/") || this.br.getHttpConnection().getResponseCode() == 404) {
                 /* Offline#1 - offline */
