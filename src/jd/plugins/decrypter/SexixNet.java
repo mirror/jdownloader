@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.SexixNetConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -54,12 +55,12 @@ public class SexixNet extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
-        final boolean grabBEST = PluginJsonConfig.get(SexixNetConfig.class).isGrabBestVideoVersionEnabled();
-        final boolean grab1080p = PluginJsonConfig.get(SexixNetConfig.class).isGrab1080pVideoEnabled();
-        final boolean grab720p = PluginJsonConfig.get(SexixNetConfig.class).isGrab720pVideoEnabled();
-        final boolean grab480p = PluginJsonConfig.get(SexixNetConfig.class).isGrab480pVideoEnabled();
-        final boolean grab360p = PluginJsonConfig.get(SexixNetConfig.class).isGrab360pVideoEnabled();
+        final SexixNetConfig pluginConfig = PluginJsonConfig.get(SexixNetConfig.class);
+        final boolean grabBEST = pluginConfig.isGrabBestVideoVersionEnabled();
+        final boolean grab1080p = pluginConfig.isGrab1080pVideoEnabled();
+        final boolean grab720p = pluginConfig.isGrab720pVideoEnabled();
+        final boolean grab480p = pluginConfig.isGrab480pVideoEnabled();
+        final boolean grab360p = pluginConfig.isGrab360pVideoEnabled();
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
 
         String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
@@ -86,6 +87,11 @@ public class SexixNet extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = createDownloadlink(directurl);
+            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            final String videoID = new Regex(parameter, "/(video\\d+)").getMatch(0);
+            if (videoID != null) {
+                dl.setName(videoID + "_" + quality + ".mp4");
+            }
             /* Best comes first --> Simply quit the loop if user wants best quality. */
             if (grabBEST) {
                 decryptedLinks.add(dl);
