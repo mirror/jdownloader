@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,13 +34,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9_\\-]+,d\\-\\d+([A-Za-z0-9_,\\-]+)?" })
 public class FreeDiscPlFolder extends PluginForDecrypt {
 
     public FreeDiscPlFolder(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("freedisc.pl", 100, 20, 60000);
+            Browser.setRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
         } catch (final Throwable e) {
         }
     }
