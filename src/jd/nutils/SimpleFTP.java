@@ -160,6 +160,9 @@ public abstract class SimpleFTP {
 
     // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
     public static String BestEncodingGuessingURLDecode(String urlCoded) throws IOException {
+        if (StringUtils.isEmpty(urlCoded)) {
+            return urlCoded;
+        }
         final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
         for (final String encoding : new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }) {
             try {
