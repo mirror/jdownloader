@@ -168,7 +168,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                     @Override
                     public boolean onFile(File f, int depths) throws RuntimeException {
-                        String name = f.getName().toLowerCase(Locale.ENGLISH);
+                        final String name = f.getName().toLowerCase(Locale.ENGLISH);
+                        if ("fav".equals(name) && f.isDirectory()) {
+                            return false;
+                        }
                         if (name.endsWith(".png") || name.endsWith(".svg")) {
                             files.add(f);
                         }
@@ -180,7 +183,8 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     }
                 }, imagesDir, 5);
                 final JList list = new JList(files.toArray(new File[] {}));
-                list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+                list.setLayoutOrientation(JList.VERTICAL_WRAP);
+                list.setVisibleRowCount(30);
                 final ListCellRenderer org = list.getCellRenderer();
                 list.setCellRenderer(new ListCellRenderer() {
 
