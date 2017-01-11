@@ -19,6 +19,7 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,6 +45,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 
@@ -510,15 +512,32 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     void removeArchiveFiles() {
+        final Archive archive = getArchive();
         final DeleteOption remove;
-        if (getArchive().getFactory().isDeepExtraction()) {
+        if (archive.getFactory().isDeepExtraction()) {
             remove = DeleteOption.NULL;
         } else {
-            remove = getExtension().getRemoveFilesAfterExtractAction(getArchive());
+            remove = getExtension().getRemoveFilesAfterExtractAction(archive);
         }
         if (remove != null && !DeleteOption.NO_DELETE.equals(remove)) {
             for (final ArchiveFile link : archive.getArchiveFiles()) {
                 link.deleteFile(remove);
+            }
+            if (ArchiveType.RAR_MULTI.equals(archive.getArchiveType())) {
+                // Deleteing rar recovery volumes
+                final HashSet<String> done = new HashSet<String>();
+                for (final ArchiveFile link : archive.getArchiveFiles()) {
+                    if (done.add(link.getName())) {
+                        final String filePath = link.getFilePath().replaceFirst("(?i)\\.rar$", ".rev");
+                        final File file = new File(filePath);
+                        if (file.exists() && file.isFile()) {
+                            logger.info("Deleting rar recovery volume " + file.getAbsolutePath());
+                            if (!file.delete()) {
+                                logger.warning("Could not deleting rar recovery volume " + file.getAbsolutePath());
+                            }
+                        }
+                    }
+                }
             }
         }
     }

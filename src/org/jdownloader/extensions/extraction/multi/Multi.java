@@ -454,34 +454,13 @@ public class Multi extends IExtraction {
     @Override
     public void close() {
         try {
-            final Archive archive = getExtractionController().getArchive();
-            if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && ArchiveType.RAR_MULTI.equals(archive.getArchiveType())) {
-                // Deleteing rar recovery volumes
-                final HashSet<String> done = new HashSet<String>();
-                for (ArchiveFile link : archive.getArchiveFiles()) {
-                    if (done.add(link.getName())) {
-                        final String filePath = link.getFilePath().replaceFirst("(?i)\\.rar$", ".rev");
-                        final File file = new File(filePath);
-                        if (file.exists() && file.isFile()) {
-                            logger.info("Deleting rar recovery volume " + file.getAbsolutePath());
-                            if (!file.delete()) {
-                                logger.warning("Could not deleting rar recovery volume " + file.getAbsolutePath());
-                            }
-                        }
-                    }
-                }
-            }
-        } finally {
-            try {
-                inArchive.close();
-            } catch (final Throwable e) {
-            }
-            try {
-                closable.close();
-            } catch (final Throwable e) {
-            }
+            inArchive.close();
+        } catch (final Throwable e) {
         }
-
+        try {
+            closable.close();
+        } catch (final Throwable e) {
+        }
     }
 
     @Override
@@ -1170,25 +1149,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
