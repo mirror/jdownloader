@@ -137,7 +137,7 @@ public class IcerBoxCom extends antiDDoSForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    if (links.size() == 1 || index == urls.length) {
+                    if (links.size() == 100 || index == urls.length) {
                         break;
                     }
                     links.add(urls[index]);
@@ -152,7 +152,7 @@ public class IcerBoxCom extends antiDDoSForHost {
                     sb.append(getFUID(dl));
                     atLeastOneDL = true;
                 }
-                getPage(br, apiURL + "/file?id=" + sb);
+                getPage(br, apiURL + "/files?ids=" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Hoster is in maintenance mode. Try again later");
