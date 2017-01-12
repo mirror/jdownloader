@@ -27,14 +27,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetram.com" }, urls = { "http://(www\\.)?filetram\\.com/(download/.+|(turbobit|uploading|mediafire|4shared)/[a-z0-9\\-_]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetram.com" }, urls = { "http://(www\\.)?filetram\\.com/(download/.+|(turbobit|mediafire|4shared)/[a-z0-9\\-_]+)" })
 public class FileTramCom extends PluginForDecrypt {
 
     public FileTramCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String OTHERLINK = "http://(www\\.)?filetram\\.com/(turbobit|uploading|mediafire|4shared)/[a-z0-9\\-_]+";
+    private final String OTHERLINK = "http://(www\\.)?filetram\\.com/(turbobit|mediafire|4shared)/[a-z0-9\\-_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
