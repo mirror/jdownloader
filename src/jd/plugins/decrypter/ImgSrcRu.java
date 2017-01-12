@@ -101,17 +101,15 @@ public class ImgSrcRu extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String title = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC.RU)?</title>").getMatch(0);
-            final String strongFrom = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
-            String fpName = title;
-            if (fpName == null || strongFrom != null && strongFrom.length() > fpName.length()) {
-                fpName = strongFrom;
-            }
-            if (fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
 
+            String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC.RU)?</title>").getMatch(0);
+                if (fpName == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+            }
             uaid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
             if (uaid == null) {
                 uaid = new Regex(parameter, "/a(\\d+)\\.html").getMatch(0);
