@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,9 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * variant of OuoIo
@@ -39,7 +39,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li", "unskip.me" }, urls = { "https?://(?:www\\.)?fas\\.li/(?:go/)?[A-Za-z0-9]{4,}", "https?://(?:www\\.)?uskip\\.me/(?:go/)?[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li" }, urls = { "https?://(?:www\\.)?fas\\.li/(?:go/)?[A-Za-z0-9]{4,}" })
 public class FasLi extends antiDDoSForDecrypt {
 
     public FasLi(PluginWrapper wrapper) {
@@ -91,7 +91,6 @@ public class FasLi extends antiDDoSForDecrypt {
     private String getFinalLink() {
         String finallink = br.getRegex("\\s+id=(\"|'|)btn-main\\1[^>]+href=(\"|')\\s*([^\r\n]+)\\s*\\2").getMatch(2);
         if (finallink == null) {
-            /* 2016-09-16: Required for unskip.me */
             finallink = br.getRegex("<a href=\"(http[^<>\"]+)\" id=\"btn\\-main\"").getMatch(0);
         }
         return finallink;

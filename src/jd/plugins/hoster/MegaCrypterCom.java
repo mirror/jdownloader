@@ -31,6 +31,13 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,24 +55,18 @@ import jd.plugins.PluginProgress;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|megacrypter\\.sytes\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(megacrypter\\.neerdi\\.x10\\.bz|megacrypter\\.noestasinvitado\\.com|youpaste\\.co)/(!|%21)[A-Za-z0-9\\-_\\!%]+" })
 public class MegaCrypterCom extends antiDDoSForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "megacrypter.neerdi.x10.bz", "megacrypter.noestasinvitado.com", "youpaste.co", "megacrypter.sytes.net" };
+        return new String[] { "megacrypter.neerdi.x10.bz", "megacrypter.noestasinvitado.com", "youpaste.co" };
     }
 
     // note: hosts removed due to be down.
     // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
     // 20160308 encrypterme.ga, no dns
+    // 20170112 megacrypter.sytes.net, no dns record
 
     public MegaCrypterCom(PluginWrapper wrapper) {
         super(wrapper);

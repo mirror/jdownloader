@@ -43,7 +43,7 @@ public class Mv2kTo extends PluginForDecrypt {
 
     /**
      * Description of regex array: 1= nowvideo.co, streamcloud.com 2=flashx.tv, vidbux.com, xvidstage.com, vidstream.in, hostingbulk.com,
-     * uploadc.com, allmyvideos.net, firedrive.com, and many others 3=zalaa.com, 4=stream2k.com 5=flashx.tv, yesload.net
+     * uploadc.com, allmyvideos.net, firedrive.com, and many others 4=stream2k.com 5=flashx.tv, yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String old_domain = new Regex(param.toString(), "https?://(?:www\\.)?([^/]+/)").getMatch(0);

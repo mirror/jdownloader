@@ -20,6 +20,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
+import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,24 +43,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me", "kissanime.ru" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kisscartoon\\.me/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kissanime\\.ru/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kisscartoon\\.me/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
-
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,6 +65,16 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final KissanimeToConfig pc = PluginJsonConfig.get(KissanimeToConfig.class);
+        if (pc == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "User has no config!");
+        }
+        final boolean grabBEST = pc.isGrabBestVideoVersionEnabled();
+        final boolean grab1080p = pc.isGrab1080pVideoEnabled();
+        final boolean grab720p = pc.isGrab720pVideoEnabled();
+        final boolean grab480p = pc.isGrab480pVideoEnabled();
+        final boolean grab360p = pc.isGrab360pVideoEnabled();
+
         br.setFollowRedirects(true);
         getPage(parameter);
         /* Error handling */
@@ -69,11 +82,6 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final boolean grabBEST = PluginJsonConfig.get(KissanimeToConfig.class).isGrabBestVideoVersionEnabled();
-        final boolean grab1080p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab1080pVideoEnabled();
-        final boolean grab720p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab720pVideoEnabled();
-        final boolean grab480p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab480pVideoEnabled();
-        final boolean grab360p = PluginJsonConfig.get(KissanimeToConfig.class).isGrab360pVideoEnabled();
 
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
         handleHumanCheck(this.br);
@@ -200,6 +208,32 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    private void test() throws Exception {
+        // JavascriptHtmlUnit.getHtmlAsXml(br, br.getURL());
+        Browser br2 = br.cloneBrowser();
+        getPage(br2, "/Scripts/kissenc.min.js");
+        final String k1 = br2.toString();
+        final String k2 = br2.getRegex("eval(.*?);$").getMatch(0);
+        br2 = br.cloneBrowser();
+        getPage(br2, "/Scripts/pbkdf2.js");
+        final String p1 = br2.toString();
+        String result1 = null;
+        String result2 = null;
+        String result3 = null;
+        final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval(p1);
+            result1 = engine.eval(k2).toString();
+            result2 = engine.eval(result1.replace("}(window)", "}")).toString();
+            // result3 =
+            // engine.eval("$kissenc.decrypt(\"y96f+H5Cxzef4pwA9moW1hl88Qo+JExIfYUtfkxZDbMJ4HbEq/04ZNu+CqY1ISsQ/CE3iuMsyrH+Kopl4tNdcjQbpQCr7e/t5C8wddaHrarndfejJVMURXQ7PzVDu5gl\");").toString();
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        System.out.println(1);
     }
 
 }
