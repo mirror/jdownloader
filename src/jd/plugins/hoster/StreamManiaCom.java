@@ -19,10 +19,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -30,13 +32,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 // based on raztoki's plugin for jdownloader 1
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streammania.com", "brapid.sk" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323" }) 
-public class StreamManiaCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streammania.com", "brapid.sk" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323" })
+public class StreamManiaCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
@@ -60,29 +59,12 @@ public class StreamManiaCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        String username = Encoding.urlEncode(account.getUser());
-        String pass = Encoding.urlEncode(account.getPass());
-        String page = null;
-        String hosts = null;
-        try {
-            page = br.getPage("http://www." + hostPublicDomain + "/api/get_pa_info.php?login=" + username + "&password=" + pass);
-            hosts = br.getPage("http://www." + hostPublicDomain + "/api/get_filehosters.php");
-        } catch (Exception e) {
-            account.setTempDisabled(true);
-            account.setValid(true);
-            ac.setProperty("multiHostSupport", Property.NULL);
-            return ac;
-        }
-        if (page.startsWith("ERROR: Auth")) {
-            account.setValid(false);
-            ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus(page);
-            return ac;
+        getPage("http://www." + hostPublicDomain + "/api/get_pa_info.php?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.toString().startsWith("ERROR: Auth")) {
+            throw new PluginException(PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         /* parse api response in easy2handle hashmap */
-        String info[] = new Regex(page, "(\\d+)($|\\|)").getColumn(0);
+        String info[] = br.getRegex("(\\d+)($|\\|)").getColumn(0);
         boolean isunlimited = "1".equalsIgnoreCase(info[1]);
         long validUntil = Long.parseLong(info[2]);
         long inC = Long.parseLong(info[0]) * 1024 * 1024l;
@@ -98,22 +80,19 @@ public class StreamManiaCom extends PluginForHost {
         } else {
             ac.setUnlimitedTraffic();
         }
-        ArrayList<String> supportedHosts = new ArrayList<String>();
-        if (hosts != null) {
-            String hoster[] = new Regex(hosts, "(.+?)($|\\|)").getColumn(0);
-            for (String host : hoster) {
-                if (hosts != null) {
-                    supportedHosts.add(host.trim());
-                }
+        getPage("http://www." + hostPublicDomain + "/api/get_filehosters.php");
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String hoster[] = br.getRegex("(.+?)($|\\|)").getColumn(0);
+        if (hoster == null) {
+            for (final String host : hoster) {
+                supportedHosts.add(host.trim());
             }
-
         }
         if (account.isValid()) {
             ac.setMultiHostSupport(this, supportedHosts);
         } else {
             account.setValid(false);
-            ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("Account invalid");
+            ac.setStatus("Account Invalid");
         }
         return ac;
     }
@@ -156,16 +135,11 @@ public class StreamManiaCom extends PluginForHost {
                 }
             }
         }
-
-        String user = Encoding.urlEncode(account.getUser());
-        String pw = Encoding.urlEncode(account.getPass());
-        String url = Encoding.urlEncode(link.getDownloadURL());
         br.setFollowRedirects(true);
-        br.setConnectTimeout(90 * 1000);
-        br.setReadTimeout(90 * 1000);
         dl = null;
         showMessage(link, "Phase 1/2: Get download link");
-        String genlink = br.getPage("http://www." + hostPublicDomain + "/api/get_ddl.php?login=" + user + "&password=" + pw + "&url=" + url);
+        getPage("http://www." + hostPublicDomain + "/api/get_ddl.php?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        String genlink = br.toString();
         String maxChunksString = br.getRequest().getResponseHeader("X-MaxChunks");
         // Tested with share-online.biz: max 4 chunks possible
         int maxChunks = 1;
