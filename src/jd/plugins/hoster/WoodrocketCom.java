@@ -86,7 +86,12 @@ public class WoodrocketCom extends PluginForHost {
         }
         if (dllink == null) {
             dllink = br.getRegex("wrvideo\\s*=\\s*\"(https?://videos\\.woodrocket\\.com/.*?\\.mp4)\"").getMatch(0);
+            if (dllink == null) {
+                // content can be hosted on pornhub
+                dllink = br.getRegex("wrVideo\\s*=\\s*\"(https?://.+?)\"").getMatch(0);
+            }
         }
+
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

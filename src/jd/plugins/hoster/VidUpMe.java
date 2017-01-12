@@ -19,10 +19,15 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,15 +43,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(?:www\\.|beta\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" })
-public class VidUpMe extends PluginForHost {
+public class VidUpMe extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private String               fuid                         = null;
@@ -98,19 +100,12 @@ public class VidUpMe extends PluginForHost {
         return false;
     }
 
-    public void prepBrowser() {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        // br.setCookie(COOKIE_HOST, "lang", "english");
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         fuid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|id=\"delete_reason\")").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -131,7 +126,7 @@ public class VidUpMe extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(fileInfo);
             }
         }
@@ -257,11 +252,7 @@ public class VidUpMe extends PluginForHost {
             try {
                 logger.info("Trying to get link via embed");
                 br.getPage("/embed-" + fuid + ".html");
-                // dllink = getDllink();
-                dllink = br.getRegex("'480p', file: '([^']+)'").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("'360p', file: '([^']+)'").getMatch(0);
-                }
+                dllink = getDllink();
                 if (dllink == null) {
                     logger.info("Failed to get link via embed");
                 } else {
@@ -281,7 +272,7 @@ public class VidUpMe extends PluginForHost {
             if (download1 != null) {
                 download1.remove("method_premium");
                 download1.put("imhuman", "");
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -373,7 +364,7 @@ public class VidUpMe extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
@@ -460,24 +451,60 @@ public class VidUpMe extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link
-                        // format.
+            // json within javascript var. note: within br not correctedbr
+            String js = new Regex(br, "var jwConfig_vars = (\\{.*?\\});").getMatch(0);
+            if (js != null) {
+                try {
+                    final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(js, "sources"));
+                    if (sources != null) {
+                        final HashMap<String, String> result = new HashMap<String, String>();
+                        for (final String source : sources) {
+                            final String label = PluginJSonUtils.getJson(source, "label");
+                            final String file = PluginJSonUtils.getJson(source, "file");
+                            result.put(label, file);
+                        }
+                        // get best
+                        dllink = result.get("1080p");
                         if (dllink == null) {
-                            dllink = new Regex(correctedBR, "(https?://[^/]+/d/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            dllink = result.get("720p");
                             if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) {
-                                            break;
+                                dllink = result.get("480p");
+                                if (dllink == null) {
+                                    dllink = result.get("360p");
+                                    if (dllink == null) {
+                                        dllink = result.get("240p");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (dllink != null) {
+                        return dllink;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                    if (dllink == null) {
+                        dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                            // generic fail over for COOKIE_HOST on final link
+                            // format.
+                            if (dllink == null) {
+                                dllink = new Regex(correctedBR, "(https?://[^/]+/d/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                                if (dllink == null) {
+                                    String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                    if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                        for (String crypted : cryptedScripts) {
+                                            dllink = decodeDownloadLink(crypted);
+                                            if (dllink != null) {
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -490,18 +517,21 @@ public class VidUpMe extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(String page, String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(String page, String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
