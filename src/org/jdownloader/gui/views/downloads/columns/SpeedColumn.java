@@ -3,6 +3,8 @@ package org.jdownloader.gui.views.downloads.columns;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
+import java.text.FieldPosition;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
@@ -10,6 +12,16 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -30,18 +42,8 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.nutils.Formatter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
 
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
@@ -52,6 +54,8 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     private final AtomicBoolean warningEnabled      = new AtomicBoolean(false);
     private final Icon          warningIcon;
     private final AtomicBoolean speedLimiterEnabled = new AtomicBoolean(false);
+    private final DecimalFormat formatter;
+    private final SIZEUNIT      maxSizeUnit;
 
     public SpeedColumn() {
         super(_GUI.T.SpeedColumn_SpeedColumn());
@@ -80,6 +84,25 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
                 speedLimiterEnabled.set(Boolean.TRUE.equals(newValue));
             }
         }, false);
+        this.formatter = new DecimalFormat("0.00") {
+
+            final StringBuffer        sb               = new StringBuffer();
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public StringBuffer format(final double number, final StringBuffer result, final FieldPosition pos) {
+                sb.setLength(0);
+                return super.format(number, sb, pos);
+            }
+        };
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit().isIECPrefix()) {
+            maxSizeUnit = SIZEUNIT.MiB;
+        } else {
+            maxSizeUnit = SIZEUNIT.MB;
+        }
     }
 
     public JPopupMenu createHeaderPopup() {
@@ -199,13 +222,13 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
             if (pluginProgress instanceof DownloadPluginProgress) {
                 long speed = ((DownloadPluginProgress) pluginProgress).getSpeed();
                 if (speed > 0) {
-                    return Formatter.formatReadable(speed) + "/s";
+                    return SIZEUNIT.formatValue(maxSizeUnit, formatter, speed) + "/s";
                 }
             }
         } else if (value instanceof FilePackage) {
             final long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage((FilePackage) value);
             if (speed >= 0) {
-                return Formatter.formatReadable(speed) + "/s";
+                return SIZEUNIT.formatValue(maxSizeUnit, formatter, speed) + "/s";
             }
         }
         return null;

@@ -30,7 +30,6 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
      */
 
     protected RenderLabel          sizeRenderer;
-    private final StringBuffer     sb;
     private final DecimalFormat    formatter;
     private final RenderLabel      countRenderer;
     private final RendererMigPanel renderer;
@@ -99,10 +98,9 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
         });
 
-        this.sb = new StringBuffer();
-
         this.formatter = new DecimalFormat("0.00") {
 
+            final StringBuffer        sb               = new StringBuffer();
             /**
              *
              */
@@ -124,7 +122,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public void configureRendererComponent(final AbstractNode value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-        this.sizeRenderer.setText(this.getSizeString(getBytes(value)));
+        this.sizeRenderer.setText(getSizeString(getBytes(value)));
         if (fileCountVisible) {
             if (value instanceof AbstractPackageNode) {
                 countRenderer.setText("[" + ((AbstractPackageNode) value).getView().size() + "]");
@@ -156,33 +154,8 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         return this.renderer;
     }
 
-    private String getSizeString(final long fileSize) {
-        switch (maxSizeUnit) {
-        case TiB:
-            if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
-                return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)).concat(" TiB");
-            }
-        case GiB:
-            if (fileSize >= 1024 * 1024 * 1024l) {
-                return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)).concat(" GiB");
-            }
-        case MiB:
-            if (fileSize >= 1024 * 1024l) {
-                return this.formatter.format(fileSize / (1024 * 1024.0)).concat(" MiB");
-            }
-        case KiB:
-            if (fileSize >= 1024l) {
-                return this.formatter.format(fileSize / 1024.0).concat(" KiB");
-            }
-        default:
-            if (fileSize == 0) {
-                return "0 B";
-            }
-            if (fileSize < 0) {
-                return zeroString;
-            }
-            return fileSize + " B";
-        }
+    private final String getSizeString(long fileSize) {
+        return SIZEUNIT.formatValue(maxSizeUnit, formatter, fileSize);
     }
 
     @Override
@@ -191,7 +164,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         if (sizeValue < 0) {
             return _GUI.T.SizeColumn_getSizeString_zero_tt();
         } else {
-            return this.getSizeString(sizeValue);
+            return getSizeString(sizeValue);
         }
 
     }

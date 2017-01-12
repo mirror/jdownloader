@@ -26,9 +26,7 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     @Override
@@ -56,33 +54,19 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
     }
 
     @Override
-    protected String getSizeString(final long fileSize) {
-        switch (maxSizeUnit) {
-        case TiB:
-            if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
-                return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)).concat(" TiB");
-            }
-        case GiB:
-            if (fileSize >= 1024 * 1024 * 1024l) {
-                return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)).concat(" GiB");
-            }
-        case MiB:
-            if (fileSize >= 1024 * 1024l) {
-                return this.formatter.format(fileSize / (1024 * 1024.0)).concat(" MiB");
-            }
-        case KiB:
-            if (fileSize >= 1024l) {
-                return this.formatter.format(fileSize / 1024.0).concat(" KiB");
-            }
-        default:
-            if (fileSize == 0) {
-                return "0 B";
-            }
-            if (fileSize < 0) {
-                return zeroString;
-            }
-            return fileSize + " B";
+    protected String getSizeString(long fileSize) {
+        return SIZEUNIT.formatValue(maxSizeUnit, formatter, fileSize);
+    }
+
+    @Override
+    protected String getTooltipText(final AbstractNode value) {
+        final long sizeValue = this.getBytes(value);
+        if (sizeValue < 0) {
+            return _GUI.T.SizeColumn_getSizeString_zero_tt();
+        } else {
+            return this.getSizeString(sizeValue);
         }
+
     }
 
 }

@@ -63,7 +63,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" })
 public class ShareOnlineBiz extends antiDDoSForHost {
 
     private static final String                                     COOKIE_HOST                             = "http://share-online.biz";
@@ -489,7 +489,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP")) {
                 /* VIP do not have traffic usage available via api */
-                final long maxDay = 100 * 1024 * 1024 * 1024l;// 100 GB per day
+                final long maxDay = 100 * 1000 * 1000 * 1000l;// 100 GB per day
                 final String trafficDay = infos.get("traffic_1d");
                 final String trafficDayData[] = trafficDay.split(";");
                 final long usedDay = Long.parseLong(trafficDayData[0].trim());
