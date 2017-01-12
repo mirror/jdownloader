@@ -24,8 +24,16 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,60 +53,51 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                  = "";
+    private String               passCode                     = null;
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://thevideo.me";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                  = "http://thevideo.me";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(thevideo\\.me)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = true;
-    private static final boolean           VIDEOHOSTER_3                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
-    private final boolean                  ENABLE_RANDOM_UA             = true;
+    private static final String  DOMAINS                      = "(thevideo\\.me)";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER_2                = true;
+    private static final boolean VIDEOHOSTER_3                = false;
+    private static final boolean SUPPORTSHTTPS                = false;
 
-    private final boolean                  ENABLE_HTML_FILESIZE_CHECK   = false;
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK   = false;
 
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 2;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 2;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXDOWNLOADS            = 2;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 2;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.2
@@ -526,15 +525,13 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         if (!is_correct_finallink && special_js_bullshit != null && dllink != null && !is_saved_directlink) {
             /* Some code to prevent their measures of blocking us (2016-08-19: They rickrolled us :D) */
-            getPage(brv, "http://thevideo.me/jwv/" + special_js_bullshit);
-            /* 2016-01-05: TODO: Improve this RegEx */
-            String extra_id = brv.getRegex("function\\|([A-Za-z0-9]{10,})").getMatch(0);
-            if (extra_id == null) {
-                /* 2016-01-05: Wider RegEx attempt */
-                extra_id = brv.getRegex("\\|([A-Za-z0-9]{10,})\\|").getMatch(0);
-            }
-            if (extra_id != null) {
-                dllink += "?direct=false&ua=1&vt=" + extra_id;
+            getPage(brv, "/jwv/" + special_js_bullshit);
+            final String jscrap = doThis(brv);
+            String vt = new Regex(jscrap, "vt=(.*?)\";").getMatch(0);
+            if (vt != null) {
+                dllink += "?direct=false&ua=1&vt=" + vt;
+            } else {
+
             }
         } else if (special_js_bullshit == null && dllink != null && !is_saved_directlink) {
             logger.info("JDownloader might have been blocked by this host");
@@ -564,6 +561,24 @@ public class TheVideoMe extends antiDDoSForHost {
         } finally {
             /* remove download slot */
             controlFree(-1);
+        }
+    }
+
+    private String doThis(Browser brv) {
+        try {
+            final String x = brv.toString().replace("eval(", "").replaceFirst("\\)$", "");
+            final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            String result = null;
+            try {
+                engine.eval("var res = " + x);
+                result = (String) engine.get("res");
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            return result;
+        } catch (final Throwable t) {
+            return null;
         }
     }
 
@@ -599,16 +614,15 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        }
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            prepBr.getHeaders().put("User-Agent", agent.get());
         }
         return prepBr;
     }
@@ -658,8 +672,46 @@ public class TheVideoMe extends antiDDoSForHost {
         return getDllink(correctedBR);
     }
 
+    private String js = null;
+
     public String getDllink(final String source) {
         String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            // json within javascript var. note: within br not correctedbr
+            js = new Regex(br, "var jwConfig_vars = (\\{.*?\\});").getMatch(0);
+            if (js != null) {
+                try {
+                    final String[] sources = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(js, "sources"));
+                    if (sources != null) {
+                        final HashMap<String, String> result = new HashMap<String, String>();
+                        for (final String sourcee : sources) {
+                            final String label = PluginJSonUtils.getJson(sourcee, "label");
+                            final String file = PluginJSonUtils.getJson(sourcee, "file");
+                            result.put(label, file);
+                        }
+                        // get best
+                        dllink = result.get("1080p");
+                        if (dllink == null) {
+                            dllink = result.get("720p");
+                            if (dllink == null) {
+                                dllink = result.get("480p");
+                                if (dllink == null) {
+                                    dllink = result.get("360p");
+                                    if (dllink == null) {
+                                        dllink = result.get("240p");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (dllink != null) {
+                        return dllink;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://d\\d*.\\.thevideo\\.me.*?)\"").getMatch(0);
         }
@@ -679,15 +731,6 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         if (dllink == null) {
             dllink = new Regex(source, "(https?://[a-z0-9]+\\.thevideo\\.me:\\d+/[^<>\"\\']+)").getMatch(0);
-        }
-        if (dllink == null) {
-            final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
-            for (final String quality : qualities) {
-                dllink = new Regex(source, "'" + quality + "',\\s*'?file\\'?\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
-                if (dllink != null) {
-                    break;
-                }
-            }
         }
         if (dllink == null) {
             /* Sometimes used for streaming */
