@@ -21,6 +21,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,10 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
 
     public DebridItaliaCom(PluginWrapper wrapper) {
@@ -191,7 +191,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             /* Workaround for server side debriditalia bug. */
             /*
              * Known hosts for which they do definitely not accept https urls [ last updated 2015-10-05]: share-online.biz, depfile.com,
-             * inclouddrive.com, secureupload.eu
+             * inclouddrive.com
              */
             host_downloadlink = host_downloadlink.replace("https://", "http://");
             final String encodedLink = Encoding.urlEncode(host_downloadlink);

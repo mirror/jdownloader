@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -55,6 +56,7 @@ public class DatoidCz extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
         this.setBrowserExclusive();
         String downloadURL = link.getDownloadURL();
         br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));

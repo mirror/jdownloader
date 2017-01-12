@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?((videarn|pornxs)\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.videarn\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornxs.com" }, urls = { "http://(www\\.)?(pornxs\\.com/(video\\.php\\?id=|[a-z0-9\\-]+/)|embed\\.pornxs\\.com/embed\\.php\\?id=)\\d+([a-z0-9\\-]+\\.html)?" })
 public class VidEarnDecrypter extends PluginForDecrypt {
 
     public VidEarnDecrypter(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class VidEarnDecrypter extends PluginForDecrypt {
         if (vid != null) {
             parameter = "http://pornxs.com/teen-amateur-mature-cumshot-webcams/" + vid + "-0123456789.html";
         }
-        final DownloadLink mainlink = createDownloadlink(parameter.replaceAll("(pornxs|videarn)\\.com/", "pornxsdecrypted.com/"));
+        final DownloadLink mainlink = createDownloadlink(parameter.replaceAll("pornxs\\.com/", "pornxsdecrypted.com/"));
         try {
             br.getPage(parameter);
         } catch (final Exception e) {

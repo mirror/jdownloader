@@ -216,7 +216,7 @@ public class BackinNet extends antiDDoSForHost {
                     final String status = PluginJSonUtils.getJson(result, "online");
                     final String filename = PluginJSonUtils.getJson(result, "file_name");
                     final String filesize = PluginJSonUtils.getJson(result, "file_size");
-                    long size = filesize != null && filesize.matches("\\d+") ? Long.parseLong(filesize) : -1;
+                    final long size = filesize != null && filesize.matches("\\d+") ? Long.parseLong(filesize) : -1;
                     dl.setFinalFileName(filename);
                     if (dl.getVerifiedFileSize() == -1 && size > 0) {
                         dl.setVerifiedFileSize(size);
