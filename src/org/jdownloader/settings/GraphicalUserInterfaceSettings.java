@@ -2,6 +2,7 @@ package org.jdownloader.settings;
 
 import java.awt.event.KeyEvent;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 
 import org.appwork.storage.Storable;
@@ -409,22 +410,81 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setFileCountInSizeColumnVisible(boolean b);
 
     public static enum SIZEUNIT {
-        TiB(1024 * 1024 * 1024 * 1024l),
-        GiB(1024 * 1024 * 1024l),
-        MiB(1024 * 1024l),
-        KiB(1024),
+        TiB(1024 * 1024 * 1024 * 1024l, true),
+        TB(1000 * 1000 * 1000 * 1000l),
+        GiB(1024 * 1024 * 1024l, true),
+        GB(1000 * 1000 * 1000l),
+        MiB(1024 * 1024l, true),
+        MB(1000 * 1000l),
+        KiB(1024, true),
+        KB(1000l),
         B(1);
 
-        private final long divider;
+        private final long    divider;
+        private final boolean iecPrefix;
+
+        public final boolean isIECPrefix() {
+            return iecPrefix;
+        }
 
         public final long getDivider() {
             return divider;
         }
 
-        private SIZEUNIT(long divider) {
+        private SIZEUNIT(long divider, boolean isIECPrefix) {
             this.divider = divider;
+            this.iecPrefix = isIECPrefix;
         }
 
+        private SIZEUNIT(long divider) {
+            this(divider, false);
+        }
+
+        public static final String formatValue(SIZEUNIT maxSizeUnit, final DecimalFormat formatter, final long fileSize) {
+            final boolean isIECPrefix = maxSizeUnit.isIECPrefix();
+            switch (maxSizeUnit) {
+            case TiB:
+                if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
+                    return formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)).concat(" TiB");
+                }
+            case TB:
+                if (!isIECPrefix && fileSize >= 1000 * 1000 * 1000 * 1000l) {
+                    return formatter.format(fileSize / (1000 * 1000 * 1000 * 1000.0)).concat(" TB");
+                }
+            case GiB:
+                if (isIECPrefix && fileSize >= 1024 * 1024 * 1024l) {
+                    return formatter.format(fileSize / (1024 * 1024 * 1024.0)).concat(" GiB");
+                }
+            case GB:
+                if (!isIECPrefix && fileSize >= 1000 * 1000 * 1000l) {
+                    return formatter.format(fileSize / (1000 * 1000 * 1000.0)).concat(" GB");
+                }
+            case MiB:
+                if (isIECPrefix && fileSize >= 1024 * 1024l) {
+                    return formatter.format(fileSize / (1024 * 1024.0)).concat(" MiB");
+                }
+            case MB:
+                if (!isIECPrefix && fileSize >= 1000 * 1000l) {
+                    return formatter.format(fileSize / (1000 * 1000.0)).concat(" MB");
+                }
+            case KiB:
+                if (isIECPrefix && fileSize >= 1024l) {
+                    return formatter.format(fileSize / 1024.0).concat(" KiB");
+                }
+            case KB:
+                if (!isIECPrefix && fileSize >= 1000l) {
+                    return formatter.format(fileSize / 1000.0).concat(" KB");
+                }
+            default:
+                if (fileSize == 0) {
+                    return "0 B";
+                }
+                if (fileSize < 0) {
+                    return "~";
+                }
+                return fileSize + " B";
+            }
+        }
     }
 
     @AboutConfig

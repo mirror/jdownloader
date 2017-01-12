@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,7 +30,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
-import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -56,12 +57,15 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener {
     public static class TrafficColumn extends ExtProgressColumn<AccountEntry> {
-        private static final long        serialVersionUID = -8376056840172682617L;
-        private PremiumAccountTableModel tableModel;
+        private static final long              serialVersionUID = -8376056840172682617L;
+        private final PremiumAccountTableModel tableModel;
+        private final DecimalFormat            formatter;
+        private final SIZEUNIT                 maxSizeUnit;
 
         {
             setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
@@ -98,6 +102,21 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         public TrafficColumn(PremiumAccountTableModel tableModel, String title) {
             super(title);
             this.tableModel = tableModel;
+            maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+            this.formatter = new DecimalFormat("0.00") {
+
+                final StringBuffer        sb               = new StringBuffer();
+                /**
+                 *
+                 */
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public StringBuffer format(final double number, final StringBuffer result, final FieldPosition pos) {
+                    sb.setLength(0);
+                    return super.format(number, sb, pos);
+                }
+            };
         }
 
         @Override
@@ -140,7 +159,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 if (ai.isUnlimitedTraffic()) {
                     return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
                 } else {
-                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(Formatter.formatReadable(ai.getTrafficLeft()), Formatter.formatReadable(ai.getTrafficMax()));
+                    return _GUI.T.premiumaccounttablemodel_column_trafficleft_left_(SIZEUNIT.formatValue(maxSizeUnit, formatter, ai.getTrafficLeft()), SIZEUNIT.formatValue(maxSizeUnit, formatter, ai.getTrafficMax()));
                 }
             }
         }
