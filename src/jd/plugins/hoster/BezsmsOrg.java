@@ -126,6 +126,10 @@ public class BezsmsOrg extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // yet to see any links online
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String[] fileInfo = new String[3];
         br.setFollowRedirects(true);
         correctDownloadLink(link);
