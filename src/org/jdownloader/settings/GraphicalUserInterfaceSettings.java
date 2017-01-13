@@ -440,6 +440,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             this(divider, false);
         }
 
+        public static final String formatValue(SIZEUNIT maxSizeUnit, final long fileSize) {
+            return formatValue(maxSizeUnit, new DecimalFormat("0.00"), fileSize);
+        }
+
         public static final String formatValue(SIZEUNIT maxSizeUnit, final DecimalFormat formatter, final long fileSize) {
             final boolean isIECPrefix = maxSizeUnit.isIECPrefix();
             switch (maxSizeUnit) {
