@@ -12,17 +12,6 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -42,12 +31,23 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+
 public class DownloadLinkDownloadable implements Downloadable {
     /**
      *
      */
-    private final DownloadLink downloadLink;
-    private PluginForHost      plugin;
+    private final DownloadLink  downloadLink;
+    private final PluginForHost plugin;
 
     public DownloadLinkDownloadable(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -61,6 +61,10 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public void setResumeable(boolean value) {
         downloadLink.setResumeable(value);
+    }
+
+    public PluginForHost getPlugin() {
+        return plugin;
     }
 
     @Override
