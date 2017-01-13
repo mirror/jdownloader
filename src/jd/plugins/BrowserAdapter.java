@@ -18,9 +18,6 @@ package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
@@ -29,8 +26,11 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.OldRAFDownload;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 public class BrowserAdapter {
 
@@ -175,7 +175,15 @@ public class BrowserAdapter {
         String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadable, request, resume, chunks);
         downloadable.setDownloadInterface(dl);
-
+        final PluginForHost plugin;
+        final DownloadLink downloadLink;
+        if (downloadable instanceof DownloadLinkDownloadable) {
+            plugin = ((DownloadLinkDownloadable) downloadable).getPlugin();
+            downloadLink = ((DownloadLinkDownloadable) downloadable).getDownloadLink();
+        } else {
+            plugin = null;
+            downloadLink = null;
+        }
         try {
             dl.connect(br);
         } catch (PluginException handle) {
@@ -194,7 +202,11 @@ public class BrowserAdapter {
                     if (lastRedirectUrl != null && (forceRedirectWait || redirectUrl.equals(lastRedirectUrl))) {
                         // some providers don't like fast redirects, as they use this for preparing final file. lets add short wait based on
                         // retry count
-                        Thread.sleep(redirect_count * 250l);
+                        if (plugin != null && downloadLink != null) {
+                            plugin.sleep(redirect_count * 250l, downloadLink);
+                        } else {
+                            Thread.sleep(redirect_count * 250l);
+                        }
                     }
 
                     if (originalUrl != null) {
