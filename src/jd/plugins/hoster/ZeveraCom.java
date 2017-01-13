@@ -27,6 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -45,12 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UnavailableHost;
 import jd.plugins.components.ZeveraApiTracker;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
@@ -231,7 +231,7 @@ public class ZeveraCom extends antiDDoSForHost {
         }
         try {
             logger.info("Connecting to " + new URL(dllink).getHost());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks, true);
         } catch (final PluginException e) {
             if ("Redirectloop".equals(e.getErrorMessage())) {
                 logger.info("Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");

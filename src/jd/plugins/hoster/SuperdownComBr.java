@@ -16,9 +16,15 @@
 
 package jd.plugins.hoster;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,12 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "https?://[\\w]+\\.superdown\\.com\\.br/(?:superdown/)?\\w+/[a-zA-Z0-9]+/\\d+/\\S+" })
 public class SuperdownComBr extends antiDDoSForHost {
 
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
@@ -81,8 +82,30 @@ public class SuperdownComBr extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
+        final boolean checked = checkLinks(new DownloadLink[] { link });
+        // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
+        if (!checked && hasAntiddosCaptchaRequirement()) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (!checked || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
     }
 
     @Override
@@ -91,6 +114,10 @@ public class SuperdownComBr extends antiDDoSForHost {
             if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", getHost()), getHost())) {
                 return false;
             }
+        }
+        // direct link... shouldn't need account
+        if (downloadLink.getDownloadURL().matches(this.getSupportedLinks().pattern())) {
+            return true;
         }
         if (account == null) {
             /* without account its not possible to download the link */
@@ -101,7 +128,7 @@ public class SuperdownComBr extends antiDDoSForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        handleDL(null, downloadLink, downloadLink.getDownloadURL());
     }
 
     @Override
@@ -112,7 +139,38 @@ public class SuperdownComBr extends antiDDoSForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        handleDL(account, link, link.getDownloadURL());
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            br.setFollowRedirects(true);
+            for (DownloadLink dl : urls) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = openAntiDDoSRequestConnection(br, br.createGetRequest(dl.getDownloadURL()));
+                    if (con.isContentDisposition()) {
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                        dl.setDownloadSize(con.getLongContentLength());
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
+                    }
+                } finally {
+                    try {
+                        /* make sure we close connection */
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
@@ -123,7 +181,7 @@ public class SuperdownComBr extends antiDDoSForHost {
             maxChunks = 1;
         }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks, true);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info(NICE_HOST + ": Unknown download error");
