@@ -152,7 +152,7 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
-import org.jdownloader.plugins.WaitForAccountSkipReason;
+import org.jdownloader.plugins.WaitForAccountTrafficSkipReason;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.AccountJsonConfig;
@@ -858,7 +858,7 @@ public abstract class PluginForHost extends Plugin {
             final long left = ai.getTrafficLeft();
             if (left == 0) {
                 if (ai.isTrafficRefill()) {
-                    throw new ConditionalSkipReasonException(new WaitForAccountSkipReason(account));
+                    throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, -1));
                 }
                 return false;
             } else {
@@ -867,7 +867,7 @@ public abstract class PluginForHost extends Plugin {
                     final long required = Math.max(0, size - downloadLink.getView().getBytesLoaded());
                     if (left - required <= 0) {
                         if (ai.isTrafficRefill()) {
-                            throw new ConditionalSkipReasonException(new WaitForAccountSkipReason(account));
+                            throw new ConditionalSkipReasonException(new WaitForAccountTrafficSkipReason(account, required - left));
                         }
                         return false;
                     }
