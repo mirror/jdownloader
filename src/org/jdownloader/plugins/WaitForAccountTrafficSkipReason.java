@@ -7,16 +7,20 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.translate._JDT;
 
 public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, IgnorableConditionalSkipReason {
 
-    private final Account account;
-    private final Icon    icon;
-    private final long    trafficRequired;
+    private final static SIZEUNIT MAXSIZEUNIT = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+
+    private final Account         account;
+    private final Icon            icon;
+    private final long            trafficRequired;
 
     public WaitForAccountTrafficSkipReason(Account account, long trafficRequired) {
         this.account = account;
@@ -56,7 +60,7 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
         if (trafficRequired < 0) {
             return _JDT.T.gui_download_waittime_notenoughtraffic();
         } else {
-            return _JDT.T.gui_download_waittime_notenoughtraffic(SizeFormatter.formatBytes(trafficRequired));
+            return _JDT.T.gui_download_waittime_notenoughtraffic(SIZEUNIT.formatValue(MAXSIZEUNIT, trafficRequired));
         }
     }
 
