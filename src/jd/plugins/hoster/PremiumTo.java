@@ -95,7 +95,9 @@ public class PremiumTo extends UseNet {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
-        if (link != null && "share-online.biz".equals(link.getHost())) {
+        if (link != null && "keep2share.cc".equals(link.getHost())) {
+            return 1;
+        } else if (link != null && "share-online.biz".equals(link.getHost())) {
             // re admin: only 1 possible
             return 1;
         } else {
@@ -588,7 +590,9 @@ public class PremiumTo extends UseNet {
     }
 
     private int getConnections(String host) {
-        if ("share-online.biz".equals(host)) {
+        if ("keep2share.cc".equals(host)) {
+            return 1;
+        } else if ("share-online.biz".equals(host)) {
             // re admin: only 1 possible
             return 1;
         } else {
