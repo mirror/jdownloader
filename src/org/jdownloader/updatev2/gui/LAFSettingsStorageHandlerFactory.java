@@ -51,10 +51,14 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
             if (oldLafSettingsFile.exists()) {
                 final JsonKeyValueStorage prim = (JsonKeyValueStorage) JsonConfig.create(SyntheticaSettings.class)._getStorageHandler().getPrimitiveStorage();
                 for (final String s : prim.getKeys()) {
-                    final KeyHandler<Object> keyH = ret.getKeyHandler(s.toLowerCase(Locale.ENGLISH));
-                    final Object oldValue = prim.get(s, null);
-                    if (keyH != null && !equals(oldValue, keyH.getDefaultValue())) {
-                        keyH.setValue(oldValue);
+                    try {
+                        final KeyHandler<Object> keyH = ret.getKeyHandler(s.toLowerCase(Locale.ENGLISH));
+                        final Object oldValue = prim.get(s, null);
+                        if (keyH != null && !equals(oldValue, keyH.getDefaultValue())) {
+                            keyH.setValue(oldValue);
+                        }
+                    } catch (Throwable e) {
+                        LoggerFactory.getDefaultLogger().log(e);
                     }
                 }
                 JsonConfig.create(SyntheticaSettings.class)._getStorageHandler().setSaveInShutdownHookEnabled(false);
