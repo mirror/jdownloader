@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
-import java.text.FieldPosition;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
@@ -84,20 +83,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
                 speedLimiterEnabled.set(Boolean.TRUE.equals(newValue));
             }
         }, false);
-        this.formatter = new DecimalFormat("0.00") {
-
-            final StringBuffer        sb               = new StringBuffer();
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public StringBuffer format(final double number, final StringBuffer result, final FieldPosition pos) {
-                sb.setLength(0);
-                return super.format(number, sb, pos);
-            }
-        };
+        this.formatter = new DecimalFormat("0.00");
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit().isIECPrefix()) {
             maxSizeUnit = SIZEUNIT.MiB;
         } else {

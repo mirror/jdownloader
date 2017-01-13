@@ -140,6 +140,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wait %s1" })
     String gui_download_waittime_status2(Object s1);
 
+    @Default(lngs = { "en" }, values = { "Not enough traffic available (%s1 required)" })
+    String gui_download_waittime_notenoughtraffic(String trafficRequired);
+
+    @Default(lngs = { "en" }, values = { "Not enough traffic available" })
+    String gui_download_waittime_notenoughtraffic();
+
     @Default(lngs = { "en" }, values = { "Wrong captcha code" })
     String decrypter_wrongcaptcha();
 
@@ -554,6 +560,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Proxy authentication is required!" })
     String ProxyController_updateProxy_proxy_auth_required_title();
+
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en", "de" }, values = {
     // "JDownloader cannot connect to %s1! Your Proxy Server requires authentication. \r\nCheck your credentials...",
