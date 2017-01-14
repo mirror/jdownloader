@@ -29,6 +29,7 @@ context_password_msg=設定密碼以解壓縮 %s1。
 context_password_msg2=設定密碼以解壓縮 %s1。\r\n建議的密碼：\r\n%s2
 context_password_msg2_multi=設定密碼。\r\n建議的密碼：\r\n%s1
 context_password_msg_multi=設定密碼
+contextmenu_abort=中止解壓縮
 contextmenu_autodeletefiles=已啟用「刪除壓縮檔」
 contextmenu_autodeletelinks=啟用「從下載清單中刪除連結」
 contextmenu_autoextract=啟用自動解壓縮
