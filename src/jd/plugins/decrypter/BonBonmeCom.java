@@ -26,7 +26,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bonbonme.com" }, urls = { "http://(www\\.)?((av|dl)\\.)?bonbonme\\.com/(?!makemoney|data/|forum/)[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bonbonme.com" }, urls = { "http://((av|dl)\\.)?bonbonme\\.com/(?!makemoney|data/|forum/)[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" })
 public class BonBonmeCom extends PornEmbedParser {
 
     public BonBonmeCom(PluginWrapper wrapper) {
