@@ -73,16 +73,17 @@ public class KvidOrg extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Cette vidéo n\\'existe pas") || this.br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">Watching now : ([^<>\"]*?)<").getMatch(0);
+        String filename = br.getRegex("title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         }
         dllink = br.getRegex("document\\.write\\(\\'([^<>\"]*?)\\'\\);").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("file: \"([^<>\"]*?)\"").getMatch(0);
         }
 
         if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
