@@ -583,7 +583,7 @@ public class OneFichierCom extends PluginForHost {
                     }
                 }
                 logger.info("Using site login because API is either wrong or no free credits...");
-                br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(this.currAcc.getUser()) + "&pass=" + this.currAcc.getPass());
+                br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(this.currAcc.getUser()) + "&pass=" + Encoding.urlEncode(this.currAcc.getPass()));
                 final String logincheck = br.getCookie(MAINPAGE, "SID");
                 if (logincheck == null || logincheck.equals("")) {
                     logger.info("Username/Password also invalid via site login!");

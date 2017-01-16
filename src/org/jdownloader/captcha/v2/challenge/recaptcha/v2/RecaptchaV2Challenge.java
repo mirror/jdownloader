@@ -8,6 +8,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -37,10 +41,6 @@ import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.phantomjs.PhantomJS;
 import org.jdownloader.phantomjs.installation.InstallThread;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Plugin;
 
 public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -260,10 +260,14 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public boolean onGetRequest(final BrowserReference brRef, final GetRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         synchronized (this) {
             String pDo = request.getParameterbyKey("do");
-            String refOrg = request.getRequestHeaders().get("Referer").getValue();
-            String ref = UrlQuery.parse(refOrg).getDecoded("do");
-            if (StringUtils.isEmpty(ref)) {
-                ref = "http://" + getSiteDomain();
+            final HTTPHeader referer = request.getRequestHeaders().get("Referer");
+            String ref = "http://" + getSiteDomain();
+            if (referer != null) {
+                final String refOrg = referer.getValue();
+                ref = UrlQuery.parse(refOrg).getDecoded("do");
+                if (StringUtils.isEmpty(ref)) {
+                    ref = "http://" + getSiteDomain();
+                }
             }
             if ("/recaptcha/api.js".equals(pDo)) {
                 ensureBrowser();
