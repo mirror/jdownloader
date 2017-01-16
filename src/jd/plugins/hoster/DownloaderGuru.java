@@ -204,7 +204,15 @@ public class DownloaderGuru extends PluginForHost {
         } else {
             downloadable = new DownloadLinkDownloadable(link);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(dllink), resume, maxChunks);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadable, br.createGetRequest(dllink), resume, maxChunks);
+        } catch (PluginException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "RedirectLoop")) {
+                tempUnavailableHoster(10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
+        }
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
