@@ -489,7 +489,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             }
             if (!StringUtils.equalsIgnoreCase(infos.get("group"), "VIP")) {
                 /* VIP do not have traffic usage available via api */
-                final long maxDay = 100 * 1000 * 1000 * 1000l;// 100 GB per day
+                final long maxDay = 100 * 1024 * 1024 * 1024l;// 100 GiB per day
                 final String trafficDay = infos.get("traffic_1d");
                 final String trafficDayData[] = trafficDay.split(";");
                 final long usedDay = Long.parseLong(trafficDayData[0].trim());
