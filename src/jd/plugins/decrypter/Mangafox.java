@@ -69,7 +69,11 @@ public class Mangafox extends PluginForDecrypt {
         int skippedPics = 0;
         for (int i = 1; i <= numberOfPages; i++) {
             if (i != 1) {
+                sleep(500, parameter);
                 br.getPage(i + ".html");
+            }
+            if (isAbort()) {
+                break;
             }
             final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\">\\s*<img src=\"(http://[^\"]+(\\.[a-z]+)(?:\\?token=[a-f0-9]{32}&ttl=\\d+)?)\"").getRow(0);
             if (unformattedSource == null || unformattedSource.length == 0) {
@@ -95,6 +99,11 @@ public class Mangafox extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
 }
