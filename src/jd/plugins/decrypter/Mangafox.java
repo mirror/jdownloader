@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -33,6 +34,7 @@ public class Mangafox extends PluginForDecrypt {
 
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal("mangafox.me", 500);
     }
 
     @Override
@@ -69,7 +71,6 @@ public class Mangafox extends PluginForDecrypt {
         int skippedPics = 0;
         for (int i = 1; i <= numberOfPages; i++) {
             if (i != 1) {
-                sleep(500, parameter);
                 br.getPage(i + ".html");
             }
             if (isAbort()) {
