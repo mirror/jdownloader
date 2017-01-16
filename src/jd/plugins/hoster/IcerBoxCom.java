@@ -281,28 +281,31 @@ public class IcerBoxCom extends antiDDoSForHost {
             ajax.getHeaders().put("Authorization", "Bearer " + account.getStringProperty("token"));
             getPage(ajax, apiURL + "/user/account");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
             final String expire = (String) JavaScriptEngineFactory.walkJson(entries, "data/premium/date");
             final Long dailyTrafficMax = (Long) JavaScriptEngineFactory.walkJson(entries, "data/package/volume");
             final Long dailyTrafficUsed = ((Number) JavaScriptEngineFactory.walkJson(entries, "data/downloaded_today")).longValue();
-            // available traffic
-            ai.setTrafficLeft(dailyTrafficMax - dailyTrafficUsed);
-            ai.setTrafficMax(dailyTrafficMax);
-            // date
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("\\.0{6}", ""), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), ajax);
-            final Boolean is_premium = (Boolean) JavaScriptEngineFactory.walkJson(entries, "data/has_premium");
-            if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {
-                // premium account
-                account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium Account");
-                account.setValid(true);
+            // free account
+            if (Boolean.FALSE.equals(is_premium)) {
+                // jdlog://8835079150841
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                // expired(free)? account
-                account.setType(AccountType.FREE);
-                // dont support free account?
-                ai.setStatus("Free Account");
-                ai.setExpired(true);
+                // available traffic
+                ai.setTrafficLeft(dailyTrafficMax - dailyTrafficUsed);
+                ai.setTrafficMax(dailyTrafficMax);
+                // date
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("\\.0{6}", ""), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), ajax);
+                if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {
+                    // premium account
+                    account.setType(AccountType.PREMIUM);
+                    ai.setStatus("Premium Account");
+                    account.setValid(true);
+                } else {
+                    // this shouldn't happen....
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                return ai;
             }
-            return ai;
         }
     }
 
