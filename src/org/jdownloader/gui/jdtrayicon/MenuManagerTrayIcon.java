@@ -29,6 +29,7 @@ import org.jdownloader.gui.jdtrayicon.actions.TrayReconnectAction;
 import org.jdownloader.gui.jdtrayicon.actions.TrayUpdateAction;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.UnskipAllSkippedLinksAction;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, DownloadLink> {
@@ -93,6 +94,7 @@ public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, Downloa
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
         opt.add(SilentModeToggleAction.class);
+        opt.add(UnskipAllSkippedLinksAction.class);
 
         return mr;
     }
