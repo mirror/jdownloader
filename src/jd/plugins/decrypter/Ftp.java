@@ -37,7 +37,7 @@ import org.jdownloader.auth.Login;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{1,}(:\\d+)?/([^\"\r\n ]+|$)" })
 public class Ftp extends PluginForDecrypt {
 
-    private static final HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
+    private static HashMap<String, Integer> LOCKS = new HashMap<String, Integer>();
 
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
