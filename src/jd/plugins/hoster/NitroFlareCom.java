@@ -198,10 +198,12 @@ public class NitroFlareCom extends antiDDoSForHost {
                     if (md5 != null) {
                         dl.setMD5Hash(md5);
                     }
-                    if (prem != null) {
-                        dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
-                    } else {
-                        dl.setProperty("premiumRequired", Property.NULL);
+                    if (getPluginConfig().getBooleanProperty(trustAPIPremiumOnly, true)) {
+                        if (prem != null) {
+                            dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
+                        } else {
+                            dl.setProperty("premiumRequired", Property.NULL);
+                        }
                     }
                     if (pass != null) {
                         dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
@@ -459,11 +461,13 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private static String  preferAPI        = "preferAPI";
-    private static boolean preferAPIdefault = false;
+    private static String  preferAPI           = "preferAPI";
+    private static String  trustAPIPremiumOnly = "trustAPIPremiumOnly";
+    private static boolean preferAPIdefault    = false;
 
     private void setConfigElement() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API for Premium Accounts (API = lots of recaptcahv1, WEB = recaptchav2 once.)")).setDefaultValue(preferAPIdefault));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), trustAPIPremiumOnly, JDL.L("plugins.hoster.Keep2ShareCc.trustAPIPremiumOnly", "Trust API about Premium Only flag?")).setDefaultValue(true));
     }
 
     /**
@@ -910,17 +914,10 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private void throwPremiumRequiredException(DownloadLink link, boolean setProperty) throws PluginException {
-        try {
-            if (setProperty) {
-                link.setProperty("premiumRequired", Boolean.TRUE);
-            }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
+        if (setProperty && link != null) {
+            link.setProperty("premiumRequired", Boolean.TRUE);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
