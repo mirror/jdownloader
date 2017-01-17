@@ -27,12 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -57,6 +51,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
@@ -138,6 +138,10 @@ public class SubyShareCom extends PluginForHost {
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             sendForm(form);
+            getPage(link.getDownloadURL());
+            if (antiddosEnforced()) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
         if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "IP blocked by service");
@@ -1032,7 +1036,10 @@ public class SubyShareCom extends PluginForHost {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     sendForm(form);
-
+                    if (antiddosEnforced()) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    getPage(COOKIE_HOST + "/account/login");
                 }
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");

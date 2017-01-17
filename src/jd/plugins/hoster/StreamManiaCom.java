@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 // based on raztoki's plugin for jdownloader 1
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streammania.com", "brapid.sk" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323" })
@@ -83,7 +83,7 @@ public class StreamManiaCom extends antiDDoSForHost {
         getPage("http://www." + hostPublicDomain + "/api/get_filehosters.php");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String hoster[] = br.getRegex("(.+?)($|\\|)").getColumn(0);
-        if (hoster == null) {
+        if (hoster != null) {
             for (final String host : hoster) {
                 supportedHosts.add(host.trim());
             }

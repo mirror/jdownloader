@@ -69,7 +69,7 @@ public class YapfilesRu extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL() + "?hq=1");
+        br.getPage(link.getDownloadURL() + "?hq=1&adlt=1");
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("/404\\.gif\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -82,7 +82,13 @@ public class YapfilesRu extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = "http://www.yapfiles.ru/files" + getLinkpart(link) + "?hq=1";
+        String token = br.getRegex("token=(.*?)(\"|&)").getMatch(0);
+        if (token == null) {
+            token = "";
+        } else {
+            token = "&token=" + token;
+        }
+        dllink = "http://www.yapfiles.ru/files" + getLinkpart(link) + "?hq=1" + token;
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -101,6 +107,9 @@ public class YapfilesRu extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setProperty("directlink", dllink);
