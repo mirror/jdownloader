@@ -10,6 +10,8 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +46,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
@@ -1552,6 +1555,15 @@ public class YoutubeHelper {
                 lst.add(sd);
             }
         }
+        for (Entry<YoutubeITAG, StreamCollection> es : ret.entrySet()) {
+            Collections.sort(es.getValue(), new Comparator<YoutubeStreamData>() {
+                @Override
+                public int compare(YoutubeStreamData o1, YoutubeStreamData o2) {
+                    int ret = CompareUtils.compare(o2.getUrl().contains("ei="), o1.getUrl().contains("ei="));
+                    return ret;
+                }
+            });
+        }
         vid.streams = ret;
         vid.subtitles = loadSubtitles();
     }
@@ -2219,14 +2231,16 @@ public class YoutubeHelper {
             return null;
         }
         String url = query.getDecoded("url");
-       
         if (url == null) {
             String fallback_host = query.getDecoded("fallback_host");
             if (fallback_host != null) {
                 url = new Regex(fallback_host, "url=(.+)").getMatch(0);
             }
         }
-     //if an ei=... parameter is missing, the url is invalid and will probably return a 403 response code
+        if (!url.contains("ei=")) {
+            System.out.println("ei");
+        }
+        // if an ei=... parameter is missing, the url is invalid and will probably return a 403 response code
         if (StringUtils.isEmpty(url)) {
             throw new WTFException("No Url found " + query);
         }
