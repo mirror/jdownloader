@@ -643,8 +643,11 @@ public abstract class SimpleFTP {
             try {
                 logger.info(host + " > " + line);
                 final OutputStream os = socket.getOutputStream();
-                os.write(encoding.toBytes(line));
-                os.write(CRLF);
+                // some server are buggy when CRLF is send in extra TCP packet.(maybe firewall?)
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                bos.write(encoding.toBytes(line));
+                bos.write(CRLF);
+                bos.writeTo(os);
                 os.flush();
             } catch (IOException e) {
                 LogSource.exception(logger, e);
