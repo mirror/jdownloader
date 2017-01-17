@@ -1021,6 +1021,19 @@ public class SubyShareCom extends PluginForHost {
                 // they redirect from https to http.. leaks! set cookie is within the response so you don't need to hit redirect
                 br.setFollowRedirects(false);
                 getPage(COOKIE_HOST + "/account/login");
+                if (antiddosEnforced()) {
+                    // recaptchaV2 event!
+                    logger.info("Detected captcha method \"reCaptchaV2\"");
+                    final Form form = br.getFormbyProperty("id", "checkDDOS");
+                    if (this.getDownloadLink() == null) {
+                        // login wont contain downloadlink
+                        this.setDownloadLink(new DownloadLink(this, "antiDDoS captcha prompt!", this.getHost(), this.getHost(), true));
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    sendForm(form);
+
+                }
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
