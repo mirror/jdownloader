@@ -209,11 +209,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         }
                         if (patterns.length != names.length) {
                             //
-                            throw new WTFException("names.length != patterns.length");
+                            throw new WTFException("Plugin: " + simpleName + "(" + revision + ")|Error:names.length(" + names.length + ") != patterns.length(" + patterns.length + ")");
                         }
                         if (names.length == 0) {
                             //
-                            throw new WTFException("names.length=0");
+                            throw new WTFException("Plugin: " + simpleName + "(" + revision + ")|Error:names.length(0)");
                         }
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
@@ -290,7 +290,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
