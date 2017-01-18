@@ -27,6 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,12 +58,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
 
@@ -79,7 +79,7 @@ public class SubyShareCom extends PluginForHost {
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           ENFORCESHTTPS                = true;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
+    private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = false;
@@ -508,6 +508,7 @@ public class SubyShareCom extends PluginForHost {
         /* define custom browser headers and language settings */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setCookie(COOKIE_HOST, "is_checkddos", "1");
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
@@ -1002,6 +1003,7 @@ public class SubyShareCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifr = br.isFollowingRedirects();
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
@@ -1022,9 +1024,10 @@ public class SubyShareCom extends PluginForHost {
                         return;
                     }
                 }
-                // they redirect from https to http.. leaks! set cookie is within the response so you don't need to hit redirect
-                br.setFollowRedirects(false);
-                getPage(COOKIE_HOST + "/account/login");
+                br.setFollowRedirects(true);
+                // lets load home page FIRST
+                getPage(COOKIE_HOST);
+                getPage("/account/login");
                 if (antiddosEnforced()) {
                     // recaptchaV2 event!
                     logger.info("Detected captcha method \"reCaptchaV2\"");
@@ -1039,7 +1042,7 @@ public class SubyShareCom extends PluginForHost {
                     if (antiddosEnforced()) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    getPage(COOKIE_HOST + "/account/login");
+                    getPage("/account/login");
                 }
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
@@ -1080,6 +1083,8 @@ public class SubyShareCom extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(ifr);
             }
         }
     }
