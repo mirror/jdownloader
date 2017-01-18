@@ -39,14 +39,14 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.tv/[^/]+/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ATVSMART = "https?://(?:www\\.)?atvsmart\\.tv/.+";
+    private static final String TYPE_ATVSMART = "https?://(?:www\\.)?atvsmart\\.(tv|at)/.+";
 
     /**
      * Important note: Via browser the videos are streamed via RTSP.
@@ -73,11 +73,12 @@ public class AtvAt extends PluginForDecrypt {
         final ArrayList<Object> parts;
         boolean geo_blocked = false;
         if (parameter.matches(TYPE_ATVSMART)) {
-            final Regex linkinfo = new Regex(parameter, "atvsmart\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
+            final Regex linkinfo = new Regex(parameter, "atvsmart\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
             url_seriesname = linkinfo.getMatch(0);
             url_episodename = linkinfo.getMatch(1);
 
             br.getPage(parameter);
+            br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">404 \\- Nicht gefunden|Leider ist die von Ihnen aufgerufene Seite nicht")) {
                 logger.info("Link offline (404 error): " + parameter);
                 final DownloadLink offline = this.createOfflinelink(parameter);
@@ -102,12 +103,13 @@ public class AtvAt extends PluginForDecrypt {
             }
             parts = (ArrayList<Object>) entries.get("videoUrl");
         } else {
-            final Regex linkinfo = new Regex(parameter, "atv\\.at/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
+            final Regex linkinfo = new Regex(parameter, "atv\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
             url_seriesname = linkinfo.getMatch(0);
             url_episodename = linkinfo.getMatch(1);
             fid = linkinfo.getMatch(2);
 
             br.getPage(parameter);
+            br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Link offline (404 error): " + parameter);
                 final DownloadLink offline = this.createOfflinelink(parameter);
@@ -218,6 +220,7 @@ public class AtvAt extends PluginForDecrypt {
                     /* Get around GEO-block - for new content */
                     src = src.replaceAll("http(s?)://blocked(\\.|-)", "http$1://");
                 }
+                src = src.replaceAll("&amp;", "&");
                 /* Some variables we need in that loop below. */
                 DownloadLink link = null;
                 String quality = null;
@@ -225,7 +228,7 @@ public class AtvAt extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(hybrid_name);
                 final String part_formatted = df.format(part_counter);
-                if ("streaming".equalsIgnoreCase(delivery) || src.contains(".m3u8")) {
+                if (("streaming".equalsIgnoreCase(delivery) && (src.contains(".m3u8") || src.contains("chunklist"))) || src.contains(".m3u8")) {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user");
                         return decryptedLinks;

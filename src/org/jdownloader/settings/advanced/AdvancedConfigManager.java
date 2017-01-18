@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.faviconcontroller.FavIconsConfig;
 import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
@@ -88,7 +89,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(RtmpdumpSettings.class));
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(ExtFileSystemViewSettings.class));
-
+        register(JsonConfig.create(FavIconsConfig.class));
         register(JsonConfig.create(SoundSettings.class));
         register(CFG_BUBBLE.CFG);
         register(CFG_CAPTCHA.CFG);

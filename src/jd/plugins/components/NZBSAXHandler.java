@@ -177,8 +177,11 @@ public class NZBSAXHandler extends DefaultHandler {
             // XXXXX - "Filename.jpg" [XX/XX] 52,44 MB yEnc (1/41)
             String nameBySubject = new Regex(subject, "( |^)\"([^\"]*?\\.[a-z0-9]{2,4})\"").getMatch(1);
             if (nameBySubject == null) {
-                // XXX - NNNNNNNN - XXX XXX - NNNNNN - [0001 of 0100] - XX - 100.52 Kb - Filename.jpg (1/1)
-                nameBySubject = new Regex(subject, "(.+ |^)(.*?) \\(1/\\d+").getMatch(1);
+                nameBySubject = new Regex(subject, "( \"|^\"?)([^\"]*?\\.[a-z0-9]{2,4})\"").getMatch(1);
+                if (nameBySubject == null) {
+                    // XXX - NNNNNNNN - XXX XXX - NNNNNN - [0001 of 0100] - XX - 100.52 Kb - Filename.jpg (1/1)
+                    nameBySubject = new Regex(subject, "(.+ |^)(.*?) \\(1/\\d+").getMatch(1);
+                }
             }
             if (nameBySubject == null) {
                 final String fileNameExtension = Files.getExtension(subject);

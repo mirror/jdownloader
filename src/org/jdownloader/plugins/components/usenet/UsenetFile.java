@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
-
-import jd.plugins.DownloadLink;
-import jd.plugins.download.HashInfo;
 
 public class UsenetFile implements Storable {
 

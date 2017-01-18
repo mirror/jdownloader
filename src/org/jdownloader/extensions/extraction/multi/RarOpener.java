@@ -78,17 +78,33 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         }
     }
 
+    /*
+     * additional dots before .rar confuses 7zip
+     */
+    private final String fixInternalName(final String name) {
+        if (name != null && name.matches(("(?i).*\\.pa?r?t?\\.?\\d+\\D+\\.rar$"))) {
+            return name.replaceFirst("(\\d+)(\\D+\\.rar)$", "$1.rar");
+        } else {
+            return name;
+        }
+    }
+
     private void init() {
         // support for test.part01-blabla.tat archives.
         // we have to create a rename matcher map in this case because 7zip cannot handle this type
         if (logger != null) {
             logger.info("Init Map:");
         }
-        ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         if (firstArchiveFile.getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
-                String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
-
+                final String rest = new Regex(af.getFilePath(), ".*pa?r?t?\\.?\\d+(\\D.*?)\\.rar$").getMatch(0);
+                final String name;
+                if (rest == null) {
+                    name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(pa?r?t?\\d+)").getMatch(0) + ".rar";
+                } else {
+                    name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(pa?r?t?\\d+)").getMatch(0) + rest + ".rar";
+                }
                 if (logger != null) {
                     logger.info(af.getFilePath() + " name: " + name);
                 }
@@ -126,13 +142,16 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
                 ArchiveFile af = map.get(filename);
                 if (af == null) {
                     af = archive.getBestArchiveFileMatch(filename);
+                    if (af != null) {
+                        map.put(filename, af);
+                    }
                 }
                 filename = af == null ? filename : af.getFilePath();
                 tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
                 openedRandomAccessFileList.put(filename, tracker);
             }
             if (name == null) {
-                name = filename;
+                name = fixInternalName(filename);
             }
             final OpenerAccessTracker finalTracker = tracker;
             finalTracker.getRandomAccessFile().seek(0);
