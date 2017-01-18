@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/flowplayer/\\?.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/flowplayer/\\?.+" })
 public class GogoAnimeCom extends PluginForHost {
 
     // raztoki embed video player template.
@@ -58,6 +58,7 @@ public class GogoAnimeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("\"url\":\"http:///dl/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
