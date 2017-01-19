@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,9 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
 public class FilerNet extends PluginForHost {
@@ -113,8 +114,8 @@ public class FilerNet extends PluginForHost {
             link.getLinkStatus().setStatusText(ERRORMESSAGE_UNKNOWNERRORTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
-        link.setFinalFileName(getJson("name", br.toString()));
-        link.setDownloadSize(Long.parseLong(getJson("size", br.toString())));
+        link.setFinalFileName(PluginJSonUtils.getJson(br, "name"));
+        link.setDownloadSize(Long.parseLong(PluginJSonUtils.getJson(br, "size")));
         /* hash != md5, its the hash of fileID */
         link.setMD5Hash(null);
         return AvailableStatus.TRUE;
@@ -145,22 +146,28 @@ public class FilerNet extends PluginForHost {
             callAPI(null, "http://filer.net/get/" + fuid + ".json");
             handleFreeErrorsAPI();
             if (statusCode == 203) {
-                final String token = getJson("token", br.toString());
-                if (token == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final int wait = getWait();
-                sleep(wait * 1001l, downloadLink);
-                callAPI(null, "http://filer.net/get/" + fuid + ".json?token=" + token);
-                handleFreeErrorsAPI();
+                // they can repeat this twice
+                int i = 0;
+                do {
+                    final String token = PluginJSonUtils.getJson(br, "token");
+                    if (token == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final int wait = getWait();
+                    sleep(wait * 1001l + 1000l, downloadLink);
+                    callAPI(null, "http://filer.net/get/" + fuid + ".json?token=" + token);
+                    // they can make you wait again...
+                    handleFreeErrorsAPI();
+                } while (statusCode == 203 && ++i <= 2);
             }
+
             if (statusCode == 202) {
                 int maxCaptchaTries = 4;
                 int tries = 0;
                 while (tries <= maxCaptchaTries) {
                     final Recaptcha rc = new Recaptcha(br, this);
                     if (recapID == null) {
-                        recapID = getJson("recaptcha_challange", br.toString());
+                        recapID = PluginJSonUtils.getJson(br, "recaptcha_challange");
                     }
                     if (recapID == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -208,22 +215,22 @@ public class FilerNet extends PluginForHost {
     private void doFreeWebsite(final DownloadLink downloadLink) throws Exception {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            this.br.getPage(downloadLink.getDownloadURL());
-            Form continueForm = this.br.getFormbyKey("token");
+            br.getPage(downloadLink.getDownloadURL());
+            Form continueForm = br.getFormbyKey("token");
             if (continueForm != null) {
                 /* Captcha is not always required! */
                 int wait = 60;
-                final String waittime_str = this.br.getRegex("id=\"time\">(\\d+)<").getMatch(0);
+                final String waittime_str = br.getRegex("id=\"time\">(\\d+)<").getMatch(0);
                 if (waittime_str != null) {
                     wait = Integer.parseInt(waittime_str);
                 }
-                this.sleep(wait * 1001l, downloadLink);
-                this.br.submitForm(continueForm);
+                sleep(wait * 1001l, downloadLink);
+                br.submitForm(continueForm);
             }
             int maxCaptchaTries = 4;
             int tries = 0;
             while (tries <= maxCaptchaTries) {
-                continueForm = this.br.getFormbyKey("hash");
+                continueForm = br.getFormbyKey("hash");
                 if (continueForm == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -234,7 +241,7 @@ public class FilerNet extends PluginForHost {
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 continueForm.put("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge()));
                 continueForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                this.br.submitForm(continueForm);
+                br.submitForm(continueForm);
                 dllink = br.getRedirectLocation();
                 tries++;
                 if (dllink == null) {
@@ -261,7 +268,7 @@ public class FilerNet extends PluginForHost {
     }
 
     private int getWait() {
-        final String tiaw = getJson("wait", br.toString());
+        final String tiaw = PluginJSonUtils.getJson(br, "wait");
         if (tiaw != null) {
             return Integer.parseInt(tiaw);
         } else {
@@ -371,16 +378,16 @@ public class FilerNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (getJson("state", br.toString()).equals("free")) {
+        if ("free".equals(PluginJSonUtils.getJson(br, "state"))) {
             account.setType(AccountType.FREE);
             ai.setStatus("Free User");
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium User");
-            ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
+            ai.setTrafficLeft(Long.parseLong(PluginJSonUtils.getJson(br, "traffic")));
             ai.setTrafficMax(SizeFormatter.getSize("100gb"));// http://filer.net/faq
-            ai.setValidUntil(Long.parseLong(getJson("until", br.toString())) * 1000);
+            ai.setValidUntil(Long.parseLong(PluginJSonUtils.getJson(br, "until")) * 1000);
         }
         account.setValid(true);
         return ai;
@@ -527,7 +534,7 @@ public class FilerNet extends PluginForHost {
     }
 
     private void updateStatuscode() {
-        final String code = getJson("code", br.toString());
+        final String code = PluginJSonUtils.getJson(br, "code");
         if ("hour download limit reached".equals(code)) {
             statusCode = 503;
         } else if ("user download slots filled".equals(code)) {
@@ -539,14 +546,6 @@ public class FilerNet extends PluginForHost {
         } else if (code != null) {
             statusCode = Integer.parseInt(code);
         }
-    }
-
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
     }
 
     @Override
