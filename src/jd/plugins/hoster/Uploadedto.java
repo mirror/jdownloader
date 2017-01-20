@@ -83,8 +83,11 @@ public class Uploadedto extends PluginForHost {
     private static final boolean           ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE    = true;
     private static final boolean           ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE = true;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS                 = 1;
-    /* Premium */
-    private static final int               FREE_MAXDOWNLOADS                         = 1;
+
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger           totalMaxSimultanFreeDownload              = new AtomicInteger(20);
+    /* don't touch the following! */
+    private static AtomicInteger           maxFree                                   = new AtomicInteger(1);
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
     private static AtomicInteger           maxPrem                                   = new AtomicInteger(1);
     // spaces will be '_'(checkLinks) and ' '(requestFileInformation), '_' stay '_'
@@ -706,7 +709,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return maxFree.get();
     }
 
     private String getPassword(final DownloadLink downloadLink) throws Exception {
@@ -926,7 +929,34 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setProperty(UPLOADED_FINAL_FILENAME, true);
             }
         }
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    private synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /** Handles error-responsecodes coming from the connection of our DownloadInterface. */
