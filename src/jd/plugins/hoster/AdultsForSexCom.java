@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,10 +29,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultsforsex.com" }, urls = { "http://(www\\.)?adultsforsex\\.com/\\d+" })
-public class AdultsForSexCom extends PluginForHost {
+public class AdultsForSexCom extends antiDDoSForHost {
 
     public AdultsForSexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,10 +45,10 @@ public class AdultsForSexCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -57,7 +56,7 @@ public class AdultsForSexCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(br.getURL(), "adultsforsex\\.com/\\d+/([A-Za-z0-9\\-]+)/").getMatch(0);
         }
-        br.getPage("http://adultsforsex.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        getPage("http://adultsforsex.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         dllink = br.getRegex("<file><\\!\\[CDATA\\[(https?://[^<>\"]*?)\\]\\]></file>").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

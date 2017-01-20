@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -34,10 +36,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https://books\\.fakku\\.net/images/manga/[^/]+/.+" }) 
-public class FakkuNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https://books\\.fakku\\.net/images/manga/[^/]+/.+" })
+public class FakkuNet extends antiDDoSForHost {
 
     public FakkuNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,12 +63,12 @@ public class FakkuNet extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
-    private String               DLLINK                    = null;
+    private String               dllink                    = null;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        DLLINK = link.getDownloadURL();
+        dllink = link.getDownloadURL();
         this.setBrowserExclusive();
         prepBRForLink(link);
         final String filename = link.getStringProperty("decrypterfilename", null);
@@ -86,7 +87,7 @@ public class FakkuNet extends PluginForHost {
         try {
             try {
                 /* Dont do HEAD requests here! */
-                con = br.openGetConnection(DLLINK);
+                con = br.openGetConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -95,7 +96,7 @@ public class FakkuNet extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setProperty("directlink", DLLINK);
+            link.setProperty("directlink", dllink);
         } finally {
             try {
                 con.disconnect();
@@ -128,7 +129,7 @@ public class FakkuNet extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         prepBRForLink(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -149,17 +150,17 @@ public class FakkuNet extends PluginForHost {
     private static final String MAINPAGE = "http://fakku.net";
     private static Object       LOCK     = new Object();
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public boolean login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     br.setCookies(MAINPAGE, cookies);
-                    return;
+                    return true;
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://www.fakku.net/login/submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(br, "https://www.fakku.net/login/submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "fakku_sid") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -172,6 +173,7 @@ public class FakkuNet extends PluginForHost {
                 account.clearCookies("");
                 throw e;
             }
+            return true;
         }
     }
 
@@ -180,17 +182,16 @@ public class FakkuNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -200,12 +201,6 @@ public class FakkuNet extends PluginForHost {
         requestFileInformation(link);
         /* No need to login again here as we already logged in in the linkcheck. */
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

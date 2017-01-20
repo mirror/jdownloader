@@ -16,9 +16,10 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+
+import org.appwork.utils.Files;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,8 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.Files;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+)" })
 public class SexCom extends PornEmbedParser {
@@ -118,7 +117,7 @@ public class SexCom extends PornEmbedParser {
         return decryptedLinks;
     }
 
-    private void findLink() throws DecrypterException, IOException {
+    private void findLink() throws Exception {
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\| Sex\\.com</title>").getMatch(0);

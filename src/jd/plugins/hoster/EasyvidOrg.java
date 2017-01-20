@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,17 +46,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easyvid.org" }, urls = { "https?://(www\\.)?easyvid\\.org/(embed\\-)?[a-z0-9]{12}" }) 
-public class EasyvidOrg extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easyvid.org" }, urls = { "https?://(www\\.)?easyvid\\.org/(embed\\-)?[a-z0-9]{12}" })
+public class EasyvidOrg extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED        = "<br><b>Passwor(d|t):</b> <input";
@@ -80,7 +79,6 @@ public class EasyvidOrg extends PluginForHost {
     private static final boolean           SUPPORTS_HTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT   = false;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE = false;
-    private static final boolean           ENABLE_RANDOM_UA              = false;
     private static final boolean           ENABLE_HTML_FILESIZE_CHECK    = false;
     /* Waittime stuff */
     private static final boolean           WAITFORCED                    = false;
@@ -91,12 +89,6 @@ public class EasyvidOrg extends PluginForHost {
     private static final boolean           FREE_RESUME                   = true;
     private static final int               FREE_MAXCHUNKS                = -2;
     private static final int               FREE_MAXDOWNLOADS             = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME           = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
 
     /* Linktypes */
     private static final String            TYPE_EMBED                    = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
@@ -116,8 +108,6 @@ public class EasyvidOrg extends PluginForHost {
     private static AtomicInteger           totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                       = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                       = new AtomicInteger(1);
-    private static Object                  LOCK                          = new Object();
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.7.0.1
@@ -154,6 +144,16 @@ public class EasyvidOrg extends PluginForHost {
     }
 
     @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
@@ -171,7 +171,6 @@ public class EasyvidOrg extends PluginForHost {
         Browser altbr = null;
         br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(br);
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
@@ -200,7 +199,7 @@ public class EasyvidOrg extends PluginForHost {
                     }
                 }
                 if (SUPPORTS_AVAILABLECHECK_ALT) {
-                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
                 }
                 /* 2nd offline check */
@@ -249,7 +248,7 @@ public class EasyvidOrg extends PluginForHost {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
-                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                postPage(altbr, COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                 fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
             } catch (final Throwable e) {
             }
@@ -318,8 +317,8 @@ public class EasyvidOrg extends PluginForHost {
         return fileInfo;
     }
 
-    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
-        br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+    private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
+        getPage(br, "http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -344,7 +343,7 @@ public class EasyvidOrg extends PluginForHost {
             try {
                 logger.info("Trying to get link via mp3embed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/mp3embed-" + fuid);
+                getPage(brv, "/mp3embed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -363,7 +362,7 @@ public class EasyvidOrg extends PluginForHost {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/vidembed-" + fuid);
+                getPage(brv, "/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -419,7 +418,9 @@ public class EasyvidOrg extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -641,20 +642,6 @@ public class EasyvidOrg extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
-        /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
-    }
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -763,23 +750,28 @@ public class EasyvidOrg extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
+        postPage(page, postdata);
         correctBR();
     }
 
-    private void submitForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        submitForm(form);
         correctBR();
     }
 
-    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    /**
+     * Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails.
+     */
     @SuppressWarnings("unused")
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int wait = 0;
@@ -839,28 +831,12 @@ public class EasyvidOrg extends PluginForHost {
     }
 
     /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -890,7 +866,9 @@ public class EasyvidOrg extends PluginForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
@@ -1074,223 +1052,9 @@ public class EasyvidOrg extends PluginForHost {
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
         URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
+        con = br.openHeadConnection(directlink);
         return con;
     }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // /* reset maxPrem workaround on every fetchaccount info */
-    // maxPrem.set(1);
-    // try {
-    // login(account, true);
-    // } catch (final PluginException e) {
-    // account.setValid(false);
-    // throw e;
-    // }
-    // final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-    // if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-    // /* free users it's provided by default */
-    // ai.setUsedSpace(space[0] + " " + space[1]);
-    // } else if ((space != null && space.length != 0) && space[0] != null) {
-    // /* premium users the Mb value isn't provided for some reason... */
-    // ai.setUsedSpace(space[0] + "Mb");
-    // }
-    // account.setValid(true);
-    // final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-    // if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-    // availabletraffic.trim();
-    // /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-    // if (!availabletraffic.startsWith("-")) {
-    // ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-    // } else {
-    // ai.setTrafficLeft(0);
-    // }
-    // } else {
-    // ai.setUnlimitedTraffic();
-    // }
-    // /* If the premium account is expired we'll simply accept it as a free account. */
-    // final String expire = new Regex(correctedBR,
-    // "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-    // long expire_milliseconds = 0;
-    // if (expire != null) {
-    // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
-    // }
-    // if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-    // maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-    // account.setProperty("nopremium", true);
-    // try {
-    // account.setType(AccountType.FREE);
-    // account.setMaxSimultanDownloads(maxPrem.get());
-    // account.setConcurrentUsePossible(false);
-    // } catch (final Throwable e) {
-    // /* not available in old Stable 0.9.581 */
-    // }
-    // ai.setStatus("Registered (free) account");
-    // } else {
-    // ai.setValidUntil(expire_milliseconds);
-    // maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setProperty("nopremium", false);
-    // try {
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(maxPrem.get());
-    // account.setConcurrentUsePossible(true);
-    // } catch (final Throwable e) {
-    // /* not available in old Stable 0.9.581 */
-    // }
-    // ai.setStatus("Premium account");
-    // }
-    // return ai;
-    // }
-    //
-    // @SuppressWarnings("unchecked")
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // /* Load cookies */
-    // br.setCookiesExclusive(true);
-    // prepBrowser(br);
-    // final Object ret = account.getProperty("cookies", null);
-    // boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name",
-    // Encoding.urlEncode(account.getUser())));
-    // if (acmatch) {
-    // acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-    // }
-    // if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-    // final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-    // if (account.isValid()) {
-    // for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-    // final String key = cookieEntry.getKey();
-    // final String value = cookieEntry.getValue();
-    // this.br.setCookie(COOKIE_HOST, key, value);
-    // }
-    // return;
-    // }
-    // }
-    // br.setFollowRedirects(true);
-    // getPage(COOKIE_HOST + "/login.html");
-    // final Form loginform = br.getFormbyProperty("name", "FL");
-    // if (loginform == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // loginform.put("login", Encoding.urlEncode(account.getUser()));
-    // loginform.put("password", Encoding.urlEncode(account.getPass()));
-    // submitForm(loginform);
-    // if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // }
-    // if (!br.getURL().contains("/?op=my_account")) {
-    // getPage("/?op=my_account");
-    // }
-    // if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-    // account.setProperty("nopremium", true);
-    // } else {
-    // account.setProperty("nopremium", false);
-    // }
-    // /* Save cookies */
-    // final HashMap<String, String> cookies = new HashMap<String, String>();
-    // final Cookies add = this.br.getCookies(COOKIE_HOST);
-    // for (final Cookie c : add.getCookies()) {
-    // cookies.put(c.getKey(), c.getValue());
-    // }
-    // account.setProperty("name", Encoding.urlEncode(account.getUser()));
-    // account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-    // account.setProperty("cookies", cookies);
-    // } catch (final PluginException e) {
-    // account.setProperty("cookies", Property.NULL);
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // @SuppressWarnings("deprecation")
-    // @Override
-    // public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-    // passCode = downloadLink.getStringProperty("pass");
-    // requestFileInformation(downloadLink);
-    // login(account, false);
-    // if (account.getBooleanProperty("nopremium")) {
-    // requestFileInformation(downloadLink);
-    // doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
-    // } else {
-    // String dllink = checkDirectLink(downloadLink, "premlink");
-    // if (dllink == null) {
-    // br.setFollowRedirects(false);
-    // getPage(downloadLink.getDownloadURL());
-    // dllink = getDllink();
-    // if (dllink == null) {
-    // Form dlform = br.getFormbyProperty("name", "F1");
-    // if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
-    // passCode = handlePassword(dlform, downloadLink);
-    // }
-    // checkErrors(downloadLink, true);
-    // if (dlform == null) {
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // submitForm(dlform);
-    // checkErrors(downloadLink, true);
-    // dllink = getDllink();
-    // }
-    // }
-    // if (dllink == null) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // logger.info("Final downloadlink = " + dllink + " starting the download...");
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 503) {
-    // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5
-    // * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // correctBR();
-    // checkServerErrors();
-    // handlePluginBroken(downloadLink, "dllinknofile", 3);
-    // }
-    // fixFilename(downloadLink);
-    // downloadLink.setProperty("premlink", dllink);
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // /* workaround for free/premium issue on stable 09581 */
-    // return maxPrem.get();
-    // }
 
     @Override
     public void reset() {

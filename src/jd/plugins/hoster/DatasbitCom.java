@@ -23,8 +23,13 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,86 +49,77 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datasbit.com" }, urls = { "https?://(www\\.)?datasbit\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class DatasbitCom extends PluginForHost {
+public class DatasbitCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
+    private static final String  HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                     = "http://datasbit.com";
-    private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                     = "http://datasbit.com";
+    private static final String  NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                         = "(datasbit\\.com)";
+    private static final String  DOMAINS                         = "(datasbit\\.com)";
 
     /* Errormessages inside URLs */
-    private static final String            URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
+    private static final String  URL_ERROR_PREMIUMONLY           = "/?op=login&redirect=";
 
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private static final boolean           AUDIOHOSTER                     = false;
+    private static final boolean AUDIOHOSTER                     = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private static final boolean           VIDEOHOSTER                     = false;
+    private static final boolean VIDEOHOSTER                     = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private static final boolean           VIDEOHOSTER_2                   = false;
+    private static final boolean VIDEOHOSTER_2                   = false;
     /* Enable this for imagehosts */
-    private static final boolean           IMAGEHOSTER                     = false;
+    private static final boolean IMAGEHOSTER                     = false;
 
-    private static final boolean           SUPPORTS_HTTPS                  = false;
-    private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
-    private static final boolean           ENABLE_RANDOM_UA                = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
+    private static final boolean SUPPORTS_HTTPS                  = false;
+    private static final boolean SUPPORTS_HTTPS_FORCED           = false;
+    private static final boolean SUPPORTS_AVAILABLECHECK_ALT     = true;
+    private static final boolean SUPPORTS_AVAILABLECHECK_ABUSE   = true;
+    private static final boolean ENABLE_HTML_FILESIZE_CHECK      = true;
 
     /* Waittime stuff */
-    private static final boolean           WAITFORCED                      = false;
-    private static final int               WAITSECONDSMIN                  = 3;
-    private static final int               WAITSECONDSMAX                  = 100;
-    private static final int               WAITSECONDSFORCED               = 5;
+    private static final boolean WAITFORCED                      = false;
+    private static final int     WAITSECONDSMIN                  = 3;
+    private static final int     WAITSECONDSMAX                  = 100;
+    private static final int     WAITSECONDSFORCED               = 5;
 
     /* Supported linktypes */
-    private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String  TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String  TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
     /* Texts displaed to the user in some errorcases */
-    private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
-    private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
-    private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
+    private static final String  USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
+    private static final String  USERTEXT_MAINTENANCE            = "This server is under maintenance";
+    private static final String  USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
 
     /* Properties */
-    private static final String            PROPERTY_DLLINK_FREE            = "freelink";
-    private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
-    private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
-    private static final String            PROPERTY_PASS                   = "pass";
+    private static final String  PROPERTY_DLLINK_FREE            = "freelink";
+    private static final String  PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
+    private static final String  PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
+    private static final String  PROPERTY_PASS                   = "pass";
 
     /* Used variables */
-    private String                         correctedBR                     = "";
-    private String                         fuid                            = null;
-    private String                         passCode                        = null;
+    private String               correctedBR                     = "";
+    private String               fuid                            = null;
+    private String               passCode                        = null;
 
-    private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload    = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                         = new AtomicInteger(1);
-    private static Object                  LOCK                            = new Object();
+    private static AtomicInteger maxFree                         = new AtomicInteger(1);
+    private static Object        LOCK                            = new Object();
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.7<br />
@@ -158,6 +154,16 @@ public class DatasbitCom extends PluginForHost {
     }
 
     @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
@@ -175,7 +181,6 @@ public class DatasbitCom extends PluginForHost {
         Browser altbr = null;
         this.br.setFollowRedirects(true);
         correctDownloadLink(link);
-        prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|>The file you is not avaliable\\.|>The file has been removed because of Tos violation\\.|>The link you are accessing is not exist|>The file has been deleted by its owner\\.)").matches()) {
@@ -676,18 +681,6 @@ public class DatasbitCom extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
-        /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
-    }
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -804,34 +797,37 @@ public class DatasbitCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(final String page) throws Exception {
+    @Override
+    protected void getPage(final String page) throws Exception {
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, final String page, final boolean correctBr) throws Exception {
-        br.getPage(page);
+        super.getPage(br, page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, final String page, final String postdata, final boolean correctBr) throws Exception {
-        br.postPage(page, postdata);
+        super.postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void submitForm(final Form form) throws Exception {
+    @Override
+    protected void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        br.submitForm(form);
+        super.submitForm(br, form);
         if (correctBr) {
             correctBR();
         }
@@ -879,22 +875,6 @@ public class DatasbitCom extends PluginForHost {
             sleep(wait * 1000l, downloadLink);
         } else {
             logger.info("Found no waittime");
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -1180,7 +1160,6 @@ public class DatasbitCom extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);

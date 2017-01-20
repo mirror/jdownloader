@@ -17,23 +17,19 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,12 +42,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnubis.com" }, urls = { "https?://(?:www\\.)?cnubis\\.com/[A-Za-z0-9]+" })
-public class CnubisCom extends PluginForHost {
+public class CnubisCom extends antiDDoSForHost {
 
     public CnubisCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,44 +68,40 @@ public class CnubisCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://cnubis.com";
-    private final String                   domains                                      = "(cnubis\\.com)";
-    private final String                   type                                         = "html";
-    private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
-    private static final int               additional_WAIT_SECONDS                      = 3;
-    private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = false;
-    private static final boolean           supportshttps_FORCED                         = false;
+    private final String         mainpage                                     = "http://cnubis.com";
+    private final String         domains                                      = "(cnubis\\.com)";
+    private final String         type                                         = "html";
+    private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
+    private static final int     additional_WAIT_SECONDS                      = 3;
+    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
+    private static final boolean supportshttps                                = false;
+    private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
-    private static final boolean           useOldLoginMethod                            = false;
-    private static final boolean           enable_RANDOM_UA                             = false;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
-    private static final String            url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
-    private static final String            url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
-    private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
+    private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
+    private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
     /* E.g. You+must+register+for+a+premium+account+to+download+files+of+this+size */
     /* E.g. You+must+register+for+a+premium+account+to+see+or+download+files.+Please+use+the+links+above+to+register+or+login. */
-    private static final String            url_ERROR_PREMIUMONLY                        = "e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to";
+    private static final String  url_ERROR_PREMIUMONLY                        = "e=You\\+must\\+register\\+for\\+a\\+premium\\+account\\+to";
     /* Texts for the known errors */
-    private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
-    private static final String            errortext_ERROR_SERVER                       = "Server error";
-    private static final String            errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
-    private static final String            errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
+    private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
+    private static final String  errortext_ERROR_SERVER                       = "Server error";
+    private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
+    private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /* Connection stuff */
-    private static final boolean           free_RESUME                                  = true;
-    private static final int               free_MAXCHUNKS                               = 0;
-    private static final int               free_MAXDOWNLOADS                            = 20;
-    private static final boolean           account_FREE_RESUME                          = true;
-    private static final int               account_FREE_MAXCHUNKS                       = 0;
-    private static final int               account_FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 20;
-
-    private static AtomicInteger           MAXPREM                                      = new AtomicInteger(1);
-    private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
+    private static final boolean free_RESUME                                  = true;
+    private static final int     free_MAXCHUNKS                               = 0;
+    private static final int     free_MAXDOWNLOADS                            = 20;
+    private static final boolean account_FREE_RESUME                          = true;
+    private static final int     account_FREE_MAXCHUNKS                       = 0;
+    private static final int     account_FREE_MAXDOWNLOADS                    = 20;
+    private static final boolean account_PREMIUM_RESUME                       = true;
+    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -124,17 +114,26 @@ public class CnubisCom extends PluginForHost {
         }
     }
 
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.addAllowedResponseCodes(416, 429);
+        }
+        return prepBr;
+    }
+
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(this.br);
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -160,7 +159,7 @@ public class CnubisCom extends PluginForHost {
                 filename = fid;
             }
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -218,7 +217,7 @@ public class CnubisCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             handleErrors();
             /* Passwords are usually before waittime. */
@@ -347,7 +346,7 @@ public class CnubisCom extends PluginForHost {
         return isdownloadlink;
     }
 
-    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
             String passCode = dl.getStringProperty("pass", null);
@@ -360,7 +359,7 @@ public class CnubisCom extends PluginForHost {
                 }
                 dl.setProperty("pass", passCode);
             }
-            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
                 dl.setProperty("pass", Property.NULL);
@@ -455,22 +454,6 @@ public class CnubisCom extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
             return "https://";
@@ -492,7 +475,6 @@ public class CnubisCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBrowser(this.br);
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -510,11 +492,11 @@ public class CnubisCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(this.getProtocol() + this.getHost() + "/");
+                getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -523,11 +505,11 @@ public class CnubisCom extends PluginForHost {
                         }
                     }
                 } else {
-                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
                     final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -536,16 +518,10 @@ public class CnubisCom extends PluginForHost {
                         }
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mainpage);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
+                getPage(loginstart + this.getHost() + "/account_home." + type);
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(mainpage));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -557,8 +533,6 @@ public class CnubisCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        MAXPREM.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -570,10 +544,9 @@ public class CnubisCom extends PluginForHost {
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -591,14 +564,12 @@ public class CnubisCom extends PluginForHost {
                 account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                MAXPREM.set(account_FREE_MAXDOWNLOADS);
-                ai.setStatus("Registered (free) user");
+                ai.setStatus("Free Account");
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
+                ai.setStatus("Premium Account");
             }
         }
         account.setValid(true);
@@ -613,7 +584,7 @@ public class CnubisCom extends PluginForHost {
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             if (!available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
@@ -642,23 +613,6 @@ public class CnubisCom extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    private Browser prepBrowser(final Browser br) {
-        br.setAllowedResponseCodes(new int[] { 416, 429 });
-        if (enable_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
-        return br;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return MAXPREM.get();
     }
 
     @Override

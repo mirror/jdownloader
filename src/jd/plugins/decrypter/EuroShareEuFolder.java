@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -25,10 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "https?://(?:www\\.)?euroshare\\.(?:eu|sk)/folder/\\d+/[^\"<>\\' ]+" }) 
-public class EuroShareEuFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "https?://(?:www\\.)?euroshare\\.(?:eu|sk)/folder/\\d+/[^\"<>\\' ]+" })
+public class EuroShareEuFolder extends antiDDoSForDecrypt {
 
     public EuroShareEuFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,8 +38,7 @@ public class EuroShareEuFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("euroshare.sk/", "euroshare.eu/");
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.getPage(parameter);
+        getPage(parameter);
         String id = new Regex(parameter, "euroshare\\.eu/folder/(\\d+)/").getMatch(0);
         if (br.containsHTML(">error 404<")) {
             return null;

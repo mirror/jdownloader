@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(www\\.)?emohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(www\\.)?emohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class EmoHottiesComDecrypter extends PornEmbedParser {
 
     public EmoHottiesComDecrypter(PluginWrapper wrapper) {
@@ -36,15 +36,15 @@ public class EmoHottiesComDecrypter extends PornEmbedParser {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getPage(parameter);
+        final String parameter = param.toString();
+        getPage(parameter);
         if ("http://www.badjojo.com/".equals(br.getRedirectLocation()) || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
         if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
+            getPage(br.getRedirectLocation());
         }
         String filename = jd.plugins.hoster.EmoHottiesCom.getTitle(this.br);
         decryptedLinks.addAll(findEmbedUrls(filename));
