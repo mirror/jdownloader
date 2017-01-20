@@ -1,6 +1,5 @@
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -36,10 +35,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
      *
      * @param title
      *            : Title to be used in case a directhttp url is found. If the title is not given, directhttp urls will never be decrypted.
+     * @throws Exception
      *
      *
      */
-    public final ArrayList<DownloadLink> findEmbedUrls(String title) throws IOException {
+    public final ArrayList<DownloadLink> findEmbedUrls(String title) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Browser brdecrypt = br.cloneBrowser();
         // use plugin regex where possible... this means less maintaince required.
@@ -179,7 +179,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // pornhub handling number #3
         externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(?:www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
-            brdecrypt.getPage(externID);
+            getPage(brdecrypt, externID);
             if (brdecrypt.containsHTML("<link_url>N/A</link_url>") || brdecrypt.containsHTML("No htmlCode read") || brdecrypt.containsHTML(">404 Not Found<")) {
                 decryptedLinks.add(createOfflinelink("http://www.pornhub.com/view_video.php?viewkey=" + new Random().nextInt(10000000), externID));
                 return decryptedLinks;
@@ -200,7 +200,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // myxvids.com 2
         externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)\\1").getMatch(1);
         if (externID != null) {
-            br.getPage(externID);
+            getPage(externID);
             final String finallink = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
             if (finallink == null) {
                 return decryptedLinks;
@@ -542,7 +542,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
         if (externID != null) {
-            brdecrypt.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
+            getPage(brdecrypt, "http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
             externID = brdecrypt.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             if (externID != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + externID);
@@ -558,7 +558,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             brdecrypt.setCookie("http://youporn.com/", "age_verified", "1");
             brdecrypt.setCookie("http://youporn.com/", "is_pc", "1");
             brdecrypt.setCookie("http://youporn.com/", "language", "en");
-            brdecrypt.getPage(Encoding.htmlDecode(externID));
+            getPage(brdecrypt, Encoding.htmlDecode(externID));
             if (brdecrypt.getRequest().getHttpConnection().getResponseCode() == 404) {
                 return decryptedLinks;
             }
@@ -569,7 +569,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             if (externID == null) {
                 return decryptedLinks;
             }
-            brdecrypt.getPage(externID);
+            getPage(brdecrypt, externID);
             final String finallink = brdecrypt.getRegex("<location>(http://.*?)</location>").getMatch(0);
             if (finallink == null) {
                 return decryptedLinks;
