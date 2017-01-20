@@ -70,35 +70,36 @@ public class PornHubCom extends PluginForHost {
 
     private static final String                   type_photo                = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
     public static final String                    html_privatevideo         = "id=\"iconLocked\"";
+    public static final String                    html_premium_only         = "<h2>Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
                                                                                 {
-                                                                                                                                                                /*
-                                                                                                                                                                 * Format
-                                                                                                                                                                 * -
-                                                                                                                                                                 * name
-                                                                                                                                                                 * :
-                                                                                                                                                                 * videoCodec,
-                                                                                                                                                                 * videoBitrate,
-                                                                                                                                                                 * videoResolution,
-                                                                                                                                                                 * audioCodec,
-                                                                                                                                                                 * audioBitrate
-                                                                                                                                                                 */
-                                                                                                                                                                /*
-                                                                                                                                                                 * Video
-                                                                                                                                                                 * -
-                                                                                                                                                                 * bitrates
-                                                                                                                                                                 * and
-                                                                                                                                                                 * resultions
-                                                                                                                                                                 * here
-                                                                                                                                                                 * are
-                                                                                                                                                                 * not
-                                                                                                                                                                 * exact
-                                                                                                                                                                 * as
-                                                                                                                                                                 * they
-                                                                                                                                                                 * vary.
-                                                                                                                                                                 */
+                                                                                                                                                                         /*
+                                                                                                                                                                          * Format
+                                                                                                                                                                          * -
+                                                                                                                                                                          * name
+                                                                                                                                                                          * :
+                                                                                                                                                                          * videoCodec,
+                                                                                                                                                                          * videoBitrate,
+                                                                                                                                                                          * videoResolution,
+                                                                                                                                                                          * audioCodec,
+                                                                                                                                                                          * audioBitrate
+                                                                                                                                                                          */
+                                                                                                                                                                         /*
+                                                                                                                                                                          * Video
+                                                                                                                                                                          * -
+                                                                                                                                                                          * bitrates
+                                                                                                                                                                          * and
+                                                                                                                                                                          * resultions
+                                                                                                                                                                          * here
+                                                                                                                                                                          * are
+                                                                                                                                                                          * not
+                                                                                                                                                                          * exact
+                                                                                                                                                                          * as
+                                                                                                                                                                          * they
+                                                                                                                                                                          * vary.
+                                                                                                                                                                          */
                                                                                     put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
                                                                                     put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
                                                                                     put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
@@ -178,6 +179,9 @@ public class PornHubCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
                 downloadLink.setName(filename);
                 return AvailableStatus.TRUE;
+            }
+            if (br.containsHTML(html_premium_only)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium only File", PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             if (source_url == null || filename == null || this.dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -462,13 +466,13 @@ public class PornHubCom extends PluginForHost {
             /* Premium accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Premium user");
+            ai.setStatus("Premium Account");
         } else {
             account.setType(AccountType.FREE);
             /* Free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Free Account");
         }
         account.setValid(true);
         logger.info("Account: " + account + " - is valid");
