@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.text.DecimalFormat;
-import java.text.FieldPosition;
 
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
@@ -98,20 +97,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
         });
 
-        this.formatter = new DecimalFormat("0.00") {
-
-            final StringBuffer        sb               = new StringBuffer();
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public StringBuffer format(final double number, final StringBuffer result, final FieldPosition pos) {
-                sb.setLength(0);
-                return super.format(number, sb, pos);
-            }
-        };
+        this.formatter = new DecimalFormat("0.00");
     }
 
     @Override
@@ -154,8 +140,12 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         return this.renderer;
     }
 
-    private final String getSizeString(long fileSize) {
-        return SIZEUNIT.formatValue(maxSizeUnit, formatter, fileSize);
+    private final String getSizeString(final long fileSize) {
+        if (fileSize < 0) {
+            return zeroString;
+        } else {
+            return SIZEUNIT.formatValue(maxSizeUnit, formatter, fileSize);
+        }
     }
 
     @Override
