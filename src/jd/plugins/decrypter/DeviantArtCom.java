@@ -33,6 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -326,19 +327,9 @@ public class DeviantArtCom extends PluginForDecrypt {
         final int offsetIncrease = 24;
         int counter = 1;
         if (parameter.contains("offset=")) {
-            final int offsetLink = Integer.parseInt(new Regex(parameter, "(\\d+)$").getMatch(0));
+            final int offsetLink = Integer.parseInt(new Regex(parameter, "offset=(\\d+)").getMatch(0));
             currentOffset = offsetLink;
             maxOffset = offsetLink;
-        } else if (!parameter.matches(TYPE_CATPATH_1)) {
-            final String[] offsets = br.getRegex("data\\-offset=\"(\\d+)\" name=\"gmi\\-GPageButton\"").getColumn(0);
-            if (offsets != null && offsets.length != 0) {
-                for (final String offset : offsets) {
-                    final int offs = Integer.parseInt(offset);
-                    if (offs > maxOffset) {
-                        maxOffset = offs;
-                    }
-                }
-            }
         }
         FilePackage fp = null;
         if (fpName != null) {
@@ -346,27 +337,48 @@ public class DeviantArtCom extends PluginForDecrypt {
             fp.setName(fpName);
             fp.setProperty("ALLOW_MERGE", true);
         }
+        final String csrf = PluginJSonUtils.getJsonValue(this.br, "csrf");
+        final String requestid = PluginJSonUtils.getJsonValue(this.br, "requestid");
+        final String galleryid = PluginJSonUtils.getJsonValue(this.br, "galleryId");
+        boolean has_more = true;
+        String has_more_str = null;
+        if (csrf == null || csrf.equals("") || requestid == null || requestid.equals("") || galleryid == null || galleryid.equals("")) {
+            throw new DecrypterException("Plugin broken");
+        }
+
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
             logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
-            if (parameter.matches(TYPE_CATPATH_1) && !parameter.contains("offset=")) {
-                if (counter > 1) {
-                    br.getPage(parameter + "&offset=" + currentOffset);
+            if (counter > 1) {
+                /*
+                 * 2017-02-20: Now they have an API. At the moment we do not yet parse the json as we really only need the URLs which are
+                 * inside the html which is inside the json :)
+                 */
+                final String postdata = "username=" + username + "&offset=" + currentOffset + "&limit=" + offsetIncrease + "&_csrf=" + csrf + "&dapiIid=" + requestid;
+                this.br.postPage(String.format("http://www.deviantart.com/dapi/v1/gallery/%s?iid=%s&mp=%s", galleryid, requestid, counter), postdata);
+                has_more_str = PluginJSonUtils.getJsonValue(this.br, "has_more");
+                if (has_more_str != null && has_more_str.matches("true|false")) {
+                    has_more = Boolean.parseBoolean(has_more_str);
+                } else {
+                    has_more = false;
                 }
-                // catpath links have an unknown end-offset
-                final String nextOffset = br.getRegex("\\?catpath=[A-Za-z0-9%]+\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
-                if (nextOffset != null) {
-                    maxOffset = Integer.parseInt(nextOffset);
-                }
-            } else if (counter > 1) {
-                accessOffset(currentOffset);
             }
+
             try {
-                final String grab = br.getRegex("class=\"gallery\\-topbar\"(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
-                String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
+                String grab;
+                if (counter == 1) {
+                    grab = br.getRegex("class=\"smbutton smbutton\\-green browse\\-search\\-button\"(.*?)class=\"rss\\-link\"").getMatch(0);
+                    if (grab == null) {
+                        grab = br.getRegex("class=\"folderview\\-art\"(.*?)class=\"rss\\-link\"").getMatch(0);
+                    }
+                } else {
+                    /* Unescape json */
+                    grab = this.br.toString().replace("\\", "");
+                }
+                final String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
                 if ((links == null || links.length == 0) && counter == 1) {
                     logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + parameter);
                     throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -404,15 +416,15 @@ public class DeviantArtCom extends PluginForDecrypt {
                     } else {
                         fina.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
                     }
-                    distribute(fina);
                     decryptedLinks.add(fina);
+                    distribute(fina);
                 }
             } finally {
                 currentOffset += offsetIncrease;
                 counter++;
             }
             /* Really make sure that we're not ending up in an infinite loop! */
-        } while (currentOffset <= maxOffset && br.containsHTML("class=\"next\"><a class=\"away\" data\\-offset=\"\\d+\""));
+        } while (has_more || maxOffset > 0 && currentOffset >= maxOffset);
         if (fpName != null) {
             fp.addLinks(decryptedLinks);
         }
