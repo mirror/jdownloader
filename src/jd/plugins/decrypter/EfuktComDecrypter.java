@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,10 +28,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
-public class EfuktComDecrypter extends PluginForDecrypt {
+public class EfuktComDecrypter extends antiDDoSForDecrypt {
 
     public EfuktComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,10 +39,10 @@ public class EfuktComDecrypter extends PluginForDecrypt {
     private static final String type_redirect = "http://(www\\.)?efukt\\.com/out\\.php\\?id=\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
             redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(http[^<>\"]*?)\\';").getMatch(0);
@@ -50,7 +51,7 @@ public class EfuktComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         } else if (redirect != null) {
-            br.getPage(redirect);
+            getPage(redirect);
             br.followRedirect(true);
         }
         final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));

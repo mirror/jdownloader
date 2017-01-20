@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -24,10 +26,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+" }) 
-public class EltrecetvComAr extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+" })
+public class EltrecetvComAr extends antiDDoSForHost {
 
     public EltrecetvComAr(final PluginWrapper wrapper) {
         super(wrapper);
@@ -50,7 +51,7 @@ public class EltrecetvComAr extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.containsHTML("class=\"player\"")) {

@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,12 +26,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.hr" }, urls = { "https?://(?:www\\.)?download\\.hr/software\\-.*?\\.html" }) 
-public class DownloadHr extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.hr" }, urls = { "https?://(?:www\\.)?download\\.hr/software\\-.*?\\.html" })
+public class DownloadHr extends antiDDoSForHost {
 
     private static final String MAINPAGE = "http://www.download.hr";
 
@@ -50,7 +48,7 @@ public class DownloadHr extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "dhrgo", "da");
@@ -59,7 +57,7 @@ public class DownloadHr extends PluginForHost {
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if ("http://www.download.hr/".equals(this.br.getURL()) || br.containsHTML("<title>Download\\.hr \\- Free Software Downloads</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -91,9 +89,9 @@ public class DownloadHr extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL().replace("/software-", "/download-"));
+        getPage(downloadLink.getDownloadURL().replace("/software-", "/download-"));
         String finallink = br.getRegex("\"(https?://(www\\.)?download\\.hr/go\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

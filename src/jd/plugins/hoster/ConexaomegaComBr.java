@@ -16,10 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,13 +38,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
-public class ConexaomegaComBr extends PluginForHost {
+public class ConexaomegaComBr extends antiDDoSForHost {
 
     /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
 
@@ -58,7 +56,6 @@ public class ConexaomegaComBr extends PluginForHost {
     private final String                                   default_UA                   = "JDownloader";
     private final String                                   html_loggedin                = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
 
-    private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
@@ -75,12 +72,15 @@ public class ConexaomegaComBr extends PluginForHost {
         return "http://conexaomega.com.br/";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
-        br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", default_UA);
-        br.setFollowRedirects(true);
-        return br;
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.getHeaders().put("User-Agent", default_UA);
+            prepBr.setFollowRedirects(true);
+        }
+        return prepBr;
     }
 
     @Override
@@ -121,7 +121,7 @@ public class ConexaomegaComBr extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
+        this.br = new Browser();
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
@@ -211,8 +211,6 @@ public class ConexaomegaComBr extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
-        this.br = newBrowser();
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -220,10 +218,12 @@ public class ConexaomegaComBr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+        setConstants(account, null);
+        this.br = new Browser();
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!this.br.getURL().contains("/minha_conta.php")) {
-            this.br.getPage("/minha_conta.php");
+            super.getPage(br, "/minha_conta.php");
         }
         final String premium_days_left = this.br.getRegex("<span>(\\d+) dias?</span>.+<small[^>]*?>[^<>]*?de conta premium").getMatch(0);
         if (premium_days_left == null || premium_days_left.equals("0")) {
@@ -257,20 +257,20 @@ public class ConexaomegaComBr extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                this.br = newBrowser();
+                br = new Browser();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* Re-use cookies whenever possible to avoid login captcha prompts. */
-                    this.br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://www." + this.getHost() + "/planos");
+                    br.setCookies(getHost(), cookies);
+                    super.getPage(br, "https://www." + getHost() + "/planos");
                     if (br.containsHTML(html_loggedin)) {
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(getHost()), "");
                         return;
                     }
                     /* Clear cookies/headers to prevent unknown errors as we'll perform a full login below now. */
-                    this.br = newBrowser();
+                    br = new Browser();
                 }
-                this.br.getPage("https://www." + this.getHost() + "/login");
+                super.getPage(br, "https://www." + getHost() + "/login");
                 String postData = "lembrar=on&email=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
 
                 if (this.br.containsHTML("g\\-recaptcha")) {
@@ -324,14 +324,14 @@ public class ConexaomegaComBr extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
+    private void getAPISafe(final String accesslink) throws Exception {
+        super.getPage(br, accesslink);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
+    private void postAPISafe(final String accesslink, final String postdata) throws Exception {
+        super.postPage(br, accesslink, postdata);
         updatestatuscode();
         handleAPIErrors(this.br);
     }

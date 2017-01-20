@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
@@ -26,12 +27,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doperoms.com" }, urls = { "http://(www\\.)?doperoms\\.com/files/[^<>\"]+" }) 
-public class DopeRomsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doperoms.com" }, urls = { "http://(www\\.)?doperoms\\.com/files/[^<>\"]+" })
+public class DopeRomsCom extends antiDDoSForHost {
 
     public DopeRomsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,26 +46,36 @@ public class DopeRomsCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage("http://doperoms.com/set_language.php?lang=EN");
+        getPage("http://doperoms.com/set_language.php?lang=EN");
         try {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }// Offline
-        if (br.getURL().equals("http://www.doperoms.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } // Offline
+        if (br.getURL().equals("http://www.doperoms.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Empty
-        if (br.containsHTML("name=\"No Roms\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("name=\"No Roms\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<title>Downloading ([^<>\"]*?)</title>").getMatch(0);
         final String filesize = br.getRegex("<br/><br/>[\t\n\r ]+<center><br/>[^<>\"/:]*?: ([^<>\"]*?)<br/>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         String md5 = br.getRegex(">MD5 Checksum: ([a-z0-9]+)<br/><br").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -75,12 +83,15 @@ public class DopeRomsCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(/files/[^<>\"]+GETFILE[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://doperoms.com" + dllink;
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">403 \\- Forbidden<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML(">403 \\- Forbidden<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

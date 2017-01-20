@@ -16,8 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -30,11 +31,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/([a-zA-Z0-9]+/[^<>\"/]+|[a-zA-Z0-9]+)" })
-public class EuroShareEu extends PluginForHost {
+public class EuroShareEu extends antiDDoSForHost {
 
     /** API documentation: http://euroshare.eu/euroshare-api/ */
     /**
@@ -64,7 +64,7 @@ public class EuroShareEu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         String filename;
         // start of password handling crapola
@@ -79,7 +79,7 @@ public class EuroShareEu extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
         } else {
-            br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
             if (br.containsHTML("ERR: File does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -109,10 +109,10 @@ public class EuroShareEu extends PluginForHost {
 
     }
 
-    private void handlePassword(DownloadLink downloadLink) throws IOException, PluginException {
+    private void handlePassword(DownloadLink downloadLink) throws Exception {
         String pass = downloadLink.getStringProperty("pass");
         if (pass != null && !pass.equals("")) {
-            br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
+            getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
             if (br.containsHTML(containsPassword)) {
                 // wrong password
                 downloadLink.setProperty("pass", "");
@@ -156,7 +156,9 @@ public class EuroShareEu extends PluginForHost {
             account.setProperty("FREE", true);
             ai.setUnlimitedTraffic();
         } else {
-            /* There are traffic and volume accounts and both combined. For combined accounts they have unlimited traffic till they expire. */
+            /*
+             * There are traffic and volume accounts and both combined. For combined accounts they have unlimited traffic till they expire.
+             */
             if (expire != null && !"0".equals(expire)) {
                 ai.setValidUntil(Long.parseLong(expire) * 1000);
                 if (ai.isExpired()) {
@@ -245,7 +247,7 @@ public class EuroShareEu extends PluginForHost {
         if (account.getBooleanProperty("FREE")) {
             doFree(link);
         } else {
-            br.getPage("http://euroshare.eu/euroshare-api/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
+            getPage("http://euroshare.eu/euroshare-api/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
             final String dllink = PluginJSonUtils.getJsonValue(this.br, "link");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -263,7 +265,7 @@ public class EuroShareEu extends PluginForHost {
     private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage("http://euroshare.eu/euroshare-api/?sub=getaccountdetails&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        getPage("http://euroshare.eu/euroshare-api/?sub=getaccountdetails&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("(ERR: User does not exist|ERR: Invalid password)")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }

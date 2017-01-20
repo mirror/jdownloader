@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -33,14 +35,29 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" }) 
-public class EvilAngelCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:en/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p|film/\\d+)", "https?://members\\.evilangelnetwork\\.com/[A-Za-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
+public class EvilAngelCom extends antiDDoSForHost {
 
     public EvilAngelCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.evilangel.com/en/join");
+    }
+
+    public static Browser prepBR(final Browser br, final String host) {
+        return br;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            prepBr.setCookiesExclusive(true);
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(host, "enterSite", "en");
+            prepBr.setFollowRedirects(true);
+        }
+        return prepBr;
     }
 
     @Override
@@ -76,7 +93,7 @@ public class EvilAngelCom extends PluginForHost {
             String filename = null;
             loginEvilAngelNetwork(this.br, aa, LOGIN_PAGE, HTML_LOGGEDIN);
             if (link.getDownloadURL().matches(URL_EVILANGEL_FILM)) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -97,7 +114,7 @@ public class EvilAngelCom extends PluginForHost {
                     filename = filename + "-" + quality + ".mp4";
                 }
             } else if (link.getDownloadURL().matches(URL_EVILANGELNETWORK_VIDEO)) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -224,7 +241,7 @@ public class EvilAngelCom extends PluginForHost {
                         return;
                     }
 
-                    br.getPage(getpage);
+                    getPage(br, getpage);
                     if (br.containsHTML(html_loggedin)) {
                         account.saveCookies(br.getCookies(host_account), "");
                         return;
@@ -233,7 +250,7 @@ public class EvilAngelCom extends PluginForHost {
                 }
                 /* We re over 18 */
                 br.setFollowRedirects(true);
-                br.getPage(getpage);
+                getPage(br, getpage);
                 if (br.containsHTML(">We are experiencing some problems\\!<")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
@@ -280,7 +297,7 @@ public class EvilAngelCom extends PluginForHost {
                     final String code = getCaptchaCode(captcha_url, dummyLink);
                     postData += "&captcha%5Bid%5D=" + captcha_id + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
                 }
-                br.postPage(br.getURL(), postData);
+                postPage(br, br.getURL(), postData);
                 if (br.containsHTML(">Your account is deactivated for abuse")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
@@ -334,14 +351,6 @@ public class EvilAngelCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    public static Browser prepBR(final Browser br, final String host) {
-        br.setCookie(host, "enterSite", "en");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        return br;
     }
 
     @Override

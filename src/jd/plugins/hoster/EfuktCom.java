@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,10 +29,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "http://(www\\.)?efuktdecrypted\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+)" })
-public class EfuktCom extends PluginForHost {
+public class EfuktCom extends antiDDoSForHost {
 
     public EfuktCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,10 +56,10 @@ public class EfuktCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://efukt.com/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -93,13 +92,7 @@ public class EfuktCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                try {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(dllink);
-                } catch (final Throwable t) {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(dllink);
-                }
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
