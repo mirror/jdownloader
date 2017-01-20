@@ -458,6 +458,9 @@ public class DownloaderGuru extends PluginForHost {
 
     private void getAPISafe(final String url) throws IOException, PluginException {
         this.br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         updatestatuscode();
         handleAPIErrors(this.br);
     }
