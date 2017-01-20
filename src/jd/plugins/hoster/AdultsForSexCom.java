@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,6 +27,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultsforsex.com" }, urls = { "http://(www\\.)?adultsforsex\\.com/\\d+" })
 public class AdultsForSexCom extends antiDDoSForHost {
@@ -57,6 +57,9 @@ public class AdultsForSexCom extends antiDDoSForHost {
             filename = new Regex(br.getURL(), "adultsforsex\\.com/\\d+/([A-Za-z0-9\\-]+)/").getMatch(0);
         }
         getPage("http://adultsforsex.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dllink = br.getRegex("<file><\\!\\[CDATA\\[(https?://[^<>\"]*?)\\]\\]></file>").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

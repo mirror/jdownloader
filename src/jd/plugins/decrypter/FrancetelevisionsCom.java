@@ -88,6 +88,7 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
         }
         for (final String singleid : videoids) {
             final DownloadLink dl = createDownloadlink("http://francetelevisionsdecrypted/" + singleid);
+            dl.setContentUrl(parameter);
             decryptedLinks.add(dl);
         }
 

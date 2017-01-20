@@ -133,9 +133,7 @@ public class FernsehkritikTv extends PluginForHost {
         return requestFileInformation(downloadLink, AccountController.getInstance().getValidAccount(this));
     }
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -627,21 +625,48 @@ public class FernsehkritikTv extends PluginForHost {
         }
         long expirelong = -1;
         login(this.br, account, true);
-        br.getPage("/u/");
-        String expire = br.getRegex("bis (\\d{1,2}\\. [A-Za-z]+ \\d{4})").getMatch(0);
+        /* API does not tell us account type, expire date or anything else account related so we have to go via website ... */
+        br.getPage("https://" + this.br.getHost() + "/u/");
+        boolean hasActiveSubscription = this.br.containsHTML(">Abonnement aktiv");
+        boolean isPremium = this.br.containsHTML("Zugang bis \\d{1,2}\\. (?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember) 20\\d{2}");
+        boolean isExpired = false;
+        br.getPage("/account/");
+        if (!hasActiveSubscription) {
+            /* Fallback */
+            hasActiveSubscription = this.br.containsHTML("<h5 [^>]*?><span [^>]*?>Automatische Verlängerung:</span>\\s*?AKTIV\\s*?</h5>");
+        }
+        /* First try - this RegEx will only work if the users' subscription is still active and he pays after this date. */
+        String expire = br.getRegex("Zahlung am (\\d{1,2}\\. (?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember) 20\\d{2})").getMatch(0);
+        if (expire != null) {
+            hasActiveSubscription = true;
+        } else {
+            /* Second try - this RegEx will work if the user does still have premium right now but his subscription ends after that date. */
+            expire = br.getRegex("Zugang bis (\\d{1,2}\\. (?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember) 20\\d{2})").getMatch(0);
+        }
         if (expire == null) {
+            /* Let's go full risc */
             expire = br.getRegex("(\\d{1,2}\\. (?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember) 20\\d{2})").getMatch(0);
         }
         if (expire != null) {
+            /* Expiredate available --> We should have a premium account! */
+            isPremium = true;
             expirelong = TimeFormatter.getMilliSeconds(expire, "dd. MMMM yyyy", Locale.GERMANY);
+            ai.setValidUntil(expirelong);
+            if (ai.isExpired()) {
+                isExpired = true;
+            }
         }
-        if (System.currentTimeMillis() - expirelong > 0 || br.containsHTML(">Kein Abonnement aktiv")) {
+        if (!isExpired && (isPremium || hasActiveSubscription)) {
+            /* Expiredate has already been set via code above. */
+            account.setType(AccountType.PREMIUM);
+            if (hasActiveSubscription) {
+                ai.setStatus("Premium Account (Automatische Verlängerung aktiv)");
+            } else {
+                ai.setStatus("Premium Account (Keine automatische Verlängerung)");
+            }
+        } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd. MMMM yyyy", Locale.GERMANY));
-            account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
         }
         ai.setUnlimitedTraffic();
         return ai;

@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -60,6 +60,12 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingfiles.net" }, urls = { "https?://(?:www\\.)?kingfiles\\.net/(?:embed\\-)?[a-z0-9]{12}" })
 public class KingfilesNet extends PluginForHost {
+
+    // DELETE THIS, after making plugin!
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -139,13 +145,13 @@ public class KingfilesNet extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.2<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
      * mods:<br />
-     * limit-info:<br />
+     * limit-info: 2017-01-20: Account untested, set FREE limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
 
@@ -195,7 +201,7 @@ public class KingfilesNet extends PluginForHost {
             if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
                 if (!inValidate(fileInfo[0])) {
-                    link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                    link.setName(Encoding.htmlOnlyDecode(fileInfo[0]).trim());
                     return AvailableStatus.TRUE;
                 }
             }
@@ -225,7 +231,7 @@ public class KingfilesNet extends PluginForHost {
                 /* We know the link must be online, lets set all information we got */
                 link.setAvailable(true);
                 if (!inValidate(fileInfo[0])) {
-                    link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    link.setName(Encoding.htmlOnlyDecode(fileInfo[0].trim()));
                 } else {
                     link.setName(fuid);
                 }
@@ -504,7 +510,7 @@ public class KingfilesNet extends PluginForHost {
                     /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                     final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
                     if (image_filename != null) {
-                        downloadLink.setName(Encoding.htmlDecode(image_filename));
+                        downloadLink.setName(Encoding.htmlOnlyDecode(image_filename));
                     }
                 }
             } while (imghost_next_form != null);
@@ -980,7 +986,7 @@ public class KingfilesNet extends PluginForHost {
             ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\">\\s*?(\\d+)\\s*?</span>").getMatch(0);
+            ttt = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?</span>").getMatch(0);
         }
         if (ttt == null) {
             /* More open RegEx */
@@ -1074,8 +1080,15 @@ public class KingfilesNet extends PluginForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
-    private void setFUID(final DownloadLink dl) {
-        fuid = getFUIDFromURL(dl);
+    private void setFUID(final DownloadLink dl) throws PluginException {
+        this.fuid = getFUIDFromURL(dl);
+        if (this.fuid == null) {
+            /*
+             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code
+             * has been changed an user still has old URLs in downloadlist --> These are usually offline.
+             */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @SuppressWarnings("deprecation")

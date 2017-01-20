@@ -27,14 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -57,6 +49,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class XFileSharingProBasic extends PluginForHost {
@@ -145,7 +145,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object                  LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.3<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
@@ -1080,8 +1080,15 @@ public class XFileSharingProBasic extends PluginForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
-    private void setFUID(final DownloadLink dl) {
-        fuid = getFUIDFromURL(dl);
+    private void setFUID(final DownloadLink dl) throws PluginException {
+        this.fuid = getFUIDFromURL(dl);
+        if (this.fuid == null) {
+            /*
+             * Either a really bad constellation of a broken plugin or, more likely, hosting script of a website has changed, plugin code
+             * has been changed an user still has old URLs in downloadlist --> These are usually offline.
+             */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @SuppressWarnings("deprecation")
