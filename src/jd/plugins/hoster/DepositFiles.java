@@ -72,26 +72,30 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" })
 public class DepositFiles extends antiDDoSForHost {
 
-    private final String                  UA                       = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
-    private final String                  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
-    private final String                  downloadLimitReached     = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
-    private final String                  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
-    public static AtomicReference<String> MAINPAGE                 = new AtomicReference<String>();
-    public static final String            DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
+    private final String                  UA                           = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
+    private final String                  FILE_NOT_FOUND               = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private final String                  downloadLimitReached         = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
+    private final String                  PATTERN_PREMIUM_FINALURL     = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
+    public static AtomicReference<String> MAINPAGE                     = new AtomicReference<String>();
+    public static final String            DOMAINS                      = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
-    private String                        protocol                 = null;
+    private String                        protocol                     = null;
 
-    public String                         DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern                 FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern                 FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
+    public String                         DLLINKREGEX2                 = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern                 FILE_INFO_NAME               = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern                 FILE_INFO_SIZE               = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
-    private static Object                 PREMLOCK                 = new Object();
-    private static Object                 LOCK                     = new Object();
+    private static Object                 PREMLOCK                     = new Object();
+    private static Object                 LOCK                         = new Object();
 
-    private static AtomicInteger          simultanpremium          = new AtomicInteger(1);
-    private static AtomicBoolean          useAPI                   = new AtomicBoolean(true);
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger          totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    /* don't touch the following! */
+    private static AtomicInteger          maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger          simultanpremium              = new AtomicInteger(1);
+    private static AtomicBoolean          useAPI                       = new AtomicBoolean(true);
 
-    private final String                  SETTING_SSL_CONNECTION   = "SSL_CONNECTION";
+    private final String                  SETTING_SSL_CONNECTION       = "SSL_CONNECTION";
 
     // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
 
@@ -403,7 +407,7 @@ public class DepositFiles extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     @Override
@@ -584,7 +588,34 @@ public class DepositFiles extends antiDDoSForHost {
             downloadLink.setFinalFileName(fixedName);
         }
         downloadLink.setProperty("finallink", finallink);
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    private synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     private final String submitCapthcaStep(final String page) throws IOException, PluginException {
