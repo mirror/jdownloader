@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -36,8 +38,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:www\\.)?pornhubpremium\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" })
 public class PornHubCom extends PluginForDecrypt {
@@ -133,6 +133,10 @@ public class PornHubCom extends PluginForDecrypt {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName("This_video_is_private_" + fpName + ".mp4");
             decryptedLinks.add(dl);
+            return;
+        }
+        if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_premium_only)) {
+            decryptedLinks.add(createOfflinelink(parameter, fpName + ".mp4", "Private_video_Premium_required"));
             return;
         }
 
