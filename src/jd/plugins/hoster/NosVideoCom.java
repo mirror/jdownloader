@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -52,7 +53,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nosvideo.com" }, urls = { "https?://(?:www\\.)?(?:nosvideo|noslocker)\\.com/(?:embed\\-)?[a-z0-9]{12,}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nosvideo.com" }, urls = { "https?://(?:www\\.)?(?:nosvideo|noslocker)\\.com/(?:embed\\-)?[a-z0-9]{12,}" })
 public class NosVideoCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -127,7 +128,7 @@ public class NosVideoCom extends PluginForHost {
 
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                            = new AtomicInteger(1);
     private static Object                  LOCK                               = new Object();
@@ -419,7 +420,7 @@ public class NosVideoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, true, -2, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -525,6 +526,8 @@ public class NosVideoCom extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
+                /* 2017-01-20: Special waittime */
+                waitTime(downloadLink, System.currentTimeMillis());
                 submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -797,7 +800,7 @@ public class NosVideoCom extends PluginForHost {
 
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
@@ -810,9 +813,13 @@ public class NosVideoCom extends PluginForHost {
         }
     }
 
-    /** Function to find the final downloadlink. */
+    /**
+     * Function to find the final downloadlink.
+     *
+     * @throws IOException
+     */
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
-    private String getDllink() {
+    private String getDllink() throws IOException {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\\'(http[^<>\"\\']+\\.smil)\\'").getMatch(0);
@@ -885,6 +892,15 @@ public class NosVideoCom extends PluginForHost {
             if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
                 /* Do NOT download thumbnails! */
                 dllink = null;
+            }
+        }
+        if (dllink == null) {
+            /* 2017-01-20: Special */
+            final String videoxml_id = this.br.getRegex("\\|png\\|100\\|([a-z0-9]+)\\|html\\|").getMatch(0);
+            if (videoxml_id != null) {
+                final Browser brc = this.br.cloneBrowser();
+                brc.getPage("/video_l/" + videoxml_id + ".xml");
+                dllink = brc.getRegex("source file=\"(http[^<>\"]+\\.mp4)\"").getMatch(0);
             }
         }
         return dllink;

@@ -32,8 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornpillow.com", "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to" }, urls = { "http://(?:www\\.)?pornpillow\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html", "http://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+",
-        "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubous.com", "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "clipcake.com", "worldsex.com", "nudez.com", "porndoe.com", "bigcamtube.com", "xogogo.com", "bigass.ws", "smv.to" }, urls = { "http://(?:www\\.)?tubous\\.com/videos/\\d+(/[a-z0-9\\-]+)?", "http://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "http://(?:[a-z]{2}\\.)?nudez\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:[a-z]{2}\\.)?porndoe\\.com/video/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/",
+        "http://(?:www\\.)?xogogo\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?bigass\\.ws/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+" })
 public class UnknownPornScript5 extends PluginForHost {
 
     public UnknownPornScript5(PluginWrapper wrapper) {
@@ -44,22 +44,6 @@ public class UnknownPornScript5 extends PluginForHost {
     /* Porn_plugin */
     /* V0.1 */
     // other: Should work for all (porn) sites that use the "jwplayer" with http URLs: http://www.jwplayer.com/
-
-    /* Extension which will be used if no correct extension is found */
-
-    // private static final String type_1 = "^https?://(?:www\\.)?[^/]+/videos/\\d+/([a-z0-9\\-]+)/$";
-    // /* E.g. worldsex.com */
-    // private static final String type_2 = "^http://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)\\-\\d+\\.html$";
-    // /* E.g. nudez.com */
-    // private static final String type_3 = "^http://[a-z]{2}\\.[^/]+/video/([a-z0-9\\-]+)\\-\\d+\\.html$";
-    // /* E.g. porndoe.com */
-    // private static final String type_4 = "^http://[a-z]{2}\\.[^/]+/video/\\d+/([a-z0-9\\-]+)$";
-    // /* E.g. bigcamtube.com */
-    // private static final String type_5 = "^http://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)/$";
-    // /* E.g. xogogo.com, bigass.ws */
-    // private static final String type_6 = "^http://(?:www\\.)?[^/]+/videos/\\d+/([a-z0-9\\-]+)\\.html$";
-
-    // private static final String type_smv_to = "https?://(?:www\\.)?smv\\.to/detail/[A-Za-z0-9]+";
 
     private static final String  type_allow_title_as_filename = "https?://(?:www\\.)?ah\\-me\\.com/videos/\\d+";
 
@@ -85,6 +69,13 @@ public class UnknownPornScript5 extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (this.br.getHost().equals("bigcamtube.com") && this.br.toString().length() <= 100) {
+            /*
+             * 2017-01-20: Workaround for bug (same via browser). First request sets cookies but server does not return html - 2nd request
+             * returns html.
+             */
+            br.getPage(downloadLink.getDownloadURL());
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. responsecode 404: boyfriendtv.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -198,7 +189,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             *
+             * 
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */
