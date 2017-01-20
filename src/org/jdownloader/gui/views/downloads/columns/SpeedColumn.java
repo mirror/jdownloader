@@ -153,17 +153,17 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
             if (dlc == null || (acc = dlc.getAccount()) != null) {
                 return false;
             }
-            PluginForHost plugin = dl.getDefaultPlugin();
+            final PluginForHost plugin = dl.getDefaultPlugin();
             if (plugin == null || !plugin.isSpeedLimited(dl, acc) | !plugin.isPremiumEnabled()) {
                 /* no account support yet for this plugin */
                 return false;
             }
-            long limit = dlc.getConnectionHandler().getLimit();
+            final long limit = dlc.getConnectionHandler().getLimit();
             if (limit > 0 && limit < 50 * 1024) {
                 /* we have an active limit that is smaller than our warn speed */
                 return false;
             }
-            DownloadInterface dli = dlc.getDownloadInstance();
+            final DownloadInterface dli = dlc.getDownloadInstance();
             if (dli != null && ((DownloadLink) value).getView().getBytesLoaded() > 100 * 1024) {
                 if (((DownloadLink) value).getView().getSpeedBps() < 50 * 1024) {
                     return true;
@@ -206,8 +206,8 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             final PluginProgress pluginProgress = ((DownloadLink) value).getPluginProgress();
             if (pluginProgress instanceof DownloadPluginProgress) {
-                long speed = ((DownloadPluginProgress) pluginProgress).getSpeed();
-                if (speed > 0) {
+                final long speed = ((DownloadPluginProgress) pluginProgress).getSpeed();
+                if (speed >= 0) {
                     return SIZEUNIT.formatValue(maxSizeUnit, formatter, speed) + "/s";
                 }
             }

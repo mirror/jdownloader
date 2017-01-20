@@ -232,7 +232,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6453521
                                 final DesktopSupportLinux desktop = new DesktopSupportLinux();
                                 try {
-                                    if (desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) {
+                                    if ((desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) && !desktop.isWayland()) {
+                                        // Wayland/java crashes onjava.awt.Robot.createScreenCapture
                                         LogController.CL(TrayExtension.class).info("Apply LinuxTrayIcon workaround");
                                         final Robot robo = new java.awt.Robot();
                                         final BufferedImage screenCapture = robo.createScreenCapture(new Rectangle(2, img.getHeight()));
