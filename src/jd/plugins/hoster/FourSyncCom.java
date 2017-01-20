@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sync.com" }, urls = { "http://(www\\.)?4sync\\.com/(rar|file)/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sync.com" }, urls = { "https?://(?:www\\.)?4sync\\.com/(?:rar|file|video)/[A-Za-z0-9]+" })
 public class FourSyncCom extends PluginForHost {
 
     public FourSyncCom(PluginWrapper wrapper) {
@@ -53,35 +53,60 @@ public class FourSyncCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://www.4sync.com/", "4langcookie", "en");
+        br.setCookie("https://www.4sync.com/", "4langcookie", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">4Sync \\- Page not found<|>The webpage you've requested wasn't found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">4Sync \\- Page not found<|>The webpage you've requested wasn't found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex finfo = br.getRegex("class=\"img\"/><b>([^<>\"]*?)</b> \\(([^<>\"]*?)\\) <table align=\"center\"");
         String filename = br.getRegex("<span id=\"fileNameTextSpan\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("alt=\"([^<>\"]*?)\"/><br><br> Click here to download this file").getMatch(0);
-        if (filename == null) filename = finfo.getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("alt=\"([^<>\"]*?)\"/><br><br> Click here to download this file").getMatch(0);
+        }
+        if (filename == null) {
+            filename = finfo.getMatch(0);
+        }
         String filesize = br.getRegex("title=\"Size: ([^<>\"]*?)\">").getMatch(0);
-        if (filesize == null) filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        if (filesize == null) {
+            filesize = finfo.getMatch(1);
+        }
+        if (filesize == null) {
+            /* 2017-01-20 */
+            filesize = this.br.getRegex("class=\"fileInfoBlock\">\\s*?<span>([^<>\"]+)<").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* 2017-01-20: Do not set final filename here as the extension is often missing! */
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.getURL().contains("errorMaxSessions=MAX_IP")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.4sync\\.com/download/[^<>\"]*?)\"").getMatch(0);
+        if (br.getURL().contains("errorMaxSessions=MAX_IP")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+        }
+        final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.4sync\\.com/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            if (!br.containsHTML("Download now\\&nbsp;")) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (!br.containsHTML("Download now\\&nbsp;")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().contains("errorMaxSessions=MAX_IP")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            if (br.getURL().contains("errorMaxSessions=MAX_IP")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
