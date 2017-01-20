@@ -26,6 +26,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,13 +53,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldbytez.com" }, urls = { "https?://(www\\.)?worldbytez\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldbytez.com" }, urls = { "https?://(www\\.)?worldbytez\\.com/(vidembed\\-)?[a-z0-9]{12}" })
 public class WorldBytezCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -790,7 +790,7 @@ public class WorldBytezCom extends antiDDoSForHost {
         if (!br.getURL().contains("/?op=my_account")) {
             getPage("/?op=my_account");
         }
-        final String space[] = new Regex(correctedBR, ">\\s*Used space:?\\s*(?:<[^>]+>)*([0-9\\.]+)\\s*of \\d+ (KB|MB|GB|TB)?\\s*<").getRow(0);
+        final String space[] = new Regex(correctedBR, ">\\s*Used space:?\\s*(?:<[^>]+>\\s*)*([0-9\\.]+)\\s*of \\d+ (KB|MB|GB|TB)?\\s*<").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -899,8 +899,8 @@ public class WorldBytezCom extends antiDDoSForHost {
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
-                    checkErrors(downloadLink, true);
                     if (dlform == null) {
+                        checkErrors(downloadLink, true);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     dlform.remove("method_free");
