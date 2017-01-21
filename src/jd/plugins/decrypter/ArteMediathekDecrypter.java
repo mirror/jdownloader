@@ -161,20 +161,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(createofflineDownloadLink(parameter));
                     return decryptedLinks;
                 }
-                if (fid == null) {
-                    if (!br.containsHTML("arte_vp_config=")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    /* Title is only available on DVD (buyable) */
-                    if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
-                        title = "only_available_on_DVD_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (video_section.contains("class='badge-live'")) {
-                        title = "livestreams_are_not_supported_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    throw new DecrypterException("Decrypter broken: " + parameter);
-                }
             } else {
                 video_section = this.br.toString();
                 scanForExternalUrls();
@@ -226,6 +212,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     hybridAPIUrl = API_HYBRID_URL_2;
                 }
                 if (fid == null) {
+                    /* Initially this complete errorhandling- was only for types: TYPE_ARTETV_GUIDE, TYPE_ARTETV_EMBED */
                     if (!br.containsHTML("arte_vp_config=")) {
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                     }

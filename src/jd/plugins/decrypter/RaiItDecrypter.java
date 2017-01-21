@@ -199,11 +199,12 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 title = this.br.getRegex("var videoTitolo\\d*?=\\d*?\"([^<>\"]+)\";").getMatch(0);
             }
             if (date == null) {
-                date = this.br.getRegex("id=\"myGenDate\">(\\d{2}\\-\\d{2}\\-\\d{4} \\d{2}:\\d{2})<").getMatch(0);
+                /* 2017-01-21: New */
+                date = this.br.getRegex("<meta property=\"titolo_episodio\" value=\"Puntata del (\\d{2}/\\d{2}/\\d{4})\"/>").getMatch(0);
             }
             if (date == null) {
-                /* 2017-01-06: New */
-                date = this.br.getRegex("property=\"gen\\-date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})\"").getMatch(0);
+                /* 2017-01-21: New */
+                date = this.br.getRegex("<meta property=\"data\" content=\"(\\d{2}\\-\\d{2}\\-\\d{4})\"/>").getMatch(0);
             }
             if (date == null) {
                 date = this.br.getRegex("data\\-date=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);

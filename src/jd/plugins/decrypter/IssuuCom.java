@@ -22,13 +22,15 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(?:www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+|https?://e\\.issuu\\.com/embed\\.html#\\d+/\\d+" })
 public class IssuuCom extends PluginForDecrypt {
 
     public IssuuCom(PluginWrapper wrapper) {
@@ -38,16 +40,28 @@ public class IssuuCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://www.", "http://").toLowerCase().replace("http://", "https://");
+        final String embed_ids = new Regex(parameter, "embed\\.html#(\\d+/\\d+)").getMatch(0);
         this.br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+        final String documentID;
+        if (embed_ids != null) {
+            /* 2017-01-21: New - added embed support */
+            br.getPage("http://e." + this.getHost() + "/embed/" + embed_ids + ".json?v=1.0.0");
+            if (isOffline()) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            documentID = PluginJSonUtils.getJsonValue(this.br, "id");
+        } else {
+            br.getPage(parameter);
+            if (isOffline()) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            documentID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);
         }
-        final String documentID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);
-        if (documentID == null) {
+        if (documentID == null || documentID.equals("")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -86,5 +100,9 @@ public class IssuuCom extends PluginForDecrypt {
         fp.setName(general_naming);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private boolean isOffline() {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 }

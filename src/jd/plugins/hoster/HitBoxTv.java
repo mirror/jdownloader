@@ -40,8 +40,9 @@ public class HitBoxTv extends PluginForHost {
         super(wrapper);
     }
 
-    private Browser ajax = null;
-    private String  url  = null;
+    private Browser ajax         = null;
+    private String  url          = null;
+    private boolean server_error = false;
 
     @Override
     public String getAGBLink() {
@@ -50,6 +51,7 @@ public class HitBoxTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        server_error = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String vid = new Regex(downloadLink.getDownloadURL(), this.getLazyP().getPattern()).getMatch(0);
@@ -107,6 +109,10 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         ajax.getPage("http://www.hitbox.tv/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
         url = PluginJSonUtils.getJsonValue(ajax, "url");
+        if (url == null || url.equals("")) {
+            /* 2017-01-21: New */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (url != null && !url.endsWith(".m3u8")) {
             // http dl
             // {"key":"#$54d46eaa112f0508979","play":null,"clip":{"autoPlay":true,"autoBuffering":true,"bufferLength":"2","eventCategory":"QueenBee\/video\/5900","baseUrl":"http:\/\/edge.vie.hitbox.tv\/static\/videos\/recordings","url":"queenbee-1394512729.flv.mp4","stopLiveOnPause":true,"live":false,"smoothing":true,"provider":"pseudo","scaling":"fit","bitrates":[{"url":"queenbee-1394512729.flv.mp4","bitrate":738,"label":"HD
@@ -162,6 +168,11 @@ public class HitBoxTv extends PluginForHost {
             // without this it will fail.
             br.getPage(url);
             url = br.getRegex("https?://[^\r\n]+\\.m3u8").getMatch(-1);
+            if (url == null) {
+                /* Either no hls url or instead a non-working http url. Such videos won't play via browser either! */
+                server_error = true;
+                return AvailableStatus.TRUE;
+            }
             final HLSDownloader downloader = new HLSDownloader(downloadLink, br, url);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
@@ -196,6 +207,9 @@ public class HitBoxTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_error) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        }
         if (url.contains(".m3u8")) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             if (downloadLink.getBooleanProperty("encrypted")) {
