@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * Earn money sharing shrinked links<br />
@@ -106,7 +106,11 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
             }
-            final String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1 (?:onClick)?[^>]*>Continue").getMatch(1);
+            String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1 (?:onClick)?[^>]*>Continue").getMatch(1);
+            if ("#".equals(continu)) {
+                // new method 20170122
+                continu = br.getRegex("<script>\\s*g\\.href\\s*=\\s*\"(https?://linkshrink.net/[a-zA-Z0-9]+)\";</script>").getMatch(0);
+            }
             if (continu == null) {
                 return null;
             }
