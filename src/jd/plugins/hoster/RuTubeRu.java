@@ -119,6 +119,11 @@ public class RuTubeRu extends PluginForHost {
         String regId = "http://video\\.rutube\\.ru/([0-9a-f]{32})";
         String nextId = new Regex(dllink, regId).getMatch(0);
         br.setCustomCharset("utf-8");
+        /*
+         * 2017-02-21: Using User-Agent 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0' will return a different
+         * 'video_balancer' object which leads to a (lower quality?) http videourl.
+         */
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
         getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "/");
         if (br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -142,83 +147,80 @@ public class RuTubeRu extends PluginForHost {
         getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
         final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
+        if (videoBalancer == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
-        if (videoBalancer != null) {
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        ajax = cloneBrowser(br);
+        ajax.getPage(videoBalancer);
+
+        Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
+        String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+
+        NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+        Node best = f4mUrls.item(f4mUrls.getLength() - 1);
+
+        RuTubeVariant bestVariant = null;
+        long bestSizeEstimation = 0;
+        String bestUrl = null;
+
+        String width = null;
+        String height = null;
+        String bitrate = null;
+        String f4murl = null;
+        for (int i = 0; i < f4mUrls.getLength(); i++) {
+            best = f4mUrls.item(i);
+            width = getAttByNamedItem(best, "width");
+            height = getAttByNamedItem(best, "height");
+            bitrate = getAttByNamedItem(best, "bitrate");
+            f4murl = getAttByNamedItem(best, "href");
 
             ajax = cloneBrowser(br);
-            ajax.getPage(videoBalancer);
+            ajax.getPage(baseUrl + f4murl);
 
-            Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
-            String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+            d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
+            double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
+            bestSizeEstimation = (long) ((duration * Long.parseLong(bitrate) * 1024l) / 8);
 
-            NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-            Node best = f4mUrls.item(f4mUrls.getLength() - 1);
-
-            RuTubeVariant bestVariant = null;
-            long bestSizeEstimation = 0;
-            String bestUrl = null;
-
-            String width = null;
-            String height = null;
-            String bitrate = null;
-            String f4murl = null;
-            for (int i = 0; i < f4mUrls.getLength(); i++) {
-                best = f4mUrls.item(i);
-                width = getAttByNamedItem(best, "width");
-                height = getAttByNamedItem(best, "height");
-                bitrate = getAttByNamedItem(best, "bitrate");
-                f4murl = getAttByNamedItem(best, "href");
-
-                ajax = cloneBrowser(br);
-                ajax.getPage(baseUrl + f4murl);
-
-                d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
-                double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
-                bestSizeEstimation = (long) ((duration * Long.parseLong(bitrate) * 1024l) / 8);
-
-                NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-                Node media;
-                for (int j = 0; j < mediaUrls.getLength(); j++) {
-                    media = mediaUrls.item(j);
-                    if (var == null) {
-                        downloadLink.setDownloadSize(bestSizeEstimation);
-                        downloadLink.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
-                        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
-                        return AvailableStatus.TRUE;
-                    }
-                    if (var == null || StringUtils.equals(getAttByNamedItem(media, "streamId"), var.getStreamID())) {
-                        // found
-                        bestUrl = getAttByNamedItem(media, "url");
-                        if (var != null) {
-                            if (StringUtils.equals(var.getWidth(), width)) {
-                                if (StringUtils.equals(var.getHeight(), height)) {
-                                    if (StringUtils.equals(var.getBitrate(), bitrate)) {
-                                        downloadLink.setDownloadSize(bestSizeEstimation);
-                                        downloadLink.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
-                                        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
-                                        return AvailableStatus.TRUE;
-                                    }
+            NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+            Node media;
+            for (int j = 0; j < mediaUrls.getLength(); j++) {
+                media = mediaUrls.item(j);
+                if (var == null) {
+                    downloadLink.setDownloadSize(bestSizeEstimation);
+                    downloadLink.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+                    return AvailableStatus.TRUE;
+                }
+                if (var == null || StringUtils.equals(getAttByNamedItem(media, "streamId"), var.getStreamID())) {
+                    // found
+                    bestUrl = getAttByNamedItem(media, "url");
+                    if (var != null) {
+                        if (StringUtils.equals(var.getWidth(), width)) {
+                            if (StringUtils.equals(var.getHeight(), height)) {
+                                if (StringUtils.equals(var.getBitrate(), bitrate)) {
+                                    downloadLink.setDownloadSize(bestSizeEstimation);
+                                    downloadLink.setProperty("f4vUrl", Request.getLocation(getAttByNamedItem(media, "url"), ajax.getRequest()));
+                                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+                                    return AvailableStatus.TRUE;
                                 }
                             }
                         }
                     }
-
                 }
 
             }
-            if (bestSizeEstimation > 0) {
 
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
-                downloadLink.setDownloadSize(bestSizeEstimation);
-                downloadLink.setProperty("f4vUrl", bestUrl);
-                return AvailableStatus.TRUE;
-            }
-
-            return AvailableStatus.FALSE;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (bestSizeEstimation > 0) {
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+            downloadLink.setDownloadSize(bestSizeEstimation);
+            downloadLink.setProperty("f4vUrl", bestUrl);
+            return AvailableStatus.TRUE;
+        }
+
+        return AvailableStatus.FALSE;
 
     }
 

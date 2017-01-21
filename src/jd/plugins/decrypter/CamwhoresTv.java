@@ -39,7 +39,7 @@ public class CamwhoresTv extends PornEmbedParser {
         this.br.setCookiesExclusive(true);
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (jd.plugins.hoster.CamwhoresTv.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

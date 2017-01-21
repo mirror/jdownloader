@@ -40,7 +40,7 @@ public class Puls4Com extends PluginForHost {
         super(wrapper);
     }
 
-    /* Nice API, usually only available for mobile devices. */
+    /* Nice (old 2016) API, usually only available for mobile devices. */
     private static final boolean use_mobile_api    = true;
     /* Connection stuff */
     private static final boolean free_resume       = true;
@@ -176,13 +176,9 @@ public class Puls4Com extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(filename);
             dllink = dllink.replace("\\", "");
-            dllink = Encoding.htmlDecode(dllink);
             String ext = getFileNameExtensionFromString(dllink, ".mp4");
             filename += ext;
             downloadLink.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);

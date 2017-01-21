@@ -264,6 +264,8 @@ public class RaiTv extends PluginForHost {
             date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         } else if (input.matches("\\d{4}-\\d{2}-\\d{2}")) {
             date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.ENGLISH);
+        } else if (input.matches("\\d{2}\\-\\d{2}\\-\\d{4}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd-MM-yyyy", Locale.ENGLISH);
         } else {
             date = TimeFormatter.getMilliSeconds(input, "dd-MM-yyyy HH:mm", Locale.ENGLISH);
         }
