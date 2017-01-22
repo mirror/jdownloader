@@ -36,7 +36,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://[a-z]+\\.hightail\\.com/[A-Za-z]+\\?phi_action=app/orchestrate[A-Za-z]+\\&[A-Za-z0-9\\-_\\&=]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://[a-z]+\\.hightail\\.com/[A-Za-z]+\\?phi_action=app/orchestrate[A-Za-z]+\\&[A-Za-z0-9\\-_\\&=]+" })
 public class HighTailComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -61,10 +61,14 @@ public class HighTailComDecrypter extends PluginForDecrypt {
             }
             throw e;
         }
+        if (br.containsHTML(">Access to this file has been blocked")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if (folderID == null) {
             folderID = br.getRegex("NYSI\\.WS\\.currentFolderId = \\'([^<>\"\\']*?)\\';").getMatch(0);
         }
-        final String fid = new Regex(this.br.getURL(), "\\&(?:id|batch_id)=([A-Za-z0-9\\-_]+)").getMatch(0);
+        final String fid = new Regex(this.br.getURL(), "(?:\\&|%26)(?:id|batch_id)(?:=|%3D)([A-Za-z0-9\\-_]+)").getMatch(0);
         if (fid == null) {
             return null;
         }
@@ -113,16 +117,17 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 // Multiple links
                 for (final String singleLink : linkInfo) {
                     final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    final String filename = new Regex(singleLink, "class=\"downloadFilename list\"><span>([^<>\"]*?)</span>").getMatch(0);
+                    final String filename = new Regex(singleLink, "class=\"downloadFilename list\"><span[^<>]*?>([^<>\"]*?)</span>").getMatch(0);
                     final String filesize = new Regex(singleLink, "class=\"downloadFilesize list\">([^<>\"]*?)</div>").getMatch(0);
                     final String fileurl = new Regex(singleLink, "file_url=\"([A-Za-z0-9]+)\"").getMatch(0);
                     if (filename == null || filesize == null || fileurl == null) {
+                        logger.info("filename: " + filename + " filesize: " + filesize + " fileurl: " + fileurl);
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     dl.setName(Encoding.htmlDecode(filename.trim()));
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    dl.setContentUrl(fileurl);
+                    dl.setContentUrl(parameter);
                     dl.setProperty("directname", Encoding.htmlDecode(filename.trim()));
                     dl.setProperty("directsize", filesize);
                     dl.setProperty("fileurl", fileurl);
@@ -132,6 +137,10 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 // Single link
+                if (br.containsHTML("Bitte loggen Sie sich ein,")) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
                 String download_id = PluginJSonUtils.getJsonValue(br, "file_download_link");
                 if (download_id == null) {
                     download_id = fid;
