@@ -152,7 +152,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                     dl.setProperty("offline", true);
                     dl.setAvailable(false);
                 } else {
-                    final String filename = br.getRegex("id=\"downloadSingleFilename\">([^<>\"]*?)</span>").getMatch(0);
+                    final String filename = br.getRegex("id=\"downloadSingleFilename\"[^<>]*?>([^<>\"]*?)</span>").getMatch(0);
                     final String filesize = br.getRegex("id=\"downloadSingleFilesize\">([^<>\"]*?)<span>").getMatch(0);
                     if (filename != null && filesize != null) {
                         dl.setName(Encoding.htmlDecode(filename.trim()));
