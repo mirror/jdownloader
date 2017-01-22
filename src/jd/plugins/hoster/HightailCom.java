@@ -82,7 +82,7 @@ public class HightailCom extends PluginForHost {
             link.setFinalFileName(link.getStringProperty("directname", null));
             link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("directsize", null)));
         } else {
-            final String filename = br.getRegex("id=\"downloadSingleFilename\">([^<>\"]*?)</span>").getMatch(0);
+            final String filename = br.getRegex("id=\"downloadSingleFilename\"[^<>]*?>([^<>\"]*?)</span>").getMatch(0);
             final String filesize = br.getRegex("id=\"downloadSingleFilesize\">([^<>\"]*?)<span>").getMatch(0);
             if (filename == null) {
                 logger.warning("hightail.com: Can't find filename, Please report this to the JD Developement team!");
