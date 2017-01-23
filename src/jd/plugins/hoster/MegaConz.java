@@ -72,12 +72,13 @@ import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-]{16,}" })
 public class MegaConz extends PluginForHost {
-    private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
-    private final String      USE_SSL   = "USE_SSL_V2";
-    private final String      USE_TMP   = "USE_TMP_V2";
-    private final String      HIDE_APP  = "HIDE_APP";
-    private final String      encrypted = ".encrypted";
-    private final String      API_URL   = "https://eu.api.mega.co.nz";
+    private static AtomicLong CS             = new AtomicLong(System.currentTimeMillis());
+    private final String      USE_SSL        = "USE_SSL_V2";
+    private final String      CHECK_RESERVED = "CHECK_RESERVED";
+    private final String      USE_TMP        = "USE_TMP_V2";
+    private final String      HIDE_APP       = "HIDE_APP";
+    private final String      encrypted      = ".encrypted";
+    private final String      API_URL        = "https://eu.api.mega.co.nz";
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -154,7 +155,12 @@ public class MegaConz extends PluginForHost {
                     if (uq.containsKey("mxfer") && uq.containsKey("csxfer")) {
                         final long max = (getNumber(uq, "mxfer")).longValue();
                         final long used = (getNumber(uq, "caxfer")).longValue();
-                        final long reserved = (getNumber(uq, "rua")).longValue();
+                        final long reserved;
+                        if (getPluginConfig().getBooleanProperty(CHECK_RESERVED, true)) {
+                            reserved = (getNumber(uq, "rua")).longValue();
+                        } else {
+                            reserved = 0;
+                        }
                         ai.setTrafficMax(max);
                         ai.setTrafficLeft(max - (used + reserved));
                     }
@@ -831,6 +837,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Do not send application identifier?")).setDefaultValue(false));
