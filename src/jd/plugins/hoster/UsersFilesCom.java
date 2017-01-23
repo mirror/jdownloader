@@ -56,7 +56,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usersfiles.com" }, urls = { "https?://(www\\.)?usersfiles\\.com/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usersfiles.com" }, urls = { "https?://(www\\.)?usersfiles\\.com/(vidembed\\-)?[a-z0-9]{12}" })
 public class UsersFilesCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -130,7 +130,7 @@ public class UsersFilesCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|>\\s*File Removed!<|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
