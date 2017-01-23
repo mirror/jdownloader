@@ -58,7 +58,7 @@ public class YourPornSexy extends PluginForHost {
         if (mp4 == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, mp4, true, 2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, mp4, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

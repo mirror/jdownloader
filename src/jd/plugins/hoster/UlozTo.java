@@ -55,7 +55,6 @@ public class UlozTo extends PluginForHost {
     private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
     private static final String  PREMIUMONLYUSERTEXT          = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
-    private final String         PASSWORDPROTECTED            = "\"frm\\-passwordProtectedForm\\-password\"";
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -92,7 +91,7 @@ public class UlozTo extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCustomCharset("utf-8");
-        br.setAllowedResponseCodes(400);
+        br.setAllowedResponseCodes(new int[] { 400, 401 });
         br.setCookie(this.getHost(), "adblock_detected", "false");
         return br;
     }
@@ -103,7 +102,7 @@ public class UlozTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         synchronized (CTRLLOCK) {
-            passwordProtected = false;
+            passwordProtected = isPasswordProtected();
             this.setBrowserExclusive();
             correctDownloadLink(downloadLink);
             prepBR(this.br);
@@ -165,8 +164,12 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = null;
-            if (br.containsHTML(PASSWORDPROTECTED)) {
-                passwordProtected = true;
+            passwordProtected = this.isPasswordProtected();
+            if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle\"")) {
+                /* Seems like whatever url the user added, it is not a downloadurl. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (this.passwordProtected) {
                 filename = getFilename();
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -464,7 +467,7 @@ public class UlozTo extends PluginForHost {
         if (br.toString().equals("No htmlCode read")) {
             // Benefit of statserv!
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (this.br.containsHTML(PASSWORDPROTECTED)) {
+        } else if (this.isPasswordProtected()) {
             // failure
             logger.info("Incorrect password was entered");
             downloadLink.setDownloadPassword(null);
@@ -478,6 +481,12 @@ public class UlozTo extends PluginForHost {
             downloadLink.setDownloadPassword(passCode);
             return;
         }
+    }
+
+    private boolean isPasswordProtected() {
+        final boolean isPasswordProtectedAccordingToResponseCode = this.br.getHttpConnection() != null && this.br.getHttpConnection().getResponseCode() == 401;
+        final boolean isPasswordProtectedAccordingToHTML = this.br.containsHTML("\"frm\\-passwordProtectedForm\\-password\"");
+        return isPasswordProtectedAccordingToHTML || isPasswordProtectedAccordingToResponseCode;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -540,9 +549,9 @@ public class UlozTo extends PluginForHost {
                         /*
                          * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
                          * 1800542995541.log; 2422576; jdlog://1800542995541
-                         *
+                         * 
                          * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                         *
+                         * 
                          * I suspect that its caused by the predownload password? or referer? -raztoki20160304
                          */
                         // logger.info("No traffic available!");
