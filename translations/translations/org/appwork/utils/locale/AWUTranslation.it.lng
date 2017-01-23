@@ -113,7 +113,6 @@ literally_tebibyte=%s1 TiB
 pathchooser_browselabel=Sfoglia
 pathchooser_dialog_title=Scegli il percorso!
 pathchooser_helptext=Digita un percorso...
-please_wait=Attendi la fine del download
 progress=%s3% %s1/%s2
 proxy_direct=Diretto %s1
 proxy_http=%s1:%s2 (proxy HTTP)
