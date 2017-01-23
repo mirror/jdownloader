@@ -60,7 +60,11 @@ public class NaughtyamericaCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    /*
+     * 2017-01-23: Max 100 connections tital seems to be a stable value - I'd not recommend allowing more as this will most likely cause
+     * failing downloads which start over and over.
+     */
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     private final String         type_pic                     = ".+\\.jpg.*?";
@@ -217,6 +221,7 @@ public class NaughtyamericaCom extends PluginForHost {
                     br.getPage("http://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
                     if (br.containsHTML(html_loggedin)) {
                         logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
                     logger.info("Cookie login failed --> Performing full login");

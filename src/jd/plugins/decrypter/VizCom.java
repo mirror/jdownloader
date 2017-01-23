@@ -16,11 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -47,44 +49,55 @@ public class VizCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final int pages = Integer.parseInt(this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0));
         final Regex urlinfo = new Regex(parameter, "/chapters/digital/([^/]+)/(\\d+)");
         final String url_name = urlinfo.getMatch(0);
-        final String id = urlinfo.getMatch(1);
+        final String manga_id = urlinfo.getMatch(1);
         final DecimalFormat page_formatter_page = new DecimalFormat("000");
         final String ext = ".jpg";
 
         int page_added_num = 0;
         int page_current = 0;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(id + "_" + url_name);
+        fp.setName(manga_id + "_" + url_name);
 
         do {
             if (this.isAbort()) {
                 return decryptedLinks;
             }
-            final String page_formatted = page_formatter_page.format(page_current);
-            final String page_url = "https://www." + this.getHost() + "/manga/get_manga_url?manga_id=" + id + "&page=" + page_current + "&device_id=3&loadermax=1";
-            this.br.getHeaders().put("Referer", "https://www.viz.com/assets/reader-" + System.currentTimeMillis() + ".swf");
-            this.br.getPage(page_url);
+            final int page_for_url_access = page_current;
+            // accessPage(this.br, manga_id, Integer.toString(page_for_url_access));
 
-            final String[] urls = this.br.getRegex("url=\"(http[^<>\"]+)\"").getColumn(0);
-            page_added_num = urls.length;
-            for (final String url : urls) {
-                final String filename = id + "_" + url_name + "_" + page_formatted + ext;
+            // final String[] urls = this.br.getRegex("url=\"(http[^<>\"]+)\"").getColumn(0);
+            final String[] dummyarray = new String[] { Integer.toString(page_current), Integer.toString(page_current + 1) };
+            page_added_num = dummyarray.length;
+            for (final String dummy : dummyarray) {
+                final String page_formatted = page_formatter_page.format(page_current);
+                final String filename = manga_id + "_" + url_name + "_" + page_formatted + ext;
 
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                final DownloadLink dl = this.createDownloadlink("http://vizdecrypted/" + manga_id + "_" + page_current + "_" + page_for_url_access);
                 dl._setFilePackage(fp);
-                dl.setName(filename);
-                // dl.setContentUrl(page_url);
+                dl.setFinalFileName(filename);
+                dl.setContentUrl(parameter);
                 dl.setLinkID(filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
-                distribute(dl);
+                // distribute(dl);
                 page_current++;
+                if (page_current > pages) {
+                    /* Do not add too many pages - without this check, we might get one page too much! */
+                    break;
+                }
             }
-        } while (page_added_num >= 2);
+        } while (page_added_num >= 2 && page_current <= pages);
 
         return decryptedLinks;
+    }
+
+    public static void accessPage(final Browser br, final String manga_id, final String page) throws IOException {
+        final String page_url = "https://www." + br.getHost() + "/manga/get_manga_url?manga_id=" + manga_id + "&page=" + page + "&device_id=3&loadermax=1";
+        br.getHeaders().put("Referer", "https://www.viz.com/assets/reader-" + System.currentTimeMillis() + ".swf");
+        br.getPage(page_url);
     }
 
 }

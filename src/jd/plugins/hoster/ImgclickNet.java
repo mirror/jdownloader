@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgclick.net" }, urls = { "https?://(www\\.)?imgclick\\.net/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgclick.net" }, urls = { "https?://(www\\.)?imgclick\\.net/(embed\\-)?[a-z0-9]{12}" })
 public class ImgclickNet extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -71,6 +71,13 @@ public class ImgclickNet extends PluginForHost {
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
+
+    /*
+     * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
+     * contains misleading information such as fake texts.
+     */
+    private final boolean                  ENABLE_HTML_FILESIZE_CHECK   = false;
+
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
@@ -235,12 +242,14 @@ public class ImgclickNet extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (ENABLE_HTML_FILESIZE_CHECK) {
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    if (fileInfo[1] == null) {
+                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    }
                 }
             }
         }
