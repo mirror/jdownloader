@@ -276,6 +276,7 @@ gui_config_reconnect_showcase_message_none=Non ancora testato
 gui_config_reconnect_showcase_reconnect2=Avvia test
 gui_config_reconnect_showcase_time=Durata riconnessione
 gui_download_filesize_unknown=(Dim. file sconosciuta)
+gui_download_waittime_notenoughtraffic=Traffico residuo insufficiente (richiesto %s1)
 gui_download_waittime_status2=Attesa %s1
 gui_downloadview_statustext_jac=Rilevazione Captcha
 gui_javacheck_newerjavaavailable_msg=JDownloader è basato su Java. Assicurarsi di avere la versione aggiornata di Java installata.\nJDownloader verrà eseguito più stabilmente, velocemente e con un aspetto migliore.\n\nVisita http://jdownloader.org/download
