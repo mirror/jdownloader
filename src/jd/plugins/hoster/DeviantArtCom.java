@@ -566,6 +566,7 @@ public class DeviantArtCom extends PluginForHost {
     public static void prepBR(final Browser br) {
         /* Needed to view mature content */
         br.setCookie("deviantart.com", "agegate_state", "1");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
     }
 
     @Override

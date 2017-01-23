@@ -17,12 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -31,29 +30,27 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "epubbooks.com" }, urls = { "httpss?://(?:www\\.)?epubbooks\\.com/downloads/\\d+" })
+public class EpubbooksCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidturk.com" }, urls = { "https?://(?:www\\.)?rapidturk\\.com/files/[A-Za-z0-9]+\\.html" })
-public class RapidturkCom extends Ftp {
-
-    public RapidturkCom(PluginWrapper wrapper) {
+    public EpubbooksCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.rapidturk.com/premium/get");
+        this.enablePremium("https://www.epubbooks.com/sign_up");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.rapidturk.com/help/faq";
+        return "https://www.epubbooks.com/terms";
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXCHUNKS               = 0;
+    private final boolean FREE_RESUME                  = false;
+    private final int     FREE_MAXCHUNKS               = 1;
     private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private final boolean ACCOUNT_FREE_RESUME          = false;
+    private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
@@ -62,42 +59,24 @@ public class RapidturkCom extends Ftp {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Download:\\&nbsp;<h1> \\(\\)</h1>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String mainlink = link.getStringProperty("mainlink", null);
+        if (mainlink != null) {
+            br.getPage(mainlink);
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        final Regex finfo = this.br.getRegex("class=\"fl\">Download:\\&nbsp;<h1>([^<>\"]+) \\(([^\\(\\)]+)\\)</h1>");
-        String filename = finfo.getMatch(0);
-        String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        this.br.getPage(this.br.getURL().replace("/files/", "/get/"));
-        if (this.br.getURL().length() < 28 || this.br.containsHTML(">This file is available with Premium only|Reason: this file is larger than")) {
-
-        }
-        if (true) {
-            /* Premiumonly */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        /* TODO! */
-        String dllink = br.getRegex("").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -105,9 +84,13 @@ public class RapidturkCom extends Ftp {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
+            if (this.br.containsHTML("You have reached your \\d+\\-hour download limit")) {
+                /* Usually 24-H downloadlimit. */
+                /* 2017-01-23: Limit seems to be 4-10 files per day - there are currently no premium accounts at all. */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -118,30 +101,35 @@ public class RapidturkCom extends Ftp {
 
     private static Object LOCK = new Object();
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    /* 2017-01-23: Always check cookies/session here - seems like sessions may expire randomly/within a few minutes. */
-                    this.br.setCookies(this.getHost(), cookies);
-                    this.br.getPage("http://www." + this.getHost() + "/members/myfiles");
-                    if (isLoggedInHtml()) {
+                    br.setCookies(account.getHoster(), cookies);
+                    br.getPage("https://www." + account.getHoster() + "/");
+                    if (isLoggedinHtml(br)) {
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
                 }
-                br.postPage("http://www." + this.getHost() + "/account/login", "task=dologin&return=%2Fmembers%2Fmyfiles&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedInHtml()) {
+                br.getPage("https://www." + account.getHoster() + "/login");
+                final String csrftoken = br.getRegex("name=\"csrf\\-token\" content=\"([^<>\"]+)\"").getMatch(0);
+                if (csrftoken == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String postdata = "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(csrftoken) + "&user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bremember_me%5D=0&user%5Bremember_me%5D=1&commit=Sign+in";
+                br.postPage(br.getURL(), postdata);
+                if (br.getCookie(account.getHoster(), "remember_user_token") == null || !isLoggedinHtml(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -149,8 +137,12 @@ public class RapidturkCom extends Ftp {
         }
     }
 
-    private boolean isLoggedInHtml() {
-        return this.br.containsHTML("/account/logout");
+    public static boolean isLoggedinHtml(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404;
     }
 
     @SuppressWarnings("deprecation")
@@ -158,30 +150,15 @@ public class RapidturkCom extends Ftp {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(this.br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
-        final String create = this.br.getRegex("Registered\\s*?:\\s*?(\\d{2}\\-\\d{2}\\-\\d{4} @ \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        final String expire = this.br.getRegex("Premium Expires\\s*?:\\s*?(\\d{2}\\-\\d{2}\\-\\d{4} @ \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         ai.setUnlimitedTraffic();
-        if (create != null) {
-            ai.setCreateTime(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy '@' HH:mm:ss", Locale.ENGLISH));
-        }
-        if (expire == null) {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy '@' HH:mm:ss", Locale.ENGLISH));
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
-        }
+        account.setType(AccountType.FREE);
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        ai.setStatus("Registered (free) user");
         account.setValid(true);
         return ai;
     }
@@ -189,18 +166,8 @@ public class RapidturkCom extends Ftp {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        br.getPage(link.getDownloadURL());
-        if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            String dllink = br.getRegex("\\'(ftp://[^<>\"\\']+)\\'").getMatch(0);
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            download(dllink, link, true);
-        }
+        login(this.br, account, false);
+        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
     @Override

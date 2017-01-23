@@ -86,7 +86,7 @@ public class DeviantArtCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        JDUtilities.getPluginForHost("deviantart.com");
+        JDUtilities.getPluginForHost(this.getHost());
         jd.plugins.hoster.DeviantArtCom.prepBR(this.br);
         fastLinkCheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FASTLINKCHECK_2, false);
         forceHtmlDownload = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FORCEHTMLDOWNLOAD, false);
@@ -279,6 +279,7 @@ public class DeviantArtCom extends PluginForDecrypt {
             this.decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
+
         /* Correct input links */
         if (parameter.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
             final Regex paramregex = new Regex(parameter, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
@@ -325,12 +326,19 @@ public class DeviantArtCom extends PluginForDecrypt {
         int timesNoItems = 0;
         final int times_No_Items_Max = 20;
         final int offsetIncrease = 24;
+        int mp = 0;
         int counter = 1;
         if (parameter.contains("offset=")) {
             final int offsetLink = Integer.parseInt(new Regex(parameter, "offset=(\\d+)").getMatch(0));
             currentOffset = offsetLink;
             maxOffset = offsetLink;
         }
+
+        /* Debug */
+        // currentOffset = 2496;
+        // mp = 104;
+        // counter = 2;
+
         FilePackage fp = null;
         if (fpName != null) {
             fp = FilePackage.getInstance();
@@ -340,6 +348,11 @@ public class DeviantArtCom extends PluginForDecrypt {
         final String csrf = PluginJSonUtils.getJsonValue(this.br, "csrf");
         final String requestid = PluginJSonUtils.getJsonValue(this.br, "requestid");
         final String galleryid = PluginJSonUtils.getJsonValue(this.br, "galleryId");
+        String catpath_var = new Regex(parameter, "catpath=([^\\&]+)").getMatch(0);
+        if (catpath_var != null) {
+            catpath_var = Encoding.urlEncode(catpath_var);
+        }
+        boolean use_ajax_requests = false;
         boolean has_more = true;
         String has_more_str = null;
         if (csrf == null || csrf.equals("") || requestid == null || requestid.equals("") || galleryid == null || galleryid.equals("")) {
@@ -351,25 +364,36 @@ public class DeviantArtCom extends PluginForDecrypt {
                 logger.info("Decryption aborted by user: " + parameter);
                 return;
             }
-            logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
+            logger.info("Decrypting offset " + currentOffset + " of ?");
             if (counter > 1) {
-                /*
-                 * 2017-02-20: Now they have an API. At the moment we do not yet parse the json as we really only need the URLs which are
-                 * inside the html which is inside the json :)
-                 */
-                final String postdata = "username=" + username + "&offset=" + currentOffset + "&limit=" + offsetIncrease + "&_csrf=" + csrf + "&dapiIid=" + requestid;
-                this.br.postPage(String.format("http://www.deviantart.com/dapi/v1/gallery/%s?iid=%s&mp=%s", galleryid, requestid, counter), postdata);
-                has_more_str = PluginJSonUtils.getJsonValue(this.br, "has_more");
-                if (has_more_str != null && has_more_str.matches("true|false")) {
-                    has_more = Boolean.parseBoolean(has_more_str);
+                if (use_ajax_requests) {
+                    /*
+                     * 2017-02-20: Now they have an API. At the moment we do not yet parse the json as we really only need the URLs which
+                     * are inside the html which is inside the json :)
+                     */
+                    String postdata = "username=" + username + "&offset=" + currentOffset + "&limit=" + offsetIncrease + "&_csrf=" + csrf + "&dapiIid=" + requestid;
+                    if (catpath_var != null) {
+                        postdata += "&catpath=" + catpath_var;
+                    }
+                    this.br.getHeaders().put("Referer", this.parameter);
+                    this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                    this.br.postPage(String.format("http://www.deviantart.com/dapi/v1/gallery/%s?iid=%s&mp=%s", galleryid, requestid, mp), postdata);
+                    has_more_str = PluginJSonUtils.getJsonValue(this.br, "has_more");
+                    if (has_more_str != null && has_more_str.matches("true|false")) {
+                        has_more = Boolean.parseBoolean(has_more_str);
+                    } else {
+                        has_more = false;
+                    }
+                    mp++;
                 } else {
-                    has_more = false;
+                    /* Old method */
+                    accessOffset(currentOffset);
                 }
             }
 
             try {
                 String grab;
-                if (counter == 1) {
+                if (counter == 1 || !use_ajax_requests) {
                     grab = br.getRegex("class=\"smbutton smbutton\\-green browse\\-search\\-button\"(.*?)class=\"rss\\-link\"").getMatch(0);
                     if (grab == null) {
                         grab = br.getRegex("class=\"folderview\\-art\"(.*?)class=\"rss\\-link\"").getMatch(0);
