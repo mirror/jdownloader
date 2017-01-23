@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -27,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allmovie.tv" }, urls = { "https?://(?:www\\.)?allmovie\\.tv/video/[a-z0-9\\-]+\\-\\d+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "allmovie.tv" }, urls = { "https?://(?:www\\.)?allmovie\\.(?:tv|pro)/video/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class AllmovieTv extends PluginForDecrypt {
 
     public AllmovieTv(PluginWrapper wrapper) {
@@ -40,10 +41,11 @@ public class AllmovieTv extends PluginForDecrypt {
         final Regex urlregex = new Regex(parameter, "([a-z0-9\\-]+)\\-(\\d+)\\.html$");
         final String url_filename = urlregex.getMatch(0);
         final String videoid = urlregex.getMatch(1);
+        final String currenthost = Browser.getHost(parameter);
 
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         this.br.getHeaders().put("Referer", parameter);
-        this.br.getPage("http://" + this.getHost() + "/video/show_player/" + videoid + "?autopay=1&skip_ads=1");
+        this.br.getPage("http://" + currenthost + "/video/show_player/" + videoid + "?autopay=1&skip_ads=1");
 
         // br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -73,5 +75,4 @@ public class AllmovieTv extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }

@@ -559,9 +559,6 @@ public class OneFichierCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final boolean force) throws Exception {
-        /* Basic auth doesn't work */
-        // br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(this.currAcc.getUser() + ":" +
-        // this.currAcc.getPass()));
         synchronized (LOCK) {
             try {
                 /* Load cookies */
@@ -601,6 +598,9 @@ public class OneFichierCom extends PluginForHost {
             } catch (final PluginException e) {
                 this.currAcc.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                /* Important! Basic Auth works safe on all of their domains - using only cookies could cause issues! */
+                setBasicAuthHeader(this.br, this.currAcc);
             }
         }
     }
@@ -637,8 +637,9 @@ public class OneFichierCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 sleep(2 * 1000l, link);
                 /*
-                 * TODO: This acts based in the users' setting 'Force download menu'. We're in touch with the admin to get this solved.
-                 * Notes: e=1 = return API html with final downloadlink.
+                 * 2017-02-23: This 'p&u' download method will only work if the "Force download menu" setting is DISABLED in the account:
+                 * https://1fichier.com/console/params.pl . This behavior is intended by the admin! If the user has enabled the download
+                 * menu, usually our fallback code below will work fine!
                  */
                 final String url = getDownloadlinkOLD(link) + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
                 URLConnectionAdapter con = null;
@@ -750,6 +751,10 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
+    private void setBasicAuthHeader(final Browser br, final Account account) {
+        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+    }
+
     private static AtomicReference<String> lastSessionPassword = new AtomicReference<String>();
 
     private String handlePassword() throws IOException, PluginException {
@@ -800,17 +805,20 @@ public class OneFichierCom extends PluginForHost {
     /** Returns an accessible downloadlink in the VERY OLD format. */
     @SuppressWarnings("unused")
     private String getDownloadlinkVERY_OLD(final DownloadLink dl) {
-        return "https://" + getFID(dl) + ".1fichier.com/en/index.html";
+        final String host_of_current_downloadlink = Browser.getHost(dl.getDownloadURL());
+        return "https://" + getFID(dl) + "." + host_of_current_downloadlink + "/en/index.html";
     }
 
     /** Returns an accessible downloadlink in the OLD format. */
     private String getDownloadlinkOLD(final DownloadLink dl) {
-        return "https://" + getFID(dl) + ".1fichier.com/";
+        final String host_of_current_downloadlink = Browser.getHost(dl.getDownloadURL());
+        return "https://" + getFID(dl) + "." + host_of_current_downloadlink + "/";
     }
 
     /** Returns an accessible downloadlink in the NEW format. */
     private String getDownloadlinkNEW(final DownloadLink dl) {
-        return "https://1fichier.com/?" + getFID(dl);
+        final String host_of_current_downloadlink = Browser.getHost(dl.getDownloadURL());
+        return "https://" + host_of_current_downloadlink + "/?" + getFID(dl);
     }
 
     /**
