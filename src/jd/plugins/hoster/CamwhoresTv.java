@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -89,22 +92,21 @@ public class CamwhoresTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         is_private_video = this.br.containsHTML("This video is a private");
-        final String videoid = this.br.getRegex("video_id\\s*?:\\s*?\\'(\\d+)\\'").getMatch(0);
+
+        final String licenseCode = this.br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        final String videoUrl = this.br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
+
+        final Browser cbr = br.cloneBrowser();
+        cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        cbr.getPage(scriptUrl);
+        final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
+
         String filename = getTitle(this.br, link.getDownloadURL());
-        final boolean try_workaround = true;
-        if (try_workaround && videoid != null) {
-            /* 2017-01-21: This is just a test - for me it worked and even survived an IP-change. This is more a bad workaround than a fix. */
-            String videotype_id = this.br.getRegex("videos_screenshots/(\\d+)").getMatch(0);
-            if (videotype_id == null) {
-                if (isLoggedInHtml()) {
-                    /* ID required if user is logged in. */
-                    videotype_id = "165000";
-                } else {
-                    /* ID required if user is not logged in. */
-                    videotype_id = "189000";
-                }
-            }
-            dllink = "http://user6.camwhores.tv/remote_control.php?time=1484993371&cv=&lr=312500&cv2=6fdbcf31e60820a723c115892c863874&file=%2F" + videotype_id + "%2F" + videoid + "%2F" + videoid + ".mp4&cv3=";
+
+        String decryptUrl = decryptHash(videoUrl, licenseCode, hashRange);
+        if (decryptUrl != null) {
+            dllink = decryptUrl;
         } else {
             dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(link, this.br);
         }
@@ -140,6 +142,75 @@ public class CamwhoresTv extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String decryptHash(final String videoUrl, final String licenseCode, final String hashRange) {
+        String result = null;
+        List<String> videoUrlPart = new ArrayList<String>();
+        Collections.addAll(videoUrlPart, videoUrl.split("/"));
+        // hash
+        String hash = videoUrlPart.get(7).substring(0, 2 * Integer.parseInt(hashRange));
+        String nonConvertHash = videoUrlPart.get(7).substring(2 * Integer.parseInt(hashRange));
+        String seed = calcSeed(licenseCode, hashRange);
+        String[] seedArray = seed.split("");
+
+        if (seed != null && hash != null) {
+            for (int k = hash.length() - 1; k >= 0; k--) {
+                String[] hashArray = hash.split("");
+                int l = k;
+                for (int m = k; m < seedArray.length; m++) {
+                    l += Integer.parseInt(seedArray[m]);
+                }
+                for (; l >= hashArray.length;) {
+                    l -= hashArray.length;
+                }
+                StringBuffer n = new StringBuffer();
+                for (int o = 0; o < hashArray.length; o++) {
+                    n.append(o == k ? hashArray[l] : o == l ? hashArray[k] : hashArray[o]);
+                }
+                hash = n.toString();
+            }
+            videoUrlPart.set(7, hash + nonConvertHash);
+            result = String.join("/", videoUrlPart.subList(2, videoUrlPart.size()));
+        }
+        return result;
+    }
+
+    private String calcSeed(final String licenseCode, final String hashRange) {
+        StringBuffer fb = new StringBuffer();
+        String[] licenseCodeArray = licenseCode.split("");
+        for (String c : licenseCodeArray) {
+            if (c.equals("$")) {
+                continue;
+            }
+            int v = Integer.parseInt(c);
+            fb.append(v != 0 ? c : "1");
+        }
+        String f = fb.toString();
+        int j = f.length() / 2;
+        int k = Integer.parseInt(f.substring(0, j + 1));
+        int l = Integer.parseInt(f.substring(j));
+        int g = l - k;
+        g = Math.abs(g);
+        int fi = g;
+        g = k - l;
+        g = Math.abs(g);
+        fi += g;
+        fi *= 2;
+        String[] fArray = String.valueOf(fi).split("");
+        // f = "" + f;
+        int i = Integer.parseInt(hashRange) / 2 + 2;
+        StringBuffer m = new StringBuffer();
+        for (int g2 = 0; g2 < j + 1; g2++) {
+            for (int h = 1; h <= 4; h++) {
+                int n = Integer.parseInt(licenseCodeArray[g2 + h]) + Integer.parseInt(fArray[g2]);
+                if (n >= i) {
+                    n -= i;
+                }
+                m.append(String.valueOf(n));
+            }
+        }
+        return m.toString();
     }
 
     @Override
