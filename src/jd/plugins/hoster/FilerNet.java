@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,6 +38,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" })
 public class FilerNet extends PluginForHost {
@@ -386,7 +386,7 @@ public class FilerNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium User");
             ai.setTrafficLeft(Long.parseLong(PluginJSonUtils.getJson(br, "traffic")));
-            ai.setTrafficMax(SizeFormatter.getSize("100gb"));// http://filer.net/faq
+            ai.setTrafficMax(SizeFormatter.getSize("125gb"));// support
             ai.setValidUntil(Long.parseLong(PluginJSonUtils.getJson(br, "until")) * 1000);
         }
         account.setValid(true);

@@ -12,11 +12,10 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.api.system.ProcMounts;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
-
-import de.javasoft.util.OS;
 
 public class DiskSpaceManager {
 
@@ -119,7 +118,7 @@ public class DiskSpaceManager {
                 bestRootMatch = FileStoreHacks.getRootFor(reservation.getDestination());
             } catch (final IOException e) {
                 LogController.CL().log(e);
-                if (OS.FreeBSD.equals(CrossSystem.getOS()) && StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
+                if (OperatingSystem.FREEBSD.equals(CrossSystem.getOS()) && StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
                     LogController.CL().info("Possible FreeBSD Jail detected! Disable DiskSpaceManager!");
                     SUPPORTED.set(false);
                     return DISKSPACERESERVATIONRESULT.UNSUPPORTED;

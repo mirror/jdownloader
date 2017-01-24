@@ -23,10 +23,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,7 +48,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:g\\.e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "^https?://(?:www\\.)?(?:(?:g\\.)?e-hentai\\.org|exhentai\\.org)/s/[a-f0-9]{10}/(\\d+)-(\\d+)$" })
 public class EHentaiOrg extends PluginForHost {
 
     @Override
@@ -186,7 +186,7 @@ public class EHentaiOrg extends PluginForHost {
         final String namepart = getNamePart(downloadLink);
         if (loggedin && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
             /* Try to get fullsize (original) image. */
-            final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:g\\.e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
+            final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
             dllink_fullsize = fulllinkinfo.getMatch(0);
             final String html_filesize = fulllinkinfo.getMatch(1);
             if (dllink_fullsize != null && html_filesize != null) {
@@ -306,12 +306,12 @@ public class EHentaiOrg extends PluginForHost {
         String cleanup = new Regex(b, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
         if (cleanup == null) {
             cleanup = new Regex(b, "<div id=\"i3\">(.*?)</div").getMatch(0);
-            if (cleanup == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
 
         dllink = new Regex(cleanup, "<img [^>]*src=(\"|')(.*?)\\1").getMatch(1);
+        if (dllink == null) {
+            dllink = new Regex(b, "<img [^>]*src=(\"|')([^\"'<>]*?\\.jpe?g)\\1").getMatch(1);
+        }
         // ok so we want to make sure it isn't 509.gif
         final String filename = extractFileNameFromURL(dllink);
         if (filename != null && filename.equals("509.gif")) {

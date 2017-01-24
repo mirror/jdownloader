@@ -1274,7 +1274,10 @@ public class FileFactory extends PluginForHost {
                 // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            return apiKey;
+            if (isPendingDeletion(nbr)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -1284,6 +1287,9 @@ public class FileFactory extends PluginForHost {
             if (apiKey == null) {
                 apiKey = loginKey(account);
             }
+            if (apiKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             return apiKey;
         }
     }
@@ -1291,6 +1297,16 @@ public class FileFactory extends PluginForHost {
     private Browser prepApiBrowser(final Browser ibr) {
         ibr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         return ibr;
+    }
+
+    private boolean isPendingDeletion(Browser br) {
+        if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(br.getURL(), "code=105")) {
+            return true;
+        }
+        if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "code=152") || StringUtils.containsIgnoreCase(br.getURL(), "code=152")) {
+            return true;
+        }
+        return false;
     }
 
     private void getPage(final Browser ibr, final String url, final Account account) throws Exception {
@@ -1304,7 +1320,7 @@ public class FileFactory extends PluginForHost {
                         // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
                         ibr.getPage(url + (url.matches("(" + getApi() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                     } else {
-                        if (StringUtils.containsIgnoreCase(ibr.getRedirectLocation(), "code=105") || StringUtils.containsIgnoreCase(ibr.getURL(), "code=105")) {
+                        if (isPendingDeletion(ibr)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                         // failure occurred.
@@ -1352,12 +1368,7 @@ public class FileFactory extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        try {
-            loginKey(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        loginKey(account);
         getPage(br, getApi() + "/getMemberInfo", account);
         final String expire = PluginJSonUtils.getJsonValue(br, "expiryMs");
         final String type = PluginJSonUtils.getJsonValue(br, "accountType");
