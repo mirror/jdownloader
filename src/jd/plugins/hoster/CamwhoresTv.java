@@ -83,7 +83,6 @@ public class CamwhoresTv extends PluginForHost {
         dllink = null;
         server_issues = false;
         br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "kt_qparams", "id%3D189979%26dir%3Dpink-dildo-masturbation");
         br.setCookie(this.getHost(), "kt_tcookie", "1");
         br.setCookie(this.getHost(), "kt_is_visited", "1");
         br.getPage(link.getDownloadURL());
@@ -92,25 +91,20 @@ public class CamwhoresTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         is_private_video = this.br.containsHTML("This video is a private");
+        String filename = getTitle(this.br, link.getDownloadURL());
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(link, this.br);
         final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
-        if (scriptUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final String licenseCode = this.br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
         final String videoUrl = this.br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-
-        final Browser cbr = br.cloneBrowser();
-        cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        cbr.getPage(scriptUrl);
-        final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
-
-        String filename = getTitle(this.br, link.getDownloadURL());
-
-        String decryptUrl = decryptHash(videoUrl, licenseCode, hashRange);
-        if (decryptUrl != null) {
-            dllink = decryptUrl;
-        } else {
-            dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(link, this.br);
+        if (scriptUrl != null && videoUrl != null && licenseCode != null) {
+            final Browser cbr = br.cloneBrowser();
+            cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            cbr.getPage(scriptUrl);
+            final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
+            final String dllink = decryptHash(videoUrl, licenseCode, hashRange);
+            if (dllink != null) {
+                this.dllink = dllink;
+            }
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -224,11 +218,11 @@ public class CamwhoresTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doDownload(null, downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (is_private_video) {
+    private void doDownload(final Account account, final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (is_private_video && account == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -315,7 +309,7 @@ public class CamwhoresTv extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
         requestFileInformation(link);
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
     private boolean isLoggedInHtml() {
