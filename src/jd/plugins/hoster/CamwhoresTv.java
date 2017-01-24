@@ -92,10 +92,12 @@ public class CamwhoresTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         is_private_video = this.br.containsHTML("This video is a private");
-
+        final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
+        if (scriptUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String licenseCode = this.br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
         final String videoUrl = this.br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
 
         final Browser cbr = br.cloneBrowser();
         cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
