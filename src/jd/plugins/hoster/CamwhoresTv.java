@@ -173,7 +173,13 @@ public class CamwhoresTv extends PluginForHost {
                 hash = n.toString();
             }
             videoUrlPart.set(7, hash + nonConvertHash);
-            result = String.join("/", videoUrlPart.subList(2, videoUrlPart.size()));
+            for (String string : videoUrlPart.subList(2, videoUrlPart.size())) {
+                if (result == null) {
+                    result = string;
+                } else {
+                    result = result + "/" + string;
+                }
+            }
         }
         return result;
     }
