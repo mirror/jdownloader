@@ -72,7 +72,7 @@ public class RapidturkCom extends Ftp {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -85,14 +85,9 @@ public class RapidturkCom extends Ftp {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         this.br.getPage(this.br.getURL().replace("/files/", "/get/"));
-        if (this.br.getURL().length() < 28 || this.br.containsHTML(">This file is available with Premium only|Reason: this file is larger than")) {
-
-        }
-        if (true) {
-            /* Premiumonly */
+        if (this.br.getURL().length() < 28 || this.br.containsHTML(">This file is available with Premium only")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        /* TODO! */
         String dllink = br.getRegex("").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -190,11 +185,12 @@ public class RapidturkCom extends Ftp {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
+        sleep(2000, link);// required because of server issue, to fast loading
         br.getPage(link.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            String dllink = br.getRegex("\\'(ftp://[^<>\"\\']+)\\'").getMatch(0);
+            final String dllink = br.getRegex("\\'(ftp://[^<>\"\\']+)\\'").getMatch(0);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
