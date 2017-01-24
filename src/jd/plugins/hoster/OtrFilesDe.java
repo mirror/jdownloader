@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-files.de" }, urls = { "http://(www\\.)?otr\\-files\\.de/(index\\.php\\?option=com_content\\&task=view\\&id=\\d+\\&Itemid=\\d+\\&server=\\d+\\&f=[^<>\"\\']+\\.otrkey|\\?file=[^<>\"\\']+\\.otrkey)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-files.de" }, urls = { "https?://(www\\.)?otr\\-files\\.de/(index\\.php\\?option=com_content\\&task=view\\&id=\\d+\\&Itemid=\\d+\\&server=\\d+\\&f=[^<>\"\\']+\\.otrkey|\\?file=[^<>\"\\']+\\.otrkey)" })
 public class OtrFilesDe extends PluginForHost {
 
     public OtrFilesDe(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class OtrFilesDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* Offline links should also have nice filenames */
         link.setName(new Regex(link.getDownloadURL(), "file=(.+)").getMatch(0));
         this.setBrowserExclusive();
@@ -92,9 +92,9 @@ public class OtrFilesDe extends PluginForHost {
             if (br.containsHTML(LIMITREACHED)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             }
-            dllink = br.getRegex("\"(http://otr\\-files\\.de/dl\\-slot/\\d+/[a-z0-9]+/[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://otr\\-files\\.de/dl\\-slot/\\d+/[a-z0-9]+/[^<>\"\\']+\\.otrkey)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<br><br><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+                dllink = br.getRegex("<br><br><a href=\"(https?://[^<>\"\\']+)\"").getMatch(0);
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -109,8 +109,14 @@ public class OtrFilesDe extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getOptionsLink() throws PluginException {
-        final String optlink = br.getRegex("\"(http://(www\\.)?otr-files\\.de/index\\.php\\?option=com_content(?:&amp;|&)task=view(?:&amp;|&)id=\\d+(?:&amp;|&)Itemid=\\d+(?:&amp;|&)server=[a-z0-9]*(?:&amp;|&)f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+    private String getOptionsLink() throws Exception {
+        String optlink = br.getRegex("\"(https?://(www\\.)?otr-files\\.de/index\\.php\\?option=com_content(?:&amp;|&)task=view(?:&amp;|&)id=\\d+(?:&amp;|&)Itemid=\\d+(?:&amp;|&)server=[a-z0-9]*(?:&amp;|&)f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+        if (optlink == null) {
+            optlink = br.getRegex("\"(\\.?/index\\.php\\?option=com_content(?:&amp;|&)task=view(?:&amp;|&)id=\\d+(?:&amp;|&)Itemid=\\d+(?:&amp;|&)server=[a-z0-9]*(?:&amp;|&)f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+            if (optlink != null) {
+                optlink = br.getURL(optlink).toString();
+            }
+        }
         if (optlink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

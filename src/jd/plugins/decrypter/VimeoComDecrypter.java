@@ -76,6 +76,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        int skippedLinks = 0;
         String parameter = param.toString().replace("http://", "https://");
         if (parameter.matches(type_player_private_external_direct)) {
             final DownloadLink link;
@@ -325,6 +326,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             // qx[5] = fileSize (\d [a-zA-Z]{2})
             // qx[6] = Codec
             // qx[7] = ID
+
+            final boolean qMobile = cfg.getBooleanProperty(Q_MOBILE, true);
+            final boolean qHD = cfg.getBooleanProperty(Q_HD, true);
+            final boolean qSD = cfg.getBooleanProperty(Q_SD, true);
+            final boolean qORG = cfg.getBooleanProperty(Q_ORIGINAL, true);
+            final boolean qALL = (qMobile == false && qHD == false && qSD == false && qORG == false);
+
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
             int format = 0;
@@ -337,32 +345,36 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 if (fmt != null) {
                     /* best selection is done at the end */
                     if (fmt.contains("mobile")) {
-                        if (cfg.getBooleanProperty(Q_MOBILE, true) == false) {
-                            continue;
-                        } else {
+                        if (qMobile || qALL) {
                             fmt = "mobile";
                             format = 1;
+                        } else {
+                            skippedLinks++;
+                            continue;
                         }
                     } else if (fmt.contains("hd")) {
-                        if (cfg.getBooleanProperty(Q_HD, true) == false) {
-                            continue;
-                        } else {
+                        if (qHD || qALL) {
                             fmt = "hd";
                             format = 2;
+                        } else {
+                            skippedLinks++;
+                            continue;
                         }
                     } else if (fmt.contains("sd")) {
-                        if (cfg.getBooleanProperty(Q_SD, true) == false) {
-                            continue;
-                        } else {
+                        if (qSD || qALL) {
                             fmt = "sd";
                             format = 3;
+                        } else {
+                            skippedLinks++;
+                            continue;
                         }
                     } else if (fmt.contains("original")) {
-                        if (cfg.getBooleanProperty(Q_ORIGINAL, true) == false) {
-                            continue;
-                        } else {
+                        if (qORG || qALL) {
                             fmt = "original";
                             format = 4;
+                        } else {
+                            skippedLinks++;
+                            continue;
                         }
                     }
                 }
@@ -466,7 +478,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             }
         }
 
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        if ((decryptedLinks == null || decryptedLinks.size() == 0) && skippedLinks == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

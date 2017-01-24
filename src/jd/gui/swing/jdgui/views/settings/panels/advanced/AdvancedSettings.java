@@ -13,7 +13,10 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.jdownloader.gui.IconKey;
@@ -24,8 +27,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEventListener;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.translate._JDT;
-
-import jd.gui.swing.jdgui.JDGui;
 
 public class AdvancedSettings extends AbstractConfigPanel implements DocumentListener, AdvancedConfigEventListener {
 
@@ -112,11 +113,18 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
             @Override
             public void delayedrun() {
-                if (!filterText.getText().equals(filterHelp)) {
-                    table.filter(filterText.getText());
-                } else {
-                    table.filter(null);
-                }
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        final String text = filterText.getText();
+                        if (text != null && !text.equals(filterHelp)) {
+                            table.filter(text);
+                        } else {
+                            table.filter(null);
+                        }
+                    }
+                };
             }
 
         };

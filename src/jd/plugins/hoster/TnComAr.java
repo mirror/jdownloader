@@ -126,7 +126,7 @@ public class TnComAr extends PluginForHost {
                 dllink = "https://vodgc.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavourid + "/format/url/protocol/https/a.mp4";
                 max_bitrate = max_bitrate_temp;
                 if (size != null && size instanceof Long) {
-                    filesize = (long) size;
+                    filesize = ((Long) size).longValue();
                 }
                 filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
             }
