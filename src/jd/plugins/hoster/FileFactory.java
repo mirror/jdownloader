@@ -1268,7 +1268,9 @@ public class FileFactory extends PluginForHost {
             final String apiKey = PluginJSonUtils.getJsonValue(nbr, "key");
             if (apiKey != null) {
                 account.setProperty("apiKey", apiKey);
-            } else if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "type")) && ("705".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "706".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")))) {
+                return apiKey;
+            }
+            if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "type")) && ("705".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "706".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")) || "707".equalsIgnoreCase(PluginJSonUtils.getJsonValue(nbr, "code")))) {
                 // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
                 // 706 ERR_API_LOGIN_FAILED Login details were incorrect
                 // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
