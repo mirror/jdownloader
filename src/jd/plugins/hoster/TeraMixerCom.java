@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teramixer.com" }, urls = { "http://(www\\.)?teramixer\\.com/(embed/)?[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "teramixer.com" }, urls = { "http://(www\\.)?teramixer\\.com/(embed/)?[a-z0-9]+" })
 public class TeraMixerCom extends PluginForHost {
 
     public TeraMixerCom(PluginWrapper wrapper) {
@@ -67,7 +67,7 @@ public class TeraMixerCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("Filename[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
-        String filesize = br.getRegex("class=\"icon\\-hdd\"></i> ([^<>\"]*?) </span>").getMatch(0);
+        String filesize = br.getRegex("class=\"icon\\-hdd\"></i> ([^<>\"]*?)\\s*</span>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("\\((\\d+(\\.\\d+)? [A-Za-z]{2,5})\\)</h3>").getMatch(0);
         }
