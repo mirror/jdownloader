@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+(?:/[A-Za-z0-9\\-_]+)?|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+(?:/[A-Za-z0-9\\-_]+)?|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
@@ -100,7 +100,10 @@ public class YuvutuCom extends PluginForHost {
         }
         String filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
-            filename = this.br.getRegex("<div class=\"video-title-content\">([^<>\"]*?)</div>").getMatch(0);
+            filename = this.br.getRegex("<div class=\"video\\-title\\-content\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = this.br.getRegex("class=\"video\\-title-content\"><h1[^>]+>([^<>\"]+)<").getMatch(0);
         }
         if (filename == null) {
             filename = this.getLinkid(downloadLink);
@@ -110,12 +113,12 @@ public class YuvutuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://www.yuvutu.com" + embedlink);
-        // Invalid link
-        if (!br.containsHTML("player\\.swf")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dllink = br.getRegex("value=\"file=(http[^<>\"]*?)\\&amp;width").getMatch(0);
+        dllink = br.getRegex("file\\s*?:\\s*?\"(http[^<>\"]+)").getMatch(0);
         if (filename == null || dllink == null) {
+            if (!br.containsHTML("player\\.swf")) {
+                /* Invalid link */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = Encoding.htmlDecode(filename.trim());

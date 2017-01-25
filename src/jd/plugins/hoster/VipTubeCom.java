@@ -35,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viptube.com" }, urls = { "http://(www\\.)?viptube\\.com/(video|embed)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viptube.com" }, urls = { "http://(www\\.)?viptube\\.com/(video|embed)/\\d+" })
 public class VipTubeCom extends PluginForHost {
 
     public VipTubeCom(PluginWrapper wrapper) {
@@ -56,11 +56,10 @@ public class VipTubeCom extends PluginForHost {
 
     private static final String SKEY = "RXdxT0JRbUpETUpScmdYWg==";
 
-    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */
+    /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com, nuvid.com */
     /*
      * IMPORTANT: If the crypto stuff fails, use the mobile version of the sites to get uncrypted finallinks! Also, registered users can see
      * uncrypted normal streamlinks!
-     *
      */
     @SuppressWarnings("deprecation")
     @Override
@@ -90,23 +89,7 @@ public class VipTubeCom extends PluginForHost {
                 if (filename == null) {
                     filename = url_filename;
                 }
-                dllink = this.br.getRegex("src=\"(http://[^/]+/mp4/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    String cfgurl = br.getRegex("\\'(http://(www\\.)?viptube\\.com/player_config/[^<>\"]*?)\\'").getMatch(0);
-                    final String vkey = br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
-                    if (cfgurl == null || vkey == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    cfgurl = Encoding.htmlDecode(cfgurl);
-                    br.getPage(cfgurl + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)));
-                    final String[] qualities = { "hq_video_file", "video_file" };
-                    for (final String quality : qualities) {
-                        dllink = br.getRegex("<" + quality + "><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></" + quality + ">").getMatch(0);
-                        if (dllink != null) {
-                            break;
-                        }
-                    }
-                }
+                getDllink();
 
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -146,6 +129,37 @@ public class VipTubeCom extends PluginForHost {
                 }
             } finally {
                 lastCheck.set(System.currentTimeMillis());
+            }
+        }
+    }
+
+    private void getDllink() throws IOException {
+        dllink = this.br.getRegex("src=\"(http://[^/]+/mp4/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            final boolean preferMobile = true;
+            if (preferMobile) {
+                /* Usually we'll get a .mp4 here, quality is lower than via website. */
+                final String videoid = new Regex(this.br.getURL(), "/video/(\\d+)").getMatch(0);
+                if (videoid != null) {
+                    this.br.getPage("http://m." + this.getHost() + "/video/" + videoid);
+                    dllink = this.br.getRegex("<source src=\"(http[^<>\"]+\\.(?:mp4|flv)[^<>\"]+)").getMatch(0);
+                }
+            } else {
+                /* 2017-01-25: pkey generation is wrong - fallback to mobile version of the website! */
+                final String h = this.br.getRegex("h=([a-z0-9]+)\\'").getMatch(0);
+                final String t = this.br.getRegex("t=([0-9]+)").getMatch(0);
+                String vkey = this.br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
+                if (vkey == null) {
+                    /* 2017-01-23 */
+                    vkey = this.br.getRegex("vkey=\\'\\s*?\\+\\s*?\\'([a-z0-9]+)\\'").getMatch(0);
+                }
+                if (h != null && t != null && vkey != null) {
+                    br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");
+                    dllink = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
+                    }
+                }
             }
         }
     }

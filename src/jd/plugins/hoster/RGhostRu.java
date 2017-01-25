@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,14 +31,14 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://([a-z0-9]+\\.)?rghost\\.(?:net|ru)/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rgho.st" }, urls = { "https?://(?:[a-z0-9]+\\.)?(?:rghost\\.(?:net|ru)|rgho\\.st)/.+" })
 public class RGhostRu extends PluginForHost {
 
     private static final String PWTEXT              = "id=\"password_field\"";
 
-    private static final String type_private_all    = "http://([a-z0-9]+\\.)?rghost\\.net/private/.+";
-    private static final String type_private_direct = "http://([a-z0-9]+\\.)?rghost\\.net/private/[A-Za-z0-9]+/[a-f0-9]{32}/.+";
-    private static final String type_normal_direct  = "http://([a-z0-9]+\\.)?rghost\\.net/[A-Za-z0-9]+/.+";
+    private static final String type_private_all    = "http://([a-z0-9]+\\.)?[^/]+/private/.+";
+    private static final String type_private_direct = "http://([a-z0-9]+\\.)?[^/]+/private/[A-Za-z0-9]+/[a-f0-9]{32}/.+";
+    private static final String type_normal_direct  = "http://([a-z0-9]+\\.)?[^/]+/[A-Za-z0-9]+/.+";
 
     public RGhostRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,7 +49,7 @@ public class RGhostRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://rghost.ru/tos";
+        return "http://rgho.st/tos";
     }
 
     @Override
@@ -58,9 +57,19 @@ public class RGhostRu extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("rghost.net".equals(getHost()) || "rghost.ru".equals(getHost())) {
+            if (host == null || "rghost.net".equals(host) || "rghost.ru".equals(host)) {
+                return "rgho.st";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        String newlink = link.getDownloadURL().replaceAll("((tr|pl)\\.)?rghost\\.(?:net|ru)/", "rghost.net/");
+        String newlink = link.getDownloadURL().replaceAll("((tr|pl)\\.)?rghost\\.(?:net|ru)/", "rgho.st/");
         if (newlink.matches(type_private_direct) || (newlink.matches(type_normal_direct) && !newlink.matches(type_private_all))) {
             /* Directlinks --> Change to normal links */
             newlink = newlink.substring(0, newlink.lastIndexOf("/"));
@@ -132,7 +141,7 @@ public class RGhostRu extends PluginForHost {
     }
 
     private String getDownloadlink() {
-        String dllink = br.getRegex("\"(http://rghost\\.net/download/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://[^/]+/download/[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 
@@ -147,30 +156,22 @@ public class RGhostRu extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 409) {
-                /* Cloudflare DNS issue --> In this case definitly offline! */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getHttpConnection().getResponseCode() == 503) {
-                link.getLinkStatus().setStatusText("Server maintenance");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            throw e;
-        }
-        // error clause for offline links
-        if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<") || !br.containsHTML("id=\"actions\"")) {
+        br.setAllowedResponseCodes(new int[] { 409, 503 });
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 409) {
+            /* Cloudflare DNS issue --> In this case definitly offline! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
+            link.getLinkStatus().setStatusText("Server maintenance");
+            return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("rel=\"alternate\" title=\"Comments for the file ([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("class=\"filename\" title=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]+)— RGhost — файлообменник</title>").getMatch(0);
         }
-        String filesize = br.getRegex("<small>([\r\n]+)?\\((.*?)\\)([\r\n]+)?</small>").getMatch(1);
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
-        }
+        String filesize = br.getRegex("<i class=\"nowrap\">\\(([^<>\"]+)\\)<").getMatch(0);
         // will pick up the first filesize mentioned.. as last resort fail over.
         if (filesize == null) {
             filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);

@@ -46,7 +46,7 @@ public class FacecastNet extends PluginForHost {
     }
 
     /* Use this server as default until they change something or we find an easy way to find a working server. */
-    private static final String server_default = "http://edge-1.facecast.net";
+    private static final String server_default = "http://edge-de-2.facecast.net";
     private long                date_start     = 0;
 
     @SuppressWarnings("deprecation")
