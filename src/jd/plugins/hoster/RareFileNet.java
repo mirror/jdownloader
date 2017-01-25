@@ -51,7 +51,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rarefile.net" }, urls = { "https?://(www\\.)?rarefile\\.net/[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rarefile.net" }, urls = { "https?://(www\\.)?rarefile\\.net/[a-z0-9]{12}" })
 public class RareFileNet extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -141,7 +141,7 @@ public class RareFileNet extends PluginForHost {
             if (filesize == null) {
                 filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
                 if (filesize == null) {
-                    filesize = new Regex(correctedBR, "([\\d\\.]+ ?(GB|MB))").getMatch(0);
+                    filesize = new Regex(correctedBR, ">Size ?: ?([\\d\\.]+ ?(GB|MB))").getMatch(0);
                 }
             }
         }
