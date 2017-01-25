@@ -65,24 +65,25 @@ public class DeviantArtCom extends PluginForDecrypt {
     // much, content as they wish. Hopefully this wont create any
     // issues.
 
-    private static Object         LOCK              = new Object();
+    private static Object         LOCK                          = new Object();
 
-    private static final String   FASTLINKCHECK_2   = "FASTLINKCHECK_2";
-    private static final String   TYPE_COLLECTIONS  = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
-    private static final String   TYPE_CATPATH_ALL  = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
-    private static final String   TYPE_CATPATH_1    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
-    private static final String   TYPE_CATPATH_2    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
-    private static final String   TYPE_JOURNAL      = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
-    private static final String   LINKTYPE_JOURNAL  = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
-    private static final String   TYPE_BLOG         = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
+    private static final String   FASTLINKCHECK_2               = "FASTLINKCHECK_2";
+    private static final String   TYPE_COLLECTIONS              = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
+    private static final String   TYPE_CATPATH_ALL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
+    private static final String   TYPE_CATPATH_1                = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
+    private static final String   TYPE_CATPATH_2                = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
+    private static final String   TYPE_JOURNAL                  = "https?://[\\w\\.\\-]*?deviantart\\.com/journal.+";
+    private static final String   LINKTYPE_JOURNAL              = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
+    private static final String   TYPE_BLOG                     = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
 
     // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
 
-    final ArrayList<DownloadLink> decryptedLinks    = new ArrayList<DownloadLink>();
+    final ArrayList<DownloadLink> decryptedLinks                = new ArrayList<DownloadLink>();
 
-    private String                parameter         = null;
-    private boolean               fastLinkCheck     = false;
-    private boolean               forceHtmlDownload = false;
+    private String                parameter                     = null;
+    private boolean               fastLinkCheck                 = false;
+    private boolean               forceHtmlDownload             = false;
+    private boolean               crawlGivenOffsetsIndividually = false;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -90,6 +91,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         jd.plugins.hoster.DeviantArtCom.prepBR(this.br);
         fastLinkCheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FASTLINKCHECK_2, false);
         forceHtmlDownload = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FORCEHTMLDOWNLOAD, false);
+        crawlGivenOffsetsIndividually = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, jd.plugins.hoster.DeviantArtCom.default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY);
         parameter = param.toString();
         /* Remove trash */
         final String replace = new Regex(parameter, "(#.+)").getMatch(0);
@@ -328,10 +330,11 @@ public class DeviantArtCom extends PluginForDecrypt {
         final int offsetIncrease = 24;
         int mp = 0;
         int counter = 1;
+        boolean startOffsetGiven = false;
         if (parameter.contains("offset=")) {
             final int offsetLink = Integer.parseInt(new Regex(parameter, "offset=(\\d+)").getMatch(0));
             currentOffset = offsetLink;
-            maxOffset = offsetLink;
+            startOffsetGiven = true;
         }
 
         /* Debug */
@@ -447,6 +450,12 @@ public class DeviantArtCom extends PluginForDecrypt {
                 currentOffset += offsetIncrease;
                 counter++;
             }
+
+            if (startOffsetGiven && crawlGivenOffsetsIndividually) {
+                logger.info("Star-toffset given and crawled and user set plugin settings to stop after crawling individual offsets");
+                break;
+            }
+
             /* Really make sure that we're not ending up in an infinite loop! */
         } while (has_more || maxOffset > 0 && currentOffset >= maxOffset);
         if (fpName != null) {

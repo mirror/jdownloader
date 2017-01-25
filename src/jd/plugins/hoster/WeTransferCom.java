@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,7 +32,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-f0-9]{46}/[a-f0-9]{46}(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
 
     private String hash   = null;
@@ -84,8 +84,10 @@ public class WeTransferCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        hash = new Regex(dlink, "([0-9a-f]+)$").getMatch(0);
-        code = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
+        final Regex urlregex = new Regex(dlink, "/downloads/([a-f0-9]+)/([a-f0-9]+)");
+        final String small_string = new Regex(dlink, "([a-z0-9]+)$").getMatch(0);
+        code = urlregex.getMatch(0);
+        hash = urlregex.getMatch(1);
         if (hash == null || code == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -95,16 +97,16 @@ public class WeTransferCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);
-        if (recepientID == null) {
-            recepientID = "";
-        }
+        // String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);
+        // if (recepientID == null) {
+        // recepientID = "";
+        // }
         final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
 
         String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
         final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
-        br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
+        br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

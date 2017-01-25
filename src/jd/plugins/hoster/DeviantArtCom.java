@@ -37,41 +37,41 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
 
-    private boolean             DOWNLOADS_STARTED            = false;
-    private String              DLLINK                       = null;
-    private final String        COOKIE_HOST                  = "http://www.deviantart.com";
-    private static final String NICE_HOST                    = "deviantart.com";
-    private static final String NICE_HOSTproperty            = "deviantartcom";
-    private final String        INVALIDLINKS                 = "https?://(www\\.)?forum\\.deviantart\\.com/art/general";
-    private final String        MATURECONTENTFILTER          = ">Mature Content Filter<";
-    private static Object       LOCK                         = new Object();
-    public static String        FASTLINKCHECK_2              = "FASTLINKCHECK_2";
-    public static String        FORCEHTMLDOWNLOAD            = "FORCEHTMLDOWNLOAD";
+    private boolean             DOWNLOADS_STARTED                = false;
+    private String              DLLINK                           = null;
+    private final String        COOKIE_HOST                      = "http://www.deviantart.com";
+    private static final String NICE_HOST                        = "deviantart.com";
+    private static final String NICE_HOSTproperty                = "deviantartcom";
+    private final String        INVALIDLINKS                     = "https?://(www\\.)?forum\\.deviantart\\.com/art/general";
+    private final String        MATURECONTENTFILTER              = ">Mature Content Filter<";
+    private static Object       LOCK                             = new Object();
+    public static String        FASTLINKCHECK_2                  = "FASTLINKCHECK_2";
+    public static String        FORCEHTMLDOWNLOAD                = "FORCEHTMLDOWNLOAD";
+    public static String        CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
 
-    private static final String GENERALFILENAMEREGEX         = "<title>([^<>\"]*?) on deviantART</title>";
-    private static final String DLLINK_REFRESH_NEEDED        = "http://(www\\.)?deviantart\\.com/download/.+";
-    private static final String TYPE_DOWNLOADALLOWED_PDF     = ">Download PDF<";
-    private static final String TYPE_DOWNLOADALLOWED_SWF     = ">SWF download";
-    private static final String TYPE_DOWNLOADALLOWED_TXT     = ">TXT download<";
-    private static final String TYPE_DOWNLOADALLOWED_ZIP     = ">ZIP download<";
-    private static final String TYPE_DOWNLOADALLOWED_GENERAL = ">Download File<";
-    private static final String TYPE_DOWNLOADALLOWED_HTML    = "class=\"text\">HTML download</span>";
-    private static final String TYPE_DOWNLOADFORBIDDEN_HTML  = "<div class=\"grf\\-indent\"";
-    private static final String TYPE_DOWNLOADFORBIDDEN_SWF   = "class=\"flashtime\"";
-    private static final String TYPE_ACCOUNTNEEDED           = "has limited the viewing of this artwork<";
-    private boolean             HTMLALLOWED                  = false;
+    private static final String GENERALFILENAMEREGEX             = "<title>([^<>\"]*?) on deviantART</title>";
+    private static final String DLLINK_REFRESH_NEEDED            = "http://(www\\.)?deviantart\\.com/download/.+";
+    private static final String TYPE_DOWNLOADALLOWED_PDF         = ">Download PDF<";
+    private static final String TYPE_DOWNLOADALLOWED_SWF         = ">SWF download";
+    private static final String TYPE_DOWNLOADALLOWED_TXT         = ">TXT download<";
+    private static final String TYPE_DOWNLOADALLOWED_ZIP         = ">ZIP download<";
+    private static final String TYPE_DOWNLOADALLOWED_GENERAL     = ">Download File<";
+    private static final String TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
+    private static final String TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
+    private static final String TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
+    private static final String TYPE_ACCOUNTNEEDED               = "has limited the viewing of this artwork<";
+    private boolean             HTMLALLOWED                      = false;
 
-    private static final String LINKTYPE_ART                 = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
-    private static final String LINKTYPE_JOURNAL             = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
-    private static final String LINKTYPE_STATUS              = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
-    private static final String TYPE_BLOG_OFFLINE            = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/.+";
+    private static final String LINKTYPE_ART                     = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
+    private static final String LINKTYPE_JOURNAL                 = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
+    private static final String LINKTYPE_STATUS                  = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
+    private static final String TYPE_BLOG_OFFLINE                = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/.+";
 
     /**
      * @author raztoki
@@ -574,34 +574,39 @@ public class DeviantArtCom extends PluginForHost {
         return "JDownloader's Deviantart Plugin helps downloading data from deviantart.com.";
     }
 
-    private static final boolean default_FASTLINKCHECK_2   = true;
-    private static final boolean default_FASTLINKCHECK_ALL = false;
-    private static final boolean default_FORCEHTMLDOWNLOAD = false;
+    private static final boolean default_FASTLINKCHECK_2                  = true;
+    private static final boolean default_FASTLINKCHECK_ALL                = false;
+    private static final boolean default_FORCEHTMLDOWNLOAD                = false;
+    public static final boolean  default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = false;
 
-    private static final String  FASTLINKCHECK_ALL         = "FASTLINKCHECK_ALL";
+    private static final String  FASTLINKCHECK_ALL                        = "FASTLINKCHECK_ALL";
 
     public void setConfigElements() {
         final StringBuilder sbinfo = new StringBuilder();
         String fastlinkchecktext = null;
         String fastlinkcheck_all_text = null;
         String forcehtmldownloadtext = null;
+        String decryptOffsetsIndividually = null;
         final String lang = System.getProperty("user.language");
         if ("de".equalsIgnoreCase(lang)) {
             fastlinkchecktext = "Schnelle Linküberprüfung aktivieren? (Dateiname und -größe werden nicht korrekt angezeigt)";
             fastlinkcheck_all_text = "Schnelle Linküberprüfung für ALLE Links aktivieren?\r\nBedenke, dass der online-status bis zum Downloadstart nicht aussagekräftig ist!";
             forcehtmldownloadtext = "HTML Code statt dem eigentlichen Inhalt (Dateien/Bilder) laden?";
+            decryptOffsetsIndividually = "Bei gegebenem 'offset=XX' im Link nur dieses Crawlen, statt ab diesem bis zum Ende zu crawlen?";
             sbinfo.append("Bitte beachten: solltest Du nur Seite 1 einer Gallerie sammeln wollen, so stelle sicher, dass \"?offset=0\" am Ende der URL steht.\r\n");
             sbinfo.append("Du kannst auch zu einer anderen Seite wechseln, auf Seite 1 klicken und deren URL einfügen.");
         } else {
             fastlinkchecktext = "Enable fast link check? (file name and size won't be shown correctly until downloadstart)";
             fastlinkcheck_all_text = "Enable fast linkcheck for ALL links?\r\nNote that this means that you can't see the real online/offline status until the download is started!";
             forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";
+            decryptOffsetsIndividually = "On given 'offset=XX', crawl only this offset instead of crawling from this offset until the end?";
             sbinfo.append("Please note: if you wanted to grab only page 1 of a gallery, please make sure that \"?offset=0\" is added to its URL.\r\n");
             sbinfo.append("You can also switch to another page, click on page 1 and grab its URL.");
         }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", fastlinkchecktext)).setDefaultValue(default_FASTLINKCHECK_2));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_ALL, JDL.L("plugins.hoster.deviantartcom.fastlinkcheck_all", fastlinkcheck_all_text)).setDefaultValue(default_FASTLINKCHECK_ALL));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.deviantartcom.forceHTMLDownload", forcehtmldownloadtext)).setDefaultValue(default_FORCEHTMLDOWNLOAD));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, fastlinkchecktext).setDefaultValue(default_FASTLINKCHECK_2));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_ALL, fastlinkcheck_all_text).setDefaultValue(default_FASTLINKCHECK_ALL));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, forcehtmldownloadtext).setDefaultValue(default_FORCEHTMLDOWNLOAD));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, decryptOffsetsIndividually).setDefaultValue(default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

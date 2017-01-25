@@ -324,6 +324,10 @@ public class AtvAt extends PluginForDecrypt {
                 } else {
                     /* delivery:progressive --> http url */
                     /* 2016-10-18: Seems like their http urls always have the same quality */
+                    /*
+                     * 2017-01-25: Seems like sometimes, part1 is only available in one single quality which is usually lower than 576p
+                     * (same for hls) - this is a serverside "issue" and not a JDownloader problem! (See forum 59152 page 7).
+                     */
                     quality = "576p";
                     link = this.createDownloadlink("directhttp://" + src);
                     finalname = hybrid_name + "_";
