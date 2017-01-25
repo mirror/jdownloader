@@ -103,8 +103,10 @@ public class WeTransferCom extends PluginForHost {
         // }
         final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
         final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-
-        String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
+        if ("invalid".equals(map.get("state"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
         final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
         br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
