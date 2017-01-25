@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevolume.com" }, urls = { "http://(www\\.)?purevolume\\.com/(new/)?\\w+(/albums/[\\w\\+\\-]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevolume.com" }, urls = { "http://(www\\.)?purevolume\\.com/(new/)?\\w+(/albums/[\\w\\+\\-]+)?" })
 public class PurevolumeComDecrypter extends PluginForDecrypt {
 
     public PurevolumeComDecrypter(final PluginWrapper wrapper) {
@@ -95,13 +95,9 @@ public class PurevolumeComDecrypter extends PluginForDecrypt {
             if (!getPluginConfig().getBooleanProperty("FILESIZECHECK", false)) {
                 link.setAvailable(true);
             }
-            link.setContentUrl(br.getURL());
+            link.setContentUrl(param.toString());
             fp.add(link);
-            try {
-                distribute(link);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
+            distribute(link);
             decryptedLinks.add(link);
         }
 

@@ -34,6 +34,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nuvid.com" }, urls = { "https?://(?:www\\.)?nuvid\\.com/(?:video|embed)/\\d+" })
 public class NuVidCom extends PluginForHost {
 
+    /* Tags: viptube.com */
     private String dllink = null;
 
     public NuVidCom(final PluginWrapper wrapper) {
@@ -68,7 +69,7 @@ public class NuVidCom extends PluginForHost {
                 vkey = this.br.getRegex("vkey=\\'\\s*?\\+\\s*?\\'([a-z0-9]+)\\'").getMatch(0);
             }
             if (h != null && t != null && vkey != null) {
-                br.getPage("http://www.nuvid.com/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("aHlyMTRUaTFBYVB0OHhS")) + "&aid=&domain_id=");
+                br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("aHlyMTRUaTFBYVB0OHhS")) + "&aid=&domain_id=");
                 dllink = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
