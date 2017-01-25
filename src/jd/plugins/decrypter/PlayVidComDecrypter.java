@@ -26,8 +26,10 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -43,9 +45,16 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* 2017-01-25: Limited this to 1 - on too many requests we get HTTP/1.1 429 Too Many Requests. */
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     private LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
     private String                        filename       = null;
     private String                        parameter      = null;
+    private CryptedLink                   param          = null;
 
     /** Settings stuff */
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
@@ -62,6 +71,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         } else {
             parameter = param.toString();
         }
+        this.param = param;
         br.setFollowRedirects(true);
         if (plugin == null) {
             plugin = JDUtilities.getPluginForHost("playvid.com");
@@ -69,7 +79,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         ((jd.plugins.hoster.PlayVidCom) plugin).prepBrowser(br);
         // Log in if possible to get 720p quality
         getUserLogin(false);
-        br.getPage(parameter);
+        getPage(parameter);
         if (jd.plugins.hoster.PlayVidCom.isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -161,6 +171,30 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             return dl;
         } else {
             return null;
+        }
+    }
+
+    /* Go through bot-protection. */
+    private void getPage(final String url) throws Exception {
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            boolean failed = true;
+            for (int i = 0; i <= 2; i++) {
+                final Form captchaform = br.getFormbyKey("secimgkey");
+                final String secimgkey = captchaform.getInputField("secimgkey").getValue();
+                final String captchaurl = "http://www." + br.getHost() + "/ccapimg?key=" + secimgkey;
+                final String code = this.getCaptchaCode(captchaurl, this.param);
+                captchaform.put("secimginp", code);
+                br.submitForm(captchaform);
+                failed = br.getHttpConnection().getResponseCode() == 429;
+                if (failed) {
+                    continue;
+                }
+                break;
+            }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
     }
 

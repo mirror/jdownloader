@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +37,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UnavailableHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class RapidsPl extends PluginForHost {
@@ -112,8 +112,8 @@ public class RapidsPl extends PluginForHost {
             }
             // now let's get a list of all supported hosts:
             final ArrayList<String> supportedHosts = new ArrayList<String>();
-            final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "wrzuta", "wrzuta.pl" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" },
-                    { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "datafile", "datafile.com" }, { "nitroflare", "nitroflare.com" } };
+            final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "wrzuta", "wrzuta.pl" }, { "rapidgator", "rapidgator.net" }, { "crocko", "crocko.com" }, { "hitfile", "hitfile.net" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" },
+                    { "keep2share", "keep2share.cc" }, { "datafile", "datafile.com" }, { "nitroflare", "nitroflare.com" } };
             for (final String hostSet[] : hostList) {
                 if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
                     for (int i = 1; i <= hostSet.length - 1; i++) {

@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class RapidoxPl extends PluginForHost {
 
     private final String                                   DOMAIN                       = "http://rapidox.pl/";
@@ -315,8 +315,6 @@ public class RapidoxPl extends PluginForHost {
                 supportedHosts.add("share-online.biz");
             } else if (crippledhost.equals("ul.to") || crippledhost.equals("uploaded")) {
                 supportedHosts.add("uploaded.net");
-            } else if (crippledhost.equals("vipfile")) {
-                supportedHosts.add("vip-file.com");
             } else if (crippledhost.equals("_4shared")) {
                 supportedHosts.add("4shared.com");
             } else {

@@ -368,6 +368,11 @@ public class PornHubCom extends PluginForHost {
                     /* Check cookies - only perform a full login if they're not valid anymore. */
                     br.setCookies(account.getHoster(), cookies);
                     br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, cookies);
+                    /*
+                     * 2017-01-25: It can happen (via browser too) that we login via pornhub.com --> Get redirected to pornhubpremium.com
+                     * (logged in) but at the same time we get logged out on pornhub.com --> So when re-using the cookies we have to check
+                     * both as we only need the cookies for our account type.
+                     */
                     final boolean loggedin_free;
                     final boolean loggedin_premium;
                     final boolean loggedin;

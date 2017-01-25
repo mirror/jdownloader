@@ -52,7 +52,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamplay.to" }, urls = { "https?://(?:www\\.)?streamplay\\.to/(?:embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streamplay.to" }, urls = { "https?://(?:www\\.)?streamplay\\.to/(?:embed\\-)?[a-z0-9]{12}" })
 public class StreamplayTo extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -139,7 +139,7 @@ public class StreamplayTo extends PluginForHost {
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
 
@@ -784,6 +784,8 @@ public class StreamplayTo extends PluginForHost {
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        /* 2017-01-25: New */
+        regexStuff.add("(<div [^>]*?data\\-jd=\"[^>]*?>)");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);

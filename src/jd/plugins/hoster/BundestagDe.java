@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "http://(?:www\\.)?bundestag\\.de/mediathek/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "http://(?:www\\.)?bundestag\\.de/mediathek.+" })
 public class BundestagDe extends PluginForHost {
 
     public BundestagDe(PluginWrapper wrapper) {
@@ -97,7 +97,12 @@ public class BundestagDe extends PluginForHost {
             dllink = getDllinkGeneral();
         }
         if (dllink == null) {
-            this.br.getPage("https://www.bundestag.de/apps/mediathek/mediathek.form?id=" + linkid + "&offsetStart=0&contentArea=details&instance=m187&categorie=Plenarsitzung&mask=search&ids=6137272&action=search&downloadConfirm=true&resultsTemplate=mediathekJSConfirmDownloadBox_xhr&searchTemplate=mediathek&type=editorial%2Clucene%2Clucene&datasource=%2Fvideos%2Findex.xml%2C%2Fcms_videos%2Findex%2C%2Ffais_videos%2Findex&downloadConfirmYes=true&downloadType=mp4");
+            /* 2017-01-25: New */
+            this.br.getPage("http://www.bundestag.de/mediathekoverlay?view=main&videoid=" + linkid);
+            if (this.br.toString().length() <= 50) {
+                /* Probably no video content/offline. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dllink = getDllinkGeneral();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

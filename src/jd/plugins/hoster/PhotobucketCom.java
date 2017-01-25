@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -56,10 +55,29 @@ public class PhotobucketCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                dllink = downloadLink.getDownloadURL();
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"detailWrapper\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
         dllink = PluginJSonUtils.getJsonValue(br, "originalUrl");
         if (dllink == null) {
             dllink = PluginJSonUtils.getJsonValue(br, "fullsizeUrl");
@@ -68,13 +86,9 @@ public class PhotobucketCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

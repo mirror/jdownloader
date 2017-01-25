@@ -70,7 +70,7 @@ public class WeTransferCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
-        br.addAllowedResponseCodes(410);
+        br.addAllowedResponseCodes(new int[] { 410, 503 });
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
         if (dlink.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
@@ -94,7 +94,7 @@ public class WeTransferCom extends PluginForHost {
         // Allow redirects for change to https
         br.setFollowRedirects(true);
         br.getPage(dlink);
-        if (br.getHttpConnection().getResponseCode() == 410) {
+        if (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);

@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
 
     public PlayVidCom(PluginWrapper wrapper) {
@@ -333,6 +333,7 @@ public class PlayVidCom extends PluginForHost {
 
     public Browser prepBrowser(final Browser prepBr) {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.setAllowedResponseCodes(429);
         return prepBr;
     }
 
