@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(www\\.)?archive\\.org/(?:details|download)/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+$" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/details/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+$" })
 public class ArchieveOrg extends PluginForDecrypt {
 
     public ArchieveOrg(PluginWrapper wrapper) {
@@ -38,14 +38,23 @@ public class ArchieveOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://www.", "://").replace("/details/", "/download/");
+        final String parameter = param.toString().replace("://www.", "://").replace("/details/", "/download/");
+        /*
+         * 2017-01-25: We do not (yet) have to be logged in here. We can always see all items and their information but some may be limited
+         * to premium users only.
+         */
+        // final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        // if (aa != null) {
+        // jd.plugins.hoster.ArchiveOrg.login(this.br, aa, false);
+        // }
         br.getPage(parameter);
         if (br.containsHTML(">The item is not available")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (!br.containsHTML("\"/download/")) {
             logger.info("Maybe invalid link or nothing there to download: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
@@ -55,7 +64,7 @@ public class ArchieveOrg extends PluginForDecrypt {
         for (final String[] finfosingle : finfo) {
             final String filename = finfosingle[0];
             String fsize = finfosingle[1];
-            final DownloadLink fina = createDownloadlink("directhttp://" + br.getURL() + "/" + filename);
+            final DownloadLink fina = createDownloadlink(br.getURL() + "/" + filename);
             fsize += "b";
             fina.setDownloadSize(SizeFormatter.getSize(fsize));
             fina.setAvailable(true);

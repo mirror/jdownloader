@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -31,7 +29,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://(www\\.)?(files\\.)?(?:indowebster\\.com|idws\\.id)/(download/(files|audio|video)/.+|[^\\s]+\\.html)" })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "https?://(?:www\\.)?(files\\.)?(?:indowebster\\.com|idws\\.id)/(download/(files|audio|video)/.+|[^\\s]+\\.html)" })
 public class Indowebster extends PluginForHost {
 
     private static final String PASSWORDTEXT = "(>THIS FILE IS PASSWORD PROTECTED<|>INSERT PASSWORD<|class=\"redbtn\" value=\"Unlock\"|method=\"post\" id=\"form_pass\")";
@@ -94,8 +94,8 @@ public class Indowebster extends PluginForHost {
         if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found") || br.containsHTML(">404 Page Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">404 Page Not Found<")) {
-            return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(">404 Page Not Found<") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Convert old links to new links
         String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.(?:indowebster\\.com|idws\\.id)/.*?)\"").getMatch(0);

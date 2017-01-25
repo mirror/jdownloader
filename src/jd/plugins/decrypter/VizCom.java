@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/chapters/digital/[^/]+/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/[^/]+/(?:chapters/)?digital/[^/]+/\\d+" })
 public class VizCom extends antiDDoSForDecrypt {
 
     public VizCom(PluginWrapper wrapper) {
@@ -49,8 +49,14 @@ public class VizCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final int pages = Integer.parseInt(this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0));
-        final Regex urlinfo = new Regex(parameter, "/chapters/digital/([^/]+)/(\\d+)");
+        /* Always visible */
+        String pages_str = this.br.getRegex("<strong>Length</strong>\\s*?(\\d+)\\s*?pages\\s*?</div>").getMatch(0);
+        if (pages_str == null) {
+            /* For premium-only content, if user is not logged in, this will always be '0'! */
+            pages_str = this.br.getRegex("var pages\\s*?=\\s*?(\\d+);").getMatch(0);
+        }
+        final int pages = Integer.parseInt(pages_str);
+        final Regex urlinfo = new Regex(parameter, "/digital/([^/]+)/(\\d+)");
         final String url_name = urlinfo.getMatch(0);
         final String manga_id = urlinfo.getMatch(1);
         final DecimalFormat page_formatter_page = new DecimalFormat("000");
