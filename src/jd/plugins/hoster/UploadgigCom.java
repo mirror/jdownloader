@@ -135,6 +135,9 @@ public class UploadgigCom extends antiDDoSForHost {
             dllink = PluginJSonUtils.getJsonValue(br, "url");
             if (dllink == null) {
                 dllink = PluginJSonUtils.getJsonValue(br, "urlt");
+                if (dllink == null) {
+                    dllink = PluginJSonUtils.getJsonValue(br, "urltar");
+                }
             }
             int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(br, "cd");

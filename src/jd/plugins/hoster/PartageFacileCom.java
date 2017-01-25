@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage\\-facile\\.com/([0-9A-Z]+/.+|\\d+.*?\\.html)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "https?://[\\w\\.]*?partage\\-facile\\.com/([0-9A-Z]+/.+|\\d+.*?\\.html)" })
 public class PartageFacileCom extends PluginForHost {
 
     public PartageFacileCom(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class PartageFacileCom extends PluginForHost {
         return -1;
     }
 
-    private static final String INVALIDLINKS = "http://[\\w\\.]*?partage\\-facile\\.com/(forum|connexion|mentions|inscription|css|js|vip|frauduleux|cgu)(.+)?";
+    private static final String INVALIDLINKS = "https?://[\\w\\.]*?partage\\-facile\\.com/(forum|connexion|mentions|inscription|css|js|vip|frauduleux|cgu)(.+)?";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
@@ -61,7 +61,7 @@ public class PartageFacileCom extends PluginForHost {
         if (br.containsHTML(">Page introuvable<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("http\\-equiv=\"refresh\" content=\"0;url=http://(www\\.)?partage\\-facile\\.com\"")) {
+        if (br.containsHTML("http\\-equiv=\"refresh\" content=\"0;url=https?://(www\\.)?partage\\-facile\\.com\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filesize = br.getRegex("<th>Taille :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);

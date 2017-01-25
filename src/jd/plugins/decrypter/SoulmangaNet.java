@@ -90,7 +90,7 @@ public class SoulmangaNet extends antiDDoSForDecrypt {
 
             final DownloadLink dl = this.createDownloadlink(finallink);
             dl._setFilePackage(fp);
-            dl.setName(filename);
+            dl.setFinalFileName(filename);
             // dl.setContentUrl(page_url);
             dl.setLinkID(filename);
             dl.setAvailable(true);
