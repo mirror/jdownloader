@@ -1288,9 +1288,9 @@ public class FileFactory extends PluginForHost {
             String apiKey = account.getStringProperty("apiKey", null);
             if (apiKey == null) {
                 apiKey = loginKey(account);
-            }
-            if (apiKey == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (apiKey == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             return apiKey;
         }
