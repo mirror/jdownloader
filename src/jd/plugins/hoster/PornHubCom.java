@@ -27,8 +27,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +53,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+|http://pornhubdecrypted\\d+" })
 public class PornHubCom extends PluginForHost {
 
@@ -74,39 +74,22 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                                                                                                         /*
-                                                                                                                                                                          * Format
-                                                                                                                                                                          * -
-                                                                                                                                                                          * name
-                                                                                                                                                                          * :
-                                                                                                                                                                          * videoCodec,
-                                                                                                                                                                          * videoBitrate,
-                                                                                                                                                                          * videoResolution,
-                                                                                                                                                                          * audioCodec,
-                                                                                                                                                                          * audioBitrate
-                                                                                                                                                                          */
-                                                                                                                                                                         /*
-                                                                                                                                                                          * Video
-                                                                                                                                                                          * -
-                                                                                                                                                                          * bitrates
-                                                                                                                                                                          * and
-                                                                                                                                                                          * resultions
-                                                                                                                                                                          * here
-                                                                                                                                                                          * are
-                                                                                                                                                                          * not
-                                                                                                                                                                          * exact
-                                                                                                                                                                          * as
-                                                                                                                                                                          * they
-                                                                                                                                                                          * vary.
-                                                                                                                                                                          */
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        {
+            /*
+             * Format - name : videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video - bitrates and resultions here are not exact as
+             * they vary.
+             */
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-                                                                                }
-                                                                            });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -363,8 +346,8 @@ public class PornHubCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE        = "http://pornhub.com";
-    private static final String PORNHUB_PREMIUM = "http://pornhubpremium.com";
+    private static final String PORNHUB_FREE    = "pornhub.com";
+    private static final String PORNHUB_PREMIUM = "pornhubpremium.com";
     private static Object       LOCK            = new Object();
 
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
@@ -372,22 +355,34 @@ public class PornHubCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                /* 2017-01-25: Important - we often have redirects! */
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null && !force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
                     br.setCookies(account.getHoster(), cookies);
-                    br.setCookies(PORNHUB_PREMIUM, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    br.getPage("http://www." + account.getHoster());
-                    if (br.containsHTML("class=\"signOut\"")) {
+                    br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, cookies);
+                    /* We trust these cookies --> Do not check them */
+                    return;
+                }
+                if (cookies != null) {
+                    /* Check cookies - only perform a full login if they're not valid anymore. */
+                    br.setCookies(account.getHoster(), cookies);
+                    br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, cookies);
+                    final boolean loggedin_free;
+                    final boolean loggedin_premium;
+                    final boolean loggedin;
+                    br.getPage(getProtocolFree() + "www." + PORNHUB_FREE);
+                    loggedin_free = isLoggedInHtml(br);
+                    /* Important - first check free, then premium! */
+                    br.getPage(getProtocolPremium() + "www." + PORNHUB_PREMIUM);
+                    loggedin_premium = isLoggedInHtml(br);
+                    loggedin = loggedin_free || loggedin_premium;
+                    if (loggedin) {
                         /* Refresh timestamp */
                         saveCookies(br, account);
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
                 br.getPage("http://www." + account.getHoster() + "/login");
                 final Form loginform = br.getFormbyKey("username");
                 // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -411,9 +406,8 @@ public class PornHubCom extends PluginForHost {
                 final String success = PluginJSonUtils.getJsonValue(br, "success");
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
                 if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
-                    /* Sometimes needed to get the (premium) cookies. */
+                    /* Required to get the (premium) cookies (multiple redirects). */
                     br.getPage(redirect);
-                    br.followRedirect();
                 }
                 // if (!isCookieLoggedIn(br)) { // 20161202 Was ii then ij now ik (free account)
                 if (!"1".equals(success) || !br.containsHTML("class=\"signOut\"")) {
@@ -431,19 +425,22 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static boolean isCookieLoggedIn(final Browser br) {
-        return (br.getCookie(MAINPAGE, "gateway_security_key") != null || br.getCookie(MAINPAGE, "ij") != null) || (br.getCookie(PORNHUB_PREMIUM, "gateway_security_key") != null || br.getCookie(PORNHUB_PREMIUM, "ii") != null);
+    public static boolean isPremiumHtml(final Browser br) {
+        return br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInHtml(br);
     }
 
-    public static String getPremiumCookie(final Browser br) {
-        return br.getCookie(PORNHUB_PREMIUM, "gateway_security_key");
+    public static boolean isLoggedInHtml(final Browser br) {
+        return br.containsHTML("class=\"signOut\"");
+    }
+
+    public static boolean isLoggedInCookie(final Browser br) {
+        return (br.getCookie(getProtocolFree() + PORNHUB_FREE, "gateway_security_key") != null || br.getCookie(getProtocolFree() + PORNHUB_FREE, "ij") != null) || (br.getCookie(getProtocolPremium() + PORNHUB_PREMIUM, "gateway_security_key") != null || br.getCookie(getProtocolPremium() + PORNHUB_PREMIUM, "ii") != null);
     }
 
     public static void saveCookies(final Browser br, final Account acc) {
-        final String cookie_loggedin_premium = getPremiumCookie(br);
-        if (cookie_loggedin_premium != null) {
+        if (isPremiumHtml(br)) {
             /* Premium account --> Premium cookies */
-            acc.saveCookies(br.getCookies(PORNHUB_PREMIUM), "");
+            acc.saveCookies(br.getCookies(getProtocolPremium() + PORNHUB_PREMIUM), "");
         } else {
             /* Free account --> Free cookies */
             acc.saveCookies(br.getCookies(acc.getHoster()), "");
@@ -461,7 +458,7 @@ public class PornHubCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        if (this.br.getURL().contains("pornhubpremium.com/")) {
+        if (isPremiumHtml(this.br)) {
             account.setType(AccountType.PREMIUM);
             /* Premium accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -611,11 +608,19 @@ public class PornHubCom extends PluginForHost {
     public static String createPornhubVideolink(final String viewkey, final Account acc) {
         if (acc != null && acc.getType() == AccountType.PREMIUM) {
             /* Premium url */
-            return "http://www.pornhubpremium.com/view_video.php?viewkey=" + viewkey;
+            return getProtocolPremium() + "www.pornhubpremium.com/view_video.php?viewkey=" + viewkey;
         } else {
             /* Free url */
-            return "http://www.pornhub.com/view_video.php?viewkey=" + viewkey;
+            return getProtocolFree() + "www.pornhub.com/view_video.php?viewkey=" + viewkey;
         }
+    }
+
+    public static String getProtocolPremium() {
+        return "https://";
+    }
+
+    public static String getProtocolFree() {
+        return "http://";
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

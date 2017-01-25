@@ -29,12 +29,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -56,6 +50,12 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thevideo.me" }, urls = { "https?://(www\\.)?thevideo\\.me/((?:vid)?embed\\-)?[a-z0-9]{12}" })
 public class TheVideoMe extends antiDDoSForHost {
@@ -340,7 +340,7 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
-                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                final String embed_access = "/embed-" + fuid + ".html";
                 getPage(embed_access);
                 special_js_bullshit = getSpecialJsBullshit();
                 dllink = getDllink();
@@ -676,7 +676,7 @@ public class TheVideoMe extends antiDDoSForHost {
 
     public String getDllink(final String source) {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
+        if (dllink == null || !isDllink(dllink)) {
             // json within javascript var. note: within br not correctedbr
             js = new Regex(br, "var jwConfig_vars = (\\{.*?\\});").getMatch(0);
             if (js != null) {
@@ -737,6 +737,12 @@ public class TheVideoMe extends antiDDoSForHost {
             dllink = new Regex(source, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
         }
         return dllink;
+    }
+
+    /* 2017-02-15: Quick n dirty function to prevent dllink = br.getRedirectLocation() --> Wrong dllink! */
+    private boolean isDllink(final String url) {
+        final boolean isDllink = url != null && !url.matches(".+/[a-z0-9]+\\-[a-z0-9]{12}.*?");
+        return isDllink;
     }
 
     private String decodeDownloadLink(final String s) {
