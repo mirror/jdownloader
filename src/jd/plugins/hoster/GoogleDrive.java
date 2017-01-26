@@ -193,7 +193,7 @@ public class GoogleDrive extends PluginForHost {
                     if (con.isContentDisposition()) {
                         final String fileName = getFileNameFromHeader(con);
                         if (fileName != null) {
-                            link.setName(fileName);
+                            link.setFinalFileName(fileName);
                         }
                         if (con.getCompleteContentLength() != -1) {
                             link.setDownloadSize(con.getCompleteContentLength());
