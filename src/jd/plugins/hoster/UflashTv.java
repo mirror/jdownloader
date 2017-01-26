@@ -62,7 +62,7 @@ public class UflashTv extends PluginForHost {
             downloadLink.setName(filename + ".flv");
             return AvailableStatus.TRUE;
         }
-        br.getPage("http://www.uflash.tv/media/player/config.b74x.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        br.getPage("/media/player/config.v89x.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         dllink = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

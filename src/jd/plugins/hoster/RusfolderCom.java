@@ -43,7 +43,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.adverigo.Adverigo;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+" })
 public class RusfolderCom extends PluginForHost {
 
     private String       ua                     = null;
@@ -411,8 +411,8 @@ public class RusfolderCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             String fileID = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.+)").getMatch(0);
             if (!br.getRedirectLocation().contains(fileID)) {
-                logger.warning("The redirect location doesn't contain the fileID, stopping...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("The redirect location doesn't contain the fileID, probably offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.info("Setting new downloadUrl...");
             downloadLink.setUrlDownload(br.getRedirectLocation());
