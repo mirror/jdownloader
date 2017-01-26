@@ -186,11 +186,26 @@ public class GoogleDrive extends PluginForHost {
             link.setVerifiedFileSize(Long.parseLong(size));
             link.setDownloadSize(SizeFormatter.getSize(size));
         } else {
-            Browser br2 = br.cloneBrowser();
-            br2.getPage("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
-            size = br2.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
-            if (size != null) {
-                link.setDownloadSize(SizeFormatter.getSize(size + "b"));
+            final Browser br2 = br.cloneBrowser();
+            final URLConnectionAdapter con = br2.openGetConnection("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
+            try {
+                if (con.isOK() && con.isContentDisposition()) {
+                    final String fileName = getFileNameFromHeader(con);
+                    if (fileName != null) {
+                        link.setName(fileName);
+                    }
+                    if (con.getCompleteContentLength() != -1) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    br2.followConnection();
+                    size = br2.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
+                    if (size != null) {
+                        link.setDownloadSize(SizeFormatter.getSize(size + "b"));
+                    }
+                }
+            } finally {
+                con.disconnect();
             }
         }
         return AvailableStatus.TRUE;
