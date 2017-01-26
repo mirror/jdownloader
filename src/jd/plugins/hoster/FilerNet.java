@@ -386,7 +386,12 @@ public class FilerNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium User");
             ai.setTrafficLeft(Long.parseLong(PluginJSonUtils.getJson(br, "traffic")));
-            ai.setTrafficMax(SizeFormatter.getSize("125gb"));// support
+            final String maxTraffic = PluginJSonUtils.getJson(br, "maxtraffic");
+            if (maxTraffic != null) {
+                ai.setTrafficMax(Long.parseLong(maxTraffic));
+            } else {
+                ai.setTrafficMax(SizeFormatter.getSize("125gb"));// fallback
+            }
             ai.setValidUntil(Long.parseLong(PluginJSonUtils.getJson(br, "until")) * 1000);
         }
         account.setValid(true);

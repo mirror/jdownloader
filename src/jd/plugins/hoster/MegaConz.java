@@ -37,6 +37,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -201,6 +202,12 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    // // unfinished
+    // private boolean queryBandwidthQuota(final Account account, final long fileSize) throws Exception {
+    // apiRequest(account, getSID(account), null, "qbq"/* queryBandwidthQuota */, new Object[] { "s", fileSize });
+    // return true;
+    // }
+
     private String apiLogin(Account account) throws Exception {
         synchronized (account) {
             try {
@@ -265,18 +272,29 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    private boolean isHideApplication() {
+        return getPluginConfig().getBooleanProperty(HIDE_APP, false);
+    }
+
     private Map<String, Object> apiRequest(Account account, final String sid, final UrlQuery additionalUrlQuery, final String action, final Object[]... postParams) throws Exception {
         final UrlQuery query = new UrlQuery();
         query.add("id", String.valueOf(CS.incrementAndGet()));
         if (StringUtils.isNotEmpty(sid)) {
             query.add("sid", sid);
         }
+        final boolean hideApp = isHideApplication();
+        if (hideApp) {
+            query.add("domain", "meganz");
+        }
         if (additionalUrlQuery != null) {
             query.addAll(additionalUrlQuery.list());
         }
         final PostRequest request = new PostRequest(API_URL + "/cs?" + query);
-        if (!getPluginConfig().getBooleanProperty(HIDE_APP, false)) {
+        if (!hideApp) {
             request.getHeaders().put("APPID", "JDownloader");
+        } else {
+            request.getHeaders().put("Referer", "https://mega.nz");
+            request.getHeaders().put("Origin", "https://mega.nz");
         }
         request.setContentType("text/plain; charset=UTF-8");
         if (postParams != null) {
@@ -551,7 +569,12 @@ public class MegaConz extends PluginForHost {
         Map<String, Object> response = null;
         try {
             final String parentNode = getParentNodeID(link);
-            response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
+            if (Thread.currentThread() instanceof SingleDownloadController) {
+                final Account account = ((SingleDownloadController) (Thread.currentThread())).getAccount();
+                response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
+            } else {
+                response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
+            }
         } catch (IOException e) {
             logger.log(e);
             checkServerBusy();
@@ -621,6 +644,21 @@ public class MegaConz extends PluginForHost {
         apiDownload(link, account);
     }
 
+    private final String getSID(final Account account) throws Exception {
+        if (account != null) {
+            synchronized (account) {
+                final String storedSid = account.restoreObject("", TypeRef.STRING);
+                if (storedSid != null) {
+                    return storedSid;
+                } else {
+                    return apiLogin(account);
+                }
+            }
+        } else {
+            return null;
+        }
+    }
+
     private void apiDownload(DownloadLink link, Account account) throws Exception {
         final AvailableStatus available = requestFileInformation(link);
         if (AvailableStatus.FALSE == available) {
@@ -629,19 +667,7 @@ public class MegaConz extends PluginForHost {
         if (AvailableStatus.TRUE != available) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
         }
-        final String sid;
-        if (account != null) {
-            synchronized (account) {
-                final String storedSid = account.restoreObject("", TypeRef.STRING);
-                if (storedSid != null) {
-                    sid = storedSid;
-                } else {
-                    sid = apiLogin(account);
-                }
-            }
-        } else {
-            sid = null;
-        }
+        final String sid = getSID(account);
         String fileID = getPublicFileID(link);
         String keyString = getPublicFileKey(link);
         if (fileID == null) {
@@ -1136,7 +1162,7 @@ public class MegaConz extends PluginForHost {
 
     private String useSSL() {
         if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
-            return "1";
+            return "1";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
         } else {
             return "0";
         }

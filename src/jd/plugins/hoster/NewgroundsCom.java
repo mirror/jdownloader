@@ -57,7 +57,7 @@ public class NewgroundsCom extends PluginForHost {
         return "http://www.newgrounds.com/wiki/help-information/terms-of-use";
     }
 
-    private static final String ARTLINK       = "http://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
+    private static final String ARTLINK       = "https?://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
 
     private boolean             accountneeded = false;
 
@@ -74,7 +74,7 @@ public class NewgroundsCom extends PluginForHost {
 
         String filename = null;
         if (downloadLink.getDownloadURL().matches(ARTLINK)) {
-            dllink = br.getRegex("id=\"dim_the_lights\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         } else {
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -88,10 +88,10 @@ public class NewgroundsCom extends PluginForHost {
                     accountneeded = true;
                     return AvailableStatus.TRUE;
                 }
-                dllink = br.getRegex("\"src\":[\t\n\r ]+\"(http:[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"src\":[\t\n\r ]+\"(https?:[^<>\"]*?)\"").getMatch(0);
                 // Maybe video or .swf
                 if (dllink == null) {
-                    dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                    dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 }
                 if (dllink != null) {
                     dllink = dllink.replace("\\", "");

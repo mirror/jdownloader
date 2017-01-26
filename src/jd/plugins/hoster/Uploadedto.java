@@ -111,6 +111,7 @@ public class Uploadedto extends PluginForHost {
     private static final String            PREFER_PREMIUM_DOWNLOAD_API               = "PREFER_PREMIUM_DOWNLOAD_API_V2";
     private static final String            DOWNLOAD_ABUSED                           = "DOWNLOAD_ABUSED";
     private static final String            DISABLE_START_INTERVAL                    = "DISABLE_START_INTERVAL";
+    private static final String            EXPERIMENTAL_MULTIFREE                    = "EXPERIMENTAL_MULTIFREE";
     private boolean                        PREFERSSL                                 = true;
     private boolean                        avoidHTTPS                                = false;
     private static final String            UPLOADED_FINAL_FILENAME                   = "UPLOADED_FINAL_FILENAME";
@@ -929,14 +930,19 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setProperty(UPLOADED_FINAL_FILENAME, true);
             }
         }
+        final boolean multiFree = getPluginConfig().getBooleanProperty(EXPERIMENTAL_MULTIFREE, true);
         try {
-            /* add a download slot */
-            controlFree(+1);
+            if (multiFree) {
+                /* add a download slot */
+                controlFree(+1);
+            }
             /* start the dl */
             dl.startDownload();
         } finally {
-            /* remove download slot */
-            controlFree(-1);
+            if (multiFree) {
+                /* remove download slot */
+                controlFree(-1);
+            }
         }
     }
 
@@ -1917,6 +1923,7 @@ public class Uploadedto extends PluginForHost {
         getConfig().addEntry(cfe);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", getPhrase("SETTING_DOWNLOAD_ABUSED"))).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLE_START_INTERVAL, "Disable start interval. Warning: This may cause IP blocks from uploaded.to").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTAL_MULTIFREE, "Experimental support of multiple free downloads").setDefaultValue(true));
     }
 
     @Override
