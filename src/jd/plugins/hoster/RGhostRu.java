@@ -146,7 +146,7 @@ public class RGhostRu extends PluginForHost {
     }
 
     private void offlineCheck() throws PluginException {
-        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted|>File is deleted<)")) {
+        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited|<title>(403|404)|File was deleted|>File is deleted<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
