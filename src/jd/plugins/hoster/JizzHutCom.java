@@ -88,6 +88,12 @@ public class JizzHutCom extends PluginForHost {
             dllink = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("'href','(https?://[^'<>]*?\\.(?:mp4|flv)(\\?.*?)?)'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<source src=\"([^\"]+)\"\\s*type=\"video/mp4\">").getMatch(0);
+                    if (dllink != null) {
+                        dllink = "http:" + dllink;
+                    }
+                }
             }
             if (dllink == null) {
                 String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?(jizzhut|youjizz)\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
