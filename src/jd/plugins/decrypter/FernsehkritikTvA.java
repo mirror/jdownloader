@@ -102,7 +102,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(posteckelink));
             } else if (posteckelink != null) {
                 br.setFollowRedirects(false);
-                /* External link - redirects to youtube/myvideo or similar */
+                /* External link - redirects to youtube or similar */
                 if (!posteckelink.startsWith("http")) {
                     posteckelink = "http://fernsehkritik.tv" + posteckelink;
                 }

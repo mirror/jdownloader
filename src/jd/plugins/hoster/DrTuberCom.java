@@ -214,7 +214,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         * 
+                         *
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */
@@ -542,7 +542,7 @@ public class DrTuberCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null;
+        return SiteTemplate.UnknownPornScript9;
     }
 
 }

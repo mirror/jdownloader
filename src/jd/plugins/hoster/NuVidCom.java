@@ -164,7 +164,7 @@ public class NuVidCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return null;
+        return SiteTemplate.UnknownPornScript9;
     }
 
 }

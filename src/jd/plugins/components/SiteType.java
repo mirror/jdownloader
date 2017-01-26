@@ -206,6 +206,13 @@ public class SiteType {
          * <b>Example that needs a decrypter class :</b> -<br />
          */
         UnknownPornScript8,
+        /**
+         * <b>Minimum requirements:</b> Website has to fit script <br />
+         * <b>Main host class:</b> There is no main class<br />
+         * <b>Example that suits :</b> <a href="http:/nuvid.com/">nuvid.com</a><br />
+         * <b>Example that needs a decrypter class :</b> -<br />
+         */
+        UnknownPornScript9,
 
         /**
          * Script used by some video hosting sites. <a href="http://cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.

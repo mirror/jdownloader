@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://(?:www\\.)?jamendo\\.com/.?.?/?(?:track/|download/album/|download/a|download/track/)\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://(?:www\\.)?jamendo\\.com/.?.?/?(?:track/|download/album/|download/a|download/track/)\\d+" })
 public class JamendoCom extends PluginForHost {
 
     private String             PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
@@ -59,7 +59,7 @@ public class JamendoCom extends PluginForHost {
         String trackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
         if (trackDownloadID != null) {
             br.setFollowRedirects(true);
-            br.getPage("http://www.jamendo.com/en/track/" + trackDownloadID);
+            br.getPage("http://www." + this.getHost() + "/en/track/" + trackDownloadID);
             String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
             if (Track == null || Artist == null) {
@@ -73,9 +73,12 @@ public class JamendoCom extends PluginForHost {
         if (trackID != null) {
             br.setFollowRedirects(true);
             br.getPage("https://www.jamendo.com/en/track/" + trackID + "/");
-            String fullname = br.getRegex("og:title\" content=\"(.*?) \\| Jamendo Music\"").getMatch(0);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String fullname = br.getRegex("<title>([^<>\"]+) \\| Jamendo Music \\| Free music downloads</title>").getMatch(0);
             if (fullname == null) {
-                final String track = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
+                final String track = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
                 final String artist = br.getRegex("itemprop=\"author\">([^<>\"]*?)</a>").getMatch(0);
                 if (track == null || artist == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

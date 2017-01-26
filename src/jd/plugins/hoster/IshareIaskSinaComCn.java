@@ -35,7 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -261,11 +260,6 @@ public class IshareIaskSinaComCn extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return null;
     }
 
 }

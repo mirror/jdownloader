@@ -3,7 +3,6 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -20,8 +19,6 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube\\.(cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)\\d+" })
 public class RedTubeCom extends PluginForHost {
 
-    private String dllink = null;
-
     public RedTubeCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -29,6 +26,9 @@ public class RedTubeCom extends PluginForHost {
 
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
+
+    private String               dllink                          = null;
+    private boolean              server_issues                   = false;
 
     private void setConfigElements() {
         String user_text;
@@ -67,15 +67,13 @@ public class RedTubeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.redtube.com", "language", "en");
-        try {
-            br.getPage(link.getDownloadURL().toLowerCase());
-        } catch (final Exception e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        br.getPage(link.getDownloadURL().toLowerCase());
         // Offline link
         if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -115,6 +113,9 @@ public class RedTubeCom extends PluginForHost {
             }
         }
         dllink = Encoding.urlDecode(dllink, true);
+        if (dllink.startsWith("//")) {
+            dllink = "http:" + dllink;
+        }
         String ext = new Regex(dllink, "(\\.flv|\\.mp4).+$").getMatch(0);
         if (fileName != null || ext != null) {
             fileName = Encoding.htmlOnlyDecode(fileName);
@@ -125,24 +126,25 @@ public class RedTubeCom extends PluginForHost {
             con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                return AvailableStatus.TRUE;
+            } else {
+                server_issues = true;
             }
-        } catch (final BrowserException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (dllink == null) {
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);

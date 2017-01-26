@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -15,7 +16,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 /**
  * @author noone2407
  */
-@HostPlugin(revision = "$Revision:$", interfaceVersion = 2, names = { "nhaccuatui.com" }, urls = { "http://(www\\.)?nhaccuatui\\.com/bai-hat/\\S+" }) 
+@HostPlugin(revision = "$Revision:$", interfaceVersion = 2, names = { "nhaccuatui.com" }, urls = { "http://(www\\.)?nhaccuatui\\.com/bai-hat/\\S+" })
 public class NhacCuaTuiCom extends PluginForHost {
 
     private String dllink = null;
@@ -30,14 +31,15 @@ public class NhacCuaTuiCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.getPage(url);
+        final String filename_url = new Regex(url, "([^/]+)$").getMatch(0);
         String filename = br.getRegex("<h1 itemprop=\"name\">(.*?)<\\/h1>").getMatch(0);
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = filename_url;
         }
         downloadLink.setFinalFileName(filename + ".mp3");
 

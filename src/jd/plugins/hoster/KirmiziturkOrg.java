@@ -19,11 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "http://(www\\.)?kirmiziturkdecrypted\\.org/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kirmiziturk.org" }, urls = { "https?://(?:www\\.)?kirmiziturkdecrypted\\.org/video/\\d+" })
 public class KirmiziturkOrg extends PluginForHost {
 
     public KirmiziturkOrg(PluginWrapper wrapper) {
@@ -51,6 +49,7 @@ public class KirmiziturkOrg extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -64,6 +63,8 @@ public class KirmiziturkOrg extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        server_issues = false;
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -72,52 +73,63 @@ public class KirmiziturkOrg extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("<h3>404</h3>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("class=\"vprocessing\"")) {
+            server_issues = true;
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        dllink = checkDirectLink(downloadLink, "directlink");
+        dllink = br.getRegex("file\\s*?:\\s*?\"(http[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("data\\-video=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            final Regex special_embed_regex = this.br.getRegex("embed\\.vol\\.io/\\?pid=(\\d+)\\&file=(\\d+\\.mp4)");
+            final String strange_embed_file_id_1 = special_embed_regex.getMatch(0);
+            final String strange_embed_file_id_2 = special_embed_regex.getMatch(1);
+            if (strange_embed_file_id_1 != null && strange_embed_file_id_2 != null) {
+                dllink = "http://cdn.vol.io/" + strange_embed_file_id_1 + "/" + strange_embed_file_id_2;
+            }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+        } else {
+            ext = ".mp4";
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -129,30 +141,6 @@ public class KirmiziturkOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     @Override
