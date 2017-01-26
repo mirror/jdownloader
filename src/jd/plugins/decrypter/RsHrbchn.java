@@ -29,8 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.(in|us)/(protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html|wp/goto/Download/\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.(in|us)/(protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html|wp/goto/Download/\\d+)" })
 public class RsHrbchn extends PluginForDecrypt {
+
     private final String ua = RandomUserAgent.generate();
 
     public RsHrbchn(PluginWrapper wrapper) {
@@ -50,20 +51,39 @@ public class RsHrbchn extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", ua);
         String parameter = param.toString().replace("hoerbuch.in", "hoerbuch.us");
         br.getPage("http://" + current_domain + "/wp/");
-        br.getPage(parameter);
-        if (parameter.matches(FOLDER_REDIRECTLINK)) {
-            br.setFollowRedirects(true);
-            if (br.getRedirectLocation() != null) {
-                br.getPage(br.getRedirectLocation());
+        boolean done = false;
+        int counter = 0;
+        do {
+            /* 2017-01-26: New: do-while-loop to detect- and avoid redirects to external websites here - this resulted in failures before. */
+            try {
+                br.getPage(parameter);
+                if (parameter.matches(FOLDER_REDIRECTLINK)) {
+                    br.setFollowRedirects(true);
+                    if (br.getRedirectLocation() != null) {
+                        br.getPage(br.getRedirectLocation());
+                    }
+                    final String newid = new Regex(br.getURL(), "folder_(\\d+)\\.html").getMatch(0);
+                    if (newid == null && !this.br.getURL().contains(current_domain)) {
+                        logger.info("Retry on ad-redirect");
+                        continue;
+                    } else if (newid == null) {
+                        logger.info("Retry on newid == null");
+                        continue;
+                    }
+                    final String newlink = "http://hoerbuch.us/protection/folder_" + newid + ".html";
+                    parameter = newlink;
+                    br.getPage(newlink);
+                }
+                if (this.br.getURL().contains(current_domain)) {
+                    done = true;
+                }
+            } finally {
+                this.sleep(2000l, param);
+                counter++;
             }
-            final String newid = new Regex(br.getURL(), "folder_(\\d+)\\.html").getMatch(0);
-            if (newid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final String newlink = "http://hoerbuch.us/protection/folder_" + newid + ".html";
-            parameter = newlink;
-            br.getPage(newlink);
+        } while (!done && counter <= 2);
+        if (!done) {
+            return null;
         }
         if (parameter.matches(FOLDERLINK)) {
             final Form form = br.getForm(1);

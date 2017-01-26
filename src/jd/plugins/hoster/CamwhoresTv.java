@@ -60,8 +60,8 @@ public class CamwhoresTv extends PluginForHost {
     private final boolean       ACCOUNT_FREE_RESUME          = true;
     private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
     private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
+    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     private String              dllink                       = null;
@@ -92,20 +92,7 @@ public class CamwhoresTv extends PluginForHost {
         }
         is_private_video = this.br.containsHTML("This video is a private");
         String filename = getTitle(this.br, link.getDownloadURL());
-        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(link, this.br);
-        final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
-        final String licenseCode = this.br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        final String videoUrl = this.br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        if (scriptUrl != null && videoUrl != null && licenseCode != null) {
-            final Browser cbr = br.cloneBrowser();
-            cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            cbr.getPage(scriptUrl);
-            final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
-            final String dllink = decryptHash(videoUrl, licenseCode, hashRange);
-            if (dllink != null) {
-                this.dllink = dllink;
-            }
-        }
+        getDllink(link);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -138,6 +125,26 @@ public class CamwhoresTv extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void getDllink(final DownloadLink link) throws PluginException, IOException {
+        dllink = jd.plugins.hoster.KernelVideoSharingCom.getDllink(link, this.br);
+        if (dllink != null && dllink.contains("login-required")) {
+            dllink = null;
+        }
+        final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
+        final String licenseCode = this.br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        final String videoUrl = this.br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        if (scriptUrl != null && videoUrl != null && licenseCode != null) {
+            final Browser cbr = br.cloneBrowser();
+            cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            cbr.getPage(scriptUrl);
+            final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
+            final String dllink = decryptHash(videoUrl, licenseCode, hashRange);
+            if (dllink != null) {
+                this.dllink = dllink;
+            }
+        }
     }
 
     private String decryptHash(final String videoUrl, final String licenseCode, final String hashRange) {
