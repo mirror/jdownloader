@@ -298,14 +298,7 @@ public class ZeveraCom extends antiDDoSForHost {
         // it seems that they can give this error AFTER hoster link has been fetched...
         handleRedirectionErrors(br.getURL());
         br.followConnection();
-        try {
-            handleErrorRetries("unknowndlerroratend", 50, 10 * 60 * 1000l);
-        } catch (final Throwable xxe) {
-            if (xxe instanceof PluginException && ((PluginException) xxe).getLinkStatus() != LinkStatus.ERROR_RETRY) {
-                /* Finally, failed! */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        handleErrorRetries("unknowndlerroratend", 50, 10 * 60 * 1000l);
     }
 
     /**
