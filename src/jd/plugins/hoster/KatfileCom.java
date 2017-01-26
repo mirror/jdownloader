@@ -1112,7 +1112,7 @@ public class KatfileCom extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|You can`t download more than 1)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -1126,7 +1126,7 @@ public class KatfileCom extends PluginForHost {
             String tmpsec = new Regex(wait, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(wait, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
-                logger.info("Waittime regexes seem to be broken");
+                logger.info("Waittime regexes seem to be broken or no wait time");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
