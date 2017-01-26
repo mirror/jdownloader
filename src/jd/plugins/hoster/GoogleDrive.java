@@ -189,20 +189,26 @@ public class GoogleDrive extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             final URLConnectionAdapter con = br2.openGetConnection("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
             try {
-                if (con.isOK() && con.isContentDisposition()) {
-                    final String fileName = getFileNameFromHeader(con);
-                    if (fileName != null) {
-                        link.setName(fileName);
+                if (con.isOK()) {
+                    if (con.isContentDisposition()) {
+                        final String fileName = getFileNameFromHeader(con);
+                        if (fileName != null) {
+                            link.setName(fileName);
+                        }
+                        if (con.getCompleteContentLength() != -1) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
+                    } else {
+                        br2.followConnection();
+                        size = br2.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
+                        if (size != null) {
+                            link.setDownloadSize(SizeFormatter.getSize(size + "b"));
+                        }
                     }
-                    if (con.getCompleteContentLength() != -1) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
+                } else if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    br2.followConnection();
-                    size = br2.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
-                    if (size != null) {
-                        link.setDownloadSize(SizeFormatter.getSize(size + "b"));
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
                 con.disconnect();
