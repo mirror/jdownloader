@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?(yourupload\\.com|yucache\\.net)/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?(yourupload\\.com|yucache\\.net)/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" })
 public class YourUploadCom extends antiDDoSForHost {
 
     private String dllink     = null;
@@ -81,7 +81,7 @@ public class YourUploadCom extends antiDDoSForHost {
             if (filename == null) {
                 filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             }
-            dllink = br.getRegex("'file':\\s+'(https?://.*?)'").getMatch(0);
+            dllink = br.getRegex("(?:\\')?file(?:\\')?\\s*?:\\s*?\\'((?:https?://|/).*?)\\'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("property=\"og:video\" content=\"(https?://.*?)\"").getMatch(0);
             }
