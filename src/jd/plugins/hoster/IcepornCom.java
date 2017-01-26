@@ -32,23 +32,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nuvid.com" }, urls = { "https?://(?:www\\.)?nuvid\\.com/(?:video|embed)/\\d+" })
-public class NuVidCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iceporn.com" }, urls = { "https?://(?:www\\.)?iceporn\\.com/embed/\\d+|https?://(?:www\\.)?iceporn\\.com/video/\\d+(?:/[a-z0-9\\-]+)?" })
+public class IcepornCom extends PluginForHost {
 
-    /* Tags: viptube.com */
+    /* Tags: viptube.com, nuvid.com */
     private String dllink = null;
 
-    public NuVidCom(final PluginWrapper wrapper) {
+    public IcepornCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.nuvid.com/static/terms";
+        return "http://www.iceporn.com/static/terms";
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.nuvid.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload("http://www.iceporn.com/video/" + new Regex(link.getDownloadURL(), "/(?:video|embed)/(\\d+)").getMatch(0));
     }
 
     private void getDllink() throws IOException {
@@ -58,7 +58,7 @@ public class NuVidCom extends PluginForHost {
             final String videoid = new Regex(this.br.getURL(), "/video/(\\d+)").getMatch(0);
             if (videoid != null) {
                 this.br.getPage("http://m." + this.getHost() + "/video/" + videoid);
-                dllink = this.br.getRegex("<source src=\"(http[^<>\"]+\\.(?:mp4|flv)[^<>\"]*?)").getMatch(0);
+                dllink = this.br.getRegex("<source src=\"(http[^<>\"]+\\.(?:mp4|flv)[^<>\"\\']+)").getMatch(0);
             }
         } else {
             /* 2017-01-23: pkey generation is wrong - fallback to mobile version of the website! */
@@ -70,7 +70,7 @@ public class NuVidCom extends PluginForHost {
                 vkey = this.br.getRegex("vkey=\\'\\s*?\\+\\s*?\\'([a-z0-9]+)\\'").getMatch(0);
             }
             if (h != null && t != null && vkey != null) {
-                br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("aHlyMTRUaTFBYVB0OHhS")) + "&aid=&domain_id=");
+                br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("null_TODO")) + "&aid=&domain_id=");
                 dllink = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
@@ -101,21 +101,11 @@ public class NuVidCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(This page cannot be found|Are you sure you typed in the correct url|<title>Most Recent Videos \\- Free Sex Adult Videos \\- NuVid\\.com</title>|This video was not found)")) {
-            // Offline1
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("This video was deleted\\.")) {
-            // Offline2
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
-            // Offline3
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        String filename = br.getRegex("class=\"navbar_title\">([^<>]+)").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) - Free Porn \\& Sex Video").getMatch(0);
-        }
+        final String fid = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) \\- Porn Tube[^<>]*?</title>").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = fid;
@@ -124,13 +114,20 @@ public class NuVidCom extends PluginForHost {
         final String ext;
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
-            ext = getFileNameExtensionFromString(dllink, ".flv");
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
+                if (con.getResponseCode() == 404) {
+                    /*
+                     * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com
+                     */
+                    final String redirect_url = con.getRequest().getUrl();
+                    con = br2.openHeadConnection(redirect_url);
+                }
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -143,7 +140,7 @@ public class NuVidCom extends PluginForHost {
                 }
             }
         } else {
-            ext = ".flv";
+            ext = ".mp4";
         }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);

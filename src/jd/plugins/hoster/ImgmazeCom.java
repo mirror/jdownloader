@@ -634,8 +634,12 @@ public class ImgmazeCom extends PluginForHost {
     }
 
     public static Form fixImghost_next_form(final Browser br, final Form imghost_next_form) {
+        /* New 2017-01-26 */
+        String special_key = br.getRegex("\\..(?:[a-f0-9]+)\\{display:initial;\\}\\..([a-f0-9]+)\\{display:initial;\\}").getMatch(0);
         /* New 2017-01-23 */
-        String special_key = br.getRegex("\\..([a-f0-9]+)\\{display:initial;\\}").getMatch(0);
+        if (special_key == null) {
+            special_key = br.getRegex("\\..([a-f0-9]+)\\{display:initial;\\}").getMatch(0);
+        }
         if (special_key == null) {
             /* 2017-01-20 */
             special_key = br.getRegex("\\$\\(\\'#\\d+\\'\\)\\.append\\(\\$\\(\\'<Form method=\"POST.*?name=\"([a-f0-9]{32})\" value=\"1\"").getMatch(0);

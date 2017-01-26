@@ -145,12 +145,6 @@ public class RGhostRu extends PluginForHost {
         return dllink;
     }
 
-    private void offlineCheck() throws PluginException {
-        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited|<title>(403|404)|File was deleted|>File is deleted<)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -177,7 +171,10 @@ public class RGhostRu extends PluginForHost {
             filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
         }
         if (filename == null) {
-            offlineCheck();
+            if (!this.br.containsHTML("class=\"file\\-info\\-title\"")) {
+                /* Not a file url */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
@@ -196,7 +193,6 @@ public class RGhostRu extends PluginForHost {
         }
         link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        offlineCheck();
         if (br.containsHTML(PWTEXT)) {
             link.getLinkStatus().setStatusText("This file is password protected");
         }

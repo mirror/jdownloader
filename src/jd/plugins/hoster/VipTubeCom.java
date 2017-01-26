@@ -33,6 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viptube.com" }, urls = { "http://(www\\.)?viptube\\.com/(video|embed)/\\d+" })
@@ -54,7 +55,7 @@ public class VipTubeCom extends PluginForHost {
         link.setUrlDownload("http://www.viptube.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
-    private static final String SKEY = "RXdxT0JRbUpETUpScmdYWg==";
+    private static final String SKEY = "null_TODO";
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com, nuvid.com */
     /*
@@ -190,5 +191,10 @@ public class VipTubeCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return null;
     }
 }

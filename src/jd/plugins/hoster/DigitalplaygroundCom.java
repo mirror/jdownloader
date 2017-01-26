@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "digitalplayground.com" }, urls = { "http://digitalplaygrounddecrypted.+" })
@@ -227,6 +228,10 @@ public class DigitalplaygroundCom extends PluginForHost {
                 if (continueform != null) {
                     /* Redirect from probiller.com to main website --> Login complete */
                     br.submitForm(continueform);
+                    /* Some errorhandling in case submitting the Form does not take us on their main page. */
+                    if (br.getURL().contains("/postlogin")) {
+                        br.getPage("/home/");
+                    }
                 }
                 if (!br.containsHTML(html_loggedin)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -277,6 +282,42 @@ public class DigitalplaygroundCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+        return account != null;
+    }
+
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        if (is_this_plugin) {
+            /* The original plugin is always allowed to download. */
+            return true;
+        } else {
+            final String mainlink = getMainlink(downloadLink);
+            /* Multihosts should only be tried if we have the correct url. */
+            return jd.plugins.decrypter.DigitalplaygroundCom.isTrailerUrl(mainlink) || mainlink.equals("");
+        }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink downloadLink, final PluginForHost buildForThisPlugin) {
+        if (!StringUtils.equals(this.getHost(), buildForThisPlugin.getHost())) {
+            final String mainlink = getMainlink(downloadLink);
+            final String extern_url = jd.plugins.decrypter.DigitalplaygroundCom.getVideoUrlFree(mainlink);
+            return extern_url;
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+        }
+    }
+
+    private String getMainlink(final DownloadLink dl) {
+        String mainlink = dl.getStringProperty("mainlink", null);
+        if (mainlink == null) {
+            mainlink = dl.getDownloadURL();
+        }
+        return mainlink;
     }
 
     @Override
