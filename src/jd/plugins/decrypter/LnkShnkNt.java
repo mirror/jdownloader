@@ -110,6 +110,14 @@ public class LnkShnkNt extends antiDDoSForDecrypt {
             if ("#".equals(continu)) {
                 // new method 20170122
                 continu = br.getRegex("<script>\\s*g\\.href\\s*=\\s*\"(https?://linkshrink.net/[a-zA-Z0-9]+)\";</script>").getMatch(0);
+                if (continu == null) {
+                    // new method 20170127
+                    continu = br.getRegex("\\.href\\s*=\\s*\\w+\\(\"([a-zA-Z0-9_/+=\\-%]+)\"\\)</script>").getMatch(0);
+                    if (continu != null) {
+                        continu = "/" + Encoding.Base64Decode(continu);
+                    }
+
+                }
             }
             if (continu == null) {
                 return null;
