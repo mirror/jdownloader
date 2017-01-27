@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tookapic.com" }, urls = { "https?://stock\\.tookapic\\.com/photos/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tookapic.com" }, urls = { "https?://stock\\.tookapic\\.com/photos/\\d+" })
 public class TookapicCom extends PluginForHost {
 
     public TookapicCom(PluginWrapper wrapper) {
@@ -74,7 +74,11 @@ public class TookapicCom extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
         String filesize = br.getRegex("<span>File size</span>[\t\n\r ]*?<span>([^<>\"]*?)</span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("File size\\s*<[^<>]*>\\s*<[^<>]*>\\s*(\\d+(\\.\\d+)? [A-Z]B)").getMatch(0);
+        }
         if (filename == null || filesize == null) {
+            logger.info("filename: " + filename + ", filesize: " + filesize);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".jpg");
