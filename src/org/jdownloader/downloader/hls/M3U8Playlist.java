@@ -222,7 +222,7 @@ public class M3U8Playlist {
                     sequenceOffset++;
                 } else if (line.startsWith("#EXT-X-KEY")) {
                     xKeyMethod = M3U8Segment.X_KEY_METHOD.get(new Regex(line, "METHOD=(NONE|AES-128|SAMPLE-AES)").getMatch(0));
-                    xKeyIV = new Regex(line, "IV=0x[a-fA-F0-9]{32}").getMatch(0);
+                    xKeyIV = new Regex(line, "IV=0x([a-fA-F0-9]{32})").getMatch(0);
                     xKeyURI = new Regex(line, "URI=\"(.*?)\"").getMatch(0);
                     if (xKeyURI != null) {
                         xKeyURI = br.getURL(xKeyURI).toString();
