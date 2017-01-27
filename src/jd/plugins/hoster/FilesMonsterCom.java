@@ -378,12 +378,15 @@ public class FilesMonsterCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api)")) {
                     DownloadLink dummyLink = new DownloadLink(this, "Account", "http://filesmonster.com", "http://filesmonster.com", true);
                     final Recaptcha rc = new Recaptcha(br, this);
-                    final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     if (id == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        id = br.getRegex("sitekey=\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                        if (id == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     rc.setId(id);
                     rc.load();
@@ -400,6 +403,9 @@ public class FilesMonsterCom extends PluginForHost {
                 final String lang_cookie = br.getCookie("http://filesmonster.com/", "yab_ulanguage");
                 if (!"en".equals(lang_cookie)) {
                     br.getPage("/?setlang=en");
+                }
+                if (br.containsHTML("Please confirm that you are not a robot") || br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api)")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Captcha invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
 
                 if (br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by \\'Password reminder\\'")) {
