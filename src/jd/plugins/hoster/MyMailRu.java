@@ -131,7 +131,11 @@ public class MyMailRu extends PluginForHost {
             final String videoID = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
             final String videourlpart = new Regex(br.getURL(), "my\\.mail\\.ru/([^<>\"]*?)/video/").getMatch(0);
             if (videourlpart == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * 2017-01-27: ERROR_FILE_NOT_FOUND instead of PLUGIN_DEFECT as chances are very high that we do not have a video or the
+                 * video is offline at this stage.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage("http://my.mail.ru/" + videourlpart + "/ajax?ajax_call=1&func_name=video.get_item&mna=&mnb=&arg_id=" + videoID + "&_=" + System.currentTimeMillis());
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));

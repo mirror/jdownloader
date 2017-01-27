@@ -14,9 +14,10 @@ import jd.plugins.PluginForHost;
  *
  * @author noone2407
  * @author raztoki
+ * @author pspzockerscene
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.zing.vn" }, urls = { "http://tv.zing.vn/video/(\\S+).html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.zing.vn" }, urls = { "http://tv.zing.vn/video/(\\S+).html" })
 public class TvZingVn extends PluginForHost {
 
     public TvZingVn(PluginWrapper wrapper) {
@@ -31,6 +32,12 @@ public class TvZingVn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         final String url = downloadLink.getDownloadURL();
+        /* 2017-01-27: Abused urls will redirect twice to 404 url */
+        this.br.setFollowRedirects(true);
+        this.br.getPage(url);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"content\\-404\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // get the name of the movie from url
         final String filename = new Regex(url, "http://tv\\.zing\\.vn/video/([\\w-]+)\\/([\\w\\d]+).html").getMatch(0);
         downloadLink.setFinalFileName(filename.replace("-", " ") + ".mp4");

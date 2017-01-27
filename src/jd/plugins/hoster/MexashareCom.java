@@ -58,7 +58,7 @@ public class MexashareCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
+    private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode|>The service is currently under maintenance";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */

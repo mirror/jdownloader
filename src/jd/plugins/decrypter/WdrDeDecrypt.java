@@ -139,17 +139,23 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             plain_name = sendung;
         }
 
+        final String json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
+        if (json_api_url == null) {
+            /* No player --> No downloadable video/content */
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        br.getPage(json_api_url);
+
+        final String finallink_audio = PluginJSonUtils.getJsonValue(this.br, "audioURL");
+
         /* Check for audio stream */
-        if (br.containsHTML("<div class=\"audioContainer\">")) {
-            /* TODO: Check if that still works / is still required */
-            final String finallink = br.getRegex("dslSrc: \\'dslSrc=(http://[^<>\"]*?)\\&amp;mediaDuration=\\d+\\'").getMatch(0);
-            if (finallink == null || sendung == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
+        if (finallink_audio != null && !finallink_audio.equals("")) {
             final DownloadLink audio = createDownloadlink("http://wdrdecrypted.de/?format=mp3&quality=1x1&hash=" + JDHash.getMD5(parameter));
             audio.setProperty("mainlink", parameter);
-            audio.setProperty("direct_link", finallink);
+            audio.setProperty("direct_link", finallink_audio);
             audio.setProperty("plain_filename", plain_name + ".mp3");
             decryptedLinks.add(audio);
         } else {
@@ -163,63 +169,13 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             boolean grab_best = cfg.getBooleanProperty(Q_BEST, true);
             final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.WdrDeMediathek.FAST_LINKCHECK, jd.plugins.hoster.WdrDeMediathek.defaultFAST_LINKCHECK);
             ArrayList<String> selected_qualities = new ArrayList<String>();
-
-            /*
-             * Possible json "API" e.g. http://www1.wdr.de/mediathek/video/sendungen/videokoelnerlichter112.html
-             * http://deviceids-medstdp-id1.wdr.de/ondemand/76/760987.js
-             */
             String subtitle_url = null;
             String flashvars = null;
-            boolean api_in_use = false;
-            final String json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
-            String player_link = br.getRegex("\\&#039;mcUrl\\&#039;:\\&#039;(/[^<>\"]*?\\.json)").getMatch(0);
-            if (player_link == null) {
-                player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
+            if (date == null) {
+                date = PluginJSonUtils.getJsonValue(this.br, "trackerClipAirTime");
             }
-            if (player_link == null) {
-                player_link = br.getRegex("\"(/[^<>\"]*?)\" rel=\"nofollow\" class=\"videoButton play\"").getMatch(0);
-            }
-            if (player_link == null) {
-                /* Last chance */
-                api_in_use = true;
-                player_link = json_api_url;
-            }
-            if (player_link == null) {
-                /* No player --> No downloadable video/content */
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            if (!player_link.startsWith("http")) {
-                player_link = "http://www1.wdr.de" + player_link;
-            }
-            br.getPage(player_link);
-            if (api_in_use) {
-                /* With API */
-                if (date == null) {
-                    date = br.getRegex("\"trackerClipAirTime\":\"([^<>\"]+)\"").getMatch(0);
-                }
-            } else {
-                /* Without API */
-                if (date == null) {
-                    date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
-                }
-            }
-            if (api_in_use) {
-                flashvars = this.br.toString();
-                subtitle_url = PluginJSonUtils.getJsonValue(flashvars, "captionURL");
-            } else {
-                flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-                if (flashvars == null) {
-                    return null;
-                }
-                flashvars = Encoding.htmlDecode(flashvars);
-                subtitle_url = new Regex(flashvars, "vtCaptionsURL=(http://[^<>\"]*?\\.xml)\\&vtCaptions").getMatch(0);
-                if (subtitle_url != null) {
-                    subtitle_url = Encoding.htmlDecode(subtitle_url);
-                }
-            }
+            flashvars = this.br.toString();
+            subtitle_url = PluginJSonUtils.getJsonValue(flashvars, "captionURL");
             final String date_formatted = formatDate(date);
             /* We know how their http links look - this way we can avoid HDS/HLS/RTMP */
             /* http://adaptiv.wdr.de/z/medp/ww/fsk0/104/1046579/,1046579_11834667,1046579_11834665,1046579_11834669,.mp4.csmil/manifest.f4 */
@@ -246,9 +202,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 // String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
                 /* 2016-02-16 new e.g. http://ondemand-ww.wdr.de/medp/fsk0/105/1058266/1058266_12111633.mp4 */
                 String final_url = "http://ondemand-ww.wdr.de/medp/";
-                if (!api_in_use) {
-                    final_url += region + "/";
-                }
                 final_url += fsk_url + "/";
                 final String single_quality_string_correct;
                 String resolution;
