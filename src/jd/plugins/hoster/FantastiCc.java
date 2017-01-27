@@ -29,8 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fantasti.cc" }, urls = { "http://(?:www\\.)?fantasti\\.cc/user/[^/]+/videos/upload/[^/]+/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fantasti.cc" }, urls = { "http://(?:www\\.)?fantasti\\.cc/(user/[^/]+/videos/upload/[^/]+/\\d+/|embed/\\d+/?)" })
 public class FantastiCc extends PluginForHost {
 
     public FantastiCc(PluginWrapper wrapper) {
@@ -64,7 +65,7 @@ public class FantastiCc extends PluginForHost {
         br.setFollowRedirects(false);
         int counter = 0;
         String redirecturl = downloadLink.getDownloadURL();
-        downloadLink.setName(new Regex(redirecturl, "videos/upload/(.+)").getMatch(0));
+        downloadLink.setName(new Regex(redirecturl, "(?:videos/upload|embed)/(.+)").getMatch(0));
         do {
             this.br.getPage(redirecturl);
             redirecturl = this.br.getRedirectLocation();
@@ -75,7 +76,10 @@ public class FantastiCc extends PluginForHost {
         }
         String filename = br.getRegex("lass=\"title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "fantasti\\.cc/user/[^/]+/videos/upload/([^/]+)/.+").getMatch(0);
+            filename = PluginJSonUtils.getJson(br, "title");
+            if (filename == null) {
+                filename = new Regex(downloadLink.getDownloadURL(), "fantasti\\.cc/user/[^/]+/videos/upload/([^/]+)/.+").getMatch(0);
+            }
         }
         dllink = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (dllink == null) {

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,9 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "http://(www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/\\d+/[^<>\"]*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "http://(www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/\\d+/[^<>\"]*?\\.html" })
 public class FourPlayersDe extends PluginForHost {
 
     public FourPlayersDe(PluginWrapper wrapper) {
@@ -51,12 +51,14 @@ public class FourPlayersDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<label>Dateiname:</label>[\t\n\r ]+<div class=\"infoval filename\">([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex("<label>Dateigröße:</label>[\t\n\r ]+<div class=\"infoval\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) {
+        final String filesize = br.getRegex("<label>Dateigröße:</label>[\t\n\r ]+<div [^>]*class=\"infoval\"[^>]*>([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
         return AvailableStatus.TRUE;
     }
 
