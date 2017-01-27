@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,12 +31,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoraj.ch" }, urls = { "http://(www\\.)?videoraj\\.ch/(v/|embed\\.php\\?id=)[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoraj.to" }, urls = { "http://(www\\.)?videoraj\\.(?:ch|to)/(v/|embed\\.php\\?id=)[a-z0-9]+" })
 public class VideorajCh extends PluginForHost {
-
-    private static final String DOMAIN = "videoraj.ch";
 
     public VideorajCh(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +40,7 @@ public class VideorajCh extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.videoraj.ch/terms";
+        return "http://www.videoraj.to/terms";
     }
 
     @Override
@@ -52,7 +50,7 @@ public class VideorajCh extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.videoraj.ch/v/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("http://www.videoraj.to/v/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     /* API available but not enough for us: http://www.videoraj.ch/api-doc.php */
@@ -87,7 +85,7 @@ public class VideorajCh extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
-        br.getPage("http://www.videoraj.ch/embed.php?id=" + fid + "&autoplay=1");
+        br.getPage("/embed.php?id=" + fid + "&autoplay=1");
         String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
         String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
         if (key == null && br.containsHTML("w,i,s,e")) {
@@ -107,9 +105,9 @@ public class VideorajCh extends PluginForHost {
         boolean success = false;
         for (int i = 0; i <= 3; i++) {
             if (i > 0) {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                br.getPage("/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
             } else {
-                br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
+                br.getPage("/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
             }
             String dllink = br.getRegex("url=(http.*?)\\&title").getMatch(0);
             if (dllink == null) {
@@ -163,7 +161,7 @@ public class VideorajCh extends PluginForHost {
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
         } catch (final Exception e) {
-            logger.log( e);
+            logger.log(e);
             return null;
         }
         return result;
