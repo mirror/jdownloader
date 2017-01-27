@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenfiles.com" }, urls = { "http://(www\\.)?tenfiles\\.(com|info)/file/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenfiles.com" }, urls = { "http://(www\\.)?tenfiles\\.(com|info)/file/[a-z0-9]+" })
 public class TenFilesCom extends PluginForHost {
 
     public TenFilesCom(PluginWrapper wrapper) {
@@ -53,10 +53,14 @@ public class TenFilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://tenfiles.com/", "lang", "us");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404<|Attention! This file was removed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("alt=\"file\" />\\-\\->([^<>\"]*?)</td>").getMatch(0);
         final String filesize = br.getRegex("Size[\t\n\r ]+</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -75,13 +79,19 @@ public class TenFilesCom extends PluginForHost {
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode("gigapeta.com", captchaUrl, downloadLink);
             br.postPage(br.getURL(), "download=&captcha_key=" + captchaKey + "&captcha=" + captchaCode);
-            if (br.getRedirectLocation() != null) break;
+            if (br.getRedirectLocation() != null) {
+                break;
+            }
         }
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.getRedirectLocation() == null) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("All threads for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.tenfilescom.unavailable", "Your IP is already downloading a file"));
+            if (br.containsHTML("All threads for IP")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.tenfilescom.unavailable", "Your IP is already downloading a file"));
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
