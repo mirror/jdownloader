@@ -58,6 +58,10 @@ public class Rule34Xxx extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
+        // redirect to base list page of all content/tags.. we don't want to decrypt the entire site
+        if (br.getURL().endsWith("/index.php?page=post&s=list&tags=all")) {
+            return decryptedLinks;
+        }
         if (parameter.contains("&s=view&")) {
             // from list to post page
             String image = br.getRegex("<img[^>]+\\s+src=('|\")([^>]+)\\1 id=('|\")image\\3").getMatch(1);
@@ -84,7 +88,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             }
         }
 
-        final String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
+        String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
         FilePackage fp = null;
         if (fpName != null) {
             fp = FilePackage.getInstance();
@@ -102,7 +106,9 @@ public class Rule34Xxx extends PluginForDecrypt {
                 for (String link : links) {
                     link = HTMLEntities.unhtmlentities(link);
                     final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
-                    fp.add(dl);
+                    if (fp != null) {
+                        fp.add(dl);
+                    }
                     // because of hundreds if links this is to speed shit up!
                     dl.setAvailable(true);
                     // we should set temp filename also

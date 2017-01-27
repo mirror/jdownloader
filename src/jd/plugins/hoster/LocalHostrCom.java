@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,8 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(www\\.)?(localhostr\\.com|lh\\.rs|hostr\\.co)/[A-Za-z0-9]+" })
 public class LocalHostrCom extends PluginForHost {
@@ -70,24 +70,18 @@ public class LocalHostrCom extends PluginForHost {
         if (br.containsHTML("(>404<|>File not found|>We can\\'t find the file you\\'re looking for)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>.*?<h3>([^<>\"]*?)</h3>");
-        final Regex gifLinkRegex = br.getRegex("<h1>([^<>\"]*?)<span class=\"bull\">\\&bull;</span> <a class=\"direct\" href=\"[^<>\"]*?\">Direct Link</a> \\(\\d+x\\d+ / ([^<>\"]*?)\\)<a");
-        String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Hostr</title>").getMatch(0);
+        String filename = br.getRegex("<title>(?:Download\\s*)?([^<>\"]*?) - Hostr[^<]*</title>").getMatch(0);
         if (filename == null) {
-            filename = fInfo.getMatch(0);
-            if (filename == null) {
-                filename = gifLinkRegex.getMatch(0);
-            }
+            filename = br.getRegex("<span class=\"filename\">(.*?)</span>").getMatch(0);
         }
-        String filesize = fInfo.getMatch(1);
-        if (filesize == null) {
-            filesize = gifLinkRegex.getMatch(1);
-        }
-        if (filename == null || filesize == null) {
+        String filesize = br.getRegex("<span class=\"filesize\">(.*?)</span>").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -98,7 +92,7 @@ public class LocalHostrCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "agreed=on", true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink + "?warning=on", true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

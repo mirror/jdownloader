@@ -27,6 +27,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -52,12 +57,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshd.net" }, urls = { "https?://(www\\.)?fileshd\\.net/((vidembed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshd.net" }, urls = { "https?://(www\\.)?fileshd\\.net/((vidembed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" })
 public class FilesHdNet extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -185,22 +185,25 @@ public class FilesHdNet extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         /* standard traits from base page */
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = new Regex(correctedBR, "<span class=\"dfilename\">(.*?)</span>").getMatch(0);
             if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
                 if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    /* traits from download1 page below */
+                    fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // next two are details from sharing box
+                        fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                        /* traits from download1 page below */
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            // next two are details from sharing box
                             if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                                 if (fileInfo[0] == null) {
-                                    /* Link of the box without filesize */
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    if (fileInfo[0] == null) {
+                                        /* Link of the box without filesize */
+                                        fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                    }
                                 }
                             }
                         }
