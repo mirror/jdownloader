@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,9 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" })
 public class BbcComDecrypter extends PluginForDecrypt {
 
     public BbcComDecrypter(PluginWrapper wrapper) {
@@ -47,8 +47,14 @@ public class BbcComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        /* Type 1 */
-        String[] jsons = this.br.getRegex("data\\-playable=\\'(.*?)\\'>").getColumn(0);
+        String[] jsons = this.br.getRegex("data\\-playable=\"(.*?)\">").getColumn(0);
+        if (jsons != null && jsons.length != 0) {
+            jsons[0] = Encoding.htmlDecode(jsons[0]);
+        }
+        if (jsons == null || jsons.length == 0) {
+            /* Type 1 */
+            jsons = this.br.getRegex("data\\-playable=\\'(.*?)\\'>").getColumn(0);
+        }
         if (jsons == null || jsons.length == 0) {
             /* Type 2 */
             jsons = this.br.getRegex("playlistObject\\s*?:\\s*?(\\{.*?\\}),[\n]+").getColumn(0);
