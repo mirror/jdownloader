@@ -66,9 +66,11 @@ public class FlogPl extends PluginForHost {
         final Regex urlregex = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)\\.flog\\.pl/wpis/(\\d+)/");
         String filename = urlregex.getMatch(0) + "_" + urlregex.getMatch(1);
         /* Better filenames even for offline urls */
-        downloadLink.setName(filename);
+        if (!downloadLink.isNameSet()) {
+            downloadLink.setName(filename);
+        }
         br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
-        if (this.br.getRedirectLocation() != null || br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getRedirectLocation() != null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Nie podałeś nazwy bloga, lub podany blog nie istnieje\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRegex("property=\"og:image\"[\t\n\r ]*?content=\"(http[^<>\"]*?)\"").getMatch(0);

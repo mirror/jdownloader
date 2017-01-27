@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
@@ -614,6 +615,18 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("(foxytube\\.com/embedded/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www." + externID));
+            return decryptedLinks;
+        }
+        /* 2017-01-27 fantasti.cc */
+        externID = br.getRegex("('|\")((?:https?:)?//(?:www\\.)?fantasti\\.cc/embed/\\d+/?)\\1").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(Request.getLocation(externID, br.getRequest())));
+            return decryptedLinks;
+        }
+        /* 2017-01-27 porn.com */
+        externID = br.getRegex("('|\")((?:https?:)?//(?:www\\.)?porn\\.com/videos/embed/\\d+?)\\1").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(Request.getLocation(externID, br.getRequest())));
             return decryptedLinks;
         }
         return decryptedLinks;
