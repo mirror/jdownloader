@@ -57,10 +57,10 @@ public class PutfilesIn extends PluginForHost {
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareBasic Version 0.8.1-psp<br />
-     * mods:<br />
+     * mods: fetchAccountInfo[Some changes to properly detect account type]<br />
      * limit-info: 2017-01-20: Premium untested, set FREE limits<br />
      * protocol: no https<br />
-     * captchatype: null, solvemedia, reCaptchaV1, reCaptchaV2<br />
+     * captchatype: null<br />
      * other: alternative linkcheck#2: statistics URL: host.tld/<fid>~s<br />
      */
 
@@ -103,8 +103,8 @@ public class PutfilesIn extends PluginForHost {
     private static final int               account_FREE_MAXCHUNKS                       = 1;
     private static final int               account_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean           account_PREMIUM_RESUME                       = true;
-    private static final int               account_PREMIUM_MAXCHUNKS                    = 1;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                 = 1;
+    private static final int               account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int               account_PREMIUM_MAXDOWNLOADS                 = -1;
 
     private static AtomicReference<String> agent                                        = new AtomicReference<String>(null);
 
@@ -558,24 +558,20 @@ public class PutfilesIn extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>")) {
+        final boolean pageContainsPremiumStatus = br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO)</span>");
+        br.getPage("http://" + this.getHost() + "/upgrade." + type);
+        String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expire == null) {
+            /* More wide RegEx to be more language independant */
+            expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
+        }
+        if (!pageContainsPremiumStatus && expire == null) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
-            /* If the premium account is expired we'll simply accept it as a free account. */
-            String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            if (expire == null) {
-                /* More wide RegEx to be more language independant */
-                expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
-            }
-            if (expire == null) {
-                account.setValid(false);
-                return ai;
-            }
             long expire_milliseconds = 0;
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
