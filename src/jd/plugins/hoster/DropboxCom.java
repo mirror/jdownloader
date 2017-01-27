@@ -12,14 +12,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,7 +30,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.config.BasicAdvancedConfigPluginPanel;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
 
     public DropboxCom(PluginWrapper wrapper) {
@@ -47,7 +47,6 @@ public class DropboxCom extends PluginForHost {
 
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23").replaceAll("\\?dl=\\d", ""));
 
@@ -75,15 +74,10 @@ public class DropboxCom extends PluginForHost {
     private String                          url               = null;
     private BasicAdvancedConfigPluginPanel  configPanel;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
-        if (link.getBooleanProperty("decrypted")) {
-            if (link.getBooleanProperty("offline", false)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-
+        if (link.getBooleanProperty("decrypted", false)) {
             URLConnectionAdapter con = null;
             if (link.getPluginPatternMatcher().matches(TYPE_S)) {
                 br.setCookie("http://dropbox.com", "locale", "en");
@@ -211,7 +205,6 @@ public class DropboxCom extends PluginForHost {
     // TODO: Move into Utilities (It's here for a hack)
     // public class OAuth {
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         String passCode = link.getStringProperty("pass", null);
@@ -262,7 +255,6 @@ public class DropboxCom extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dlURL = downloadLink.getPluginPatternMatcher();

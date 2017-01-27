@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+" })
 public class RomHustlerNet extends PluginForHost {
 
     public RomHustlerNet(PluginWrapper wrapper) {
@@ -64,6 +64,10 @@ public class RomHustlerNet extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         final String decrypterLink = downloadLink.getStringProperty("decrypterLink", null);
+        if (decrypterLink == null) {
+            /* This should never happen. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(decrypterLink);
         String jslink = br.getRegex("\"(/js/cache[a-z0-9\\-]+\\.js)\"").getMatch(0);
         if (jslink != null) {

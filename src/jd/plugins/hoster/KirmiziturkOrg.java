@@ -65,6 +65,7 @@ public class KirmiziturkOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -86,8 +87,9 @@ public class KirmiziturkOrg extends PluginForHost {
                 dllink = "http://cdn.vol.io/" + strange_embed_file_id_1 + "/" + strange_embed_file_id_2;
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filename.trim().equals("")) {
+            /* Fallback */
+            filename = fid;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();

@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//?(gallery|image)\\.php\\?id=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//?(gallery|image)\\.php\\?id=\\d+" })
 public class ImagEarnCom extends PluginForDecrypt {
 
     public ImagEarnCom(PluginWrapper wrapper) {
@@ -49,12 +49,15 @@ public class ImagEarnCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h3 class=\"page-title\"><strong>([^<>\"/]+)</strong>").getMatch(0);
-        if (parameter.matches("http://(www\\.)?imagearn\\.com//?gallery\\.php\\?id=\\d+")) {
+        if (parameter.matches(".+/gallery\\.php\\?id=\\d+")) {
             if (br.containsHTML(">There are no images in this gallery")) {
-                logger.info("Link empty: " + parameter);
+                logger.info("Gallery empty: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- Image Earn</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<title>(.*?) \\- Image Earn</title>").getMatch(0);
+            }
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -70,7 +73,9 @@ public class ImagEarnCom extends PluginForDecrypt {
             String currentUA = null;
             for (final String singleLink : links) {
                 for (int i = 1; i <= 3; i++) {
-                    if (currentUA != null) br.getHeaders().put("User-Agent", currentUA);
+                    if (currentUA != null) {
+                        br.getHeaders().put("User-Agent", currentUA);
+                    }
                     br.getPage(singleLink);
                     if (br.containsHTML("Do not use autorefresh programs")) {
                         this.sleep(new Random().nextInt(4) * 1000l, param);
@@ -105,7 +110,9 @@ public class ImagEarnCom extends PluginForDecrypt {
                 sleep(1500, param);
             }
         } else {
-            if (fpName == null) fpName = br.getRegex("<title>Image - (.*?) \\- Image Earn</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<title>Image - (.*?) \\- Image Earn</title>").getMatch(0);
+            }
             String finallink = getDirectlink();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -125,7 +132,9 @@ public class ImagEarnCom extends PluginForDecrypt {
 
     private String getDirectlink() {
         String finallink = br.getRegex("<div id=\"image\"><center><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://img\\.imagearn\\.com//?imags/\\d+/\\d+\\.jpg)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("\"(http://img\\.imagearn\\.com//?imags/\\d+/\\d+\\.jpg)\"").getMatch(0);
+        }
         return finallink;
     }
 

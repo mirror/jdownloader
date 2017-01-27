@@ -21,7 +21,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -54,8 +53,6 @@ public class VipTubeCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://www.viptube.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
-
-    private static final String SKEY = "null_TODO";
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com, nuvid.com */
     /*
@@ -98,14 +95,11 @@ public class VipTubeCom extends PluginForHost {
                 dllink = Encoding.htmlDecode(dllink);
                 filename = filename.trim();
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + getFileNameExtensionFromString(dllink, ".mp4"));
-                br.getHeaders().put("Accept", "*/*");
-                final Browser br2 = br.cloneBrowser();
-                // In case the link redirects to the finallink
-                br2.setFollowRedirects(true);
+                br.getHeaders().put("Accept", "*/*"); // In case the link redirects to the finallink
                 URLConnectionAdapter con = null;
                 try {
                     try {
-                        con = br2.openGetConnection(dllink);
+                        con = br.openGetConnection(dllink);
                         if (con.getResponseCode() == 404) {
                             /*
                              * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com
@@ -155,7 +149,7 @@ public class VipTubeCom extends PluginForHost {
                     vkey = this.br.getRegex("vkey=\\'\\s*?\\+\\s*?\\'([a-z0-9]+)\\'").getMatch(0);
                 }
                 if (h != null && t != null && vkey != null) {
-                    br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");
+                    br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("null_TODO")) + "&aid=&domain_id=");
                     dllink = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
