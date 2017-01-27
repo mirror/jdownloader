@@ -72,6 +72,7 @@ public class WeTransferCom extends PluginForHost {
         br = new Browser();
         br.addAllowedResponseCodes(new int[] { 410, 503 });
         setBrowserExclusive();
+        br.setCookie(getHost(), "wt_tandc", "2016317");
         String dlink = link.getDownloadURL();
         if (dlink.matches("https?://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
             br.setFollowRedirects(false);
@@ -108,7 +109,7 @@ public class WeTransferCom extends PluginForHost {
         }
         final String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
         final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
-        br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
+        br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
