@@ -54,7 +54,7 @@ public class TubeRampantTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://emohotties.com/contact.php";
+        return "https://videos.rampant.tv/tos.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -87,12 +87,16 @@ public class TubeRampantTv extends PluginForHost {
                 downloadLink.setName(filename + default_Extension);
                 return AvailableStatus.TRUE;
             }
-            final String playerConfigUrl = br.getRegex("(https?://[A-Za-z0-9]*?\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.(mp4|flv))").getMatch(0);
-            if (playerConfigUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // iframe && then multiple qualities.
+            dllink = br.getRegex("<\\s*source\\s+[^>]*src=(\"|')(.*?)\\1").getMatch(1);
+            if (dllink == null) {
+                final String playerConfigUrl = br.getRegex("(https?://[A-Za-z0-9]*?\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.(mp4|flv))").getMatch(0);
+                if (playerConfigUrl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(playerConfigUrl);
+                dllink = br.getRegex("defaultVideo:(https?://[^<>\"]*?);").getMatch(0);
             }
-            br.getPage(playerConfigUrl);
-            dllink = br.getRegex("defaultVideo:(https?://[^<>\"]*?);").getMatch(0);
         }
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
