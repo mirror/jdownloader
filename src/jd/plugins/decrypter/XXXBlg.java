@@ -18,24 +18,18 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-/**
- *
- *
- *
- */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)/(?:[^/]+/){2})" }) 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "https?://(?:www\\.)?xxx-blog\\.to/[a-z0-9\\-]+" })
 public class XXXBlg extends antiDDoSForDecrypt {
 
     public XXXBlg(PluginWrapper wrapper) {
@@ -74,59 +68,44 @@ public class XXXBlg extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
 
-        if (parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html)")) {
-            DownloadLink dLink;
-            if (br.getRedirectLocation() != null) {
-                dLink = createDownloadlink(br.getRedirectLocation());
-            } else {
-                Form form = br.getForm(0);
-                if (form == null) {
-                    return null;
-                }
-                dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches(this.getSupportedLinks().toString())) {
-                    decryptedLinks.add(createDownloadlink(parameter));
-                }
-            }
-            dLink.setSourcePluginPasswordList(pwList);
-            decryptedLinks.add(dLink);
-
-        } else {
-            String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
-            if (fpname == null) {
-                fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
-            }
-            String pagepiece = br.getRegex("<div class=\"entry\">(.*?)</article>").getMatch(0);
+        String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
+        if (fpname == null) {
+            fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
+        }
+        String pagepiece = br.getRegex("<div class=\"entry\">(.*?)</article>").getMatch(0);
+        if (pagepiece == null) {
+            pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
             if (pagepiece == null) {
-                pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
+                pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class='easySpoilerConclude'").getMatch(0);
                 if (pagepiece == null) {
-                    pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class='easySpoilerConclude'").getMatch(0);
+                    pagepiece = br.getRegex("class='easySpoilerTitleA'(.*?)class='easySpoilerConclude'").getMatch(0);
                     if (pagepiece == null) {
-                        pagepiece = br.getRegex("class='easySpoilerTitleA'(.*?)class='easySpoilerConclude'").getMatch(0);
-                        if (pagepiece == null) {
-                            pagepiece = this.br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
-                            if (pagepiece == null) {
-                                logger.warning("pagepiece is null, using full html code!");
-                                pagepiece = br.toString();
-                            }
-                        }
+                        pagepiece = this.br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
                     }
                 }
             }
-            final String[] regexes = { "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"", "<a href=\"(http[^<>\"]*?)\" target=\"_blank\"" };
-            for (final String currentRegex : regexes) {
-                final String[] links = new Regex(pagepiece, currentRegex).getColumn(0);
-                if (links == null || links.length == 0) {
+        }
+        if (pagepiece == null) {
+            /* 2017-01-28 */
+            pagepiece = this.br.getRegex("class=\"post\\-title\"(.*?)class=\"crp_related").getMatch(0);
+        }
+        if (pagepiece == null) {
+            logger.warning("pagepiece is null, using full html code!");
+            pagepiece = br.toString();
+        }
+        final String[] regexes = { "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"", "<a href=\"(http[^<>\"]*?)\" target=\"_blank\"" };
+        for (final String currentRegex : regexes) {
+            final String[] links = new Regex(pagepiece, currentRegex).getColumn(0);
+            if (links == null || links.length == 0) {
+                continue;
+            }
+            for (final String link : links) {
+                if (link.matches("https?://(?:www\\.)?xxx\\-blog\\.to/.+")) {
                     continue;
                 }
-                for (final String link : links) {
-                    if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ|genre)(?:[^/]+/){2})")) {
-                        continue;
-                    }
-                    final DownloadLink dlink = createDownloadlink(link);
-                    dlink.setSourcePluginPasswordList(pwList);
-                    decryptedLinks.add(dlink);
-                }
+                final DownloadLink dlink = createDownloadlink(link);
+                dlink.setSourcePluginPasswordList(pwList);
+                decryptedLinks.add(dlink);
             }
             if (decryptedLinks.size() == 0) {
                 logger.info("Failed to find any downloadable content");

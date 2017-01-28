@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -48,7 +49,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        if (parameter.matches("http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+")) {
+        if (new Regex(parameter, Pattern.compile(".+/pictures/user/[A-Za-z0-9\\-_]+/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hentai-foundry.com/", "hentai-foundrydecrypted.com/")));
             return decryptedLinks;
         }
@@ -86,7 +87,8 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                     logger.info("title: " + title + "url: " + url);
                     return null;
                 }
-                title = Encoding.htmlDecode(title).trim();
+                final String pic_id = jd.plugins.hoster.HentaiFoundryCom.getFID(url);
+                title = pic_id + "_" + Encoding.htmlDecode(title).trim();
                 title = encodeUnicode(title);
                 final DownloadLink dl = createDownloadlink("http://www.hentai-foundrydecrypted.com" + url);
                 dl.setName(title);

@@ -39,11 +39,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://(www\\.)?jheberg\\.net/(captcha|download|mirrors)/[A-Z0-9a-z\\.\\-_]+" }) 
-public class JBbergCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.net" }, urls = { "https?://(?:www\\.)?jheberg\\.net/(captcha|download|mirrors)/[A-Z0-9a-z\\.\\-_]+" })
+public class JhebergNet extends PluginForDecrypt {
 
-    public JBbergCom(PluginWrapper wrapper) {
+    public JhebergNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    /* 2017-01-28: They block IPs when there are too many requests in a short time. */
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
     private final String  COOKIE_HOST  = "http://jheberg.net/";
@@ -119,7 +125,7 @@ public class JBbergCom extends PluginForDecrypt {
                     return null;
                 }
                 /* Waittime is not (yet) checked */
-                // this.sleep(5 * 1001l, param);
+                this.sleep(5 * 1001l, param);
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.getHeaders().put("Accept", "*/*");
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -136,17 +142,15 @@ public class JBbergCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink(finallink.replace("\\", ""));
             fp.add(dl);
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                // Not available in old Stable 0.9851
-            }
+            distribute(dl);
             decryptedLinks.add(dl);
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+
+        this.sleep(5000l, param);
 
         return decryptedLinks;
     }

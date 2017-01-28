@@ -55,8 +55,8 @@ public class SuperbshareCom extends PluginForHost {
     private final int     FREE_MAXCHUNKS               = 0;
     private final int     FREE_MAXDOWNLOADS            = -1;
     private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = -1;
+    private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
@@ -115,8 +115,14 @@ public class SuperbshareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 416) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 60 * 60 * 1000l);
         }
         br.followConnection();
+        if (this.br.getURL().contains("slot-missing")) {
+            /* Can happen for free account- and free downloads. */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting more downloads", 3 * 60 * 1000l);
+        }
         if (this.br.toString().length() < 100) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
         }
@@ -224,7 +230,7 @@ public class SuperbshareCom extends PluginForHost {
         trafficmax = trafficleft + trafficused;
         if (trafficleft == 0) {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) user");
         } else {
             account.setType(AccountType.PREMIUM);
@@ -244,7 +250,6 @@ public class SuperbshareCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
