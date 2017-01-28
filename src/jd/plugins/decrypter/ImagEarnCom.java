@@ -20,6 +20,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,11 +29,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//?(gallery|image)\\.php\\?id=\\d+" })
-public class ImagEarnCom extends PluginForDecrypt {
+public class ImagEarnCom extends antiDDoSForDecrypt {
 
     public ImagEarnCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +44,7 @@ public class ImagEarnCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getURL().equals("http://imagearn.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -76,7 +77,7 @@ public class ImagEarnCom extends PluginForDecrypt {
                     if (currentUA != null) {
                         br.getHeaders().put("User-Agent", currentUA);
                     }
-                    br.getPage(singleLink);
+                    getPage(singleLink);
                     if (br.containsHTML("Do not use autorefresh programs")) {
                         this.sleep(new Random().nextInt(4) * 1000l, param);
                         continue;

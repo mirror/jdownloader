@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -28,9 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:www\\.)?files\\.fm/u/[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:www\\.)?files\\.fm/u/[a-z0-9]+" })
 public class FilesFmFolder extends PluginForDecrypt {
 
     public FilesFmFolder(PluginWrapper wrapper) {
@@ -38,19 +39,32 @@ public class FilesFmFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* 2016-03-10: They enforce https */
         final String parameter = param.toString().replace("http://", "https://");
         final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage("http://files.fm/u/" + fid + "?view=gallery&items_only=true&index=0&count=10000");
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not contain any files|These files are deleted by the owner<|The expiry date of these files is over<|class=\"deleted_wrapper\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = null;
+        String[] folders = br.getRegex("<div class=\"item upload\".*?</i>\\s*</div>\\s*</div>").getColumn(-1);
+        if (folders != null) {
+            for (String folder : folders) {
+                folder = Encoding.htmlOnlyDecode(folder);
+                final String fileid = new Regex(folder, "/u/([a-z0-9]+)").getMatch(0);
+                final String contentUrl = Request.getLocation("/u/" + fileid, br.getRequest());
+                decryptedLinks.add(createDownloadlink(contentUrl));
+            }
+        }
         String[] links = br.getRegex("<div class=\"hover_items\">(.*?)class=\"OrderID\"").getColumn(0);
         if (links == null || links.length == 0) {
+            if (folders != null && folders.length > 0) {
+                return decryptedLinks;
+            }
+            // this picks up folders... and incorrectly as files
             links = br.getRegex("class=\"file\\-icon\"(.*?)class=\"OrderID\"").getColumn(0);
         }
         if (links == null || links.length == 0) {
@@ -67,7 +81,7 @@ public class FilesFmFolder extends PluginForDecrypt {
             if (filename == null || filesize == null || fileid == null) {
                 return null;
             }
-            final String contentUrl = "https://files.fm/down.php?i=" + fileid + "&n=" + filename;
+            final String contentUrl = Request.getLocation("/down.php?i=" + fileid + "&n=" + filename, br.getRequest());
             final DownloadLink dl = createDownloadlink(contentUrl);
             dl.setProperty("mainlink", parameter);
             dl.setContentUrl(contentUrl);
