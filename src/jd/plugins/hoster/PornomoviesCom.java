@@ -17,12 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import org.appwork.utils.Regex;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -33,7 +30,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornomovies.com" }, urls = { "http://(?:www\\.)?pornomovies\\.com/\\d+\\-[a-z0-9\\-]+\\.html" })
+import org.appwork.utils.Regex;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornomovies.com" }, urls = { "https?://(?:www\\.)?pornomovies\\.com/(?:\\d+\\-[a-z0-9\\-]+\\.html|embed/\\d+)" })
 public class PornomoviesCom extends PluginForHost {
 
     public PornomoviesCom(PluginWrapper wrapper) {
@@ -51,24 +50,34 @@ public class PornomoviesCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
+    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
         return "http://www.pornomovies.com/terms";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Correct embed urls --> Normal urls */
+        final String movieid_type_embed = new Regex(link.getDownloadURL(), Pattern.compile("/embed/(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (movieid_type_embed != null) {
+            link.setUrlDownload(String.format("http://www.pornomovies.com/%s-.html", movieid_type_embed));
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "pornomovies\\.com/\\d+\\-([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
-        String filename = br.getRegex("itemprop=\"name\" style=\"color: #000;\">([^<>\"]*?)</h1>").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "pornomovies\\.com/([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
@@ -85,46 +94,50 @@ public class PornomoviesCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("(https?://[^<>\"]+\\.mp4[^<>\"]+\\&nva=[^<>\"]+)").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        final String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+        } else {
+            ext = ".mp4";
+        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

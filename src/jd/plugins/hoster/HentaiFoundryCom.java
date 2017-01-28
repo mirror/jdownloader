@@ -67,18 +67,23 @@ public class HentaiFoundryCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("hentai-foundrydecrypted.com/", "hentai-foundry.com/"));
     }
 
+    public static String getFID(final String url) {
+        return new Regex(url, "/user/[A-Za-z0-9\\-_]+/(\\d+)").getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         String filename = null;
         String ext = null;
+        final String fid = getFID(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(type_direct_pdf)) {
             dllink = downloadLink.getDownloadURL() + "?enterAgree=1&size=0";
             ext = ".pdf";
-            filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
+            filename = fid + "_" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
         } else {
             br.getPage(downloadLink.getDownloadURL() + "?enterAgree=1&size=0");
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -90,7 +95,7 @@ public class HentaiFoundryCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Request.getLocation(Encoding.htmlDecode(dllink), br.getRequest());
-            filename = Encoding.htmlDecode(filename);
+            filename = fid + "_" + Encoding.htmlDecode(filename);
             filename = filename.trim();
             filename = encodeUnicode(filename);
         }
