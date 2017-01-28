@@ -276,6 +276,7 @@ gui_config_reconnect_showcase_message_none=Még nem került vizsgálatra
 gui_config_reconnect_showcase_reconnect2=Teszt indítása
 gui_config_reconnect_showcase_time=Újracsatlakozás ideje
 gui_download_filesize_unknown=(Fájlméret ismeretlen)
+gui_download_waittime_notenoughtraffic=Nem elegendő az elérhető forgalom
 gui_download_waittime_status2=Várakozás %s1
 gui_downloadview_statustext_jac=Képkód (captcha) felismerése
 gui_javacheck_newerjavaavailable_msg=Bár a JDownloader fut a jelenlegi Java verzióval is, de kérjük, telepítse a Java frissítéseket! \n\nA JDownloader sokkal megbízhatóbban és gyorsabban fog működni. \n\n\n\nLátogassa meg a http://jdownloader.org/download oldalt.
