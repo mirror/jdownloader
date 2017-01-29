@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,12 +32,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidzi.tv" }, urls = { "https?://(www\\.)?vidzi\\.(tv|cc)/((vid)?embed\\-)?[a-z0-9]{12}" })
 public class VidziTv extends antiDDoSForDecrypt {
 
     public VidziTv(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class VidziTv extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace(".cc", ".tv");
         // add video link
         decryptedLinks.add(createDownloadlink(parameter.replace("vidzi.tv", "vidzidecrypted.tv")));
         // default is to only want video, so we can can return decrypted fast without the need to page get
