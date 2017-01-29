@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 35313 $", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+" })
 public class WikifeetCom extends PluginForDecrypt {
 
     public WikifeetCom(PluginWrapper wrapper) {
@@ -88,10 +88,6 @@ public class WikifeetCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
-    }
-
-    public static void main(String[] args) throws Throwable {
-
     }
 
     public static boolean isOffline(final Browser br) {
