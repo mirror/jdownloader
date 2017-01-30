@@ -109,8 +109,8 @@ public class EHentaiOrg extends PluginForDecrypt {
                 final String namepart = fpName + "_" + uid + "-" + imgposition;
                 dl.setProperty("namepart", namepart);
                 dl.setProperty("imageposition", imgposition);
-                dl.setName(namepart + ".png");
-                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.PNG);
+                dl.setName(namepart + ".jpg");
+                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
                 dl.setAvailable(true);
                 fp.add(dl);
                 distribute(dl);
