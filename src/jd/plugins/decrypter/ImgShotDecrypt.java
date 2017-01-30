@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImgShotDecrypt extends antiDDoSForDecrypt {
@@ -92,7 +92,7 @@ public class ImgShotDecrypt extends antiDDoSForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">Image Removed or Bad Link<|>This image has been removed") || br.getURL().contains("/noimage.php") || br.getHttpConnection().getResponseCode() == 404) {
             return true;
         }
         return false;
