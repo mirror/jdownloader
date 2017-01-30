@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -156,10 +157,7 @@ public class DropBoxCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
-        String json_source = this.br.getRegex("mod\\.initialize_module\\((\\{\"components\".*?)\\);\\s+").getMatch(0);
-        if (json_source == null) {
-            json_source = this.br.getRegex("mod\\.initialize_module\\((\\{.*?)\\);\\s+").getMatch(0);
-        }
+        final String json_source = getJsonSource(this.br);
 
         /* 2017-01-27 new */
         boolean isSingleFile = false;
@@ -207,6 +205,14 @@ public class DropBoxCom extends PluginForDecrypt {
         DownloadLink ret = super.createDownloadlink(link);
 
         return ret;
+    }
+
+    public static String getJsonSource(final Browser br) {
+        String json_source = br.getRegex("mod\\.initialize_module\\((\\{\"components\".*?)\\);\\s+").getMatch(0);
+        if (json_source == null) {
+            json_source = br.getRegex("mod\\.initialize_module\\((\\{.*?)\\);\\s+").getMatch(0);
+        }
+        return json_source;
     }
 
     private DownloadLink createSingleDownloadLink(String parameter) {

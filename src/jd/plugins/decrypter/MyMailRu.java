@@ -47,7 +47,10 @@ public class MyMailRu extends PluginForDecrypt {
 
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("class=\"l\\-button l\\-button_password\"")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML("class=\"l\\-button l\\-button_password\"")) {
             logger.info("Password protected my.mail.ry links are not (yet) supported: " + parameter);
             return decryptedLinks;
         } else if (br.containsHTML("class=\"photo\\-catalog_nofound\"")) {
@@ -55,6 +58,10 @@ public class MyMailRu extends PluginForDecrypt {
             return decryptedLinks;
         } else if (br.containsHTML("class=\"b-catalog__photo-notfound\"")) {
             /* Album is not public */
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
+        } else if (this.br.getURL().contains("/login")) {
+            logger.info("Content offline or account required");
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }

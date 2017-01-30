@@ -109,7 +109,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
     /** Log in the account of the hostplugin */
     @SuppressWarnings("deprecation")
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("hentai-foundry.com");
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
             logger.warning("There is no account available, continuing without logging in (if possible)");
