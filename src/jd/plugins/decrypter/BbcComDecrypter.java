@@ -122,10 +122,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
-        // if(decryptedLinks.size() == 0){
-        // logger.info("Failed to find any playable content --> Probably only photo content or url offline --> Adding offline url");
-        // decryptedLinks.add(this.createOfflinelink(parameter));
-        // }
+        if (decryptedLinks.size() == 0) {
+            logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+        }
 
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
