@@ -19,8 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bbc.com" }, urls = { "https?://(?:www\\.)?(bbc\\.com|bbc\\.co\\.uk)/.+" })
 public class BbcComDecrypter extends PluginForDecrypt {
@@ -68,7 +68,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         LinkedHashMap<String, Object> entries = null;
-        for (final String json : jsons) {
+        for (String json : jsons) {
+            if (json.contains("{&quot;")) {
+                json = Encoding.htmlDecode(json);
+            }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             final Object story = entries.get("story");
             String title = null;
@@ -77,6 +80,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
             if (story != null) {
                 /* Type 3 */
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "story/Content/AssetVideoIb2/{0}");
+                if (entries == null) {
+                    logger.info("Failed to find video content");
+                    break;
+                }
                 title = (String) entries.get("Title");
                 vpid = (String) entries.get("Vpid");
             } else {
@@ -87,6 +94,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
                     sourcemapo = JavaScriptEngineFactory.walkJson(entries, "allAvailableVersions/{0}/smpConfig");
                 }
                 entries = (LinkedHashMap<String, Object>) sourcemapo;
+                if (entries == null) {
+                    logger.info("Failed to find video content");
+                    break;
+                }
                 title = (String) entries.get("title");
                 description = (String) entries.get("summary");
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
@@ -110,6 +121,11 @@ public class BbcComDecrypter extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         }
+
+        // if(decryptedLinks.size() == 0){
+        // logger.info("Failed to find any playable content --> Probably only photo content or url offline --> Adding offline url");
+        // decryptedLinks.add(this.createOfflinelink(parameter));
+        // }
 
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

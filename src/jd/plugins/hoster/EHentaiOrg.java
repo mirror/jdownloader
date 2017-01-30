@@ -83,6 +83,7 @@ public class EHentaiOrg extends PluginForHost {
     private static final long           minimal_filesize        = 1000;
 
     private String                      dllink                  = null;
+    private boolean                     server_issues           = false;
     private final boolean               ENABLE_RANDOM_UA        = true;
     private static final String         PREFER_ORIGINAL_QUALITY = "PREFER_ORIGINAL_QUALITY";
 
@@ -197,13 +198,22 @@ public class EHentaiOrg extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String ext = getFileNameExtensionFromString(dllink, ".png");
-        // package customiser altered, or user altered value, we need to update this value.
-        if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
-            downloadLink.setForcedFileName(namepart + ext);
+        final String ext;
+        if (dllink != null) {
+            ext = getFileNameExtensionFromString(dllink, ".png");
         } else {
-            // decrypter doesn't set file extension.
-            downloadLink.setFinalFileName(namepart + ext);
+            ext = ".png";
+        }
+        if (dllink != null) {
+            downloadLink.setName(namepart + ext);
+        } else {
+            // package customiser altered, or user altered value, we need to update this value.
+            if (downloadLink.getForcedFileName() != null && !downloadLink.getForcedFileName().endsWith(ext)) {
+                downloadLink.setForcedFileName(namepart + ext);
+            } else {
+                // decrypter doesn't set file extension.
+                downloadLink.setFinalFileName(namepart + ext);
+            }
         }
 
         if (dllink_fullsize != null) {
@@ -212,70 +222,75 @@ public class EHentaiOrg extends PluginForHost {
             dllink = dllink_fullsize;
             return AvailableStatus.TRUE;
         }
-        while (true) {
-            if (!dupe.add(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
+        if (dllink != null) {
+            while (true) {
+                if (!dupe.add(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Browser br2 = br.cloneBrowser();
+                // In case the link redirects to the finallink
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = null;
                 try {
-                    con = br2.openHeadConnection(dllink);
-                } catch (final BrowserException ebr) {
-                    // socket issues, lets try another mirror also.
-                    final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
-                    if (failed != null && failed.length == 2) {
-                        br.getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                        getDllink(account);
-                        if (dllink != null) {
-                            continue;
+                    try {
+                        con = br2.openHeadConnection(dllink);
+                    } catch (final BrowserException ebr) {
+                        // socket issues, lets try another mirror also.
+                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\(\\'(\\d+-\\d+)\\'\\)\">Click here if the image fails loading</a>").getRow(0);
+                        if (failed != null && failed.length == 2) {
+                            br.getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
+                            getDllink(account);
+                            if (dllink != null) {
+                                continue;
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* Whatever happens - its most likely a server problem for this host! */
+                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                     }
-                    /* Whatever happens - its most likely a server problem for this host! */
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-                }
-                if (con.getResponseCode() == 404) {
-                    // we can try another mirror
-                    final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
-                    if (failed != null && failed.length == 2) {
-                        br.getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
-                        getDllink(account);
-                        if (dllink != null) {
-                            continue;
+                    if (con.getResponseCode() == 404) {
+                        // we can try another mirror
+                        final String[] failed = br.getRegex("onclick=\"return ([a-z]+)\\('(\\d+-\\d+)'\\)\">Click here if the image fails loading</a>").getRow(0);
+                        if (failed != null && failed.length == 2) {
+                            br.getPage(br.getURL() + "?" + failed[0] + "=" + failed[1]);
+                            getDllink(account);
+                            if (dllink != null) {
+                                continue;
+                            } else {
+                                /* Failed */
+                                break;
+                            }
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            /* Failed */
+                            break;
                         }
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                }
-                final long conlength = con.getLongContentLength();
-                if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
-                    downloadLink.setDownloadSize(conlength);
-                    downloadLink.setProperty("directlink", dllink);
-                    return AvailableStatus.TRUE;
-                } else {
-                    return AvailableStatus.UNCHECKABLE;
-                }
-            } finally {
-                if (con != null) {
-                    if (con.getRequest() instanceof HeadRequest) {
-                        br2.loadConnection(con);
+                    final long conlength = con.getLongContentLength();
+                    if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
+                        downloadLink.setDownloadSize(conlength);
+                        downloadLink.setProperty("directlink", dllink);
+                        return AvailableStatus.TRUE;
                     } else {
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                } finally {
+                    if (con != null) {
+                        if (con.getRequest() instanceof HeadRequest) {
+                            br2.loadConnection(con);
+                        } else {
+                            try {
+                                con.disconnect();
+                            } catch (final Throwable e) {
+                            }
                         }
                     }
                 }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     private void getDllink(final Account account) throws PluginException, IOException {
@@ -308,9 +323,10 @@ public class EHentaiOrg extends PluginForHost {
             cleanup = new Regex(b, "<div id=\"i3\">(.*?)</div").getMatch(0);
         }
 
-        dllink = new Regex(cleanup, "<img [^>]*src=(\"|')(.*?)\\1").getMatch(1);
+        dllink = new Regex(cleanup, "<img [^>]*src=(\"|')([^\"\\'<>]*?)\\1").getMatch(1);
         if (dllink == null) {
-            dllink = new Regex(b, "<img [^>]*src=(\"|')([^\"'<>]*?\\.jpe?g)\\1").getMatch(1);
+            /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
+            dllink = new Regex(b, "<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png))\\1").getMatch(1);
         }
         // ok so we want to make sure it isn't 509.gif
         final String filename = extractFileNameFromURL(dllink);
@@ -335,9 +351,13 @@ public class EHentaiOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (downloadLink.getDownloadSize() < minimal_filesize) {
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (downloadLink.getDownloadSize() < minimal_filesize) {
             /* E.h. "403 picture" is smaller than 1 KB */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);

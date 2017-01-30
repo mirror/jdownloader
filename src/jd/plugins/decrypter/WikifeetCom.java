@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -35,6 +33,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+" })
 public class WikifeetCom extends PluginForDecrypt {
@@ -74,7 +74,7 @@ public class WikifeetCom extends PluginForDecrypt {
             for (final Object entry : data) {
                 Map<String, Object> entryMap = (Map<String, Object>) entry;
                 String pid = (String) entryMap.get("pid");
-                final String dlurl = "http://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
+                final String dlurl = "directhttp://http://pics.wikifeet.com/" + cfName + "-Feet-" + pid + ".jpg";
                 final DownloadLink dl = this.createDownloadlink(dlurl);
                 dl.setName(cfName + "_" + pid);
                 dl.setAvailable(true);
