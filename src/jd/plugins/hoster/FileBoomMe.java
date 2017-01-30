@@ -47,7 +47,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "https?://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" })
 public class FileBoomMe extends K2SApi {
 
     private final String MAINPAGE = "http://fboom.me";
@@ -393,7 +393,7 @@ public class FileBoomMe extends K2SApi {
                 ai.setStatus("Free Account");
                 account.setProperty("free", true);
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
                 ai.setStatus("Premium Account");
                 account.setProperty("free", false);
             }
