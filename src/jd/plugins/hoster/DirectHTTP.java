@@ -49,6 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -250,6 +251,18 @@ public class DirectHTTP extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public Downloadable newDownloadable(DownloadLink downloadLink, Browser br) {
+        final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
+        if (StringUtils.contains(host, "mooo.com")) {
+            final Browser brc = br.cloneBrowser();
+            brc.setRequest(null);
+            return super.newDownloadable(downloadLink, brc);
+        } else {
+            return super.newDownloadable(downloadLink, br);
+        }
     }
 
     @Override
