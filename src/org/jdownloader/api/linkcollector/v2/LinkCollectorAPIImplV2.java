@@ -1,7 +1,7 @@
 package org.jdownloader.api.linkcollector.v2;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.Application;
-import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -348,12 +347,25 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             for (final String dataURL : dataURLs) {
                 final String extension = new Regex(dataURL, "data:application/([a-z0-9A-Z]{1,4})").getMatch(0);
                 if (extension != null) {
+                    final File tmp = Application.getTempResource("linkcollectorAPI" + System.nanoTime() + "." + extension);
                     try {
-                        final byte[] write = IO.readStream(-1, getInputStream(dataURL));
-                        final File tmp = Application.getTempResource("linkcollectorAPI" + System.nanoTime() + "." + extension);
-                        IO.writeToFile(tmp, write);
+                        if (tmp.exists() && !tmp.delete()) {
+                            throw new IOException("Failed to delete tmp file:" + tmp);
+                        }
+                        final InputStream is = getInputStreamFromBase64DataURL(dataURL);
+                        final FileOutputStream fos = new FileOutputStream(tmp);
+                        try {
+                            final byte[] buf = new byte[8192];
+                            int read = 0;
+                            while ((read = is.read(buf)) != -1) {
+                                fos.write(buf, 0, read);
+                            }
+                        } finally {
+                            fos.close();
+                        }
                         ret.add(tmp);
                     } catch (final IOException e) {
+                        tmp.delete();
                         LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName()).log(e);
                     }
                 }
@@ -661,12 +673,27 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
     }
 
-    public static InputStream getInputStream(String dataURL) throws IOException {
+    public static InputStream getInputStreamFromBase64DataURL(final String dataURL) throws IOException {
         final int base64Index = dataURL.indexOf(";base64,");
         if (base64Index == -1 || base64Index + 8 >= dataURL.length()) {
             throw new IOException("Invalid DataURL: " + dataURL);
         }
-        return new Base64InputStream(new ByteArrayInputStream(dataURL.substring(base64Index + 8).getBytes("UTF-8")));
+        final InputStream base64StringInputStream = new InputStream() {
+
+            private int index = base64Index + 8;
+
+            @Override
+            public int read() throws IOException {
+                if (index < dataURL.length()) {
+                    // Base64 chars
+                    return dataURL.charAt(index++);
+                } else {
+                    return -1;
+                }
+            }
+        };
+        return new Base64InputStream(base64StringInputStream);
+
     }
 
     @Override
@@ -686,15 +713,28 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             fileName = null;
         }
         if (fileName != null) {
+            final File tmp = Application.getTempResource(fileName);
             try {
-                final File tmp = Application.getTempResource(fileName);
-                final byte[] write = IO.readStream(-1, getInputStream(content));
-                IO.writeToFile(tmp, write);
+                if (tmp.exists() && !tmp.delete()) {
+                    throw new IOException("Failed to delete tmp file:" + tmp);
+                }
+                final InputStream is = getInputStreamFromBase64DataURL(content);
+                final FileOutputStream fos = new FileOutputStream(tmp);
+                try {
+                    final byte[] buf = new byte[8192];
+                    int read = 0;
+                    while ((read = is.read(buf)) != -1) {
+                        fos.write(buf, 0, read);
+                    }
+                } finally {
+                    fos.close();
+                }
                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), tmp.toURI().toString());
                 LinkCollector.getInstance().getAddLinksThread(job, null).start();
                 return new LinkCollectingJobAPIStorable(job);
             } catch (IOException e) {
-                e.printStackTrace();
+                tmp.delete();
+                LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName()).log(e);
             }
         }
         return null;
