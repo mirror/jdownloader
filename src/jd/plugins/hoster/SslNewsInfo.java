@@ -18,7 +18,8 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "ssl-news.info" }, urls = { "" }) public class SslNewsInfo extends UseNet {
+@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "ssl-news.info" }, urls = { "" })
+public class SslNewsInfo extends UseNet {
     public SslNewsInfo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.ssl-news.info/signup.php");
@@ -105,7 +106,9 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
                 account.setMaxSimultanDownloads(1);
                 ai.setStatus("Unknown Type");
             }
-            if (validUntil != null) {
+            if (StringUtils.containsIgnoreCase(bucketType, "block")) {
+                ai.setValidUntil(-1);
+            } else if (validUntil != null) {
                 ai.setValidUntil(Long.parseLong(validUntil) * 1000);
             }
         } catch (final PluginException e) {
