@@ -18,16 +18,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camshowdownload.com" }, urls = { "https?://(?:www\\.)?camshowdownload\\.com/[^/]+/video/.+" })
 public class CamshowdownloadCom extends antiDDoSForDecrypt {
@@ -37,13 +40,25 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setFollowRedirects(false);
+        br.setFollowRedirects(false);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        // they can anti bot routine here
+        if (br.getHttpConnection().getResponseCode() == 503) {
+            // 6LdM_AYTAAAAADrpgYaW-wHyMowkEizhAS72G6rw
+            final Form captchaForm = br.getForm(0);
+            if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                submitForm(captchaForm);
+            } else {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
         }
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
@@ -71,6 +86,11 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
 }

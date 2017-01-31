@@ -26,6 +26,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,13 +55,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(?:www\\.)?uploadboy\\.(?:com|me)/(?:vidembed\\-)?[a-z0-9]{12}(?:\\.html)?(?:\\?ref=[a-zA-Z0-9\\%\\.]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(?:www\\.)?uploadboy\\.(?:com|me)/(?:vidembed\\-)?[a-z0-9]{12}(?:\\.html)?(?:\\?ref=[a-zA-Z0-9\\%\\.]+)?" })
 public class UploadBoyCom extends antiDDoSForHost {
 
     public static final long     trust_cookie_age             = 300000l;
@@ -77,7 +77,6 @@ public class UploadBoyCom extends antiDDoSForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
@@ -698,7 +697,7 @@ public class UploadBoyCom extends antiDDoSForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|You downloaded \\d+ files? in last \\d+ day\\(s\\))").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
             String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -749,24 +748,10 @@ public class UploadBoyCom extends antiDDoSForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.info("As free user you can download files up to " + filesizelimit + " only");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
                 logger.info("Only downloadable via premium");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
@@ -790,8 +775,6 @@ public class UploadBoyCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -830,15 +813,11 @@ public class UploadBoyCom extends antiDDoSForHost {
         final boolean is_free = new Regex(correctedBR, ">User Type</small>[\t\n\r ]*?<h1>Free").matches();
         if ((expire == null || !ai.isExpired()) && !is_free) {
             ai.setStatus("Premium Account");
-            maxPrem.set(1);
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
         } else {
             ai.setStatus("Free Account");
-            maxPrem.set(2);
-            // free accounts can still have captcha.
-            totalMaxSimultanFreeDownload.set(maxPrem.get());
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(2);
             account.setConcurrentUsePossible(false);
         }
         return ai;
@@ -1070,12 +1049,6 @@ public class UploadBoyCom extends antiDDoSForHost {
         }
         downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override
