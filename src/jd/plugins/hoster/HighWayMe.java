@@ -194,11 +194,7 @@ public class HighWayMe extends UseNet {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, defaultMAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
-                    /*
-                     * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added
-                     * link via JDownloader.
-                     */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (file offline?)", 30 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
