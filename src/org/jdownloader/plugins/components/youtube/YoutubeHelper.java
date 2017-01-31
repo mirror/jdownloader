@@ -1269,12 +1269,18 @@ public class YoutubeHelper {
         html5PlayerJs = this.br.getMatch("\"js\"\\s*:\\s*\"(.+?)\"");
         if (html5PlayerJs != null) {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
-            html5PlayerJs = "http:" + html5PlayerJs;
+            html5PlayerJs = br.getURL(html5PlayerJs).toString();
         }
         if (html5PlayerJs == null) {
             html5PlayerJs = br.getMatch("src=\"//([^\"<>]*?/base.js)\" name=\"player\\/base\"");
             if (html5PlayerJs != null) {
-                html5PlayerJs = "https://" + html5PlayerJs;
+                html5PlayerJs = br.getURL(html5PlayerJs).toString();
+            }
+        }
+        if (html5PlayerJs == null) {
+            html5PlayerJs = br.getMatch("src=\"([^\"<>]*?/base.js)\" n");
+            if (html5PlayerJs != null) {
+                html5PlayerJs = br.getURL(html5PlayerJs).toString();
             }
         }
         String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
