@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -50,7 +51,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+\\&quelle_id=\\d+\\&format=\\d+\\&adfree=(?:1|0)\\&stream=0" })
 public class HighWayMe extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
     private static final String                            DOMAIN                              = "http://http.high-way.me/api.php";
@@ -122,7 +123,38 @@ public class HighWayMe extends UseNet {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
+            final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
+            br.setFollowRedirects(true);
+            ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+            if (accs == null || accs.size() == 0) {
+                link.getLinkStatus().setStatusText("Only downlodable via account!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            URLConnectionAdapter con = null;
+            long fileSize = -1;
+            for (Account acc : accs) {
+                this.currAcc = acc;
+                this.loginSafe();
+                try {
+                    con = br.openHeadConnection(dlink);
+                    if (!con.getContentType().contains("html")) {
+                        fileSize = con.getLongContentLength();
+                        if (fileSize <= 0) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        link.setDownloadSize(fileSize);
+                        link.setFinalFileName(getFileNameFromHeader(con));
+                        return AvailableStatus.TRUE;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
             return AvailableStatus.UNCHECKABLE;
+
         }
     }
 
@@ -152,9 +184,30 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.setConstants(account, link);
+        this.loginSafe();
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+            return;
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, defaultMAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    /*
+                     * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added
+                     * link via JDownloader.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (file offline?)", 30 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                this.br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
+            }
+            dl.startDownload();
+        }
     }
 
     @SuppressWarnings("deprecation")
