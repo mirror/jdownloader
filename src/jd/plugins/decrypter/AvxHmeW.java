@@ -54,7 +54,12 @@ public class AvxHmeW extends PluginForDecrypt {
         final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
         if (parameter.matches(".*/go/\\d+/.*")) {
             br.setFollowRedirects(false);
-            br.getPage(parameter);
+            if (parameter.matches(this.getSupportedLinks().pattern()) && parameter.matches("^http://.+")) {
+                br.getPage(parameter);
+                br.followRedirect();
+            } else {
+                br.getPage(parameter);
+            }
             final String link = br.getRedirectLocation();
             if (!link.matches(this.getSupportedLinks().pattern())) {
                 decryptedLinks.add(createDownloadlink(link));
