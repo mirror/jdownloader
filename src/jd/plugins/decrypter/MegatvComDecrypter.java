@@ -97,7 +97,7 @@ public class MegatvComDecrypter extends PluginForDecrypt {
                 return null;
             }
             /* Remove linebreaks ... */
-            finallink = finallink.replace("\n", "");
+            finallink = finallink.replace("\n", "").replace("\r", "");
             decryptedLinks.add(this.createDownloadlink(finallink));
         }
 

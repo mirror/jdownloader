@@ -317,6 +317,7 @@ public class FileBoomMe extends K2SApi {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (ACCLOCK) {
             try {
+                boolean login = true;
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -324,7 +325,7 @@ public class FileBoomMe extends K2SApi {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -332,25 +333,30 @@ public class FileBoomMe extends K2SApi {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()));
+                        if (br.containsHTML("/auth/logout") || force == false) {
+                            login = false;
+                        }
                     }
                 }
-                br.setFollowRedirects(false);
-                getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()) + "/login.html");
-                String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
-                String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                if (logincaptcha != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", Browser.getHost(MAINPAGE), MAINPAGE, true);
-                    final String c = getCaptchaCode(logincaptcha, dummyLink);
-                    postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
-                }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage("/login.html", postData);
-                if (!br.containsHTML("\"url\":\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (login) {
+                    br.setFollowRedirects(false);
+                    getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()) + "/login.html");
+                    String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
+                    String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                    if (logincaptcha != null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", Browser.getHost(MAINPAGE), MAINPAGE, true);
+                        final String c = getCaptchaCode(logincaptcha, dummyLink);
+                        postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
+                    }
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    postPage("/login.html", postData);
+                    if (!br.containsHTML("\"url\":\"")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 // Save cookies
@@ -389,11 +395,19 @@ public class FileBoomMe extends K2SApi {
             getPage("/site/profile.html");
             ai.setUnlimitedTraffic();
             final String expire = br.getRegex("Premium expires:[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
-            if (expire == null) {
+            if ("LifeTime".equalsIgnoreCase(expire)) {
+                ai.setStatus("Premium Account(LifeTime)");
+                ai.setValidUntil(-1);
+                account.setProperty("free", false);
+            } else if (expire == null) {
                 ai.setStatus("Free Account");
                 account.setProperty("free", true);
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
+                final long expireTimeStamp = TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH);
+                if (expireTimeStamp == -1) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                ai.setValidUntil(expireTimeStamp + (24 * 60 * 60 * 1000l));
                 ai.setStatus("Premium Account");
                 account.setProperty("free", false);
             }

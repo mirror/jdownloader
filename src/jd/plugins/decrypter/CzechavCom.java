@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "https?://(?:www\\.)?czechav\\.com/(?:de|en)/video/[a-z0-9\\-]+\\-\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "https?://(?:www\\.)?czechav\\.com/(?:de|en)/video/[a-z0-9\\-]+\\-\\d+[a-z0-9\\-]*/?" })
 public class CzechavCom extends PluginForDecrypt {
 
     public CzechavCom(PluginWrapper wrapper) {
