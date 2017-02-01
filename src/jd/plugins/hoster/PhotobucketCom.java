@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 2, names = { "photobucket.com" }, urls = { "http://(?:www\\.)?(media\\.photobucket\\.com/.+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|s\\d+\\.photobucket\\.com/user/[A-Za-z0-9\\-_]+/media/[^<>\"]+\\.[a-z0-9]{3,4}\\.html)" })
 public class PhotobucketCom extends PluginForHost {
-
     public PhotobucketCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +39,6 @@ public class PhotobucketCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     private String dllink = null;
 
     @Override
@@ -55,10 +52,9 @@ public class PhotobucketCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(downloadLink.getDownloadURL());
+            con = br.openGetConnection(downloadLink.getDownloadURL());
             if (!con.getContentType().contains("html")) {
                 dllink = downloadLink.getDownloadURL();
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -73,11 +69,9 @@ public class PhotobucketCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("class=\"detailWrapper\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         dllink = PluginJSonUtils.getJsonValue(br, "originalUrl");
         if (dllink == null) {
             dllink = PluginJSonUtils.getJsonValue(br, "fullsizeUrl");
