@@ -296,7 +296,7 @@ public class MegaConz extends PluginForHost {
             request.getHeaders().put("Referer", "https://mega.nz");
             request.getHeaders().put("Origin", "https://mega.nz");
         }
-        request.setContentType("text/plain; charset=UTF-8");
+        request.setContentType("text/plain;charset=UTF-8");
         if (postParams != null) {
             final HashMap<String, Object> sendParams = new HashMap<String, Object>();
             sendParams.put("a", action);
@@ -739,6 +739,11 @@ public class MegaConz extends PluginForHost {
                     checkServerBusy();
                     logger.info("Unhandled error code: " + error);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error code: " + error);
+                }
+                if (isHideApplication()) {
+                    br.setRequest(null);
+                    br.setCurrentURL("https://mega.nz");
+                    br.getHeaders().put("Origin", "https://mega.nz");
                 }
                 /* mega does not like much connections! */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);

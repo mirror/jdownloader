@@ -33,6 +33,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.ClipboardMonitoring;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -49,6 +50,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -144,6 +146,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
             // contentpane.add(btn, "aligny center, spany 3");
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_builddate()));
             stats.add(disable(map.get("buildDate")));
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_runtime()));
+            stats.add(disable(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - SecondLevelLaunch.startup, 0)));
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderRevision")));

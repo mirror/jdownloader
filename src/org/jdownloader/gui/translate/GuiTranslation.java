@@ -1887,6 +1887,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Build Date:" })
     String jd_gui_swing_components_AboutDialog_builddate();
 
+    @Default(lngs = { "en" }, values = { "Runtime:" })
+    String jd_gui_swing_components_AboutDialog_runtime();
+
     @Default(lngs = { "en" }, values = { "Source Revisions" })
     String jd_gui_swing_components_AboutDialog_sourcerevisions();
 
