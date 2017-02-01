@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { ".com" }, urls = { "https?://(?:www\\.)?it\\-ebooks\\.directory/book\\-\\d+[a-z0-9]*?\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it-ebooks.directory" }, urls = { "https?://(?:www\\.)?it\\-ebooks\\.directory/book\\-\\d+[a-z0-9]*?\\.html" })
 public class ItEbooksDirectory extends PluginForHost {
 
     public ItEbooksDirectory(PluginWrapper wrapper) {
@@ -111,6 +111,10 @@ public class ItEbooksDirectory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            if (this.br.containsHTML(">You have reached the maximum download limit")) {
+                /* 2017-01-02: "<p>You have reached the maximum download limit for the last 24 hours.</p>" */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

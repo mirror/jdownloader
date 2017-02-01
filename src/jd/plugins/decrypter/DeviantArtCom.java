@@ -148,12 +148,6 @@ public class DeviantArtCom extends PluginForDecrypt {
         if (decryptedUrlsNum == 0) {
             logger.info("Link probably offline: " + parameter);
             return decryptedLinks;
-        } else if (decryptedUrlsNum == 1) {
-            /*
-             * 2017-02-01: Workaround when using only
-             * "distribute(DownloadLink) --> If we have only 1 element, nothing will appear in the linkgrabber if decryptedLinks.size() == 0 so we add a dummy. "
-             */
-            decryptedLinks.add(this.createDownloadlink("dummy://"));
         }
 
         return decryptedLinks;

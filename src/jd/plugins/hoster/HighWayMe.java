@@ -27,8 +27,10 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,6 +42,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
@@ -124,6 +127,9 @@ public class HighWayMe extends UseNet {
             return super.requestFileInformation(link);
         } else {
             final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
+            final String linkid = new Regex(dlink, "id=(\\d+)").getMatch(0);
+            link.setName(linkid);
+            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             br.setFollowRedirects(true);
             ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs == null || accs.size() == 0) {
@@ -134,7 +140,7 @@ public class HighWayMe extends UseNet {
             long fileSize = -1;
             for (Account acc : accs) {
                 this.currAcc = acc;
-                this.loginSafe();
+                this.loginSafe(false);
                 try {
                     con = br.openHeadConnection(dlink);
                     if (!con.getContentType().contains("html")) {
@@ -186,7 +192,7 @@ public class HighWayMe extends UseNet {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.setConstants(account, link);
-        this.loginSafe();
+        this.loginSafe(false);
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
             return;
@@ -368,7 +374,8 @@ public class HighWayMe extends UseNet {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
-        this.postAPISafe(DOMAIN + "?login&user&hoster", "pass=" + Encoding.urlEncode(this.currAcc.getPass()) + "&user=" + Encoding.urlEncode(this.currAcc.getUser()));
+        this.login(true);
+        getAPISafe(DOMAIN + "?hoster&user");
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final LinkedHashMap<String, Object> info_account = (LinkedHashMap<String, Object>) entries.get("user");
         final ArrayList<Object> array_hoster = (ArrayList) entries.get("hoster");
@@ -472,14 +479,33 @@ public class HighWayMe extends UseNet {
         return null;
     }
 
-    /** Login without errorhandling */
-    private void login() throws IOException {
+    /**
+     * Login without errorhandling
+     *
+     * @throws PluginException
+     */
+    private void login(final boolean force) throws IOException, PluginException {
+        final Cookies cookies = this.currAcc.loadCookies("");
+        if (cookies != null && !force) {
+            this.br.setCookies(this.getHost(), cookies);
+            this.br.getPage(DOMAIN + "?logincheck");
+            if ("true".equals(PluginJSonUtils.getJsonValue(this.br, "loggedin"))) {
+                /* Cookies valid? --> Save them again to renew the last-saved timestamp. */
+                this.currAcc.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                return;
+            }
+            /* Cookies not valid anymore --> Perform full login */
+        }
         br.postPage(DOMAIN + "?login", "pass=" + Encoding.urlEncode(this.currAcc.getPass()) + "&user=" + Encoding.urlEncode(this.currAcc.getUser()));
+        if (br.getCookie(br.getURL(), "xf_user") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        this.currAcc.saveCookies(this.br.getCookies(this.br.getHost()), "");
     }
 
     /** Login + errorhandling */
-    private void loginSafe() throws IOException, PluginException {
-        login();
+    private void loginSafe(final boolean force) throws IOException, PluginException {
+        login(force);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
@@ -530,11 +556,15 @@ public class HighWayMe extends UseNet {
         handleAPIErrors(this.br);
     }
 
-    /** Performs full logins on errorcode 9 up to ERRORHANDLING_MAXLOGINS-times, hopefully avoiding login/cookie problems. */
-    private void handleLoginIssues() throws IOException {
+    /**
+     * Performs full logins on errorcode 9 up to ERRORHANDLING_MAXLOGINS-times, hopefully avoiding login/cookie problems.
+     *
+     * @throws PluginException
+     */
+    private void handleLoginIssues() throws IOException, PluginException {
         updatestatuscode();
         if (this.statuscode == 9) {
-            this.login();
+            this.login(true);
             updatestatuscode();
         }
     }
