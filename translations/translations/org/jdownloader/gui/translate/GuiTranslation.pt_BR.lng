@@ -1821,6 +1821,7 @@ jd_gui_swing_components_AboutDialog_license=Exibir licença
 jd_gui_swing_components_AboutDialog_license_title=Licença do JDownloader
 jd_gui_swing_components_AboutDialog_mopdules=Módulos contidos:
 jd_gui_swing_components_AboutDialog_plugins=Plugins (Sites suportados):
+jd_gui_swing_components_AboutDialog_runtime=Tempo de execução:
 jd_gui_swing_components_AboutDialog_sourcerevisions=Revisões do Código:
 jd_gui_swing_components_AboutDialog_synthetica2=Número de registro da licença %s1
 jd_gui_swing_components_AboutDialog_title=Sobre o JDownloader
