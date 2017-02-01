@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/(?!account|celebs|contact|guild|images|passreset|signup|upload|videos)[a-zA-Z0-9\\-\\_]+" })
 public class WikifeetCom extends PluginForDecrypt {
 
     public WikifeetCom(PluginWrapper wrapper) {
