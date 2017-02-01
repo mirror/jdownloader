@@ -181,9 +181,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         }
 
         contentpane.add(lbl = new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 10, spanx");
-
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
-
         contentpane.add(stats, "pushx,growx,spanx");
 
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
