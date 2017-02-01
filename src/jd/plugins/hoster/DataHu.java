@@ -18,7 +18,11 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.regex.Pattern;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,31 +37,23 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://[\\w\\.]*?data.hu/get/\\d+/[^<>\"/%]+" })
 public class DataHu extends antiDDoSForHost {
 
-    private static final String nice_host         = "data.hu";
-    private static final String nice_hostproperty = nice_host.replaceAll("(\\.|\\-)", "");
-
-    private int                 statuscode        = 0;
+    private int statuscode = 0;
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://data.hu/premium.php");
+        this.enablePremium("https://data.hu/premium.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://data.hu/adatvedelem.php";
+        return "https://data.hu/adatvedelem.php";
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace(".html", ""));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace(".html", ""));
     }
 
     @Override
@@ -66,7 +62,7 @@ public class DataHu extends antiDDoSForHost {
     }
 
     /*
-     * Max 4 connections per downloadserver, if we try more this will end up in 503 responses. At the moment we allow 3 simultan DLs * 2
+     * Max 4 connections per download server, if we try more this will end up in 503 responses. At the moment we allow 3 simultan DLs * 2
      * Chunks each.
      */
     @Override
@@ -108,16 +104,16 @@ public class DataHu extends antiDDoSForHost {
                 }
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink dl : links) {
-                    checkurl = "http://data.hu/get/" + getFID(dl) + "/";
+                    checkurl = "https://data.hu/get/" + getFID(dl) + "/";
                     sb.append(checkurl);
                     sb.append("%2C");
                 }
-                this.getAPISafe("http://data.hu/api.php?act=check_download_links&links=" + sb.toString());
+                this.getAPISafe("https://data.hu/api.php?act=check_download_links&links=" + sb.toString());
                 br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
                 for (final DownloadLink dllink : links) {
                     final String added_url = dllink.getDownloadURL();
                     final String fid = getFID(dllink);
-                    checkurl = "http://data.hu/get/" + fid + "/";
+                    checkurl = "https://data.hu/get/" + fid + "/";
                     final String thisjson = br.getRegex("\"" + checkurl + "\":\\{(.*?)\\}").getMatch(0);
                     if (thisjson == null || !"online".equals(PluginJSonUtils.getJsonValue(thisjson, "status"))) {
                         dllink.setAvailable(false);
@@ -130,11 +126,7 @@ public class DataHu extends antiDDoSForHost {
                         if (!added_url.contains("name")) {
                             final String correctedurl = "http://data.hu/get/" + fid + "/" + name;
                             dllink.setUrlDownload(correctedurl);
-                            try {
-                                dllink.setContentUrl(correctedurl);
-                            } catch (final Throwable e) {
-                                /* Not available in old 0.9.581 Stable */
-                            }
+                            dllink.setContentUrl(correctedurl);
                         }
                         /* Names via API are good --> Use as final filenames */
                         dllink.setFinalFileName(name);
@@ -211,7 +203,7 @@ public class DataHu extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        final String link = br.getRegex(Pattern.compile("(?:\"|\\')(http://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)(?:\"|\\')", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String link = br.getRegex("(\"|')(https?://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\\1").getMatch(1);
         if (link == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -219,7 +211,7 @@ public class DataHu extends antiDDoSForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             /*
-             * Wait a minute for respons 503 because JD tried to start too many downloads in a short time
+             * Wait a minute for response 503 because JD tried to start too many downloads in a short time
              */
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
@@ -245,7 +237,7 @@ public class DataHu extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        getAPISafe("http://data.hu/api.php?act=get_direct_link&link=" + PluginJSonUtils.escape(downloadLink.getDownloadURL()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+        getAPISafe("https://data.hu/api.php?act=get_direct_link&link=" + PluginJSonUtils.escape(downloadLink.getDownloadURL()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
         final String link = PluginJSonUtils.getJsonValue(br, "direct_link");
         if (link == null) {
             /* Should never happen */
@@ -256,7 +248,7 @@ public class DataHu extends antiDDoSForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The finallink doesn't seem to be a file...");
             /*
-             * Wait a minute for respons 503 because JD tried to start too many downloads in a short time
+             * Wait a minute for response 503 because JD tried to start too many downloads in a short time
              */
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.datahu.toomanysimultandownloads", "Too many simultan downloads, please wait some time!"), 60 * 1000l);
@@ -280,7 +272,7 @@ public class DataHu extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBR();
-        getAPISafe("http://data.hu/api.php?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+        getAPISafe("https://data.hu/api.php?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
     }
 
     private String getFID(final DownloadLink dl) {
@@ -384,11 +376,11 @@ public class DataHu extends antiDDoSForHost {
             default:
                 /* Completely Unknown error */
                 statusMessage = "Unknown error";
-                logger.info(nice_host + ": Unknown API error");
+                logger.info("Unknown API error");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
-            logger.info(nice_host + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info("Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
     }
