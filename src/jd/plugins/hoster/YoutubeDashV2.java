@@ -421,7 +421,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         break;
                                     } else {
                                         if (si.getSrc() != null) {
-                                            Log.info("Stream Source: " + si.getSrc());
+                                            Log.info("Failed for Stream Source: " + si.getSrc());
                                         }
                                         // if (i == 0) {
                                         // resetStreamUrls(downloadLink);
@@ -541,6 +541,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         // // do not check alternatives
                         // throw e;
                         // }
+                        // age Protection. If age protection is active, all requests may return 403 without an youtube account
+                        if (con != null && con.getResponseCode() == 403) {
+                            YoutubeClipData clipData = ClipDataCache.hasCache(helper, downloadLink) ? ClipDataCache.get(helper, downloadLink) : null;
+                            if (clipData != null && clipData.ageCheck) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                            }
+                        }
                         LinkVariant alternative = getAlternatives(downloadLink, orgVariant, checkedAlternatives);
                         if (alternative != null) {
                             logger.info("Try next alternative variant: " + alternative);
@@ -550,6 +557,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         downloadLink.getTempProperties().removeProperty(YT_ALTERNATE_VARIANT);
                         throw e;
                     }
+                }
+                boolean hasCachedVideo = downloadLink.getProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO) != null;
+                boolean hasCachedAudio = downloadLink.getProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO) != null;
+                boolean hasCachedData = downloadLink.getProperty(YoutubeHelper.YT_STREAM_DATA_DATA) != null;
+                if (!hasCachedVideo && !hasCachedAudio && !hasCachedData) {
+                    YoutubeClipData clipData = ClipDataCache.hasCache(helper, downloadLink) ? ClipDataCache.get(helper, downloadLink) : null;
+                    if (clipData != null && clipData.ageCheck) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
                 AbstractVariant alternative = (AbstractVariant) downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
