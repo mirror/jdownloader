@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/(?!account|celebs|contact|guild|images|passreset|signup|upload|videos)[a-zA-Z0-9\\-\\_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?:www\\.)?wikifeet\\.com/[a-zA-Z0-9\\-\\_]+" })
 public class WikifeetCom extends PluginForDecrypt {
 
     public WikifeetCom(PluginWrapper wrapper) {
@@ -57,14 +57,14 @@ public class WikifeetCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String cfName = this.br.getRegex("messanger.cfname = '(.*?)';").getMatch(0);
+        final String cfName = this.br.getRegex("messanger.cfname = \\'(.*?)\\';").getMatch(0);
         if (cfName == null) {
             return null;
         }
         String title = cfName;
         title = Encoding.htmlDecode(title).trim();
         if (parameter.matches(type_wikifeet)) {
-            final String gData = this.br.getRegex("messanger\\['gdata'\\] = ([\\s\\S]*?);").getMatch(0);
+            final String gData = this.br.getRegex("messanger\\[\\'gdata\\'\\] = ([\\s\\S]*?);").getMatch(0);
 
             List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
             if (data.size() < 1 || cfName == null) {
@@ -91,6 +91,6 @@ public class WikifeetCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404;
+        return br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=thepics");
     }
 }

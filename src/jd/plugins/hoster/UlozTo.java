@@ -27,11 +27,13 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -40,7 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -54,7 +55,9 @@ public class UlozTo extends PluginForHost {
     private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
     private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
-    private static final String  PREMIUMONLYUSERTEXT          = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
+    private static final String  PREMIUMONLYUSERTEXT          = "Only downloadable for premium users!";
+
+    private static final boolean use_login_api                = false;
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -253,9 +256,13 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        doFree(downloadLink);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         AvailableStatus status = requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
@@ -516,63 +523,70 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* First access downloadurl without logging in. */
-        requestFileInformation(link);
-        if (this.passwordProtected) {
-            /*
-             * 2016-12-21: passwordProtected + BasicAuth header = We'll get an empty page so we have to handle the password without the
-             * 'Authorization' Header and set it afterwards, then a download is possible without any issues.
-             */
-            handlePassword(link);
-        }
-        /* Now login, repeat the filecheck and download! */
-        br.getHeaders().put("Authorization", login(account, null));
-        requestFileInformation(link);
-        String dllink = finalDirectDownloadURL;
-        if (dllink == null) {
-            // since login evaulates traffic left!
-            if (account.getAccountInfo().getTrafficLeft() < link.getDownloadSize()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
+        if (account.getType() == AccountType.FREE) {
+            /* Free Account */
+            login(account, false);
+            doFree(link);
+        } else {
+            /* Premium Account */
+            /* First access downloadurl without logging in. */
+            requestFileInformation(link);
+            if (this.passwordProtected) {
+                /*
+                 * 2016-12-21: passwordProtected + BasicAuth header = We'll get an empty page so we have to handle the password without the
+                 * 'Authorization' Header and set it afterwards, then a download is possible without any issues.
+                 */
+                handlePassword(link);
             }
-            br.setFollowRedirects(false);
-            if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
-                dllink = link.getDownloadURL();
-            } else {
-                if (passwordProtected) {
-                    handlePassword(link);
+            /* Now login, repeat the filecheck and download! */
+            login(account, false);
+            requestFileInformation(link);
+            String dllink = finalDirectDownloadURL;
+            if (dllink == null) {
+                // since login evaulates traffic left!
+                if (account.getAccountInfo().getTrafficLeft() < link.getDownloadSize()) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available traffic for this download", 30 * 60 * 1000l);
+                }
+                br.setFollowRedirects(false);
+                if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
+                    dllink = link.getDownloadURL();
                 } else {
-                    br.getPage(link.getDownloadURL());
-                }
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    if (br.toString().equals("No htmlCode read")) {
-                        /*
-                         * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log: Link;
-                         * 1800542995541.log; 2422576; jdlog://1800542995541
-                         * 
-                         * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
-                         * 
-                         * I suspect that its caused by the predownload password? or referer? -raztoki20160304
-                         */
-                        // logger.info("No traffic available!");
-                        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    if (passwordProtected) {
+                        handlePassword(link);
+                    } else {
+                        br.getPage(link.getDownloadURL());
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    dllink = br.getRedirectLocation();
+                    if (dllink == null) {
+                        if (br.toString().equals("No htmlCode read")) {
+                            /*
+                             * total bullshit, logs show user has 77.24622536 GB in login check just before given case of this. see log:
+                             * Link; 1800542995541.log; 2422576; jdlog://1800542995541
+                             * 
+                             * @search --ID:1215TS:1456220707529-23.2.16 10:45:07 - [jd.http.Browser(openRequestConnection)] ->
+                             * 
+                             * I suspect that its caused by the predownload password? or referer? -raztoki20160304
+                             */
+                            // logger.info("No traffic available!");
+                            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
-        }
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -588,41 +602,119 @@ public class UlozTo extends PluginForHost {
         return false;
     }
 
-    private String login(final Account account, final AccountInfo aa) throws Exception {
+    private void loginAPI(final Account account, final AccountInfo aa) throws Exception {
         synchronized (ACCLOCK) {
-            final AccountInfo ai = aa != null ? aa : account.getAccountInfo();
-            setBrowserExclusive();
-            final Browser br = new Browser();
-            br.setFollowRedirects(true);
-            br.setCustomCharset("utf-8");
-            br.getHeaders().put("Accept", "text/html, */*");
-            br.getHeaders().put("Accept-Encoding", "identity");
-            br.getHeaders().put("User-Agent", "UFM 1.5");
-            br.getPage("http://api.uloz.to/login.php?kredit=1&uzivatel=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-            if (br.containsHTML("ERROR")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            try {
+                final AccountInfo ai = aa != null ? aa : account.getAccountInfo();
+                setBrowserExclusive();
+                final Browser br = new Browser();
+                br.setFollowRedirects(true);
+                prepBR(this.br);
+                br.getHeaders().put("Accept", "text/html, */*");
+                br.getHeaders().put("Accept-Encoding", "identity");
+                br.getHeaders().put("User-Agent", "UFM 1.5");
+                br.getPage("http://api.uloz.to/login.php?kredit=1&uzivatel=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("ERROR")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final String trafficleft = br.toString().trim();
+                if (trafficleft != null) {
+                    ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " KB"));
+                }
+                if (aa == null) {
+                    account.setAccountInfo(ai);
+                }
+            } finally {
+                setBasicAuthHeader(account);
             }
-            final String trafficleft = br.toString().trim();
-            if (trafficleft != null) {
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " KB"));
+        }
+    }
+
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
+        synchronized (ACCLOCK) {
+            try {
+                setBrowserExclusive();
+                br.setFollowRedirects(true);
+                prepBR(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                this.br.getPage("https://" + account.getHoster() + "/login");
+                final Form loginform = br.getFormbyKey("username");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (loginform.hasInputFieldByName("remember")) {
+                    loginform.remove("remember");
+                }
+                loginform.put("remember", "on");
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+
+                if (br.getCookie(this.br.getHost(), "permanentLogin2") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(br.getCookies(account.getHoster()), "");
+            } finally {
+                setBasicAuthHeader(account);
             }
-            if (aa == null) {
-                account.setAccountInfo(ai);
-            }
-            return "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass());
+        }
+    }
+
+    private void setBasicAuthHeader(final Account account) {
+        this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+    }
+
+    private void login(final Account account, final boolean force) throws Exception {
+        if (use_login_api) {
+            this.loginAPI(account, null);
+        } else {
+            this.loginWebsite(account, force);
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai;
+        if (use_login_api) {
+            ai = fetchAccountInfoAPI(account);
+        } else {
+            ai = fetchAccountInfoWebsite(account);
+        }
+        return ai;
+    }
+
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, ai);
+            loginAPI(account, ai);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
         ai.setStatus("Premium Account");
+        account.setType(AccountType.PREMIUM);
+        account.setValid(true);
+        return ai;
+    }
+
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            loginWebsite(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        final String trafficleft = br.getRegex("<em>[^<]+</em>\\s*?\\(([^<>\"\\']+)\\)\\s*?</span>").getMatch(0);
+        if (trafficleft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        }
+        ai.setStatus("Premium Account");
+        account.setType(AccountType.PREMIUM);
         account.setValid(true);
         return ai;
     }
@@ -661,7 +753,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), UlozTo.REPEAT_CAPTCHA, JDL.L("plugins.hoster.uloz.to.captchas", "Solve captcha by replaying previous (disable to solve manually)")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), UlozTo.REPEAT_CAPTCHA, "Solve captcha by replaying previous (disable to solve manually)").setDefaultValue(true));
     }
 
 }

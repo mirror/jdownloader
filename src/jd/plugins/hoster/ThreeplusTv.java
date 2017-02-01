@@ -30,6 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3plus.tv" }, urls = { "https?://(?:www\\.)?3plus.tv/episode/[a-z0-9\\-]+/[a-z0-9\\-]+" })
 public class ThreeplusTv extends PluginForHost {
 
@@ -50,6 +53,7 @@ public class ThreeplusTv extends PluginForHost {
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
+    private String               dllink_hls        = null;
     private boolean              server_issues     = false;
 
     @Override
@@ -61,6 +65,7 @@ public class ThreeplusTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
+        dllink_hls = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -85,6 +90,7 @@ public class ThreeplusTv extends PluginForHost {
             /* First ID goes to second ID --> Access that */
             this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
         }
+
         final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
         for (final String possibleQuality : qualities) {
             dllink = this.br.getRegex("src\\s*?:\\s*?\\'(https?[^<>\"\\']+format=progressive[^<>\"\\']*?)\\',\\s*?type\\s*?:\\s*?\\'video(?:/|\\x2F)mp4\\',\\s*?quality\\s*?:\\s*?\\'" + possibleQuality + "\\'").getMatch(0);
@@ -92,6 +98,8 @@ public class ThreeplusTv extends PluginForHost {
                 break;
             }
         }
+        dllink_hls = this.br.getRegex("\\'(https?://[^<>\"\\']+\\.m3u8[^<>\"\\']*?)").getMatch(0);
+
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -148,24 +156,39 @@ public class ThreeplusTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (this.br.containsHTML("Dieses Video steht nur für Silverlight und Flash")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download Silverlight/DRM protected content");
-        } else if (dllink == null) {
+        } else if (dllink == null && dllink_hls == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            this.dllink_hls = Encoding.unescape(this.dllink_hls);
+            this.br.getPage(this.dllink_hls);
+            if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            this.dllink_hls = hlsbest.downloadurl;
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, this.dllink_hls);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
