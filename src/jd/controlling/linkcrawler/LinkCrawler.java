@@ -2699,10 +2699,9 @@ public class LinkCrawler {
                         final HashSet<DownloadLink> distribute            = new HashSet<DownloadLink>();
 
                         public synchronized void distribute(DownloadLink... links) {
-                            if (links == null || links.length == 0) {
+                            if (links == null || (links.length == 0 && wplg.getDistributer() != null)) {
                                 return;
                             }
-
                             for (DownloadLink link : links) {
                                 if (link.getPluginPatternMatcher() != null && !fastDuplicateDetector.contains(link)) {
                                     distribute.add(link);
