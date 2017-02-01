@@ -26,12 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,6 +38,7 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
@@ -54,6 +49,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(?:www\\.)?uploadboy\\.(?:com|me)/(?:vidembed\\-)?[a-z0-9]{12}(?:\\.html)?(?:\\?ref=[a-zA-Z0-9\\%\\.]+)?" })
 public class UploadBoyCom extends antiDDoSForHost {
@@ -144,7 +145,7 @@ public class UploadBoyCom extends antiDDoSForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
@@ -815,10 +816,12 @@ public class UploadBoyCom extends antiDDoSForHost {
             ai.setStatus("Premium Account");
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(true);
+            account.setType(AccountType.PREMIUM);
         } else {
             ai.setStatus("Free Account");
             account.setMaxSimultanDownloads(2);
             account.setConcurrentUsePossible(false);
+            account.setType(AccountType.FREE);
         }
         return ai;
     }
@@ -888,7 +891,7 @@ public class UploadBoyCom extends antiDDoSForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, -2, "freelink2");
         } else {

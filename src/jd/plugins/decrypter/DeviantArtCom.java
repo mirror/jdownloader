@@ -85,6 +85,11 @@ public class DeviantArtCom extends PluginForDecrypt {
 
     private long                decryptedUrlsNum              = 0;
 
+    protected void distribute(final DownloadLink dl) {
+        super.distribute(dl);
+        decryptedUrlsNum++;
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -143,7 +148,14 @@ public class DeviantArtCom extends PluginForDecrypt {
         if (decryptedUrlsNum == 0) {
             logger.info("Link probably offline: " + parameter);
             return decryptedLinks;
+        } else if (decryptedUrlsNum == 1) {
+            /*
+             * 2017-02-01: Workaround when using only
+             * "distribute(DownloadLink) --> If we have only 1 element, nothing will appear in the linkgrabber if decryptedLinks.size() == 0 so we add a dummy. "
+             */
+            decryptedLinks.add(this.createDownloadlink("dummy://"));
         }
+
         return decryptedLinks;
     }
 
@@ -403,6 +415,10 @@ public class DeviantArtCom extends PluginForDecrypt {
                     grab = br.getRegex("class=\"smbutton smbutton\\-green browse\\-search\\-button\"(.*?)class=\"rss\\-link\"").getMatch(0);
                     if (grab == null) {
                         grab = br.getRegex("class=\"folderview\\-art\"(.*?)class=\"rss\\-link\"").getMatch(0);
+                    }
+                    if (grab == null) {
+                        /* 2017-02-01: Favourites */
+                        grab = br.getRegex("value=\"Search Favourites\"(.*?)class=\"footer_copyright\"").getMatch(0);
                     }
                 } else {
                     /* Unescape json */
