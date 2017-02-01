@@ -142,8 +142,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         try {
             map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
-            // stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_beta()), "spanx,alignx center");
-            // contentpane.add(btn, "aligny center, spany 3");
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_builddate()));
             stats.add(disable(map.get("buildDate")));
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_runtime()));
@@ -189,12 +187,12 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(stats, "pushx,growx,spanx");
 
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(disable("Copyright \u00A9 2009-2016 AppWork GmbH"));
+        stats.add(disable("Copyright \u00A9 2009-2017 AppWork GmbH"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(disable("Copyright \u00A9 2009-2016 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2017 JDownloader Community"));
 
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(disable("Copyright \u00A9 2009-2016 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2017 JDownloader Community"));
         try {
             stats.add(new JLabel("Java:"), "");
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
