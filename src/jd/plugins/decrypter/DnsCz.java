@@ -13,12 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,16 +38,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
-
-@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "http://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]+/?#.*|[^/]*\\?.+|/?$)" }) 
+@DecrypterPlugin(revision = "$Revision: 0 $", interfaceVersion = 2, names = { "rajce.idnes.cz" }, urls = { "https?://.*\\.rajce\\.idnes\\.cz/([^/]+/$|[^/]+/?#.*|[^/]*\\?.+|/?$)" })
 public class DnsCz extends PluginForDecrypt {
-
     public DnsCz(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -134,5 +132,4 @@ public class DnsCz extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
