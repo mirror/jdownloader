@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -575,6 +577,7 @@ public class BrfilesCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        final boolean isUploader = br.containsHTML("class=\"badge badge\\-success\">(?:UPLOADER)</span>");
         if (!br.containsHTML("class=\"badge badge\\-success\">(?:PAID USER|USUARIO DE PAGO|CONTA PREMIUM)</span>")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
@@ -596,6 +599,11 @@ public class BrfilesCom extends PluginForHost {
                     expire = br.getRegex(">[\t\n\r ]*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})[\t\n\r ]*?<").getMatch(0);
                 }
             }
+            if (expire == null && isUploader) {
+                final GregorianCalendar calendar = new GregorianCalendar();
+                calendar.setTimeInMillis(System.currentTimeMillis());
+                expire = "30/12/" + (calendar.get(Calendar.YEAR) + 1);
+            }
             if (expire == null) {
                 account.setValid(false);
                 return ai;
@@ -616,11 +624,16 @@ public class BrfilesCom extends PluginForHost {
                 MAXPREM.set(account_FREE_MAXDOWNLOADS);
                 ai.setStatus("Registered (free) user");
             } else {
-                ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
                 MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
+                if (isUploader) {
+                    ai.setValidUntil(-1);
+                    ai.setStatus("Uploader account");
+                } else {
+                    ai.setValidUntil(expire_milliseconds);
+                    ai.setStatus("Premium account");
+                }
             }
         }
         account.setValid(true);
