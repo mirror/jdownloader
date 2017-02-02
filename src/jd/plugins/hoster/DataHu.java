@@ -22,11 +22,14 @@ import java.util.Locale;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -182,7 +185,7 @@ public class DataHu extends antiDDoSForHost {
         if (expiredate != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH));
         }
-        ai.setStatus("Premium account");
+        ai.setStatus("Premium Account");
         account.setValid(true);
         return ai;
     }
@@ -193,17 +196,24 @@ public class DataHu extends antiDDoSForHost {
         requestFileInformation(downloadLink);
         getPage(downloadLink.getDownloadURL());
         handleSiteErrors();
-        if (br.containsHTML("class=\\'slow_dl_error_text\\'")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        if (br.containsHTML("class='slow_dl_error_text'")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        final String link = br.getRegex("(\"|')(https?://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\\1").getMatch(1);
+        final Form captcha = br.getFormbyProperty("id", "captcha_form");
+        final String link;
+        if (captcha != null) {
+            // recaptchav2 by javascript
+            logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getHeaders().put("X-Requested-With", " XMLHttpRequest");
+            submitForm(ajax, captcha);
+            link = PluginJSonUtils.getJson(ajax, "redirect");
+        } else {
+            link = br.getRegex("(\"|')(https?://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\\1").getMatch(1);
+        }
         if (link == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -219,14 +229,7 @@ public class DataHu extends antiDDoSForHost {
             br.followConnection();
             handleSiteErrors();
             if (br.getURL().contains("data.hu/only_premium.php")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
