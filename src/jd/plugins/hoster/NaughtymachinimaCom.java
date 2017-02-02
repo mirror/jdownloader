@@ -61,7 +61,6 @@ public class NaughtymachinimaCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -72,7 +71,7 @@ public class NaughtymachinimaCom extends PluginForHost {
         /* 2016-09-01: This check is not needed yet! */
         // privatecontent = this.br.containsHTML(">This is a private video");
         privatecontent = false;
-        final String fid = new Regex(link.getDownloadURL(), "/video/(\\d+)$").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "/video/(\\d+)/").getMatch(0);
         final String url_name = new Regex(link.getDownloadURL(), "([a-z0-9\\-_]+)$").getMatch(0);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
@@ -83,7 +82,7 @@ public class NaughtymachinimaCom extends PluginForHost {
         }
 
         /* E.g. SD: http://www.naughtymachinima.com/media/videos/iphone/<fid>.mp4 */
-        dllink = "http://www." + this.getHost() + "/media/videos/hd/" + fid + ".mp4";
+        dllink = "/media/videos/hd/" + fid + ".mp4";
 
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
