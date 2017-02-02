@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "http://(www\\.)?d\\-h\\.st/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "http://(www\\.)?d\\-h\\.st/[A-Za-z0-9]+" })
 public class DhSt extends PluginForHost {
 
     public DhSt(PluginWrapper wrapper) {
@@ -94,7 +94,6 @@ public class DhSt extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
