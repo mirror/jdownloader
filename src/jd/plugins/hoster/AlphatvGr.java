@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -42,6 +44,7 @@ public class AlphatvGr extends PluginForHost {
 
     public AlphatvGr(PluginWrapper wrapper) {
         super(wrapper);
+        // setConfigElements();
     }
 
     @Override
@@ -67,20 +70,32 @@ public class AlphatvGr extends PluginForHost {
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String date = br.getRegex("property=\"article:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null || date == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        date = date.trim();
-        filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
-
-        final String date_formatted = formatDate(date);
-
-        filename = date_formatted + "_alphatv_" + filename + ".mp4";
+        final String filename = getFilename(this.br);
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
+    }
+
+    public static String getFilename(final Browser br) {
+        final String date = br.getRegex("property=\"article:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            title = getFilenameFromUrl(br.getURL());
+            if (title == null) {
+                /* Final fallback - this should never happen! */
+                title = br.getURL();
+            }
+        }
+
+        String filename = "";
+        final String date_formatted = formatDate(date);
+        if (date_formatted != null) {
+            filename = date_formatted + "_";
+        }
+        filename += "alphatv_" + title + ".mp4";
+
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = encodeUnicodeStatic(filename);
+        return filename;
     }
 
     @Override
@@ -126,7 +141,10 @@ public class AlphatvGr extends PluginForHost {
         dl.startDownload();
     }
 
-    private String formatDate(String input) {
+    public static String formatDate(String input) {
+        if (input == null) {
+            return null;
+        }
         // 2015-06-28T15:00:00+03:00
         /* 2015-06-23T20:15:00+02:00 --> 2015-06-23T20:15:00+0200 */
         input = input.substring(0, input.lastIndexOf(":")) + "00";
@@ -146,6 +164,32 @@ public class AlphatvGr extends PluginForHost {
 
     public static boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("jwplayer\\.flash\\.swf\"");
+    }
+
+    public static String getFilenameFromUrl(final String url) {
+        return new Regex(url, "([^/]+)$").getMatch(0);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FAST_LINKCHECK", "Enable fast link check? (file name and size won't be shown correctly until downloadstart)").setDefaultValue(true));
+    }
+
+    public static String encodeUnicodeStatic(final String input) {
+        if (input != null) {
+            String output = input;
+            output = output.replace(":", ";");
+            output = output.replace("|", "¦");
+            output = output.replace("<", "[");
+            output = output.replace(">", "]");
+            output = output.replace("/", "⁄");
+            output = output.replace("\\", "∖");
+            output = output.replace("*", "#");
+            output = output.replace("?", "¿");
+            output = output.replace("!", "¡");
+            output = output.replace("\"", "'");
+            return output;
+        }
+        return null;
     }
 
     @Override
