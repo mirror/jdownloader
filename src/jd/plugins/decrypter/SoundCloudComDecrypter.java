@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -47,6 +45,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
@@ -782,12 +782,12 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     try {
                         final SimpleDateFormat customFormatter = new SimpleDateFormat(userDefinedDateFormat);
                         formattedDate = customFormatter.format(dateStr);
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         // prevent user error killing plugin.
                         formattedDate = defaultformattedDate;
                     }
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 // prevent user error killing plugin.
                 formattedDate = null;
             }

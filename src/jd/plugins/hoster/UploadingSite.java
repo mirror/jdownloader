@@ -118,7 +118,7 @@ public class UploadingSite extends PluginForHost {
     private String                         fuid                               = null;
     private String                         passCode                           = null;
 
-    private static final int               FREE_MAXDOWNLOADS                  = 5;
+    private static final int               FREE_MAXDOWNLOADS                  = 2;
     private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(FREE_MAXDOWNLOADS);

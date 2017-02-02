@@ -55,8 +55,7 @@ public class PhoenixDe extends PluginForDecrypt {
     private boolean             BEST               = false;
 
     ArrayList<DownloadLink>     decryptedLinks     = new ArrayList<DownloadLink>();
-    private String              PARAMETER          = null;
-    private String              PARAMETER_ORIGINAL = null;
+    private String              PARAMETER = null;
     boolean                     fastlinkcheck      = false;
 
     private final String        TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
@@ -68,12 +67,11 @@ public class PhoenixDe extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setAllowedResponseCodes(500);
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         PARAMETER = param.toString();
-        PARAMETER_ORIGINAL = param.toString();
+        final SubConfiguration cfg = SubConfiguration.getConfig(Browser.getHost(PARAMETER));
         BEST = cfg.getBooleanProperty(Q_BEST, false);
         this.fastlinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
-        if (PARAMETER_ORIGINAL.matches(TYPE_PHOENIX_RSS)) {
+        if (PARAMETER.matches(TYPE_PHOENIX_RSS)) {
             decryptPhoenixRSS();
         } else {
             getDownloadLinksZdfOld(cfg);
@@ -85,7 +83,7 @@ public class PhoenixDe extends PluginForDecrypt {
     private void decryptPhoenixRSS() throws IOException {
         br.getPage(this.PARAMETER);
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
-            decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
+            decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
         final String date_general = getXML("pubDate");
@@ -143,36 +141,36 @@ public class PhoenixDe extends PluginForDecrypt {
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
 
         try {
-            if (PARAMETER_ORIGINAL.matches(TYPE_PHOENIX)) {
+            if (PARAMETER.matches(TYPE_PHOENIX)) {
                 br.getPage(PARAMETER);
                 if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
-                    decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
+                    decryptedLinks.add(this.createOfflinelink(PARAMETER));
                     return decryptedLinks;
                 }
                 id = br.getRegex("id=\"phx_vod_(\\d+)\"").getMatch(0);
                 if (id == null) {
-                    decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
+                    decryptedLinks.add(this.createOfflinelink(PARAMETER));
                     return decryptedLinks;
                 }
                 id_filename = id;
                 decrypterurl = "decrypted://phoenix.de/content/" + id + "&quality=%s";
                 br.getPage("/php/zdfplayer-v1.3/data/beitragsDetails.php?ak=web&id=" + id);
-            } else if (this.PARAMETER_ORIGINAL.matches(TYPE_TIVI)) {
+            } else if (this.PARAMETER.matches(TYPE_TIVI)) {
                 final String param_1;
                 final String param_2;
-                if (this.PARAMETER_ORIGINAL.matches(TYPE_TIVI_1)) {
-                    param_1 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(0);
-                    param_2 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(1);
+                if (this.PARAMETER.matches(TYPE_TIVI_1)) {
+                    param_1 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(0);
+                    param_2 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(1);
                 } else {
-                    param_1 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(2);
-                    param_2 = new Regex(this.PARAMETER_ORIGINAL, TYPE_TIVI).getMatch(3);
+                    param_1 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(2);
+                    param_2 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(3);
                 }
                 id_filename = param_1 + "_" + param_2;
                 decrypterurl = "decrypted://tivi.de/content/" + param_1 + param_2 + "&quality=%s";
                 br.getPage("http://www.tivi.de/tiviVideos/beitrag/" + param_1 + "/" + param_2 + "?view=flashXml");
             }
             if (br.containsHTML("<debuginfo>Kein Beitrag mit ID") || br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
-                decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
+                decryptedLinks.add(this.createOfflinelink(PARAMETER));
                 return decryptedLinks;
             }
 
@@ -274,7 +272,7 @@ public class PhoenixDe extends PluginForDecrypt {
                         link.setAvailable(true);
                     }
                     link.setFinalFileName(name);
-                    link.setContentUrl(PARAMETER_ORIGINAL);
+                    link.setContentUrl(PARAMETER);
                     link.setProperty("date", date_formatted);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", name);
@@ -332,7 +330,7 @@ public class PhoenixDe extends PluginForDecrypt {
                 subtitle.setProperty("directName", name);
                 subtitle.setProperty("streamingType", "subtitle");
                 subtitle.setProperty("starttime", startTime);
-                subtitle.setContentUrl(PARAMETER_ORIGINAL);
+                subtitle.setContentUrl(PARAMETER);
                 subtitle.setLinkID(name);
                 decryptedLinks.add(subtitle);
             }
