@@ -57,7 +57,7 @@ public class PanBaiduCom extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
         shorturl = new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0);
         /* Extract password from url in case the url came from this decrypter before. */
@@ -89,7 +89,7 @@ public class PanBaiduCom extends PluginForDecrypt {
 
         uk = br.getRegex("\"uk\":(\\d+),").getMatch(0);
         shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
-        JDUtilities.getPluginForHost("pan.baidu.com");
+        JDUtilities.getPluginForHost(this.getHost());
 
         if (br.getURL().contains("/share/init")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -148,7 +148,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         br.getHeaders().put("Accept", "Accept");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int currentpage = 1;
-        long errno = 0;
+        long errno = -1;
         final int maxpages = 10;
         final int maxlinksperpage = 100;
         int currentlinksnum = 0;
@@ -164,7 +164,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (currentpage > 1 || is_subfolder) {
                 br.getPage(getFolder(parameter, dir, currentpage));
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                errno = JavaScriptEngineFactory.toLong(entries.get("errno"), 0);
+                errno = JavaScriptEngineFactory.toLong(entries.get("errno"), -1);
                 if (errno == 2) {
                     /* Empty folder */
                     final DownloadLink dl = this.createOfflinelink(parameter);
@@ -181,6 +181,13 @@ public class PanBaiduCom extends PluginForDecrypt {
                 }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
+            }
+            if (ressourcelist.size() == 0 && errno == 0) {
+                /* Empty folder */
+                final DownloadLink dl = this.createOfflinelink(parameter);
+                dl.setFinalFileName(Encoding.htmlDecode(dirName));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
             }
 
             DownloadLink dl = null;

@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3plus.tv" }, urls = { "https?://(?:www\\.)?3plus.tv/episode/[a-z0-9\\-]+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3plus.tv" }, urls = { "https?://(?:www\\.)?3plus.tv/(?:episode/[a-z0-9\\-]+/[a-z0-9\\-]+|videos/\\d+/\\d+)" })
 public class ThreeplusTv extends PluginForHost {
 
     public ThreeplusTv(PluginWrapper wrapper) {
@@ -56,6 +56,8 @@ public class ThreeplusTv extends PluginForHost {
     private String               dllink_hls        = null;
     private boolean              server_issues     = false;
 
+    private static final String  type_videos       = ".+/videos/\\d+/\\d+";
+
     @Override
     public String getAGBLink() {
         return "http://www.3plus.tv/impressum";
@@ -75,7 +77,7 @@ public class ThreeplusTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || sdnPlayoutId == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/episode/(.+)").getMatch(0).replace("/", "_");
+        final String url_filename = new Regex(link.getDownloadURL(), "/(?:episode|videos)/(.+)").getMatch(0).replace("/", "_");
         String filename = null;
         if (filename == null) {
             filename = url_filename;
@@ -84,11 +86,16 @@ public class ThreeplusTv extends PluginForHost {
         if (vastid != null) {
             player_get_parameters += "&vastid=" + vastid;
         }
-        this.br.getPage("http://playout.3qsdn.com/" + sdnPlayoutId + player_get_parameters);
+        String get_url = "http://playout.3qsdn.com/" + sdnPlayoutId;
+        if (!link.getDownloadURL().matches(type_videos)) {
+            get_url += player_get_parameters;
+        }
+        this.br.getPage(get_url);
         sdnPlayoutId = getsdnPlayoutId();
         if (sdnPlayoutId != null) {
             /* First ID goes to second ID --> Access that */
             this.br.getPage("/" + sdnPlayoutId + player_get_parameters);
+            this.br.getRequest().setHtmlCode(Encoding.unescape(this.br.toString()));
         }
 
         final String[] qualities = { "hd1080p", "hd720p", "mediumlarge", "medium", "small" };
@@ -145,6 +152,10 @@ public class ThreeplusTv extends PluginForHost {
 
     private String getsdnPlayoutId() {
         String ret = this.br.getRegex("sdnPlayoutId\\s*?(?:=|:)\\s*?(?:\"|\\')([^\"\\']+)(?:\"|\\')").getMatch(0);
+        if (ret == null) {
+            /* 2017-02-02: E.g. for '/videos/' urls. */
+            ret = this.br.getRegex("class=\"views\\-field\\-field\\-threeq\\-value\">\\s*?<div class=\"field\\-content\\s*?\">([^<>\"\\']+)<").getMatch(0);
+        }
         ret = Encoding.unescapeYoutube(ret);
         return ret;
     }

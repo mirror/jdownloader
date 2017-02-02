@@ -335,7 +335,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         int currentOffset = 0;
         int maxOffset = 0;
         int timesNoItems = 0;
-        final int times_No_Items_Max = 19;
+        final int times_No_Items_Max = 9;
         final int offsetIncrease = 24;
         int mp = 0;
         int request_counter = 1;
@@ -414,6 +414,14 @@ public class DeviantArtCom extends PluginForDecrypt {
                         /* 2017-02-01: Favourites */
                         grab = br.getRegex("value=\"Search Favourites\"(.*?)class=\"footer_copyright\"").getMatch(0);
                     }
+                    if (grab == null) {
+                        /* 2017-02-02: Favourites */
+                        grab = br.getRegex("class=\"folderview\\-top\"(.*?)class=\"footer_copyright\"").getMatch(0);
+                    }
+                    if (grab == null) {
+                        /* 2017-02-02: Gallery */
+                        grab = br.getRegex("value=\"Search Gallery\"(.*?)class=\"footer_copyright\"").getMatch(0);
+                    }
                 } else {
                     /* Unescape json */
                     grab = this.br.toString().replace("\\", "");
@@ -436,7 +444,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                         continue;
                     } else {
                         /* We went too far - we should already have all links (or this is a fatal error situation) --> Stop [fail safe] */
-                        logger.info("No items found on " + times_No_Items_Max + "pages in a row --> Stopping");
+                        logger.info("No items found on " + times_No_Items_Max + " pages in a row --> Stopping");
                         break;
                     }
                 } else {

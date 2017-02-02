@@ -63,6 +63,9 @@ public class HighWayMe extends UseNet {
     private static final String                            NORESUME                            = NICE_HOSTproperty + "NORESUME";
     private static final int                               ERRORHANDLING_MAXLOGINS             = 2;
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
+
+    private static final long                              trust_cookie_age                    = 300000l;
+
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><Boolean resume possible|impossible> */
     private static HashMap<String, Boolean>                hostResumeMap                       = new HashMap<String, Boolean>();
@@ -488,6 +491,10 @@ public class HighWayMe extends UseNet {
         final Cookies cookies = this.currAcc.loadCookies("");
         if (cookies != null && !force) {
             this.br.setCookies(this.getHost(), cookies);
+            if (System.currentTimeMillis() - this.currAcc.getCookiesTimeStamp("") <= trust_cookie_age) {
+                /* We trust these cookies --> Do not check them */
+                return;
+            }
             this.br.getPage(DOMAIN + "?logincheck");
             if ("true".equals(PluginJSonUtils.getJsonValue(this.br, "loggedin"))) {
                 /* Cookies valid? --> Save them again to renew the last-saved timestamp. */
