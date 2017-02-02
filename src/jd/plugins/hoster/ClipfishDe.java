@@ -56,7 +56,7 @@ public class ClipfishDe extends PluginForHost {
 
     private final String         NEW_XMP_PATH           = "http://www.clipfish.de/devxml/videoinfo/";
 
-    private static final boolean preferHLS              = true;
+    private static final boolean preferHLS              = false;
 
     private String               dllink                 = null;
     private String               dllink_hls             = null;
