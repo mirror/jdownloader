@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforgedecrypted\\.net/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforgedecrypted\\.net/.+" })
 public class SourceForgeNet extends PluginForHost {
 
     public SourceForgeNet(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class SourceForgeNet extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -62,10 +62,10 @@ public class SourceForgeNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         URLConnectionAdapter con = null;
-        DLLINK = checkDirectLink(downloadLink, "directlink");
+        dllink = checkDirectLink(downloadLink, "directlink");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (DLLINK == null) {
+        if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -73,10 +73,7 @@ public class SourceForgeNet extends PluginForHost {
             final String altDlink = br.getRegex("<b>Download</b>[\t\n\r ]+<small title=\"(/[^<>\"]*?)\"").getMatch(0);
             String link = null;
             if (br.getURL().contains("/files/extras/") || br.getURL().contains("prdownloads.sourceforge.net") || br.getURL().contains("/download")) {
-                link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
-                if (link == null) {
-                    link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
-                }
+                link = getDllink(this.br);
             } else {
                 String project = new Regex(downloadLink.getDownloadURL(), "sourceforge\\.net/projects/(.*?)/").getMatch(0);
                 if (project == null) {
@@ -104,52 +101,67 @@ public class SourceForgeNet extends PluginForHost {
                 return null;
             }
             link = Encoding.htmlDecode(link);
-            boolean getPage = false;
             final String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)(http://sourceforge\\.net/|\\?r=)").getMatch(0);
             final String secondUrlPart = new Regex(link, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
-            // Either we already got the final link or we have to build it
+            /* Either we already got the final link or we have to build it */
             if (urlPart != null && secondUrlPart != null) {
                 link = urlPart + "?r=" + secondUrlPart;
-                getPage = true;
             }
             br.setFollowRedirects(false);
             String finallink = null;
-            for (int i = 0; i <= 5; i++) {
-                if (getPage) {
-                    br.getPage(link);
-                    finallink = br.getRedirectLocation();
+            try {
+                for (int i = 0; i <= 5; i++) {
+                    if (i == 0) {
+                        finallink = link;
+                    } else if (br.getRedirectLocation() != null) {
+                        finallink = br.getRedirectLocation();
+                    } else {
+                        finallink = getDllink(this.br);
+                    }
                     if (finallink == null) {
                         return null;
                     }
-                } else {
-                    finallink = link;
+                    con = br.openHeadConnection(finallink);
+                    if (con.getContentType().contains("html")) {
+                        logger.info("finallink is no file, continuing...");
+                        br.followConnection();
+                        continue;
+                    }
+                    dllink = finallink;
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    break;
                 }
-                con = openConnection(this.br, finallink);
-                if (con.getContentType().contains("html")) {
-                    logger.info("finallink is no file, continuing...");
-                    continue;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
-                DLLINK = finallink;
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                break;
             }
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-            if (DLLINK == null) {
+            if (dllink == null) {
                 logger.warning("The finallink is no file!!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("finallink", DLLINK);
+            downloadLink.setProperty("finallink", dllink);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static String getDllink(final Browser br) {
+        String link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
+        if (link == null) {
+            link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
+        }
+        if (link == null) {
+            /* 2017-02-02: E.g. html "This file may contain malware and the automatic download has been disabled" */
+            link = br.getRegex("<a href=\"(https?://downloads\\.sourceforge\\.net/[^<>\"]+)\" class=\"direct\\-download\"").getMatch(0);
+        }
+        return link;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -168,7 +180,7 @@ public class SourceForgeNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -184,20 +196,6 @@ public class SourceForgeNet extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
