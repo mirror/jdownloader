@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bongobd.com" }, urls = { "https?://(?:www\\.)?bongobd\\.com/(?:en|bn)/watch\\?v=[A-Za-z0-9]+" })
 public class BongobdCom extends PluginForHost {
@@ -166,6 +167,11 @@ public class BongobdCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KalturaVideoPlatform;
     }
 
     @Override

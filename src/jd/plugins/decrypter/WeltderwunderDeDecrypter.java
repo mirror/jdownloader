@@ -31,9 +31,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://(?:www\\.|video\\.)?weltderwunder\\.de/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://(?:www\\.|video\\.)?weltderwunder\\.de/.+" })
 public class WeltderwunderDeDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -97,6 +98,11 @@ public class WeltderwunderDeDecrypter extends PluginForDecrypt {
         decryptedLinks.addAll(newRet);
 
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KalturaVideoPlatform;
     }
 
     /**
