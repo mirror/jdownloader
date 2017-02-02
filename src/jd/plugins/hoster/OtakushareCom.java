@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otakushare.com" }, urls = { "https?://(www\\.)?otakushare\\.com/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otakushare.com" }, urls = { "https?://(www\\.)?otakushare\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class OtakushareCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -74,7 +74,7 @@ public class OtakushareCom extends PluginForHost {
     /* Linktypes */
     private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode|>Site Maintenance!";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
