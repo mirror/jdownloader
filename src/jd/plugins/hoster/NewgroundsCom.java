@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -48,18 +45,18 @@ public class NewgroundsCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final int     free_maxdownloads = 2;
 
     private String               dllink            = null;
+    private boolean              server_issues     = false;
+    private boolean              accountneeded     = false;
 
     @Override
     public String getAGBLink() {
         return "http://www.newgrounds.com/wiki/help-information/terms-of-use";
     }
 
-    private static final String ARTLINK       = "https?://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
-
-    private boolean             accountneeded = false;
+    private static final String ARTLINK = "https?://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -73,9 +70,14 @@ public class NewgroundsCom extends PluginForHost {
         }
 
         String filename = null;
+        String ext = null;
+        final boolean checkForFilesize;
         if (downloadLink.getDownloadURL().matches(ARTLINK)) {
+            checkForFilesize = true;
             dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         } else {
+            /* 2017-02-02: Do not check for filesize as only 1 download per minute is possible --> Accessing directurls makes no sense here. */
+            checkForFilesize = false;
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
                 final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -83,6 +85,7 @@ public class NewgroundsCom extends PluginForHost {
                     filename = Encoding.htmlDecode(filename).trim() + "_" + fid + ".mp3";
                 }
                 dllink = "http://www.newgrounds.com/audio/download/" + fid;
+                ext = ".mp3";
             } else {
                 if (br.containsHTML("requires a Newgrounds account to play\\.<")) {
                     accountneeded = true;
@@ -101,16 +104,17 @@ public class NewgroundsCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+        }
+        if (ext == null) {
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+        }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        if (dllink != null && checkForFilesize) {
+            URLConnectionAdapter con = null;
             try {
-                con = openConnection(br2, dllink);
+                con = br.openHeadConnection(dllink);
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
                 }
@@ -121,22 +125,20 @@ public class NewgroundsCom extends PluginForHost {
                     filename += ext;
                 }
                 downloadLink.setFinalFileName(filename);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+                downloadLink.setProperty("directlink", dllink);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -144,6 +146,10 @@ public class NewgroundsCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (accountneeded) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -151,6 +157,8 @@ public class NewgroundsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - wait before starting new downloads", 3 * 60 * 1000l);
             }
             br.followConnection();
             try {
@@ -162,47 +170,33 @@ public class NewgroundsCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
-    }
+    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+    // String dllink = downloadLink.getStringProperty(property);
+    // if (dllink != null) {
+    // URLConnectionAdapter con = null;
+    // try {
+    // final Browser br2 = br.cloneBrowser();
+    // con = br2.openHeadConnection(dllink);
+    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+    // downloadLink.setProperty(property, Property.NULL);
+    // dllink = null;
+    // }
+    // } catch (final Exception e) {
+    // downloadLink.setProperty(property, Property.NULL);
+    // dllink = null;
+    // } finally {
+    // try {
+    // con.disconnect();
+    // } catch (final Throwable e) {
+    // }
+    // }
+    // }
+    // return dllink;
+    // }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

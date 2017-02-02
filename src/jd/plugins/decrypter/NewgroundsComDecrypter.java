@@ -20,19 +20,24 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/art/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio)/" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
 
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String ARTLINK = "http://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
+    // private static final String ARTLINK = "http://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
+
+    private static final String TYPE_AUDIO = ".+/audio/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -43,13 +48,34 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String[] art_urls = this.br.getRegex("\"(https?://(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
-        if (art_urls == null || art_urls.length == 0) {
-            return null;
+        String fpName = null;
+        if (parameter.matches(TYPE_AUDIO)) {
+            fpName = new Regex(parameter, "http://([^/]+)\\.newgrounds\\.com/").getMatch(0);
+            final String[][] urlinfo = this.br.getRegex("href=\"https?://(?:www\\.)?newgrounds\\.com/audio/listen/(\\d+)\">([^<>\"]+)</a>").getMatches();
+            for (final String[] urlinfosingle : urlinfo) {
+                final String fid = urlinfosingle[0];
+                final String title = urlinfosingle[1];
+                final DownloadLink dl = this.createDownloadlink("http://www.newgrounds.com/audio/listen/" + fid);
+                dl.setAvailable(true);
+                dl.setName(Encoding.htmlDecode(title) + "_" + fid + ".mp3");
+                dl.setLinkID(fid);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            final String[] art_urls = this.br.getRegex("\"(https?://(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
+            if (art_urls == null || art_urls.length == 0) {
+                return null;
+            }
+            for (final String art_url : art_urls) {
+                final DownloadLink dl = createDownloadlink(art_url);
+                decryptedLinks.add(dl);
+            }
         }
-        for (final String art_url : art_urls) {
-            final DownloadLink dl = createDownloadlink(art_url);
-            decryptedLinks.add(dl);
+
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
 
         return decryptedLinks;

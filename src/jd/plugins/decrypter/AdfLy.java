@@ -21,8 +21,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -37,7 +35,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee)/[^<>\r\n\t]+" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|[a-z0-9]+\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee)/[^<>\r\n\t]+" })
 @SuppressWarnings("deprecation")
 public class AdfLy extends antiDDoSForDecrypt {
 
@@ -53,7 +53,7 @@ public class AdfLy extends antiDDoSForDecrypt {
     // belongs to adfly group
     private static final String adfDomains    = "adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy";
     // belongs to other people who use subdomains and use adf.ly service
-    private static final String subDomains    = "(?:dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee";
+    private static final String subDomains    = "(?:dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|[a-z0-9]+\\.redmusic\\.pl|dl\\.android-zone\\.org|out\\.unionfansub\\.com|sostieni\\.ilwebmaster21\\.com|fuyukai\\-desu\\.garuda\\-raws\\.net|zo\\.ee";
     // builds final String for method calling (no need to edit).
     private static final String HOSTS         = adfPre + "(?:" + adfDomains + "|" + subDomains + ")";
     private static final String INVALIDLINKS  = "/(link-deleted\\.php|index|login|static).+";
