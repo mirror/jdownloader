@@ -203,11 +203,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 date = this.br.getRegex("<meta property=\"titolo_episodio\" value=\"Puntata del (\\d{2}/\\d{2}/\\d{4})\"/>").getMatch(0);
             }
             if (date == null) {
-                /* 2017-01-21: New */
-                date = this.br.getRegex("<meta property=\"data\" content=\"(\\d{2}\\-\\d{2}\\-\\d{4})\"/>").getMatch(0);
+                date = this.br.getRegex("data\\-date=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
             }
             if (date == null) {
-                date = this.br.getRegex("data\\-date=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
+                /* 2017-02-02: New */
+                date = this.br.getRegex("avaibility\\-start=\"(\\d{4}\\-\\d{2}\\-\\d{2})\"").getMatch(0);
             }
         } else {
             LinkedHashMap<String, Object> entries = null;

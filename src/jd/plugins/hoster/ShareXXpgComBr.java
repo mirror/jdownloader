@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg(?:\\.uol)?\\.com\\.br/files/[0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg(?:\\.uol)?\\.com\\.br/files/[0-9]+" })
 public class ShareXXpgComBr extends PluginForHost {
 
     public ShareXXpgComBr(PluginWrapper wrapper) {
@@ -38,12 +38,15 @@ public class ShareXXpgComBr extends PluginForHost {
         return "http://sharex.xpg.com.br/contact.php";
     }
 
+    private String dllink = null;
+
     /**
      * Important: brazil proxy is needed, else you are redirected to http://www3.xpg.uol.com.br/404.html
      */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
@@ -51,12 +54,15 @@ public class ShareXXpgComBr extends PluginForHost {
         if (br.getURL().contains("/?NOT_FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        dllink = br.getRegex("\"(http://sharex\\.xpg(?:\\.uol)?\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
         String filename = br.getRegex("<div class=\"downinfo\">([^<>\"]*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("/download/.*?/(.*?)\"").getMatch(0);
         }
         String filesize = br.getRegex(">([0-9]+ bytes)<").getMatch(0);
         if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (dllink == null && this.br.containsHTML("/download//")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setName(filename.trim());
@@ -70,7 +76,6 @@ public class ShareXXpgComBr extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String dllink = br.getRegex("\"(http://sharex\\.xpg(?:\\.uol)?\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

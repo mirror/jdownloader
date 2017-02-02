@@ -21,10 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lynda.com" }, urls = { "http://(www\\.)?lynda\\.com/home/Player\\.aspx\\?lpk4=\\d+" })
 public class LyndaCom extends PluginForHost {
 
@@ -42,16 +41,26 @@ public class LyndaCom extends PluginForHost {
         super(wrapper);
     }
 
-    private String dllink = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     @Override
     public String getAGBLink() {
         return "http://www.lynda.com/aboutus/lotterms.aspx";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        final String linkid = new Regex(link.getDownloadURL(), "").getMatch(0);
+        link.setLinkID(linkid);
+        link.setContentUrl("http://www." + this.getHost() + "/home/Player.aspx?lpk4=" + linkid);
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
+        server_issues = false;
+
         final String videoid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setName(videoid);
         this.setBrowserExclusive();
@@ -102,33 +111,43 @@ public class LyndaCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        final String ext;
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            ext = getFileNameExtensionFromString(dllink, ".mp4");
+        } else {
+            ext = ".mp4";
+        }
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".f4v");
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (dllink != null) {
+            this.br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
