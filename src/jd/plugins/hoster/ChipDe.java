@@ -36,12 +36,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {
@@ -166,9 +167,9 @@ public class ChipDe extends PluginForHost {
 
             /*
              * Include linkid in this case because otherwise links could be identified as duplicates / mirrors wrongly e.g.
-             * 
+             *
              * http://download.chip.eu/en/Firefox_115074.html
-             * 
+             *
              * http://download.chip.eu/en/Firefox_106534.html
              */
             if (filename == null) {
@@ -595,6 +596,11 @@ public class ChipDe extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KalturaVideoPlatform;
     }
 
     @Override

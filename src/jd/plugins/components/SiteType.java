@@ -63,6 +63,11 @@ public class SiteType {
          * Official Demo: <a href="http://imgshot.com/">imgshot.com</a><br />
          */
         ImageHosting_ImgShot,
+        /**
+         * Script used by some video hosting sites e.g.: <a href="http:/tn.com.ar/">tn.com.ar</a>. <br />
+         * Can be bought e.g. from here: <a href="http://de.corp.kaltura.com/" >http://de.corp.kaltura.com/</a>.<br />
+         */
+        KalturaVideoPlatform,
 
         /**
          * Should cover all given templates.<br />
