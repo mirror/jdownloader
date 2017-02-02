@@ -631,7 +631,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 }
             } else if (parameter.contains("swzz.xyz/")) {
                 // cloudflare
-                getPage(parameter);
+                br.setFollowRedirects(true);
+                getPage(parameter.replaceAll("http://", "https://"));
                 if (br.containsHTML("<em>Questo Link Non è ancora attivo\\.\\.\\.riprova tra qualche istante!<em>")) {
                     logger.warning("Retry in a few minutes: " + parameter);
                     return decryptedLinks;
