@@ -129,6 +129,7 @@ public class HighWayMe extends UseNet {
         if (isUsenetLink(link)) {
             return super.requestFileInformation(link);
         } else {
+            final boolean check_via_json = true;
             final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
             final String linkid = new Regex(dlink, "id=(\\d+)").getMatch(0);
             link.setName(linkid);
@@ -140,29 +141,54 @@ public class HighWayMe extends UseNet {
                 return AvailableStatus.UNCHECKABLE;
             }
             URLConnectionAdapter con = null;
-            long fileSize = -1;
+            long filesize = -1;
+            String filesize_str;
+            String filename = null;
             for (Account acc : accs) {
                 this.currAcc = acc;
                 this.loginSafe(false);
-                try {
-                    con = br.openHeadConnection(dlink);
-                    if (!con.getContentType().contains("html")) {
-                        fileSize = con.getLongContentLength();
-                        if (fileSize <= 0) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        link.setDownloadSize(fileSize);
-                        link.setFinalFileName(getFileNameFromHeader(con));
-                        return AvailableStatus.TRUE;
+                if (check_via_json) {
+                    final String json_url = link.getDownloadURL().replaceAll("stream=(?:0|1)", "json=1");
+                    this.br.getPage(json_url);
+                    final String code = PluginJSonUtils.getJsonValue(this.br, "code");
+                    filename = PluginJSonUtils.getJsonValue(this.br, "name");
+                    filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
+                    if ("5".equals(code)) {
+                        /* Login issue */
+                        return AvailableStatus.UNCHECKABLE;
+                    } else if (!"0".equals(code)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                } finally {
+                    if (filename == null || filename.equals("") || filesize_str == null || !filesize_str.matches("\\d+")) {
+                        /* This should never happen at this stage! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    filesize = Long.parseLong(filesize_str);
+                    break;
+                } else {
                     try {
-                        con.disconnect();
-                    } catch (Throwable e) {
+                        con = br.openHeadConnection(dlink);
+                        if (!con.getContentType().contains("html")) {
+                            filesize = con.getLongContentLength();
+                            if (filesize <= 0) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            filename = getFileNameFromHeader(con);
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
                     }
+                    break;
                 }
             }
-            return AvailableStatus.UNCHECKABLE;
+            if (filesize > -1) {
+                link.setDownloadSize(filesize);
+            }
+            link.setFinalFileName(filename);
+            return AvailableStatus.TRUE;
 
         }
     }

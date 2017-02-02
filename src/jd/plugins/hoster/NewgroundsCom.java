@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -27,10 +25,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://www\\.newgrounds\\.com/((portal/view/|audio/listen/)\\d+|art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)" })
-public class NewgroundsCom extends PluginForHost {
+public class NewgroundsCom extends antiDDoSForHost {
 
     public NewgroundsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +44,8 @@ public class NewgroundsCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = 2;
+    /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. */
+    private static final int     free_maxdownloads = 1;
 
     private String               dllink            = null;
     private boolean              server_issues     = false;
@@ -60,11 +60,11 @@ public class NewgroundsCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This entry was")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -84,7 +84,7 @@ public class NewgroundsCom extends PluginForHost {
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename).trim() + "_" + fid + ".mp3";
                 }
-                dllink = "http://www.newgrounds.com/audio/download/" + fid;
+                dllink = "http://www." + this.getHost() + "/audio/download/" + fid;
                 ext = ".mp3";
             } else {
                 if (br.containsHTML("requires a Newgrounds account to play\\.<")) {

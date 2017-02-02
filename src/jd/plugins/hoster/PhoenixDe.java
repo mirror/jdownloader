@@ -36,15 +36,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
-public class ZdfDeMediathek extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de", "tivi.de" }, urls = { "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+|decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" })
+public class PhoenixDe extends PluginForHost {
 
     private String  dllink        = null;
     private boolean server_issues = false;
 
-    public ZdfDeMediathek(PluginWrapper wrapper) {
+    public PhoenixDe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
@@ -57,7 +56,7 @@ public class ZdfDeMediathek extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://zdf.de";
+        return "http://www.phoenix.de/";
     }
 
     public static Browser prepBR(final Browser br) {
@@ -71,8 +70,7 @@ public class ZdfDeMediathek extends PluginForHost {
         server_issues = false;
         final String filename;
         prepBR(this.br);
-        /* New urls 2016-12-21 */
-        dllink = link.getDownloadURL().replace("decryptedmediathek://", "http://");
+        dllink = link.getStringProperty("directURL", null);
         filename = link.getStringProperty("directName", null);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -317,7 +315,7 @@ public class ZdfDeMediathek extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's ZDF Plugin helps downloading videoclips from zdf.de. ZDF provides different video qualities.";
+        return "JDownloader's phoenix.de Plugin helps downloading videoclips from phoenix.de and tivi.de. Both websites provide different video qualities.";
     }
 
     private static final String Q_SUBTITLES                                         = "Q_SUBTITLES";
@@ -331,17 +329,16 @@ public class ZdfDeMediathek extends PluginForHost {
     public static final boolean defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE = false;
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle whenever possible").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load best version ONLY")).setDefaultValue(false);
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, "Load best version ONLY").setDefaultValue(false);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.zdf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.zdf.fastlinkcheck", "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, JDL.L("plugins.hoster.zdf.neomagazin_royale_de_current_episode", "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?")).setDefaultValue(defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, "Load low version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, "Load high version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, "Load veryhigh version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, "Load HD version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!").setDefaultValue(false));
     }
 
 }
