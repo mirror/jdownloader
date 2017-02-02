@@ -56,7 +56,7 @@ public class ClipfishDe extends PluginForHost {
 
     private final String         NEW_XMP_PATH           = "http://www.clipfish.de/devxml/videoinfo/";
 
-    private static final boolean preferHLS              = false;
+    private static final boolean preferHLS              = true;
 
     private String               dllink                 = null;
     private String               dllink_hls             = null;
@@ -226,7 +226,7 @@ public class ClipfishDe extends PluginForHost {
         }
         if (dllink == null && (dllink_hls == null || !preferHLS)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if ("".equals(dllink)) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink.contains(".hds.")) {
             /* Usually encrypted hds */
@@ -235,14 +235,12 @@ public class ClipfishDe extends PluginForHost {
             /* this will throw statserv errors - but this usually never happens! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Media Type: " + this.mediatype);
         }
-
         boolean hls_downloadable = false;
         if (dllink_hls != null) {
             try {
                 this.br.getPage(dllink_hls);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 dllink_hls = hlsbest.downloadurl;
-
                 final URLConnectionAdapter con = br.openGetConnection(dllink_hls);
                 try {
                     if (con.getResponseCode() == 200) {
@@ -261,8 +259,21 @@ public class ClipfishDe extends PluginForHost {
             /* 2017-02-27: HLS is now available and quality is sometimes better than http .mp4. */
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, dllink_hls);
-            dl.startDownload();
-        } else if (dllink.startsWith("rtmp")) {
+            if (!((HLSDownloader) dl).isEncrypted()) {
+                dl.startDownload();
+                return;
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink.contains(".hds.")) {
+            /* Usually encrypted hds */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
+        } else if (this.mediatype != null && !"video".equalsIgnoreCase(this.mediatype)) {
+            /* this will throw statserv errors - but this usually never happens! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Media Type: " + this.mediatype);
+        }
+        if (dllink.startsWith("rtmp")) {
             if (this.flashplayer == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
