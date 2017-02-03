@@ -191,7 +191,6 @@ public class ARDMediathek extends PluginForHost {
         final File source = new File(downloadlink.getFileOutput());
 
         final StringBuilder xml = new StringBuilder();
-        int counter = 1;
         final String lineseparator = System.getProperty("line.separator");
 
         Scanner in = null;
@@ -211,6 +210,7 @@ public class ARDMediathek extends PluginForHost {
         if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
             success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
         } else {
+            int counter = 1;
             BufferedWriter dest;
             try {
                 dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
