@@ -532,6 +532,10 @@ public class FilesMonsterCom extends PluginForHost {
         }
         String premlink = br.getRegex("\"(https?://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) {
+            if (br.containsHTML("You have reached max \\d+ downloads per")) {
+                logger.info("Max downloads limit reached!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Max downloads limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             logger.warning("Failed to find premium downloadlink");
             throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find premium downloadlink. Check if you can download this file via browser, if so, please report this as a bug.");
         }
