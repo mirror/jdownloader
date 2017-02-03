@@ -31,7 +31,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -206,11 +205,6 @@ public class RapidturkCom extends Ftp {
             }
             download(dllink, link, true);
         }
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.DaddyScripts_DaddysLinkProtector;
     }
 
     @Override
