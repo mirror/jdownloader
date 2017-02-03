@@ -466,7 +466,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private static boolean preferAPIdefault    = false;
 
     private void setConfigElement() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API for Premium Accounts (API = lots of recaptcahv1, WEB = recaptchav2 once.)")).setDefaultValue(preferAPIdefault));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API for Premium Accounts (API = lots of recaptchav1, WEB = recaptchav2 once.)")).setDefaultValue(preferAPIdefault));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), trustAPIPremiumOnly, JDL.L("plugins.hoster.Keep2ShareCc.trustAPIPremiumOnly", "Trust API about Premium Only flag?")).setDefaultValue(true));
     }
 
