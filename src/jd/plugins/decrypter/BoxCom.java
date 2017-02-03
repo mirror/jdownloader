@@ -35,8 +35,8 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]*)(?:\\.?app)?\\.box\\.(net|com)/(shared|s)/(?!static)[a-z0-9]+(/\\d+/\\d+)?" })
-public class BxNt extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:www|[a-z0-9\\-_]*)(?:\\.?app)?\\.box\\.(?:net|com)/(?:shared|s)/(?!static)[a-z0-9]+(/\\d+/\\d+)?" })
+public class BoxCom extends antiDDoSForDecrypt {
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
     private static final Pattern FEED_FILETITLE_PATTERN       = Pattern.compile("<title>(.*?)<\\/title>", Pattern.DOTALL);
     private static final Pattern FEED_DL_LINK_PATTERN         = Pattern.compile("<media:content url=\\\"(.*?)\\\"\\s*/>", Pattern.DOTALL);
@@ -45,13 +45,13 @@ public class BxNt extends antiDDoSForDecrypt {
 
     private static final String  TYPE_APP                     = "https?://(?:\\w+\\.)?app\\.box\\.com/(s|shared)/[a-z0-9]+(/1/\\d+)?";
 
-    public BxNt(PluginWrapper wrapper) {
+    public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String cryptedlink = parameter.toString().replace("box.net/", "box.com/").replace("box.com/s/", "box.com/shared/");
         logger.finer("Decrypting: " + cryptedlink);
         br.setCookie("http://box.com", "country_code", "US");
@@ -61,7 +61,7 @@ public class BxNt extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found")) {
             decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
         }
@@ -73,7 +73,7 @@ public class BxNt extends antiDDoSForDecrypt {
             final int pageCount = pc != null ? Integer.parseInt(pc) : 1;
             String parent = null;
 
-            fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+            fpName = PluginJSonUtils.getJsonValue(this.br, "name");
             final String main_folderid = new Regex(cryptedlink, "box\\.com/(s|shared)/([a-z0-9]+)").getMatch(1);
             String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
             if (json_Text == null) {

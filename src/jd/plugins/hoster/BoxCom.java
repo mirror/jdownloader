@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.LinkedHashMap;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -25,13 +27,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com", "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=f_\\d+\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+|https?://www\\.boxdecrypted\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }) 
-public class BoxNet extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=f_\\d+\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+|https?://www\\.boxdecrypted\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)" })
+public class BoxCom extends antiDDoSForHost {
     private static final String TOS_LINK                = "https://www.box.net/static/html/terms.html";
 
     private static final String OUT_OF_BANDWITH_MSG     = "error_message_bandwidth";
@@ -44,7 +46,7 @@ public class BoxNet extends antiDDoSForHost {
     private boolean             force_http_download     = false;
     private boolean             error_message_bandwidth = false;
 
-    public BoxNet(PluginWrapper wrapper) {
+    public BoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -58,7 +60,7 @@ public class BoxNet extends antiDDoSForHost {
         return -1;
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("boxdecrypted\\.(net|com)/", "box.com/"));
         link.setUrlDownload(link.getDownloadURL().replace("box.net/", "box.com/"));
     }
@@ -150,15 +152,18 @@ public class BoxNet extends antiDDoSForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("https://app.box.com/index.php?rm=preview_shared&fileId=" + fileID + "&firstLoad=true&ignoreFolderContents=true&sharedName=" + sharedName + "&vanityName=&isSharedFilePage=true&isSharedFileEmbed=false&isSharedFolderPage=false&isSharedFolderEmbed=false&clientIsMobile=false&clientSupportsSWF=true&clientSupportsSVG=true&clientSupportsMP3=true&clientSupportsH264Baseline=true&clientSupportsMSE=true&clientSupportsDash=true&clientSupportsWebGL=true&sortType=&sortDirection=");
 
-            final String filename = PluginJSonUtils.getJsonValue(br, "name");
-            final String filesize = PluginJSonUtils.getJsonValue(br, "size");
-            if (filename == null) {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("file");
+
+            final String filename = (String) entries.get("fullName");
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            if (filename == null || filename.equals("")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             parameter.setProperty("fileid", fileID);
             parameter.setName(filename.trim());
-            if (filesize != null) {
-                parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize > 0) {
+                parameter.setDownloadSize(filesize);
             }
             dllink = "https://app.box.com/index.php?rm=box_download_shared_file&shared_name=" + sharedName + "&file_id=f_" + fileID;
             br.setFollowRedirects(false);
@@ -202,13 +207,13 @@ public class BoxNet extends antiDDoSForHost {
             }
             parameter.setDownloadSize(urlConnection.getLongContentLength());
             urlConnection.disconnect();
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 urlConnection.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
