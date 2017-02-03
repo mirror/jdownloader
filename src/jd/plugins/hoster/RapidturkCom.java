@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -190,13 +191,26 @@ public class RapidturkCom extends Ftp {
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            final String dllink = br.getRegex("\\'(ftp://[^<>\"\\']+)\\'").getMatch(0);
+            String dllink = br.getRegex("\\'(ftp://[^<>\"\\']+)\\'").getMatch(0);
+            if (dllink == null) {
+                /* 2017-02-03: New */
+                dllink = this.br.getRegex("class=\"download\\-button\\-orange\" onclick=\"location\\.href=\\'([^<>\"\\']+)\\'").getMatch(0);
+            }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (!dllink.startsWith("ftp://")) {
+                /* 2017-02-03: New */
+                dllink = "ftp://" + dllink;
+            }
             download(dllink, link, true);
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.DaddyScripts_DaddysLinkProtector;
     }
 
     @Override

@@ -30,10 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "links.snahp.it" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+" })
-public class LinksSnahpIt extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 35972 $", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "linx.2ddl.link", "protect.dmd247.com" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?linx\\.(?:2ddl|twoddl)\\.(?:[a-z]+)/(?:[;\\.A-Za-z0-9]+|%27)+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" })
+public class DaddyScriptsDaddysLinkProtector extends PluginForDecrypt {
 
-    public LinksSnahpIt(PluginWrapper wrapper) {
+    public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,6 +42,7 @@ public class LinksSnahpIt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -61,7 +62,7 @@ public class LinksSnahpIt extends PluginForDecrypt {
             /* 2017-01-30: Either captcha OR password */
             if (confirmationForm.hasInputFieldByName("security_code")) {
                 captchaFail = true;
-                final String code = this.getCaptchaCode("/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
+                final String code = this.getCaptchaCode("ziddu.com", "/CaptchaSecurityImages.php?width=100&height=40&characters=5", param);
                 confirmationForm.put("security_code", Encoding.urlEncode(code));
             } else if (confirmationForm.hasInputFieldByName("Pass1")) {
                 passwordFail = true;

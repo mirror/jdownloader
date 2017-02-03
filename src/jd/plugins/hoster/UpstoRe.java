@@ -85,7 +85,7 @@ public class UpstoRe extends antiDDoSForHost {
     private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
     private static Object                  LOCK                          = new Object();
     private final String                   MAINPAGE                      = "http://upstore.net";
-    private final String                   INVALIDLINKS                  = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+    private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
 
     private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private final String                   EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
@@ -131,6 +131,9 @@ public class UpstoRe extends antiDDoSForHost {
         }
         getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.containsHTML("name=\"hash\"") && !this.br.containsHTML("class=\"features (minus|plus)\"")) {
+            /* Probably not a file url. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
