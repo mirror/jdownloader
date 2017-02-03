@@ -79,7 +79,7 @@ public class LibGenInfo extends PluginForHost {
         try {
             con = br.openGetConnection(link.getDownloadURL());
             final String server_filename = getFileNameFromHeader(con);
-            if (server_filename != null && server_filename.contains(".html")) {
+            if (server_filename != null && server_filename.matches(".+\\.html?$")) {
                 allow_html_download = true;
             }
             final boolean is_a_downloadable_file = !con.getContentType().contains("html") || allow_html_download;
