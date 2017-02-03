@@ -413,6 +413,12 @@ public class FourSharedCom extends PluginForHost {
         if (ttt != null) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
         }
+        if (cau2 != null) {
+            if (cau2.equals("0322")) {
+                /* 2017-02-03 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Signature is invalid. Please, try again.'", 5 * 60 * 1000l);
+            }
+        }
     }
 
     private String handlePassword(DownloadLink link) throws Exception {
