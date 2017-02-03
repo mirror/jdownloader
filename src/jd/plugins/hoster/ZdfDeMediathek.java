@@ -38,6 +38,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
 
@@ -67,7 +70,7 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         server_issues = false;
         final String filename;
         prepBR(this.br);
@@ -78,18 +81,32 @@ public class ZdfDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(link.getStringProperty("directName", null));
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
+        if (dllink.contains("m3u8")) {
+            final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (streamInfo == null) {
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 server_issues = true;
+            } else {
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (estimatedSize > 0) {
+                    link.setDownloadSize(estimatedSize);
+                }
             }
-        } finally {
+        } else {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = this.br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -121,6 +138,10 @@ public class ZdfDeMediathek extends PluginForHost {
             dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dllink, dl);
             ((RTMPDownload) dl).startDownload();
+        } else if (dllink.contains("m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
         } else {
             boolean resume = true;
             int maxChunks = 0;
@@ -157,12 +178,41 @@ public class ZdfDeMediathek extends PluginForHost {
         }
     }
 
+    private boolean convertSubtitle(final DownloadLink downloadlink) {
+        final File source = new File(downloadlink.getFileOutput());
+
+        final StringBuilder xml = new StringBuilder();
+        final String lineseparator = System.getProperty("line.separator");
+
+        Scanner in = null;
+        try {
+            in = new Scanner(new FileReader(source));
+            while (in.hasNext()) {
+                xml.append(in.nextLine() + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            in.close();
+        }
+        boolean success;
+        final String xmlContent = xml.toString();
+        /* They got two different subtitle formats */
+        if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
+            success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+        } else {
+            /* Unknown subtitle type */
+            success = false;
+        }
+        return success;
+    }
+
     /**
      * Converts the ZDF/WDR(some of them) Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      *
      * @return The success of the conversion.
      */
-    public static boolean convertSubtitle(final DownloadLink downloadlink) {
+    public static boolean convertSubtitleWdr(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
 
         BufferedWriter dest = null;
@@ -333,13 +383,18 @@ public class ZdfDeMediathek extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load best version ONLY")).setDefaultValue(false);
-        getConfig().addEntry(bestonly);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.zdf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        // final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST,
+        // JDL.L("plugins.hoster.zdf.best", "Load best version ONLY")).setDefaultValue(false);
+        // getConfig().addEntry(bestonly);
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow",
+        // "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH,
+        // JDL.L("plugins.hoster.zdf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH,
+        // JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd",
+        // "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.zdf.fastlinkcheck", "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, JDL.L("plugins.hoster.zdf.neomagazin_royale_de_current_episode", "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?")).setDefaultValue(defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE));
     }

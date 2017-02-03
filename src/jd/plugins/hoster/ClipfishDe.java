@@ -52,8 +52,6 @@ public class ClipfishDe extends PluginForHost {
     private final Pattern        PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\....)&|<filename><\\!\\[CDATA\\[(.*?)\\]\\]></filename>", Pattern.CASE_INSENSITIVE);
     private final Pattern        PATTERN_TITEL          = Pattern.compile("<meta property=\"og:title\" content=\"(.+?)\"/>", Pattern.CASE_INSENSITIVE);
 
-    private final Pattern        PATTERN_DOLOOP_TV      = Pattern.compile("https?://(?:www\\.)?dooloop\\.tv/video/\\d+/[A-Za-z0-9]+");
-
     private final String         NEW_XMP_PATH           = "http://www.clipfish.de/devxml/videoinfo/";
 
     private static final boolean preferHLS              = true;
