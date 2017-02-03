@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,10 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mp3red.su" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.su/\\d+/[a-z0-9\\-]+\\.html" })
-public class Mp3redSu extends PluginForHost {
+@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mp3red.co" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co)/\\d+/[a-z0-9\\-]+\\.html" })
+public class Mp3redCo extends PluginForHost {
 
-    public Mp3redSu(PluginWrapper wrapper) {
+    public Mp3redCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -53,9 +52,26 @@ public class Mp3redSu extends PluginForHost {
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String linkpart = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0);
+        link.setUrlDownload("http://" + this.getHost() + "/" + linkpart);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("mp3red.su".equals(getHost())) {
+            if (host == null || "mp3red.su".equals(host)) {
+                return "mp3red.co";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://mp3red.su/";
+        return "http://mp3red.co/";
     }
 
     @SuppressWarnings("deprecation")
@@ -80,6 +96,14 @@ public class Mp3redSu extends PluginForHost {
             filename = url_filename;
         }
         dllink = br.getRegex("(/findfile/[^<>\"\\']+)").getMatch(0);
+        if (dllink == null) {
+            /* 2017-02-03: New */
+            dllink = br.getRegex("(/stream/[^<>\"\\']+)").getMatch(0);
+        }
+        if (dllink == null) {
+            /* 2017-02-03: New */
+            dllink = br.getRegex("var\\s*?mp3url_track_data_model\\s*?=\\s*?\"(/[^<>\"\\']+)\";").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -100,12 +124,9 @@ public class Mp3redSu extends PluginForHost {
             link.setName(filename);
         }
         if (dllink != null) {
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);

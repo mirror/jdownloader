@@ -25,6 +25,11 @@ public class SiteType {
          * example: <a href="http://dosya.tc/">dosya.tc</a>
          */
         DaddyScripts_FileHostV2,
+        /**
+         * Link protector script: <a href="http://www.daddyscripts.com/products.php?name=daddys_link_protector">Daddy's Link Protector</a><br />
+         * example: <a href="http://protect-link.org/">protect-link.org</a>
+         */
+        DaddyScripts_DaddysLinkProtector,
 
         /**
          * Open source image board: <a href="https://github.com/r888888888/danbooru">danbooru github project</a><br />
