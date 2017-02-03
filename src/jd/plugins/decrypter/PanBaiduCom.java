@@ -258,12 +258,16 @@ public class PanBaiduCom extends PluginForDecrypt {
                         path = new Regex(path, "(/.+/)").getMatch(0);
                         FilePackage fp = filePackages.get(path);
                         if (fp == null) {
-                            fp = FilePackage.getInstance();
                             final String name = new Regex(path, ".+/(.+)/").getMatch(0);
-                            fp.setName(name);
-                            filePackages.put(path, fp);
+                            if (name != null) {
+                                fp = FilePackage.getInstance();
+                                fp.setName(name);
+                                filePackages.put(path, fp);
+                            }
                         }
-                        fp.add(dl);
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                     }
 
                     /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
