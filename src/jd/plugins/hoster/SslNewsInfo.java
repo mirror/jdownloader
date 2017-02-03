@@ -81,35 +81,47 @@ public class SslNewsInfo extends UseNet {
             } else {
                 account.setProperty(USENET_USERNAME, userName.trim());
             }
-            final String validUntil = br.getRegex("\\[aexpire\\]\\s*?=>\\s*?(\\d+)").getMatch(0);
-            final String bucketType = br.getRegex("\\[Pakket\\]\\s*?=>\\s*(.*?)(\r|\n)").getMatch(0);
-            if (bucketType != null) {
-                ai.setStatus(Encoding.htmlOnlyDecode(bucketType));
-                // https://www.ssl-news.info/signup.php
-                if (StringUtils.containsIgnoreCase(bucketType, "block")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.containsIgnoreCase(bucketType, "shared")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.containsIgnoreCase(bucketType, "150") || StringUtils.containsIgnoreCase(bucketType, "250")) {
-                    account.setMaxSimultanDownloads(30);
-                } else if (StringUtils.containsIgnoreCase(bucketType, "flat 20") || StringUtils.containsIgnoreCase(bucketType, "flat 30")) {
-                    account.setMaxSimultanDownloads(20);
-                } else if (StringUtils.containsIgnoreCase(bucketType, "flat 10")) {
-                    account.setMaxSimultanDownloads(10);
-                } else if (StringUtils.containsIgnoreCase(bucketType, "flat 5")) {
-                    account.setMaxSimultanDownloads(5);
-                } else {
-                    // smallest number of connections
-                    account.setMaxSimultanDownloads(5);
+            final String aBlocktype = br.getRegex("\\[atype\\]\\s*?=>\\s*sslnews_block:(\\d+)").getMatch(0);
+            if (aBlocktype != null) {
+                final String quotaRemaining = br.getRegex("\\[quotaRemaining\\]\\s*?=>\\s*(\\d+)").getMatch(0);
+                ai.setValidUntil(-1);
+                account.setMaxSimultanDownloads(30);
+                ai.setStatus("SSL Block:" + aBlocktype + " GB");
+                if (quotaRemaining != null && !"na".equalsIgnoreCase(quotaRemaining)) {
+                    ai.setTrafficMax(aBlocktype + "GB");
+                    ai.setTrafficLeft(Long.parseLong(quotaRemaining));
                 }
             } else {
-                account.setMaxSimultanDownloads(1);
-                ai.setStatus("Unknown Type");
-            }
-            if (StringUtils.containsIgnoreCase(bucketType, "block")) {
-                ai.setValidUntil(-1);
-            } else if (validUntil != null) {
-                ai.setValidUntil(Long.parseLong(validUntil) * 1000);
+                final String bucketType = br.getRegex("\\[Pakket\\]\\s*?=>\\s*(.*?)(\r|\n)").getMatch(0);
+                final String validUntil = br.getRegex("\\[aexpire\\]\\s*?=>\\s*?(\\d+)").getMatch(0);
+                if (bucketType != null) {
+                    ai.setStatus(Encoding.htmlOnlyDecode(bucketType));
+                    // https://www.ssl-news.info/signup.php
+                    if (StringUtils.containsIgnoreCase(bucketType, "block")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.containsIgnoreCase(bucketType, "shared")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.containsIgnoreCase(bucketType, "150") || StringUtils.containsIgnoreCase(bucketType, "250")) {
+                        account.setMaxSimultanDownloads(30);
+                    } else if (StringUtils.containsIgnoreCase(bucketType, "flat 20") || StringUtils.containsIgnoreCase(bucketType, "flat 30")) {
+                        account.setMaxSimultanDownloads(20);
+                    } else if (StringUtils.containsIgnoreCase(bucketType, "flat 10")) {
+                        account.setMaxSimultanDownloads(10);
+                    } else if (StringUtils.containsIgnoreCase(bucketType, "flat 5")) {
+                        account.setMaxSimultanDownloads(5);
+                    } else {
+                        // smallest number of connections
+                        account.setMaxSimultanDownloads(5);
+                    }
+                } else {
+                    account.setMaxSimultanDownloads(1);
+                    ai.setStatus("Unknown Type");
+                }
+                if (StringUtils.containsIgnoreCase(bucketType, "block")) {
+                    ai.setValidUntil(-1);
+                } else if (validUntil != null) {
+                    ai.setValidUntil(Long.parseLong(validUntil) * 1000);
+                }
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
