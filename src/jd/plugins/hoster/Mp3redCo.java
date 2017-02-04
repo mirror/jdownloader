@@ -85,6 +85,7 @@ public class Mp3redCo extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fid = new Regex(link.getDownloadURL(), "https?://[^/]+/(\\d+)/").getMatch(0);
         final String url_filename = new Regex(link.getDownloadURL(), "([^/]+)\\.html$").getMatch(0);
         boolean nice_filename = true;
         String filename = br.getRegex("mp3url_track_data_model\\s*?,\\s*?\"([^<>\"]+)\"").getMatch(0);
@@ -95,6 +96,7 @@ public class Mp3redCo extends PluginForHost {
             nice_filename = false;
             filename = url_filename;
         }
+        filename = fid + "_" + filename;
         dllink = br.getRegex("(/findfile/[^<>\"\\']+)").getMatch(0);
         if (dllink == null) {
             /* 2017-02-03: New */

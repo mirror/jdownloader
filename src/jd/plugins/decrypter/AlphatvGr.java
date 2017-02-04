@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Dialog.ModalityType;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,6 +28,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/shows/.+/[A-Za-z0-9\\-_]+" })
@@ -59,36 +65,58 @@ public class AlphatvGr extends PluginForDecrypt {
             }
         }
 
-        final Browser br2 = this.br.cloneBrowser();
-        final String base_url = this.br.getURL();
-        short addedUrlsNum;
-        int currentPage = 0;
-        do {
-            if (this.isAbort()) {
-                return decryptedLinks;
+        final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, parameter, "For this URL JDownloader can crawl the single video only or all related videos. What would you like to do?", null, "All videos AND the single video?", "Single Video?") {
+            @Override
+            public ModalityType getModalityType() {
+                return ModalityType.MODELESS;
             }
-            logger.info(String.format("Crawling urls from page %d of  (?) %d", currentPage, page_max));
-            if (currentPage > 0) {
-                br2.getPage(base_url + "?page=" + currentPage);
+
+            @Override
+            public boolean isRemoteAPIEnabled() {
+                return true;
             }
-            final String[] otherVideos = br2.getRegex("<article><a[^<>]*?class=\"link\"[^<>]*?href=\"(" + linkpart + "[^<>\"]+)\">").getColumn(0);
-            for (String otherVideoUrl : otherVideos) {
-                final String otherVideoUrlTitle = jd.plugins.hoster.AlphatvGr.getFilenameFromUrl(otherVideoUrl);
-                if (main_url_title != null && otherVideoUrlTitle != null && otherVideoUrlTitle.equalsIgnoreCase(main_url_title)) {
-                    /* Prevent re-adding the url which the user has just added. */
-                    continue;
+        };
+        boolean decryptRelatedVideos = false;
+        try {
+            UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+            decryptRelatedVideos = true;
+        } catch (DialogCanceledException e) {
+            decryptRelatedVideos = false;
+        } catch (DialogClosedException e) {
+            decryptRelatedVideos = false;
+        }
+        if (decryptRelatedVideos) {
+            final Browser br2 = this.br.cloneBrowser();
+            final String base_url = this.br.getURL();
+            short addedUrlsNum;
+            int currentPage = 0;
+            do {
+                if (this.isAbort()) {
+                    return decryptedLinks;
                 }
-                otherVideoUrl = "http://www." + this.getHost() + otherVideoUrl;
-                /* This will go back into the decrypter. */
-                urlsToDecrypt.add(otherVideoUrl);
-            }
-            addedUrlsNum = (short) otherVideos.length;
-            currentPage++;
-            /*
-             * Important! Stop once a page has less than the max number of videos because if we go to far the website will just show more
-             * random other videos and we can go until page ~2000.
-             */
-        } while (addedUrlsNum >= 12);
+                logger.info(String.format("Crawling urls from page %d of  (?) %d", currentPage, page_max));
+                if (currentPage > 0) {
+                    br2.getPage(base_url + "?page=" + currentPage);
+                }
+                final String[] otherVideos = br2.getRegex("<article><a[^<>]*?class=\"link\"[^<>]*?href=\"(" + linkpart + "[^<>\"]+)\">").getColumn(0);
+                for (String otherVideoUrl : otherVideos) {
+                    final String otherVideoUrlTitle = jd.plugins.hoster.AlphatvGr.getFilenameFromUrl(otherVideoUrl);
+                    if (main_url_title != null && otherVideoUrlTitle != null && otherVideoUrlTitle.equalsIgnoreCase(main_url_title)) {
+                        /* Prevent re-adding the url which the user has just added. */
+                        continue;
+                    }
+                    otherVideoUrl = "http://www." + this.getHost() + otherVideoUrl;
+                    /* This will go back into the decrypter. */
+                    urlsToDecrypt.add(otherVideoUrl);
+                }
+                addedUrlsNum = (short) otherVideos.length;
+                currentPage++;
+                /*
+                 * Important! Stop once a page has less than the max number of videos because if we go to far the website will just show
+                 * more random other videos and we can go until page ~2000.
+                 */
+            } while (addedUrlsNum >= 12);
+        }
 
         /* First crawl the video the user initially added. */
         crawlSingleVideo();
