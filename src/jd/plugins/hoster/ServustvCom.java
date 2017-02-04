@@ -130,7 +130,7 @@ public class ServustvCom extends PluginForHost {
             hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         }
         if (hlsbest != null) {
-            final String url_hls = hlsbest.downloadurl;
+            final String url_hls = hlsbest.getDownloadurl();
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();

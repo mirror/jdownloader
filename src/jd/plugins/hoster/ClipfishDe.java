@@ -238,7 +238,7 @@ public class ClipfishDe extends PluginForHost {
             try {
                 this.br.getPage(dllink_hls);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                dllink_hls = hlsbest.downloadurl;
+                dllink_hls = hlsbest.getDownloadurl();
                 final URLConnectionAdapter con = br.openGetConnection(dllink_hls);
                 try {
                     if (con.getResponseCode() == 200) {

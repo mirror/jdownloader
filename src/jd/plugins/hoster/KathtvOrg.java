@@ -103,7 +103,7 @@ public class KathtvOrg extends PluginForHost {
         }
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, hlsbest.downloadurl);
+        dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
         dl.startDownload();
     }
 

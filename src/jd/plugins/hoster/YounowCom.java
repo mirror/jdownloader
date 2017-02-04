@@ -133,7 +133,7 @@ public class YounowCom extends PluginForHost {
                 if (hlsbest == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                url_hls = hlsbest.downloadurl;
+                url_hls = hlsbest.getDownloadurl();
             }
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);

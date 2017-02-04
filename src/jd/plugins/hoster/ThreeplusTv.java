@@ -195,7 +195,7 @@ public class ThreeplusTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            this.dllink_hls = hlsbest.downloadurl;
+            this.dllink_hls = hlsbest.getDownloadurl();
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, this.dllink_hls);
             dl.startDownload();

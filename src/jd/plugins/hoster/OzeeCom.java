@@ -108,7 +108,7 @@ public class OzeeCom extends PluginForHost {
         }
         this.br.getPage(dllink);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-        final String dllink = hlsbest.downloadurl;
+        final String dllink = hlsbest.getDownloadurl();
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();

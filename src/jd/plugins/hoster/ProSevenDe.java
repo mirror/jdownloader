@@ -203,7 +203,7 @@ public class ProSevenDe extends PluginForHost {
                 logger.info("Seems like only encrypted HDS/RTMPE streams are available!");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol rtmpe:// not supported");
             }
-            final String url_hls = hlsbest.downloadurl;
+            final String url_hls = hlsbest.getDownloadurl();
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
@@ -216,7 +216,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             *
+             * 
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */

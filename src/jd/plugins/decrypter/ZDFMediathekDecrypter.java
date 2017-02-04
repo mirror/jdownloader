@@ -170,8 +170,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         grabBest = cfg.getBooleanProperty(Q_BEST, false);
         fastlinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
         grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
-        /* TODO: Decide here whether we have to access the hls master urls at all --> If not, we can save even more time :) */
+        /* TODO: If one of these is false, we can save http requests and thus time. */
         final boolean grabHLS = true;
+        boolean grabDownloadUrls = true;
 
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String sophoraIDSource;
@@ -249,8 +250,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         short counter = 0;
         short highestHlsMasterValue = 0;
         short hlsMasterValueTemp = 0;
-        boolean grabDownloadUrls = false;
+        int highestHlsBandwidth = 0;
         boolean finished = false;
+        boolean grabDownloadUrlsPossible = false;
+        DownloadLink highestHlsDownload = null;
+
         do {
 
             if (this.isAbort()) {
@@ -259,20 +263,20 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
             if (counter == 0) {
                 accessPlayerJson(player_url_template, "ngplayer_2_3");
-            } else if (!grabDownloadUrls || counter > 1) {
+            } else if (grabDownloadUrls && grabDownloadUrlsPossible) {
+                accessPlayerJson(player_url_template, "zdf_pd_download_1");
+                finished = true;
+            } else {
                 /* Fail safe && case when there are no additional downloadlinks available. */
                 finished = true;
                 break;
-            } else {
-                accessPlayerJson(player_url_template, "zdf_pd_download_1");
-                finished = true;
             }
 
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
             final Object downloadAllowed_o = JavaScriptEngineFactory.walkJson(entries, "attributes/downloadAllowed/value");
             if (downloadAllowed_o != null && downloadAllowed_o instanceof Boolean) {
                 /* Usually this is set in the first loop to decide whether a 2nd loop is required. */
-                grabDownloadUrls = ((Boolean) downloadAllowed_o).booleanValue();
+                grabDownloadUrlsPossible = ((Boolean) downloadAllowed_o).booleanValue();
             }
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("priorityList");
             final Object subtitleO = JavaScriptEngineFactory.walkJson(entries, "captions/{0}/uri");
@@ -382,6 +386,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     linkid = String.format(linkid_format, id, type, cdn, language, protocol, resolution);
                                     final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, linkid, ext));
                                     dl = createDownloadlink(final_download_url);
+                                    if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
+                                        /*
+                                         * While adding the URLs, let's find the BEST quality url. In case we need it later we will already
+                                         * know which one is the BEST.
+                                         */
+                                        highestHlsBandwidth = hlscontainer.getBandwidth();
+                                        highestHlsDownload = dl;
+                                    }
                                     setDownloadlinkProperties(dl, date_formatted, final_filename, type, linkid);
                                     addDownloadLink(dl);
                                 }

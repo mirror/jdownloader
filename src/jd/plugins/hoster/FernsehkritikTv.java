@@ -767,7 +767,7 @@ public class FernsehkritikTv extends PluginForHost {
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String url_hls = hlsbest.downloadurl;
+        String url_hls = hlsbest.getDownloadurl();
         if (!url_hls.startsWith("http")) {
             url_hls = url_base + url_hls;
         }

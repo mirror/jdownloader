@@ -241,7 +241,7 @@ public class DplayCom extends PluginForHost {
         if (hlsSelected == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String url_hls = hlsSelected.downloadurl;
+        final String url_hls = hlsSelected.getDownloadurl();
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
