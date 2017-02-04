@@ -72,9 +72,12 @@ public class SendvidCom extends PluginForHost {
         if (filename == null) {
             filename = videoid;
         }
-        dllink = "http://sendvid.com/" + videoid + ".mp4";
+        dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!dllink.contains("http")) {
+            dllink = "http:" + dllink;
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
