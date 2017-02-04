@@ -43,7 +43,7 @@ public class HlsContainer {
                 final String url = br.getURL(stream[1]).toString();
                 final HlsContainer hls = new HlsContainer();
                 if (bandwidth != null) {
-                    hls.bandwidth = Long.parseLong(bandwidth);
+                    hls.bandwidth = Integer.parseInt(bandwidth);
                 } else {
                     hls.bandwidth = -1;
                 }
@@ -64,19 +64,35 @@ public class HlsContainer {
         return hlsqualities;
     }
 
-    public String codecs;
-    public String downloadurl;
+    private String codecs;
+    private String downloadurl;
 
     public String getDownloadurl() {
         return downloadurl;
     }
 
-    public int  width     = -1;
-    public int  height    = -1;
-    public long bandwidth = -1;
+    private int width     = -1;
+    private int height    = -1;
+    private int bandwidth = -1;
+
+    public String getCodecs() {
+        return this.codecs;
+    }
+
+    public int getWidth() {
+        return this.width;
+    }
+
+    public int getHeight() {
+        return this.height;
+    }
 
     public String getResolution() {
-        return width + "x" + height;
+        return this.width + "x" + this.height;
+    }
+
+    public int getBandwidth() {
+        return this.bandwidth;
     }
 
     public HlsContainer() {

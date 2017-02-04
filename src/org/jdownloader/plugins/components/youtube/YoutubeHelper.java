@@ -40,6 +40,23 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -101,23 +118,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -170,8 +170,8 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static LogSource             LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
-    public static List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static LogSource             LOGGER                           = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -723,30 +723,30 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String          YT_TITLE                         = "YT_TITLE";
+    public static final String          YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String          YT_ID                            = "YT_ID";
+    public static final String          YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String          YT_DATE                          = "YT_DATE";
+    public static final String          YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String          YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String          YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String          YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String          YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String          YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String         REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1469,18 +1469,18 @@ public class YoutubeHelper {
                     if (xml.trim().startsWith("#EXTM3U")) {
                         List<HlsContainer> containers = HlsContainer.getHlsQualities(clone);
                         for (HlsContainer c : containers) {
-                            String[][] params = new Regex(c.downloadurl, "/([^/]+)/([^/]+)").getMatches();
-                            final UrlQuery query = Request.parseQuery(c.downloadurl);
+                            String[][] params = new Regex(c.getDownloadurl(), "/([^/]+)/([^/]+)").getMatches();
+                            final UrlQuery query = Request.parseQuery(c.getDownloadurl());
                             if (params != null) {
                                 for (int i = 1; i < params.length; i++) {
                                     query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
                                 }
                             }
-                            query.addIfNoAvailable("codecs", c.codecs);
+                            query.addIfNoAvailable("codecs", c.getCodecs());
                             query.addIfNoAvailable("type", query.get("codecs") + "-" + query.get("mime"));
                             query.addIfNoAvailable("fps", query.get("frameRate"));
-                            query.addIfNoAvailable("width", c.width + "");
-                            query.addIfNoAvailable("height", c.height + "");
+                            query.addIfNoAvailable("width", c.getWidth() + "");
+                            query.addIfNoAvailable("height", c.getHeight() + "");
                             if (query.containsKey("width") && query.containsKey("height")) {
                                 query.addIfNoAvailable("size", query.get("width") + "x" + query.get("height"));
                             }
@@ -1492,14 +1492,14 @@ public class YoutubeHelper {
                             } catch (Throwable e) {
                                 logger.log(e);
                             }
-                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.width, c.height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
+                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), c.getWidth(), c.getHeight(), StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
                             if (itag == null) {
                                 this.logger.info("Unknown Line: " + query);
                                 this.logger.info(query + "");
                                 continue;
                             }
                             YoutubeStreamData vsd;
-                            vsd = new YoutubeStreamData(mpdUrl.src, vid, c.downloadurl, itag, query);
+                            vsd = new YoutubeStreamData(mpdUrl.src, vid, c.getDownloadurl(), itag, query);
                             try {
                                 vsd.setHeight(Integer.parseInt(query.get("height")));
                             } catch (Throwable e) {
