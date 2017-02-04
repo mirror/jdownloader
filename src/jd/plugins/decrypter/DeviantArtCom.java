@@ -404,6 +404,12 @@ public class DeviantArtCom extends PluginForDecrypt {
             }
 
             try {
+                final boolean galleryEndReached = this.br.containsHTML("class=\"empty\\-state gallery\"");
+                if (galleryEndReached) {
+                    /* 2017-02-04 */
+                    logger.info("Seems like we have reached the end of the gallery");
+                    break;
+                }
                 String grab;
                 if (request_counter == 1 || !use_ajax_requests) {
                     grab = br.getRegex("class=\"smbutton smbutton\\-green browse\\-search\\-button\"(.*?)class=\"rss\\-link\"").getMatch(0);
@@ -420,7 +426,7 @@ public class DeviantArtCom extends PluginForDecrypt {
                     }
                     if (grab == null) {
                         /* 2017-02-02: Gallery */
-                        grab = br.getRegex("value=\"Search Gallery\"(.*?)class=\"footer_copyright\"").getMatch(0);
+                        grab = br.getRegex("value=\"Search Gallery\"(.*?)data\\-gmiclass=\"CCommentThread\"").getMatch(0);
                     }
                 } else {
                     /* Unescape json */

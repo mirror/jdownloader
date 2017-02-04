@@ -65,6 +65,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final Pattern           TYPE_USER_SETS                = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/sets");
     private final Pattern           TYPE_USER_IN_PLAYLIST         = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/sets");
     private final Pattern           TYPE_USER_LIKES               = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/likes");
+    private final Pattern           TYPE_USER_REPOST              = Pattern.compile("https?://(www\\.)?soundcloud\\.com/[A-Za-z0-9\\-_]+/repost");
     private final Pattern           TYPE_GROUPS                   = Pattern.compile("https?://(www\\.)?soundcloud\\.com/groups/[A-Za-z0-9\\-_]+");
 
     /* Single soundcloud tracks, posted via smartphone/app. */
@@ -322,6 +323,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (tracks == null || tracks.size() == 0 || usernameOfSet == null) {
             if (getString(data, "duration").equals("0")) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            } else if (tracks != null && tracks.size() == 0) {
+                logger.info("Probably GEO-Blocked");
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             logger.warning("Decrypter broken for link: " + parameter);
             throw new DecrypterException("null");
@@ -481,12 +485,23 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private void decryptLikes() throws Exception {
         br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
         data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        String user_id = null;
         if ("302 - Found".equals(data.get("status"))) {
             // json redirect
-            br.getPage((String) data.get("location"));
+            final String redirect = (String) data.get("location");
+            if (redirect == null || redirect.equals("")) {
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
+            user_id = new Regex(redirect, "users/(\\d+)").getMatch(0);
+            br.getPage(redirect);
             data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         }
-        String user_id = getString(data, "id");
+        if (user_id == null) {
+            user_id = getString(data, "id");
+        }
+        if (user_id == null || user_id.equals("")) {
+            throw new DecrypterException("Decrypter broken for link: " + parameter);
+        }
         String nextPage = null;
         final long items_count = ((Number) data.get("likes_count")).intValue();
         final long pages = items_count / max_entries_per_request;
@@ -613,10 +628,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private void decryptUser() throws Exception {
         resolve(null);
         // Decrypt all tracks of a user
-        Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
 
         username = getString(data, "username");
-        String userID = getString(data, "id");
+        final String userID = getString(data, "id");
+        final String type = new Regex(parameter, TYPE_USER_REPOST).matches() ? "/reposts" : "";
 
         if (userID == null) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -627,10 +643,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         setFilePackage(username, playlistname);
         String next_href = null;
         String offset = "0";
+        final String url = String.format("https://api-v2.soundcloud.com/stream/users/%s%s", userID, type);
         do {
-            final String base = "https://api-v2.soundcloud.com/stream/users/" + userID + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br);
+            final String base = url + "?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&app_version=" + jd.plugins.hoster.SoundcloudCom.getAppVersion(br);
             br.getPage(base);
-            List<Map<String, Object>> collection = parseCollection();
+            final List<Map<String, Object>> collection = parseCollection();
             if (collection == null || collection.size() != maxPerCall) {
                 break;
             }
@@ -646,7 +663,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             throw new DecrypterException("parameter == null");
         } else if (parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?") || parameter.contains("/groups/") || parameter.contains("/sets")) {
             return true;
-        } else if (TYPE_USER_LIKES.matcher(parameter).find()) {
+        } else if (TYPE_USER_LIKES.matcher(parameter).find() || new Regex(parameter, TYPE_USER_REPOST).matches()) {
             return true;
         } else if (parameter.matches(".*?soundcloud\\.com(/[A-Za-z\\-_0-9]+){2,3}/?(\\?.+)?")) {
             return false;

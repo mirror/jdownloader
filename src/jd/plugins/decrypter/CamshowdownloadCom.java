@@ -82,6 +82,12 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
         }
         for (final String singleLink : urlsToDecrypt) {
             getPage(singleLink);
+            final Form captchaForm = this.br.getFormbyKey("loc");
+            if (captchaForm != null) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                super.submitForm(captchaForm);
+            }
             final String finallink = this.br.getRedirectLocation();
             if (finallink == null || finallink.contains("camshowdownload.com/")) {
                 return null;

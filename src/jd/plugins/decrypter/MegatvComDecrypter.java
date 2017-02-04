@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Dialog.ModalityType;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -27,6 +28,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megatv.com" }, urls = { "https?://(?:www\\.)?megatv\\.com/[^<>\"]+\\.asp\\?catid=\\d+\\&subid=\\d+\\&pubid=\\d+|https?://(?:www\\.)?megatv\\.com\\.cy/cgibin/hweb\\?\\-A=\\d+\\&\\-V=[A-Za-z0-9]+" })
 public class MegatvComDecrypter extends PluginForDecrypt {
@@ -87,20 +94,78 @@ public class MegatvComDecrypter extends PluginForDecrypt {
             }
         } else {
             /* New 2017-01-30 */
+            this.br.setFollowRedirects(true);
             this.br.getPage(parameter);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (isOffline()) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            String finallink = this.br.getRegex(Pattern.compile("\"(https?://media\\.livenews\\.com\\.cy/DesktopModules/IST[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (finallink == null) {
+
+            final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, parameter, "For this URL JDownloader can crawl the single video only or all related videos. What would you like to do?", null, "All videos AND the single video?", "Single Video?") {
+                @Override
+                public ModalityType getModalityType() {
+                    return ModalityType.MODELESS;
+                }
+
+                @Override
+                public boolean isRemoteAPIEnabled() {
+                    return true;
+                }
+            };
+            boolean decryptRelatedVideos = false;
+            try {
+                UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                decryptRelatedVideos = true;
+            } catch (DialogCanceledException e) {
+                decryptRelatedVideos = false;
+            } catch (DialogClosedException e) {
+                decryptRelatedVideos = false;
+            }
+
+            /* Decrypt current url */
+            final DownloadLink dlsingle = crawlSingle();
+            if (dlsingle == null) {
                 return null;
             }
-            /* Remove linebreaks ... */
-            finallink = finallink.replace("\n", "").replace("\r", "");
-            decryptedLinks.add(this.createDownloadlink(finallink));
+            decryptedLinks.add(dlsingle);
+            distribute(dlsingle);
+
+            if (decryptRelatedVideos) {
+                final String[] allRelatedVideoUrls = this.br.getRegex("<option value=\"(/cgibin/hweb\\?[^<>\"]+)\"").getColumn(0);
+                for (String relatedVideoUrl : allRelatedVideoUrls) {
+                    if (this.isAbort()) {
+                        return decryptedLinks;
+                    }
+                    relatedVideoUrl = "http://www." + this.br.getHost() + relatedVideoUrl;
+                    this.br.getPage(relatedVideoUrl);
+                    if (isOffline()) {
+                        decryptedLinks.add(this.createOfflinelink(relatedVideoUrl));
+                        continue;
+                    }
+                    final DownloadLink dl = crawlSingle();
+                    if (dl == null) {
+                        return null;
+                    }
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            }
         }
 
         return decryptedLinks;
+    }
+
+    private boolean isOffline() {
+        return this.br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("cgibin");
+    }
+
+    private DownloadLink crawlSingle() {
+        String finallink = this.br.getRegex(Pattern.compile("\"(https?://media\\.livenews\\.com\\.cy/DesktopModules/IST[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (finallink == null) {
+            return null;
+        }
+        /* Remove linebreaks ... */
+        finallink = finallink.replace("\n", "").replace("\r", "");
+        return this.createDownloadlink(finallink);
     }
 }
