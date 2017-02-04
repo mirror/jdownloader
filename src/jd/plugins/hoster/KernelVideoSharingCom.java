@@ -313,7 +313,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             }
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, hlsbest.downloadurl);
+            dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
             dl.startDownload();
         } else {
             /* http download */
@@ -339,8 +339,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
-         * 
+         *
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         String httpurl_temp = null;

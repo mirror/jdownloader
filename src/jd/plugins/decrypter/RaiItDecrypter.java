@@ -343,7 +343,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             this.br.getPage(dllink);
             final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
             for (final HlsContainer singleHlsQuality : allqualities) {
-                final DownloadLink dl = this.createDownloadlink(singleHlsQuality.downloadurl);
+                final DownloadLink dl = this.createDownloadlink(singleHlsQuality.getDownloadurl());
                 final String filename = title + "_" + singleHlsQuality.getStandardFilename();
                 dl.setFinalFileName(filename);
                 dl._setFilePackage(fp);

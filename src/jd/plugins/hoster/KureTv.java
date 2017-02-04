@@ -93,7 +93,7 @@ public class KureTv extends PluginForHost {
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String url_hls = hlsbest.downloadurl;
+        final String url_hls = hlsbest.getDownloadurl();
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();

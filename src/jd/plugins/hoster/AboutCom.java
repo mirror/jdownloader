@@ -86,7 +86,7 @@ public class AboutCom extends PluginForHost {
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = hlsbest.downloadurl;
+        DLLINK = hlsbest.getDownloadurl();
         download(downloadLink);
     }
 

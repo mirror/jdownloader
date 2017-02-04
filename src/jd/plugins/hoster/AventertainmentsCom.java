@@ -150,7 +150,7 @@ public class AventertainmentsCom extends PluginForHost {
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = hlsbest.downloadurl;
+            dllink = hlsbest.getDownloadurl();
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, dllink);
             dl.startDownload();
