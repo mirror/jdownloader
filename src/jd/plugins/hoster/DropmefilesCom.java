@@ -56,7 +56,7 @@ public class DropmefilesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("due to ending of the share period|class=\"fileCount\">0</div>") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("due to ending of the share period|due to exceeding the limit|class=\"fileCount\">0</div>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
