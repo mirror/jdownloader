@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,11 +48,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easyvid.org" }, urls = { "https?://(www\\.)?easyvid\\.org/(embed\\-)?[a-z0-9]{12}" })
 public class EasyvidOrg extends antiDDoSForHost {
@@ -752,20 +752,20 @@ public class EasyvidOrg extends antiDDoSForHost {
 
     @Override
     protected void getPage(final String page) throws Exception {
-        getPage(br, page);
+        super.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
     @Override
     protected void postPage(final String page, final String postdata) throws Exception {
-        postPage(page, postdata);
+        super.postPage(page, postdata);
         correctBR();
     }
 
     @Override
     protected void submitForm(final Form form) throws Exception {
-        submitForm(form);
+        super.submitForm(form);
         correctBR();
     }
 
