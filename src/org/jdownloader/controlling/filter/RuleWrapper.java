@@ -189,8 +189,12 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileType(final CrawledLink link) {
         final CompiledFiletypeFilter filetypeFilter = getFiletypeFilter();
         if (filetypeFilter != null) {
-            final LinkInfo linkInfo = link.getLinkInfo();
-            return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+            if (link.gethPlugin() != null || (link.getDownloadLink() != null && link.getDownloadLink().getMimeHint() != null)) {
+                final LinkInfo linkInfo = link.getLinkInfo();
+                return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+            } else {
+                return false;
+            }
         }
         return true;
     }
