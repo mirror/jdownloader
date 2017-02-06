@@ -148,7 +148,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     String ValidateArchiveAction_ValidateArchiveAction(String name);
 
     @Default(lngs = { "en" }, values = { "Cannot extract %s1. Archive is incomplete!" })
-    String cannot_extract_incopmplete(String name);
+    String cannot_extract_incomplete(String name);
 
     @Default(lngs = { "en" }, values = { "Archive %s1" })
     String dummyarchivedialog_title(String name);

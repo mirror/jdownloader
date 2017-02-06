@@ -11,7 +11,6 @@ import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.logging.Level;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +32,6 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.IconLabelToolTip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.ToolTipHandler;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -44,8 +42,7 @@ public class RegexListTextPane extends TextPane implements ToolTipHandler {
 
     @Override
     public void setEnabled(boolean enabled) {
-
-        if (txt.isEnabled()) {
+        if (txt != null) {
             txt.setEnabled(enabled);
         }
     }
