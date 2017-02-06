@@ -257,6 +257,9 @@ public class GoogleDrive extends PluginForHost {
         if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
             // so its not possible to download at this time.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
+        } else if (this.br.containsHTML("class=\"uc\\-error\\-caption\"")) {
+            /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
         }
         if ((br.containsHTML("<TITLE>Not Found</TITLE>") || this.br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
             if (download_might_not_be_possible) {

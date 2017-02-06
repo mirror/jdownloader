@@ -6,6 +6,7 @@ import java.util.Iterator;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -16,7 +17,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/model/[a-zA0-9\\-\\_]+/movie/\\d+/[a-zA0-9\\-\\_]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com", "sexart.com" }, urls = { "https?://members\\.(?:met\\-art|metart)\\.com/members/model/[A-Za-z0-9\\-\\_]+/movie/\\d+/[A-Za-z0-9\\-\\_]+/", "https?://members\\.sexart\\.com/members/model/[A-Za-z0-9\\-\\_]+/movie/\\d+/[A-Za-z0-9\\-\\_]+/" })
 public class MetArt extends PluginForDecrypt {
 
     public MetArt(PluginWrapper wrapper) {
@@ -25,8 +26,10 @@ public class MetArt extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("met-art.com");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String host = Browser.getHost(parameter.toString());
+        final String host_for_url = "decrypted" + host.replaceAll("(\\.|\\-)", "") + "://";
+        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(Browser.getHost(parameter.toString()));
         Account useAcc = null;
         if (accounts != null && accounts.size() != 0) {
             Iterator<Account> it = accounts.iterator();
@@ -49,7 +52,6 @@ public class MetArt extends PluginForDecrypt {
             con = br.openGetConnection(parameter.toString());
             if (con.getResponseCode() == 401) {
                 useAcc.setValid(false);
-
                 throw new DecrypterException("Account invalid!");
             }
             br.followConnection();
@@ -59,14 +61,16 @@ public class MetArt extends PluginForDecrypt {
             } catch (final Throwable e) {
             }
         }
-        String links[] = br.getRegex("href=\"(https?://members.met-art.com/members/movie\\..*?)\"").getColumn(0);
-        String title = br.getRegex("title>(MetArt.*?)</title").getMatch(0);
+        final String links[] = br.getRegex("href=\"(https?://[^/]+/[^<>\"\\']+method=download)\"").getColumn(0);
+        String title = br.getRegex("<title>(.*?)</title").getMatch(0);
         for (String link : links) {
-            DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
+            link = Encoding.htmlDecode(link);
+            final DownloadLink dl = createDownloadlink(link.replaceAll("https?://", host_for_url));
             ret.add(dl);
         }
         if (title != null) {
-            FilePackage fp = FilePackage.getInstance();
+            title = Encoding.htmlDecode(title);
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
             fp.addLinks(ret);
         }
