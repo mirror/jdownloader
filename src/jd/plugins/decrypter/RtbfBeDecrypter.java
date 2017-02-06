@@ -97,8 +97,9 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (title == null) {
             return null;
         }
+        title = "rtbf_" + title;
         if (date_formatted != null) {
-            title = title + " - " + date_formatted;
+            title = date_formatted + "_" + title;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
