@@ -53,13 +53,17 @@ public class Pair<T extends SettingsComponent> {
 
             @Override
             public void itemStateChanged(ItemEvent e) {
-                setEnabled(conditionPair.getComponent().isSelected());
+                final Pair<Checkbox> conditionPair = Pair.this.conditionPair;
+                if (conditionPair != null) {
+                    setEnabled(conditionPair.getComponent().isSelected());
+                }
             }
         });
         setEnabled(conditionPair.getComponent().isSelected());
     }
 
     public void update() {
+        final Pair<Checkbox> conditionPair = this.conditionPair;
         if (conditionPair != null) {
             setEnabled(conditionPair.getComponent().isSelected());
         }

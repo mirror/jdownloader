@@ -177,7 +177,7 @@ public class XSUseNetCom extends UseNet {
                             }
                         }
                         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-                        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+                        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
                         try {
                             verifyUseNetLogins(account);
                             return ai;

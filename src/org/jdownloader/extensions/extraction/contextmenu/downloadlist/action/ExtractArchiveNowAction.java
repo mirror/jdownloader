@@ -35,7 +35,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
                         if (_getExtension().isComplete(archive)) {
                             _getExtension().addToQueue(archive, true);
                         } else {
-                            Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T.T.cannot_extract_incopmplete(archive.getName()));
+                            Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T.T.cannot_extract_incomplete(archive.getName()));
                         }
                     }
 
