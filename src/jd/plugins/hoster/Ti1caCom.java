@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "http://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ti1ca.com" }, urls = { "http://(www\\.)?ti1ca\\.com/[a-z0-9]+\\-[^<>\"]*?\\.html" })
 public class Ti1caCom extends PluginForHost {
 
     public Ti1caCom(PluginWrapper wrapper) {
@@ -68,7 +68,10 @@ public class Ti1caCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Le fichier n\\'existe pas ou|>Le fichier a été supprimé")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(link.getDownloadURL(), "ti1ca\\.com/[a-z0-9]+\\-([^<>\"]*?)\\.html").getMatch(0);
+        String filename = br.getRegex("title=\"Téléchargez\\s*(.*?)\"").getMatch(0);
+        if (filename == null || filename.contains("...")) {
+            filename = new Regex(link.getDownloadURL(), "ti1ca\\.com/[a-z0-9]+\\-([^<>\"]*?)\\.html").getMatch(0);
+        }
         String filesize = br.getRegex("octets\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

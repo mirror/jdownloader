@@ -85,10 +85,12 @@ public class VipTubeCom extends PluginForHost {
                 }
                 String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
                 if (filename == null) {
-                    filename = url_filename;
+                    filename = br.getRegex("class=\"watch\"><div class=\"base\"><div class=\"headline\"><h2>(.*?)</h2").getMatch(0);
+                    if (filename == null) {
+                        filename = url_filename;
+                    }
                 }
                 getDllink();
-
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
