@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/detail_[a-z0-9}\\-_]+\\?id=\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/detail_[a-z0-9}\\-_]+\\?id=\\d+" })
 public class RtbfBeDecrypter extends PluginForDecrypt {
 
     public RtbfBeDecrypter(PluginWrapper wrapper) {
@@ -53,6 +53,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.RtbfBe.formats;
         final String decryptedhost = "http://" + this.getHost() + "decrypted/";
+        String date_formatted = null;
 
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
@@ -65,6 +66,10 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
+        }
+        final String uploadDate = PluginJSonUtils.getJsonValue(this.br, "uploadDate");
+        if (uploadDate != null) {
+            date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
         }
         br.getPage("embed/media?id=" + fid + "&autoplay=1");
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
@@ -91,6 +96,9 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         }
         if (title == null) {
             return null;
+        }
+        if (date_formatted != null) {
+            title = title + " - " + date_formatted;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
