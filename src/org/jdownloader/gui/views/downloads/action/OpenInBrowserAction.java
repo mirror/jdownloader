@@ -65,6 +65,11 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                     final Set<String> urls = LinkTreeUtils.getURLs(selection, true);
                     if (urls.size() < 5) {
                         for (String url : urls) {
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                return;
+                            }
                             CrossSystem.openURLOrShowMessage(url);
                         }
                         return;

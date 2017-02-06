@@ -189,9 +189,21 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileType(final CrawledLink link) {
         final CompiledFiletypeFilter filetypeFilter = getFiletypeFilter();
         if (filetypeFilter != null) {
-            if (link.gethPlugin() != null || (link.getDownloadLink() != null && link.getDownloadLink().getMimeHint() != null)) {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
                 final LinkInfo linkInfo = link.getLinkInfo();
-                return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+                if (downloadLink.getFinalFileName() != null || downloadLink.getForcedFileName() != null) {
+                    // filename available
+                    return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+                } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
+                    // file is online
+                    return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+                } else if (checkOnlineStatus(link)) {
+                    // onlinestatus matches so we trust the available filename
+                    return filetypeFilter.matches(linkInfo.getExtension().name(), linkInfo);
+                } else {
+                    return false;
+                }
             } else {
                 return false;
             }
