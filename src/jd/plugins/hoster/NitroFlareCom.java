@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -48,7 +49,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -58,12 +58,17 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" })
 public class NitroFlareCom extends antiDDoSForHost {
 
-    private final String language = System.getProperty("user.language");
-    private final String baseURL  = "https://nitroflare.com";
-    private final String apiURL   = "http://nitroflare.com/api/v2";
+    private final String         language                     = System.getProperty("user.language");
+    private final String         baseURL                      = "https://nitroflare.com";
+    private final String         apiURL                       = "http://nitroflare.com/api/v2";
+
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    /* don't touch the following! */
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -353,7 +358,34 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (directlinkproperty != null) {
             downloadLink.setProperty(directlinkproperty, dllink);
         }
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    private synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /**
@@ -379,14 +411,19 @@ public class NitroFlareCom extends antiDDoSForHost {
             throwPremiumRequiredException(this.getDownloadLink(), false);
         }
         if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
-            // ﻿Free downloading is not possible. You have to wait 178 minutes to download your next file.
-            final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
-            if (waitminutes != null) {
-                // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
-                // they have 30min wait not the 3 hours a stated with this error response
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            if (this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false)) {
+                /* We do not know exactly when the next free download is possible so let's try every 5 minutes. */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            } else {
+                // ﻿Free downloading is not possible. You have to wait 178 minutes to download your next file.
+                final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
+                if (waitminutes != null) {
+                    // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
+                    // they have 30min wait not the 3 hours a stated with this error response
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         if (StringUtils.startsWithCaseInsensitive(br.toString(), "﻿Free download is currently unavailable due to overloading in the server. <br>Please try again later")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Free download Overloaded, will try again later", 5 * 60 * 1000l);
@@ -461,13 +498,16 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private static String  preferAPI           = "preferAPI";
-    private static String  trustAPIPremiumOnly = "trustAPIPremiumOnly";
-    private static boolean preferAPIdefault    = false;
+    private static String  preferAPI                  = "preferAPI";
+    private static String  trustAPIPremiumOnly        = "trustAPIPremiumOnly";
+    private static String  allowMultipleFreeDownloads = "allowMultipleFreeDownloads";
+    private static boolean preferAPIdefault           = false;
 
     private void setConfigElement() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API for Premium Accounts (API = lots of recaptchav1, WEB = recaptchav2 once.)")).setDefaultValue(preferAPIdefault));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), trustAPIPremiumOnly, JDL.L("plugins.hoster.Keep2ShareCc.trustAPIPremiumOnly", "Trust API about Premium Only flag?")).setDefaultValue(true));
+        final ConfigEntry apie = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, "Use API for Premium Accounts and single url linkcheck (API = lots of recaptchav1, WEB = recaptchav2 once.)").setDefaultValue(preferAPIdefault);
+        getConfig().addEntry(apie);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), allowMultipleFreeDownloads, "Allow multiple free downloads?\r\nThis might result in fatal errors!").setDefaultValue(false).setEnabledCondidtion(apie, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), trustAPIPremiumOnly, "Trust API about Premium Only flag?").setDefaultValue(true));
     }
 
     /**
@@ -485,6 +525,9 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (useAPI()) {
             return fetchAccountInfoApi(account);
         } else {
+            if (this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false)) {
+                totalMaxSimultanFreeDownload.set(20);
+            }
             return fetchAccountInfoWeb(account, false, true);
         }
     }

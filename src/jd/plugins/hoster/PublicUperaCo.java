@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -65,6 +66,7 @@ public class PublicUperaCo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Invalid or Deleted File") || !this.br.containsHTML("id=\"pay_modes\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -91,16 +93,37 @@ public class PublicUperaCo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            this.br.postPage(this.br.getURL(), "ns=0&showrecaptcha=1");
+            final String dlformAction = this.br.getURL();
+            Form dlform = this.br.getFormbyKey("ns");
+            if (dlform != null) {
+                this.br.submitForm(dlform);
+            } else {
+                /* Fallback */
+                this.br.postPage(this.br.getURL(), "ns=0&showrecaptcha=1");
+            }
+            /* Sometimes there is a waittime before the user can enter the captcha. */
+            final String continueURL = this.br.getRegex("\\'(https?://[^/\"\\']+/[^/]+\\&showrecaptcha=1[^<>\"\\']+)\\'").getMatch(0);
+            if (continueURL != null) {
+                int wait = 45;
+                final String waitStr = this.br.getRegex("id=\"count\">(\\d+)<").getMatch(0);
+                if (waitStr != null) {
+                    wait = Integer.parseInt(waitStr);
+                }
+                this.sleep(wait * 1001l, downloadLink);
+                this.br.getPage(continueURL);
+            }
             String captchaUrl = null;
             boolean success = false;
-            for (int i = 0; i <= 2; i++) {
+            for (int i = 0; i <= 7; i++) {
+                dlform = this.br.getFormbyKey("ns");
                 captchaUrl = this.br.getRegex("(/captcha/[^<>\"]+)\"").getMatch(0);
-                if (captchaUrl == null) {
+                if (captchaUrl == null || dlform == null || !dlform.hasInputFieldByName("g-recaptcha-response")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dlform.setAction(dlformAction);
                 final String code = this.getCaptchaCode(captchaUrl, downloadLink);
-                this.br.postPage(this.br.getURL(), "recaptcha-srm=1&ns=0&interadv=0&g-recaptcha-response=" + Encoding.urlEncode(code));
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(code));
+                this.br.submitForm(dlform);
                 if (!this.br.containsHTML("name=\"recaptcha\\-srm\"")) {
                     success = true;
                     break;
