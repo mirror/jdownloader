@@ -44,7 +44,7 @@ public final class TwoCaptchaConfigPanel extends AbstractCaptchaSolverConfigPane
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL("http://2captcha.com/?from=1396142");
+                CrossSystem.openURL("http://2captcha.com/");
             }
         }), "gapleft 37,spanx,pushx,growx");
         apiKey = new TextInput(CFG_TWO_CAPTCHA.API_KEY);
