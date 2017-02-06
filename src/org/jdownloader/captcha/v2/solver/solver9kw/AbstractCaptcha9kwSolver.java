@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -32,6 +29,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> {
     private String                     accountStatusString;

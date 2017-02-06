@@ -5366,6 +5366,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
     String CBSolver_getName_();
 
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
+    String TwoCaptcha_getName_();
+
     @Default(lngs = { "en" }, values = { "My.JDownloader.org" })
     String CaptchaMyJDSolver_gettypeName();
 
