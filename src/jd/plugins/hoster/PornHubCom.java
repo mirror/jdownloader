@@ -127,7 +127,8 @@ public class PornHubCom extends PluginForHost {
             final String RNKEY = evalRNKEY(br);
             if (RNKEY != null && --maxLoops > 0) {
                 br.setCookie("pornhub.com", "RNKEY", RNKEY);
-                Thread.sleep(100);
+                Thread.sleep(1000);
+                br.setRequest(null);
                 br.getPage(url);
             } else {
                 break;
@@ -189,7 +190,6 @@ public class PornHubCom extends PluginForHost {
             fresh_directurls = getVideoLinksFree(this.br);
             downloadLink.setFinalFileName(filename);
         }
-        setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
@@ -250,6 +250,8 @@ public class PornHubCom extends PluginForHost {
         }
         if (flashVars == null) {
             return null;
+        } else {
+            flashVars = flashVars.replaceAll("(\"\\s*\\+\\s*\")", "");
         }
         final LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
 
