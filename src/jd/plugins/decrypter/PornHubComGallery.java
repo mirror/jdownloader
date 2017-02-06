@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/album/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/album/\\d+" })
 public class PornHubComGallery extends PluginForDecrypt {
 
     public PornHubComGallery(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class PornHubComGallery extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replaceAll("https://", "http://");
         parameter = parameter.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "http://www.");
-        br.getPage(parameter);
+        jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -76,5 +76,4 @@ public class PornHubComGallery extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }

@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.logging2.LogSource;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -20,6 +17,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/(embed/)?[^<>\"/]+-?\\d+(\\.html)?" })
 public class PornCom extends PluginForDecrypt {
@@ -45,7 +45,7 @@ public class PornCom extends PluginForDecrypt {
             }
         }
         String url = parameter.getCryptedUrl();
-        br.getPage(url.replace("/embed/", "/"));
+        jd.plugins.hoster.PornHubCom.getPage(br, url.replace("/embed/", "/"));
         if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca|_deleted_single)?.png)") || this.br.getHttpConnection().getResponseCode() == 404) {
             links.add(this.createOfflinelink(parameter.getCryptedUrl()));
             return links;
@@ -65,7 +65,7 @@ public class PornCom extends PluginForDecrypt {
             final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
-            brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
+            jd.plugins.hoster.PornHubCom.getPage(brc, "http://www.porn.com/videos/embed/" + fid + ".html");
             links = getLinks(brc, url, fileName);
         }
         if (links.size() == 0) {
