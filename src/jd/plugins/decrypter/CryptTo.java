@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Application;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crypt.to" }, urls = { "https?://(?:www\\.)?crypt\\.to/fid,[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crypt.to" }, urls = { "https?://(?:www\\.)?crypt\\.to/(?:fid|links),[A-Za-z0-9]+" })
 public class CryptTo extends PluginForDecrypt {
 
     public CryptTo(PluginWrapper wrapper) {
@@ -66,6 +66,11 @@ public class CryptTo extends PluginForDecrypt {
             String code = null;
             for (int i = 0; i <= 5; i++) {
                 final Form form = this.br.getFormbyProperty("id", "mainForm");
+                if (i == 0 && form == null) {
+                    /* 2017-02-06: No Form --> No captcha/password/form-redirect */
+                    failed = false;
+                    break;
+                }
                 if (form.containsHTML("captcha\\.inc\\.php")) {
                     code = this.getCaptchaCode("/inc/captcha.inc.php", param);
                     form.put("pruefcode", code);

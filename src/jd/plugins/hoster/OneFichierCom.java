@@ -222,6 +222,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        this.setConstants(null, downloadLink);
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
@@ -229,7 +230,6 @@ public class OneFichierCom extends PluginForHost {
     private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        this.setConstants(null, downloadLink);
         checkDownloadable();
         // to prevent wasteful requests.
         int i = 0;
@@ -325,6 +325,7 @@ public class OneFichierCom extends PluginForHost {
                 if (br2.containsHTML("not possible to unregistered users")) {
                     final Account aa = AccountController.getInstance().getValidAccount(this);
                     if (aa != null) {
+                        this.currAcc = aa;
                         try {
                             login(true);
                             ensureSiteLogin();

@@ -598,7 +598,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches() || br.getURL().endsWith("/404.html")) {
             logger.warning("Server says link offline, please recheck that!");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404#2", 30 * 60 * 1000l);
         }
         /* Error 500 without 500 response. */
         if (correctedBR.contains(">Service Unavailable, Service temporairement indisponible<")) {

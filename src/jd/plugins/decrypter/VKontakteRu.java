@@ -458,6 +458,7 @@ public class VKontakteRu extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void decryptAudioAlbum() throws Exception {
         final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)$").getMatch(0);
+        final String album_id = new Regex(this.CRYPTEDLINK_ORIGINAL, "album_id=(\\d+)").getMatch(0);
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         String fpName = null;
         if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
@@ -471,7 +472,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String postData = "act=load_silent&al=1&album_id=-2&band=false&owner_id=" + owner_ID;
+        final String postData = "act=load_silent&al=1&album_id=" + album_id + "&band=false&owner_id=" + owner_ID;
         br.postPage(getBaseURL() + "/al_audio.php", postData);
         final ArrayList<Object> audioData = jd.plugins.hoster.VKontakteRuHoster.getAudioDataArray(this.br);
         if (audioData == null || audioData.size() == 0) {

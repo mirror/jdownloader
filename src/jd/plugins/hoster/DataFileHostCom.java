@@ -23,9 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -37,6 +34,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "https?://((www\\.)?datafilehost\\.com/(download\\-[a-z0-9]+\\.html|d/[a-z0-9]+)|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" })
 public class DataFileHostCom extends antiDDoSForHost {
@@ -83,20 +83,29 @@ public class DataFileHostCom extends antiDDoSForHost {
         getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"alert alert\\-danger\"") || this.br.containsHTML("The file that you are looking for is either|an invalid file name|has been removed due to|Please check the file name again and|>The file you requested \\(id [a-z0-9]+\\) does not exist.|>Invalid file ID.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("no longer exists on|>It was either removed by the owner of the file")) {
+            /* 2017-02-06 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">\\s*File\\s*:\\s*(.*?)\\s*<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("fileName=\"([^<>\"]+)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"col-sm-3\">[\t\n\r ]*?<strong>File Name:</strong>[\t\n\r ]*?</div>[\t\n\r ]*?<div class=\"col-sm-9\">([^<>\"]+)</div>").getMatch(0);
-            }
+        }
+        if (filename == null) {
+            filename = br.getRegex("class=\"col-sm-3\">[\t\n\r ]*?<strong>File Name:</strong>[\t\n\r ]*?</div>[\t\n\r ]*?<div class=\"col-sm-9\">([^<>\"]+)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex(">File Name\\s*?:\\s*?<br><strong>([^<>\"]+)<").getMatch(0);
         }
         String filesize = br.getRegex(">\\s*Size\\s*:\\s*(.*?)\\s*<").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("class=\"col-sm-3\">[\t\n\r ]*?<strong>File Size:</strong>[\t\n\r ]*?</div>[\t\n\r ]*?<div class=\"col-sm-9\">([^<>\"]+)</div>").getMatch(0);
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("<h4> <strong>(\\d+[^<>\"\\']+)</strong>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
@@ -188,7 +197,7 @@ public class DataFileHostCom extends antiDDoSForHost {
         requestFileInformation(downloadLink);
         simulateBrowser();
         sleep(2000, downloadLink);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)(?:\\.html)?$").getMatch(0);
         final String dllink = br.getURL("/get.php?file=" + fid).toString().replace("https://", "http://");
         br.getHeaders().put("Upgrade-Insecure-Requests", "1");
         br.setRequest(null);

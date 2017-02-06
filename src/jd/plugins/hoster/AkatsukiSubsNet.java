@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" })
 public class AkatsukiSubsNet extends PluginForHost {
 
     public AkatsukiSubsNet(PluginWrapper wrapper) {
