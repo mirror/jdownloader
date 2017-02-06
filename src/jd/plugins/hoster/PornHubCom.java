@@ -603,12 +603,10 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static void prepBr(final Browser br) {
-        br.setCookie("http://pornhub.com/", "age_verified", "1");
-        br.setCookie("http://pornhub.com/", "is_really_pc", "1");
-        br.setCookie("http://pornhub.com/", "phub_in_player", "1");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        // br.setCookie("http://pornhub.com/", "platform", "pc");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
         br.setLoadLimit(br.getLoadLimit() * 4);
     }
