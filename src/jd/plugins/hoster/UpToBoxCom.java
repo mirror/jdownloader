@@ -712,13 +712,24 @@ public class UpToBoxCom extends antiDDoSForHost {
         } else {
             // alternative xfileshare expire time, usually shown on 'extend
             // premium account' page
-            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            String format = null;
+            boolean extraDay = false;
+            String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December)\\s*\\d{4}\\s*\\d+:\\d+)").getMatch(0);
+            if (expire != null) {
+                format = "dd MMMM yyyy HH:mm";
+            } else if (expire == null) {
+                expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+                if (expire != null) {
+                    extraDay = true;
+                    format = "dd MMMM yyyy";
+                }
+            }
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, format, Locale.ENGLISH) + (extraDay ? (24 * 60 * 60 * 1000l) : 0));
                 try {
                     maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                     account.setMaxSimultanDownloads(maxPrem.get());
