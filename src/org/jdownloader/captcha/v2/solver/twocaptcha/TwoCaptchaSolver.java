@@ -1,38 +1,31 @@
 package org.jdownloader.captcha.v2.solver.twocaptcha;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
 
 import jd.http.Browser;
 
-public class TwoCaptchaSolver extends CESChallengeSolver<String> {
+public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     private TwoCaptchaConfigInterface     config;
-    private static final TwoCaptchaSolver INSTANCE   = new TwoCaptchaSolver();
-    private ThreadPoolExecutor            threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
-    private LogSource                     logger;
+    private static final TwoCaptchaSolver INSTANCE = new TwoCaptchaSolver();
 
     public static TwoCaptchaSolver getInstance() {
         return INSTANCE;
@@ -49,11 +42,8 @@ public class TwoCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     private TwoCaptchaSolver() {
-        super(new TwoCaptchaSolverService(), Math.max(1, Math.min(25, JsonConfig.create(TwoCaptchaConfigInterface.class).getThreadpoolSize())));
+        super();
         getService().setSolver(this);
-        config = JsonConfig.create(TwoCaptchaConfigInterface.class);
-        logger = LogController.getInstance().getLogger(TwoCaptchaSolver.class.getName());
-        threadPool.allowCoreThreadTimeOut(true);
     }
 
     @Override
@@ -65,17 +55,55 @@ public class TwoCaptchaSolver extends CESChallengeSolver<String> {
             // does not accept this annoted image yet
             return true;
         }
-        if (true) {
-            return false;
-        }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
-        if (job.getChallenge() instanceof RecaptchaV2Challenge) {
+        Challenge<String> captchaChallenge = job.getChallenge();
+        if (captchaChallenge instanceof RecaptchaV2Challenge) {
             handleRecaptchaV2(job);
             return;
+        }
+        job.showBubble(this);
+        checkInterruption();
+        RequestOptions options = prepare(job);
+        try {
+            job.getChallenge().sendStatsSolving(this);
+            Browser br = new Browser();
+            br.setReadTimeout(5 * 60000);
+            // Put your CAPTCHA image file, file object, input stream,
+            // or vector of bytes here:
+            job.setStatus(SolverStatus.SOLVING);
+            long startTime = System.currentTimeMillis();
+            final byte[] data = IO.readFile(((ImageCaptchaChallenge) captchaChallenge).getImageFile());
+            UrlQuery qi = createQueryForUpload(job, options, data);
+            String json = br.postPage("http://2captcha.com/in.php", qi);
+            BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
+            });
+            if (1 == response.getStatus()) {
+                String id = response.getRequest();
+                job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 10)));
+                while (true) {
+                    UrlQuery queryPoll = createQueryForPolling();
+                    queryPoll.appendEncoded("id", id);
+                    String ret = br.getPage("http://2captcha.com/res.php?" + queryPoll.toString());
+                    logger.info(ret);
+                    if ("CAPCHA_NOT_READY".equals(ret)) {
+                        Thread.sleep(5000);
+                        continue;
+                    }
+                    if (ret.startsWith("OK|")) {
+                        job.setAnswer(new TwoCaptchaResponse(captchaChallenge, this, id, ret.substring(3)));
+                    }
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            job.getChallenge().sendStatsError(this, e);
+            job.getLogger().log(e);
+        } finally {
+            System.out.println(1);
         }
     }
 
@@ -218,10 +246,5 @@ public class TwoCaptchaSolver extends CESChallengeSolver<String> {
             ret.setError(e.getMessage());
         }
         return ret;
-    }
-
-    @Override
-    protected void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException, SolverException {
-        // unused
     }
 }

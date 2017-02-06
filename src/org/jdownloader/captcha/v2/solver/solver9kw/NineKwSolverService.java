@@ -22,6 +22,7 @@ import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
+import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -263,6 +264,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         ret.put(ImageTyperzSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);
         ret.put(EndCaptchaSolverService.ID, 60000);
+        ret.put(TwoCaptchaSolverService.ID, 60000);
         return ret;
     }
 
