@@ -26,6 +26,9 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -117,6 +120,15 @@ public class PornHubCom extends PluginForHost {
         return "http://www.pornhub.com/terms";
     }
 
+    public static void getPage(Browser br, final String url) throws Exception {
+        br.getPage(url);
+        final String RNKEY = evalRNKEY(br);
+        if (RNKEY != null) {
+            br.setCookie("pornhub.com", "RNKEY", RNKEY);
+            br.getPage(url);
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "static-access" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -131,7 +143,7 @@ public class PornHubCom extends PluginForHost {
             viewkey = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
             /* Offline links should also have nice filenames */
             downloadLink.setName(viewkey + ".jpg");
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(br, downloadLink.getDownloadURL());
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Video has been removed")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -156,8 +168,7 @@ public class PornHubCom extends PluginForHost {
             viewkey = new Regex(source_url, "([A-Za-z0-9\\-_]+)$").getMatch(0);
             /* Offline links should also have nice filenames */
             downloadLink.setName(viewkey + ".mp4");
-
-            this.br.getPage(createPornhubVideolink(viewkey, aa));
+            getPage(br, createPornhubVideolink(viewkey, aa));
             if (br.containsHTML(html_privatevideo)) {
                 downloadLink.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
                 downloadLink.setName(filename);
@@ -191,7 +202,7 @@ public class PornHubCom extends PluginForHost {
                 con = this.br.openHeadConnection(dlUrl);
                 if (con.getResponseCode() != 200) {
                     con.disconnect();
-                    br.getPage(source_url);
+                    getPage(br, source_url);
                     this.dlUrl = fresh_directurls.get(quality);
                     if (this.dlUrl == null) {
                         logger.warning("Failed to get fresh directurl");
@@ -376,7 +387,7 @@ public class PornHubCom extends PluginForHost {
                     final boolean loggedin_free;
                     final boolean loggedin_premium;
                     final boolean loggedin;
-                    br.getPage(getProtocolFree() + "www." + PORNHUB_FREE);
+                    getPage(br, (getProtocolFree() + "www." + PORNHUB_FREE));
                     loggedin_free = isLoggedInHtml(br);
                     /* Important - first check free, then premium! */
                     br.getPage(getProtocolPremium() + "www." + PORNHUB_PREMIUM);
@@ -388,7 +399,7 @@ public class PornHubCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage("http://www." + account.getHoster() + "/login");
+                getPage(br, "http://www." + account.getHoster() + "/login");
                 final Form loginform = br.getFormbyKey("username");
                 // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
                 // final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -412,7 +423,7 @@ public class PornHubCom extends PluginForHost {
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
                 if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                     /* Required to get the (premium) cookies (multiple redirects). */
-                    br.getPage(redirect);
+                    getPage(br, redirect);
                 }
                 // if (!isCookieLoggedIn(br)) { // 20161202 Was ii then ij now ik (free account)
                 if (!"1".equals(success) || !br.containsHTML("class=\"signOut\"")) {
@@ -631,6 +642,22 @@ public class PornHubCom extends PluginForHost {
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
+    public final static String evalRNKEY(Browser br) throws ScriptException {
+        if (br.containsHTML("document.cookie=\"RNKEY") && br.containsHTML("leastFactor")) {
+            ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(null);
+            ScriptEngine engine = mgr.getEngineByName("JavaScript");
+            String js = br.toString();
+            js = new Regex(js, "<script.*?>(?:<!--)?(.*?)(?://-->)?</script>").getMatch(0);
+            js = js.replace("document.cookie=", "return ");
+            js = js.replaceAll("(/\\*.*?\\*/)", "");
+            engine.eval(js + " var ret=go();");
+            final String answer = (engine.get("ret").toString());
+            return new Regex(answer, "RNKEY=(.+)").getMatch(0);
+        } else {
+            return null;
+        }
     }
 
     @Override
