@@ -122,10 +122,15 @@ public class PornHubCom extends PluginForHost {
 
     public static void getPage(Browser br, final String url) throws Exception {
         br.getPage(url);
-        final String RNKEY = evalRNKEY(br);
+        String RNKEY = evalRNKEY(br);
         if (RNKEY != null) {
             br.setCookie("pornhub.com", "RNKEY", RNKEY);
             br.getPage(url);
+            RNKEY = evalRNKEY(br);
+            if (RNKEY != null) {
+                br.setCookie("pornhub.com", "RNKEY", RNKEY);
+                br.getPage(url);
+            }
         }
     }
 
