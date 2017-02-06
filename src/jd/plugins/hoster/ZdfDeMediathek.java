@@ -483,6 +483,54 @@ public class ZdfDeMediathek extends PluginForHost {
     //
     // void setGrabHLS720pVideoEnabled(boolean b);
     //
+    // @DefaultBooleanValue(true)
+    // @Order(90)
+    // boolean isGrabHTTPMp4LowVideoEnabled();
+    //
+    // void setGrabHTTPMp4LowVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(100)
+    // boolean isGrabHTTPMp4MediumVideoEnabled();
+    //
+    // void setGrabHTTPMp4MediumVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(110)
+    // boolean isGrabHTTPMp4HighVideoEnabled();
+    //
+    // void setGrabHTTPMp4HighVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(120)
+    // boolean isGrabHTTPMp4VeryHighVideoEnabled();
+    //
+    // void setGrabHTTPMp4VeryHighVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(130)
+    // boolean isGrabHTTPWebmLowVideoEnabled();
+    //
+    // void setGrabHTTPWebmLowVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(140)
+    // boolean isGrabHTTPWebmMediumVideoEnabled();
+    //
+    // void setGrabHTTPWebmMediumVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(150)
+    // boolean isGrabHTTPWebmHighVideoEnabled();
+    //
+    // void setGrabHTTPWebmHighVideoEnabled(boolean b);
+    //
+    // @DefaultBooleanValue(true)
+    // @Order(160)
+    // boolean isGrabHTTPWebmVeryHighVideoEnabled();
+    //
+    // void setGrabHTTPWebmVeryHighVideoEnabled(boolean b);
+    //
     // }
 
 }
