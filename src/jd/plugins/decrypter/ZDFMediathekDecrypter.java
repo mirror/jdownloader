@@ -172,7 +172,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         /* TODO: If one of these is false, we can save http requests and thus time. */
         final boolean grabHLS = true;
-        boolean grabDownloadUrls = true;
+        /*
+         * 2017-01-07: Download usually has: http low, http medium, http high and CAN contain http veryhigh --> But veryhigh is ALWAYS
+         * available via hls so it makes no sense to grab official downloadurls at all (at the moment).
+         */
+        boolean grabDownloadUrls = false;
 
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String sophoraIDSource;
