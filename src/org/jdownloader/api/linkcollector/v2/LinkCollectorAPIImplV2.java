@@ -709,6 +709,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
         } else if ("CCF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
+        } else if ("CRAWLJOB".equalsIgnoreCase(type)) {
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".crawljob";
         } else {
             fileName = null;
         }
