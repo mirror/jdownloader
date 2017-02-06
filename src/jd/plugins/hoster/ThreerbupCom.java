@@ -409,6 +409,8 @@ public class ThreerbupCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
         } else if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
+        } else if (br.containsHTML("Please check the details are correct and your MySQL")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error(Database)", 60 * 60 * 1000l);
         }
         checkResponseCodeErrors(this.br.getHttpConnection());
     }
