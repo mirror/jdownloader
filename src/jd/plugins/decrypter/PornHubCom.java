@@ -89,7 +89,7 @@ public class PornHubCom extends PluginForDecrypt {
                 return;
             }
             if (page > 1) {
-                this.br.getPage("/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
+                jd.plugins.hoster.PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
             }
             final String[] viewkeys = this.br.getRegex("_vkey=\"([^<>\"]+)\"").getColumn(0);
             for (final String viewkey : viewkeys) {
@@ -117,10 +117,10 @@ public class PornHubCom extends PluginForDecrypt {
                 throw new DecrypterException("Decrypter broken");
             }
             parameter = newLink;
-            br.getPage(parameter);
+            jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
         final String viewkey = new Regex(parameter, "viewkey=([a-z0-9]+)").getMatch(0);
-        this.br.getPage(jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
+        jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, this.br);
         if (isOffline(this.br)) {
             final DownloadLink dl = this.createOfflinelink(parameter);

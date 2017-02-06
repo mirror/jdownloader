@@ -16,7 +16,7 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
 
-    @DefaultStringArrayValue(value = { "##Lines with XX are comments", "##Skip deep extraction of archives that contain exe files", ".*\\.exe" })
+    @DefaultStringArrayValue(value = { "##Lines with XX are comments", "##Skip deep extraction of archives that contain binary files", ".*\\.exe", ".*\\.msi", ".*\\.bat" })
     @AboutConfig
     @DescriptionForConfigEntry("A list of regular expressions. Use to avoid deep extracting.")
     String[] getDeepExtractionBlacklistPatterns();
