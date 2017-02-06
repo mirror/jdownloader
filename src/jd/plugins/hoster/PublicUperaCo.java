@@ -95,12 +95,10 @@ public class PublicUperaCo extends PluginForHost {
         if (dllink == null) {
             final String dlformAction = this.br.getURL();
             Form dlform = this.br.getFormbyKey("ns");
-            if (dlform != null) {
-                this.br.submitForm(dlform);
-            } else {
-                /* Fallback */
-                this.br.postPage(this.br.getURL(), "ns=0&showrecaptcha=1");
+            if (dlform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            this.br.submitForm(dlform);
             /* Sometimes there is a waittime before the user can enter the captcha. */
             final String continueURL = this.br.getRegex("\\'(https?://[^/\"\\']+/[^/]+\\&showrecaptcha=1[^<>\"\\']+)\\'").getMatch(0);
             if (continueURL != null) {
