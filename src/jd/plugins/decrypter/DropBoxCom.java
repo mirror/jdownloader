@@ -95,6 +95,11 @@ public class DropBoxCom extends PluginForDecrypt {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link);
+            if (con.getResponseCode() == 404) {
+                final DownloadLink dl = this.createOfflinelink(link);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             if (con.getResponseCode() == 460) {
                 logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support. " + link);
                 return decryptedLinks;
