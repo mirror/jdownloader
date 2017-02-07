@@ -49,6 +49,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     private static final String PATTERN_FILESIZE_GIB  = "{filesize_gib}";
 
     private static final String PATTERN_URL           = "{url}";
+    private static final String PATTERN_HOST          = "{host}";
     private static final String PATTERN_URL_CONTAINER = "{url.container}";
     private static final String PATTERN_URL_ORIGIN    = "{url.origin}";
     private static final String PATTERN_URL_CONTENT   = "{url.content}";
@@ -205,8 +206,8 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         String line = null;
         if (pv instanceof FilePackage) {
             line = getPatternPackages();
-            FilePackage pkg = (FilePackage) pv;
-            FilePackageView fpv = new FilePackageView(pkg);
+            final FilePackage pkg = (FilePackage) pv;
+            final FilePackageView fpv = new FilePackageView(pkg);
             fpv.aggregate();
             line = line.replace(PATTERN_TYPE, "Package");
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(pkg)));
@@ -217,6 +218,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_MD5, nulltoString(null));
+            line = line.replace(PATTERN_HOST, nulltoString(null));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
@@ -230,8 +232,9 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
         } else if (pv instanceof DownloadLink) {
             line = getPatternLinks();
-            DownloadLink link = (DownloadLink) pv;
+            final DownloadLink link = (DownloadLink) pv;
             line = line.replace(PATTERN_TYPE, "Link");
+            line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getComment()));
             final long fileSize = link.getView().getBytesTotalEstimated();
@@ -257,8 +260,9 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledLink) {
             line = getPatternLinks();
-            CrawledLink link = (CrawledLink) pv;
+            final CrawledLink link = (CrawledLink) pv;
             line = line.replace(PATTERN_TYPE, "Link");
+            line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getDownloadLink().getComment()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             final long fileSize = link.getSize();
@@ -284,9 +288,9 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledPackage) {
             line = getPatternPackages();
-            CrawledPackage pkg = (CrawledPackage) pv;
-            CrawledPackageView fpv = new CrawledPackageView();
-            boolean readL = pkg.getModifyLock().readLock();
+            final CrawledPackage pkg = (CrawledPackage) pv;
+            final CrawledPackageView fpv = new CrawledPackageView();
+            final boolean readL = pkg.getModifyLock().readLock();
             try {
                 fpv.setItems(pkg.getChildren());
                 line = line.replace(PATTERN_TYPE, "Package");
@@ -309,6 +313,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 line = line.replace(PATTERN_URL_CONTENT, nulltoString(null));
                 line = line.replace(PATTERN_URL_ORIGIN, nulltoString(null));
                 line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
+                line = line.replace(PATTERN_HOST, nulltoString(null));
             } finally {
                 pkg.getModifyLock().readUnlock(readL);
             }
