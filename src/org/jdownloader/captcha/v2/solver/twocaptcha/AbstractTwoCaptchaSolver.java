@@ -75,7 +75,6 @@ public abstract class AbstractTwoCaptchaSolver<T> extends CESChallengeSolver<T> 
         UrlQuery qi = new UrlQuery();
         qi.appendEncoded("key", config.getApiKey() + "");
         qi.appendEncoded("method", "base64");
-        qi.appendEncoded("soft_id", "2969704");
         qi.appendEncoded("json", "1");
         if (data != null) {
             qi.appendEncoded("body", org.appwork.utils.encoding.Base64.encodeToString(data, false));
