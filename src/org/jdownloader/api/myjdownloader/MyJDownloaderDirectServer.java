@@ -105,7 +105,7 @@ public class MyJDownloaderDirectServer extends Thread {
     }
 
     private int setUPNPPort() throws InterruptedException {
-        UDAServiceType[] udaServices = new UDAServiceType[] { new UDAServiceType("WANPPPConnection"), new UDAServiceType("WANIPConnection") };
+        final UDAServiceType[] udaServices = new UDAServiceType[] { new UDAServiceType("WANPPPConnection"), new UDAServiceType("WANIPConnection") };
         UpnpServiceImpl upnpService = null;
         try {
             final DefaultUpnpServiceConfiguration config = new DefaultUpnpServiceConfiguration() {
@@ -128,10 +128,10 @@ public class MyJDownloaderDirectServer extends Thread {
             upnpService.getControlPoint().search(15000);
             Thread.sleep(15000);
             final CopyOnWriteArrayList<InetAddress> localIPs = new CopyOnWriteArrayList<InetAddress>(HTTPProxyUtils.getLocalIPs());
-            InetAddress netMask = InetAddress.getByName("255.255.255.0");
-            for (UDAServiceType udaService : udaServices) {
-                for (Device device : upnpService.getRegistry().getDevices(udaService)) {
-                    Service service = device.findService(udaService);
+            final InetAddress netMask = InetAddress.getByName("255.255.255.0");
+            for (final UDAServiceType udaService : udaServices) {
+                for (final Device device : upnpService.getRegistry().getDevices(udaService)) {
+                    final Service service = device.findService(udaService);
                     if (service == null) {
                         continue;
                     }
