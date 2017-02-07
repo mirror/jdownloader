@@ -6,6 +6,11 @@ import java.util.Map;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
@@ -17,15 +22,11 @@ import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
+import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
-
-import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 
 public class TwoCaptchaSolverService extends AbstractSolverService implements ServicePanelExtender {
     private TwoCaptchaConfigInterface config;
@@ -109,7 +110,7 @@ public class TwoCaptchaSolverService extends AbstractSolverService implements Se
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
 
         ret.put(JacSolverService.ID, 30000);
-        // ret.put(NineKwSolverService.ID, 120000);
+        ret.put(NineKwSolverService.ID, 120000);
         ret.put(CaptchaMyJDSolverService.ID, 60000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);

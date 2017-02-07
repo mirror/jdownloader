@@ -2,6 +2,8 @@ package org.jdownloader.captcha.v2.solver.twocaptcha;
 
 import java.io.IOException;
 
+import jd.http.Browser;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
@@ -20,8 +22,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
-
-import jd.http.Browser;
 
 public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     private TwoCaptchaConfigInterface     config;
@@ -124,7 +124,6 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             q.appendEncoded("method", "userrecaptcha");
             q.appendEncoded("googlekey", challenge.getSiteKey());
             q.appendEncoded("pageurl", challenge.getSiteDomain());
-            q.appendEncoded("soft_id", "1396142");
             q.appendEncoded("json", "1");
             String json = br.getPage("http://2captcha.com/in.php?" + q.toString());
             BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
@@ -231,7 +230,6 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             UrlQuery q = new UrlQuery();
             q.appendEncoded("key", config.getApiKey());
             q.appendEncoded("action", "getbalance");
-            q.appendEncoded("soft_id", "1396142");
             q.appendEncoded("json", "1");
             String json = br.getPage("http://2captcha.com/res.php?" + q.toString());
             BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
