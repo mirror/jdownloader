@@ -412,8 +412,8 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
         if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
             if (this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false)) {
-                /* We do not know exactly when the next free download is possible so let's try every 5 minutes. */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                /* We do not know exactly when the next free download is possible so let's try every 20 minutes. */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1000l);
             } else {
                 // ﻿Free downloading is not possible. You have to wait 178 minutes to download your next file.
                 final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
