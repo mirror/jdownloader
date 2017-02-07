@@ -67,6 +67,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
         }
+        final String subtitle = this.br.getRegex("class=\"rtbf\\-media\\-item__subtitle\">([^<>\"]+)<").getMatch(0);
         final String uploadDate = PluginJSonUtils.getJsonValue(this.br, "uploadDate");
         if (uploadDate != null) {
             date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
@@ -100,6 +101,9 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         title = "rtbf_" + title;
         if (date_formatted != null) {
             title = date_formatted + "_" + title;
+        }
+        if (subtitle != null) {
+            title = title + " - " + subtitle;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream.moe" }, urls = { "https?://(?:www\\.)?stream\\.moe/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream.moe" }, urls = { "https?://(?:www\\.)?stream\\.moe/(?:embed2/)?[A-Za-z0-9]+" })
 public class StreamMoe extends PluginForHost {
 
     public StreamMoe(PluginWrapper wrapper) {
@@ -112,11 +112,16 @@ public class StreamMoe extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
+        final String fid = getFID(link);
+        final String protocol;
         if (!supportshttps) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+            protocol = "http://";
         } else if (supportshttps && supportshttps_FORCED) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+            protocol = "https://";
+        } else {
+            protocol = "http://";
         }
+        link.setUrlDownload(String.format("%s%s/%s", protocol, this.getHost(), fid));
     }
 
     @SuppressWarnings("deprecation")
