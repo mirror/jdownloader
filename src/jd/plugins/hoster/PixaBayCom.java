@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(www\\.)?pixabay\\.com/en/[a-z0-9\\-]+\\-\\d+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(www\\.)?pixabay\\.com/en/[a-z0-9\\-]+\\-\\d+/" })
 public class PixaBayCom extends PluginForHost {
 
     public PixaBayCom(PluginWrapper wrapper) {
@@ -57,20 +57,20 @@ public class PixaBayCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean  FREE_RESUME               = false;
-    private static final int      FREE_MAXCHUNKS            = 1;
-    private static final int      FREE_MAXDOWNLOADS         = 20;
-    private static final boolean  ACCOUNT_FREE_RESUME       = false;
-    private static final int      ACCOUNT_FREE_MAXCHUNKS    = 1;
-    private static final int      ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME               = false;
+    private static final int     FREE_MAXCHUNKS            = 1;
+    private static final int     FREE_MAXDOWNLOADS         = 20;
+    private static final boolean ACCOUNT_FREE_RESUME       = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
     /* TODO: Maybe add support for SVG format(s) */
-    private static final String[] qualities                 = { "O", "XXL", "XL", "L", "M", "S" };
+    private final String[]       qualities                 = { "Original", "O", "XXL", "XL", "L", "M", "S" };
 
-    private String                quality_max               = null;
-    private String                quality_download_id       = null;
+    private String               quality_max               = null;
+    private String               quality_download_id       = null;
     /* don't touch the following! */
-    private static AtomicInteger  maxPrem                   = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -99,19 +99,19 @@ public class PixaBayCom extends PluginForHost {
         final String[] qualityInfo = this.br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
         for (final String possiblequality : qualities) {
             for (final String quality : qualityInfo) {
-                final String quality_name = new Regex(quality, "(S|M|L|XL|SVG)</td>").getMatch(0);
+                final String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
                 if (quality_name == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final boolean accountQualityPossible = aa != null && (quality_name.equals("XXL") || quality_name.equals("XL") || quality_name.equals("O"));
-                final boolean isNoAccountQuality = !quality_name.equals("XXL") && !quality_name.equals("XL") && !quality_name.equals("O");
+                final boolean accountQualityPossible = aa != null && (quality_name.equalsIgnoreCase("XXL") || quality_name.equalsIgnoreCase("XL") || quality_name.equalsIgnoreCase("O") || quality_name.equalsIgnoreCase("Original"));
+                final boolean isNoAccountQuality = !quality_name.equalsIgnoreCase("XXL") && !quality_name.equalsIgnoreCase("XL") && !quality_name.equalsIgnoreCase("O") && !quality_name.equalsIgnoreCase("Original");
                 if (quality_name.equals(possiblequality) && (accountQualityPossible || isNoAccountQuality)) {
                     done = true;
                     filesize = new Regex(quality, "class=\"hide-xs hide-md\">([^<>\"]*?)<").getMatch(0);
                     if (filesize == null) {
                         filesize = new Regex(quality, ">(\\d+(?:\\.\\d+)? (?:kB|mB|gB))<").getMatch(0);
                     }
-                    quality_max = new Regex(quality, ">(\\d+) x \\d+<").getMatch(0);
+                    quality_max = new Regex(quality, ">(\\d+)\\s*(?:×|x)\\s*\\d+<").getMatch(0);
                     quality_download_id = new Regex(quality, "([^<>\"/]*?\\.jpg)").getMatch(0);
                     if (quality_download_id == null) {
                         quality_download_id = new Regex(quality, "name=\"download\" value=\"([^<>\"]*?)\"").getMatch(0);
