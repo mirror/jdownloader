@@ -1167,7 +1167,11 @@ public class MegaConz extends PluginForHost {
 
     private String useSSL() {
         if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
-            return "2";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
+            if (isHideApplication()) {
+                return "2";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
+            } else {
+                return "1";
+            }
         } else {
             return "0";
         }
