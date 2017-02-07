@@ -114,7 +114,7 @@ public class RTLCms extends PluginForHost {
         String headline1 = PluginJSonUtils.getJsonValue(json, "headline1");
         String headline2 = PluginJSonUtils.getJsonValue(json, "headline2");
         DLLINK = PluginJSonUtils.getJsonValue(json, "mp4url");
-        if (headline2 == null || DLLINK == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (headline1 != null && (headline1.equals("null") || headline1.equals(""))) {

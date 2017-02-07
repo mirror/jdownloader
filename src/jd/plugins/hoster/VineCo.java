@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -28,15 +27,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vine.co" }, urls = { "https?://(www\\.)?vine\\.co/v/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vine.co" }, urls = { "https?://(www\\.)?vine\\.co/v/[A-Za-z0-9]+" })
 public class VineCo extends PluginForHost {
 
     public VineCo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     @Override
     public String getAGBLink() {
@@ -46,57 +47,62 @@ public class VineCo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(410);
-        br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
-        final int responsecode = this.br.getHttpConnection().getResponseCode();
-        if (br.containsHTML(">Page not found") || responsecode == 404 || responsecode == 410) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
         downloadLink.setLinkID(fid);
-        String filename = br.getRegex("property=\"?og:title\"? content=\"?(.*?)\"?><meta").getMatch(0);
-        DLLINK = br.getRegex("property=\"twitter:player:stream\" content=\"(https?://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("contentUrl\" : \"(https?://[^<>\"]*?)\"").getMatch(0);
+        br.getPage(String.format("https://archive.%s/posts/%s.json", this.getHost(), fid));
+        final int responsecode = this.br.getHttpConnection().getResponseCode();
+        if (responsecode == 403 || responsecode == 404 || responsecode == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null || DLLINK == null) {
-            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
+        String filename = PluginJSonUtils.getJsonValue(this.br, "description");
+        if (filename == null || filename.equals("")) {
+            /* Fallback */
+            filename = fid;
+        }
+        dllink = PluginJSonUtils.getJsonValue(this.br, "videoUrl");
+        if (dllink == null || dllink.equals("")) {
+            logger.info("filename: " + filename + ", DLLINK: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
         /* Include linkid in filename to avoid false positive duplicate! */
         filename = fid + "_" + filename + ".mp4";
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(DLLINK);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // We only download small files, chunkload makes no sense
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* We only download small files, chunkload makes no sense */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" })
 public class OkRuDecrypter extends PluginForDecrypt {
 
     public OkRuDecrypter(PluginWrapper wrapper) {
@@ -47,6 +47,14 @@ public class OkRuDecrypter extends PluginForDecrypt {
         String externID = this.br.getRegex("data-ytid=\"([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("https://www.youtube.com/watch?v=" + externID));
+            return decryptedLinks;
+        }
+        externID = this.br.getRegex("coubID=([A-Za-z0-9]+)").getMatch(0);
+        if (externID == null) {
+            externID = this.br.getRegex("coub\\.com%2Fview%2F([A-Za-z0-9]+)").getMatch(0);
+        }
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(String.format("https://coub.com/view/%s", externID)));
             return decryptedLinks;
         }
         final DownloadLink main = createDownloadlink(param.toString());

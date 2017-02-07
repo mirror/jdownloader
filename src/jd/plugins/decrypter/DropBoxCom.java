@@ -95,17 +95,14 @@ public class DropBoxCom extends PluginForDecrypt {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link);
-            if (con.getResponseCode() == 404) {
-                final DownloadLink dl = this.createOfflinelink(link);
-                decryptedLinks.add(dl);
+            if (con.getResponseCode() == 429) {
+                logger.info("URL's downloads are disabled due to it generating too much traffic");
                 return decryptedLinks;
-            }
-            if (con.getResponseCode() == 460) {
-                logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support. " + link);
+            } else if (con.getResponseCode() == 460) {
+                logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support.");
                 return decryptedLinks;
-            }
-            // Temporarily unavailable links
-            if (con.getResponseCode() == 509) {
+            } else if (con.getResponseCode() == 509) {
+                /* Temporarily unavailable links */
                 final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
                 dl.setProperty("decrypted", true);
                 decryptedLinks.add(dl);
@@ -129,7 +126,17 @@ public class DropBoxCom extends PluginForDecrypt {
                     return null;
                 }
             }
+            br.setFollowRedirects(true);
             br.followConnection();
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                br.getPage(redirect);
+            }
+            if (con.getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel")) {
+                final DownloadLink dl = this.createOfflinelink(link);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
         } finally {
             try {
                 con.disconnect();

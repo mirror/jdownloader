@@ -60,7 +60,7 @@ public class PixivNet extends PluginForDecrypt {
             /* Decrypt gallery */
             br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
             String[] links;
-            if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
+            if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple\\-image submission<")) {
                 /* Not multiple urls --> Switch to single-url view */
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
                 links = br.getRegex("data\\-illust\\-id=\"\\d+\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
@@ -72,6 +72,9 @@ public class PixivNet extends PluginForDecrypt {
                 /* Check for offline */
                 if (isOffline(this.br)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (isAccountOrRightsRequired(this.br)) {
+                    logger.info("Account required to crawl this particular content");
                     return decryptedLinks;
                 }
                 links = br.getRegex("data\\-filter=\"manga\\-image\" data\\-src=\"(http[^<>\"\\']+)\"").getColumn(0);
@@ -100,6 +103,9 @@ public class PixivNet extends PluginForDecrypt {
             br.getPage(parameter);
             if (isOffline(this.br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else if (isAccountOrRightsRequired(this.br)) {
+                logger.info("Account required to crawl this particular content");
                 return decryptedLinks;
             }
             // final String total_numberof_items = this.br.getRegex("class=\"count\\-badge\">(\\d+) results").getMatch(0);
@@ -140,7 +146,11 @@ public class PixivNet extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404;
+        return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("この作品は削除されました。|>This work was deleted");
+    }
+
+    public static boolean isAccountOrRightsRequired(final Browser br) {
+        return br.getURL().contains("return_to=");
     }
 
 }
