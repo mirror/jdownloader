@@ -32,7 +32,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -102,8 +101,8 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE = ".+m\\.xhamster\\.com/[^/]+/(\\d+)(?:/.+\\.html)?$";
-    private static final String TYPE_EMBED  = "^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
+    private static final String TYPE_MOBILE = "(?i).+m\\.xhamster\\.com/[^/]+/(\\d+)(?:/.+\\.html)?$";
+    private static final String TYPE_EMBED  = "(?i)^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
     private static Object       ctrlLock    = new Object();
     private final String        recaptchav2 = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
@@ -276,13 +275,15 @@ public class XHamsterCom extends PluginForHost {
             if (aa != null) {
                 login(aa, false);
             }
-            try {
-                br.getPage(downloadLink.getDownloadURL());
-            } catch (final BrowserException e) {
-                if (br.getHttpConnection() != null && (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 423)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRequest().getHttpConnection().getResponseCode() == 423) {
+                if (br.containsHTML("Conversion of video processing")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw e;
+            } else if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // embeded correction --> Usually not needed
             if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
@@ -592,6 +593,7 @@ public class XHamsterCom extends PluginForHost {
 
     private void prepBr() {
         br.setCookie(MAINPAGE, "lang", "en");
+        br.setAllowedResponseCodes(new int[] { 410, 423 });
     }
 
     @Override
