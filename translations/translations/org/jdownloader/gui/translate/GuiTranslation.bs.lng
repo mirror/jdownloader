@@ -1294,6 +1294,7 @@ TestWaitDialog_runInEDTnothing_found=Nisu pronađeni Dostupni Download-i! Pokuš
 TimingTableModel_initColumns_waitloop_print=%s1 čeka do %s2 za %s3
 TimingTableModel_initColumns_waitloop_title=Deteltovana je Petlja Vremena čekanja!
 TimingTableModel_initColumns_waitloop_warning=Ovu vrijednost ne možete promijeniti. To bi rezultiralo sljedećim petlja konfliktom: %s1 Molimo prvo prekinite petlju.
+TwoCaptcha_getName_=Potpuno automatizovano rješavanje Captcha
 UPNPRouterPlugin_accept_all=Potvbrdi sve. Ne pitaj više.
 UPNPRouterPlugin_runDetectionWizard_confirm_msg=Čarobnjak će sada testirati ovaj UPNP metod Ponovne konekcije: Servis: %s1 Kontrolna tačka: %s2
 UninstalledExtension_getDescription_object_=%s1 Ovaj dodatak još nije instaliran. Kliknite na [Instaliraj sada] i JDownloader će pokrenuti instalaciju
