@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" })
 public class MyviRu extends PluginForHost {
 
     public MyviRu(PluginWrapper wrapper) {
@@ -98,6 +98,9 @@ public class MyviRu extends PluginForHost {
             final String video_embed_id = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0);
             html_embed_url = "http://myvi.ru/player/embed/html/" + video_embed_id;
             this.br.getPage(html_embed_url);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String videojson = this.br.getRegex("sprutoData:(\\{.+\\}),").getMatch(0);
             try {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videojson);
@@ -118,6 +121,9 @@ public class MyviRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage(api_url);
+        if (br.getHttpConnection().getResponseCode() == 404 || "{}".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         dllink = (String) JavaScriptEngineFactory.walkJson(entries, "sprutoData/playlist/{0}/video/{0}/url");
         if (dllink == null) {
