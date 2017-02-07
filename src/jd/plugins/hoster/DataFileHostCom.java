@@ -81,7 +81,7 @@ public class DataFileHostCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"alert alert\\-danger\"") || this.br.containsHTML("The file that you are looking for is either|an invalid file name|has been removed due to|Please check the file name again and|>The file you requested \\(id [a-z0-9]+\\) does not exist.|>Invalid file ID.")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"alert alert\\-danger\"") || this.br.containsHTML("The file that you are looking for is either|an invalid file name|has been removed due to|Please check the file name again and|>The file you requested \\(id [a-z0-9]+\\) does not exist.|>Invalid file ID.|The file .*? is invalid.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("no longer exists on|>It was either removed by the owner of the file")) {
             /* 2017-02-06 */
