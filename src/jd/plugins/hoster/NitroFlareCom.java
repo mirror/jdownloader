@@ -66,7 +66,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private final String         apiURL                       = "http://nitroflare.com/api/v2";
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
@@ -1027,7 +1027,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     @Override
