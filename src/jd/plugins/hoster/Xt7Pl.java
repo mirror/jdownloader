@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xt7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class Xt7Pl extends PluginForHost {
-    private String                                         MAINPAGE           = "http://xt7.pl/";
+    private String                                         MAINPAGE           = "https://xt7.pl/";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
 
@@ -131,27 +131,16 @@ public class Xt7Pl extends PluginForHost {
             validUntil = validUntil.replace(" / ", " ");
             ai.setProperty("premium", "TRUE");
         }
-        /*
-         * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
-         */
-        // final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(
-        // // "turbobit.net",
-        // "catshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploaded.to",
-        // "uploaded.net", "ul.to", "sharehost.eu"
-        // // "oboom.com", "fileparadox.in", "freakshare.net", "freakshare.com"
-        // ));
+
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
-        // ai.setProperty("Turbobit traffic", "Unlimited");
         String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
                 br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         if (otherHostersLimitLeft == null) {
             otherHostersLimitLeft = br.getRegex("Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         }
-        // ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
         ai.setProperty("TRAFFIC_LEFT", otherHostersLimitLeft == null ? getPhrase("UNKNOWN") : SizeFormatter.getSize(otherHostersLimitLeft));
-        // ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
         String unlimited = br.getRegex("<br />(.*): <b>Bez limitu</b> \\|").getMatch(0);
         if (unlimited != null) {
             ai.setProperty("UNLIMITED", unlimited);
