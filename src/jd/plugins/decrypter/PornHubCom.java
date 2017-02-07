@@ -45,6 +45,7 @@ public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
         super(wrapper);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 333);
     }
 
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -186,10 +187,9 @@ public class PornHubCom extends PluginForDecrypt {
         return this.createDownloadlink("http://pornhubdecrypted" + new Random().nextInt(1000000000));
     }
 
-    // /* For testing */
-    // public int getMaxConcurrentProcessingInstances() {
-    // return 2;
-    // }
+    public int getMaxConcurrentProcessingInstances() {
+        return 2;// seems they try to block crawling
+    }
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
