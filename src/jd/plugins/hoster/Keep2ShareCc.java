@@ -22,11 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +39,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  *
@@ -678,6 +678,20 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 dllink = Encoding.htmlDecode(dllink);
                 logger.info("dllink = " + dllink);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    br.followConnection();
+                    if (br.containsHTML("Download of file will start in")) {
+                        dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
+                    } else {
+                        dllink = null;
+                    }
+                    if (dllink == null) {
+                        logger.warning("The final dllink seems not to be a file!");
+                        handleGeneralServerErrors(account, link);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
