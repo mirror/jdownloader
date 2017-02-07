@@ -64,10 +64,10 @@ public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
-    private static final int                      FREE_MAXDOWNLOADS         = 20;
+    private static final int                      FREE_MAXDOWNLOADS         = 5;
     private static final boolean                  ACCOUNT_FREE_RESUME       = true;
     private static final int                      ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 5;
 
     public static final long                      trust_cookie_age          = 300000l;
 
@@ -100,6 +100,7 @@ public class PornHubCom extends PluginForHost {
     public PornHubCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.pornhub.com/create_account");
+        Browser.setRequestIntervalLimitGlobal(getHost(), 333);
         this.setConfigElements();
     }
 
