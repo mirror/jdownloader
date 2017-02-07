@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tb7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class Tb7Pl extends PluginForHost {
-    private String                                         MAINPAGE           = "http://tb7.pl/";
+    private String                                         MAINPAGE           = "https://tb7.pl/";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Object                                  LOCK               = new Object();
 
@@ -129,26 +129,16 @@ public class Tb7Pl extends PluginForHost {
             validUntil = validUntil.replace(" / ", " ");
             ai.setProperty("premium", "TRUE");
         }
-        /*
-         * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
-         */
-        /*
-         * final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList( // "turbobit.net", "catshare.net", "fileshark.pl",
-         * "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "uploaded.to", "uploaded.net", "ul.to", "sharehost.eu" //
-         * "oboom.com", "fileparadox.in", "freakshare.net", "freakshare.com" ));
-         */
+
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
-        // ai.setProperty("Turbobit traffic", "Unlimited");
         String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
                 br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         if (otherHostersLimitLeft == null) {
             otherHostersLimitLeft = br.getRegex("Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         }
-        // ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
         ai.setProperty("TRAFFIC_LEFT", otherHostersLimitLeft == null ? _JDT.T.lit_unknown() : SizeFormatter.getSize(otherHostersLimitLeft));
-        // ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
         String unlimited = br.getRegex("<br />(.*): <b>Bez limitu</b> \\|").getMatch(0);
         if (unlimited != null) {
             ai.setProperty("UNLIMITED", unlimited);
@@ -393,59 +383,4 @@ public class Tb7Pl extends PluginForHost {
         link.setProperty("generatedLinkTb7", null);
     }
 
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREMIUM_ERROR", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("UNSUPPORTED_PREMIUM", "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
-                                                      put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
-                                                      put("TRAFFIC_LEFT", "Traffic left");
-                                                      put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable via");
-                                                      put("DOWNLOAD_LIMIT", "Download limit exceeded!");
-                                                      put("RETRY", "Retry in few secs");
-                                                      put("LINK_INACTIVE", "Tb7 reports the link is as inactive!");
-                                                      put("LINK_EXPIRED", "Previously generated Link expired!");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("UNKNOWN_ERROR", "Unable to handle this errorcode!");
-                                                      put("ACCOUNT_TYPE", "Account type");
-                                                      put("UNKNOWN", "Unknown");
-                                                      put("UNLIMITED", "Unlimited");
-                                                      put("FREE", "free");
-                                                  }
-                                              };
-    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREMIUM_ERROR", "\r\nNieprawidłowy użytkownik/hasło!\r\nUpewnij się, że wprowadziłeś poprawnie użytkownika i hasło. Podpowiedzi:\r\n1. Jeśli w twoim haśle znajdują się znaki specjalne - usuń je/popraw i wprowadź ponownie hasło!\r\n2. Wprowadzając nazwę użytkownika i hasło - nie używaj operacji Kopiuj i Wklej.");
-                                                      put("UNSUPPORTED_PREMIUM", "\r\nNieobsługiwany typ konta!\r\nJesli uważasz, że informacja ta jest niepoprawna i chcesz aby dodac obsługę tego typu konta\r\nskontaktuj się z nami poprzez forum wsparcia.");
-                                                      put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
-                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
-                                                      put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny przez");
-                                                      put("DOWNLOAD_LIMIT", "Przekroczono dostępny limit transferu!");
-                                                      put("RETRY", "Ponawianie za kilka sekund");
-                                                      put("LINK_INACTIVE", "Tb7 raportuje link jako nieaktywny!");
-                                                      put("LINK_EXPIRED", "Poprzednio wygenerowany link wygasł!");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("UNKNOWN_ERROR", "Nieobsługiwany kod błędu!");
-                                                      put("ACCOUNT_TYPE", "Typ konta");
-                                                      put("UNKNOWN", "Nieznany");
-                                                      put("UNLIMITED", "Bez limitu");
-                                                      put("FREE", "darmowe");
-                                                  }
-                                              };
-
-    /**
-     * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
-     * English.
-     *
-     * @param key
-     * @return
-     */
-    private String getPhrase(String key) {
-        String language = System.getProperty("user.language");
-        if ("pl".equals(language) && phrasesPL.containsKey(key)) {
-            return phrasesPL.get(key);
-        } else if (phrasesEN.containsKey(key)) {
-            return phrasesEN.get(key);
-        }
-        return "Translation not found!";
-    }
 }
