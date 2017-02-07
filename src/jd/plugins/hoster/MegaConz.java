@@ -571,9 +571,9 @@ public class MegaConz extends PluginForHost {
             final String parentNode = getParentNodeID(link);
             if (Thread.currentThread() instanceof SingleDownloadController) {
                 final Account account = ((SingleDownloadController) (Thread.currentThread())).getAccount();
-                response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
+                response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
             } else {
-                response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { "ssl", useSSL() }, new Object[] { isPublic(link) ? "p" : "n", fileID });
+                response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
             }
         } catch (IOException e) {
             logger.log(e);
@@ -1167,7 +1167,7 @@ public class MegaConz extends PluginForHost {
 
     private String useSSL() {
         if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
-            return "1";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
+            return "2";// can also be 2, see meganz/webclient/blob/master/js/crypto.js
         } else {
             return "0";
         }
