@@ -53,21 +53,29 @@ public class PixivNet extends PluginForDecrypt {
             jd.plugins.hoster.PixivNet.login(this.br, aa, false);
         }
         final String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
-        br.getPage(parameter);
-        if (isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
+        br.setFollowRedirects(true);
 
         String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
         if (parameter.matches(TYPE_GALLERY)) {
             /* Decrypt gallery */
             br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
-            if (isOffline(this.br)) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+            String[] links;
+            if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
+                /* Not multiple urls --> Switch to single-url view */
+                br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                links = br.getRegex("data\\-illust\\-id=\"\\d+\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
+                if (links.length == 0) {
+                    links = this.br.getRegex("data\\-title=\"registerImage\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
+                }
+            } else {
+                /* Multiple urls */
+                /* Check for offline */
+                if (isOffline(this.br)) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                links = br.getRegex("data\\-filter=\"manga\\-image\" data\\-src=\"(http[^<>\"\\']+)\"").getColumn(0);
             }
-            final String[] links = br.getRegex("data\\-filter=\"manga\\-image\" data\\-src=\"(http[^<>\"\\']+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -82,6 +90,7 @@ public class PixivNet extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(singleLink.replaceAll("https?://", "decryptedpixivnet://"));
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("galleryid", lid);
+                dl.setProperty("galleryurl", this.br.getURL());
                 dl.setFinalFileName(filename);
                 decryptedLinks.add(dl);
                 counter++;
@@ -107,7 +116,7 @@ public class PixivNet extends PluginForDecrypt {
                 if (this.br.containsHTML("No results found for your query")) {
                     break;
                 }
-                final String[] links = br.getRegex("class=\"image\\-item\"><a href=\"[^<>\"]*?[^/]+illust_id=(\\d+)\"").getColumn(0);
+                final String[] links = br.getRegex("<a href=\"[^<>\"]*?[^/]+illust_id=(\\d+)\"").getColumn(0);
                 for (final String galleryID : links) {
                     final DownloadLink dl = createDownloadlink(jd.plugins.hoster.PixivNet.createGalleryUrl(galleryID));
                     decryptedLinks.add(dl);

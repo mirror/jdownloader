@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/\\?v=[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.sx", "raptu.com", }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/\\?v=[A-Za-z0-9]+", "https?://(?:www\\.)?(?:playernaut\\.com|rapidvideo\\.com|raptu\\.com)/(?:\\?v=|embed/)[A-Za-z0-9]+" })
 public class BitvideoIo extends PluginForHost {
 
     public BitvideoIo(PluginWrapper wrapper) {
@@ -85,7 +85,7 @@ public class BitvideoIo extends PluginForHost {
         link.setName(fid + ".mp4");
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         /* Only use one of their domains */
-        br.getPage("https://www.bitporno.sx/?v=" + fid);
+        br.getPage("https://www.bitporno.com/?v=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

@@ -60,6 +60,10 @@ public class PixivNet extends PluginForHost {
         return String.format("http://www.pixiv.net/member_illust.php?mode=manga&illust_id=%s", galleryid);
     }
 
+    public static String createSingleImageUrl(final String galleryid) {
+        return String.format("http://www.pixiv.net/member_illust.php?mode=medium&illust_id=%s", galleryid);
+    }
+
     /* Extension which will be used if no correct extension is found */
     public static final String default_extension            = ".jpg";
 
@@ -81,11 +85,11 @@ public class PixivNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBR(this.br);
-        final String galleryid = link.getStringProperty("galleryid", null);
-        if (galleryid == null) {
+        final String galleryurl = link.getStringProperty("galleryurl", null);
+        if (galleryurl == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(createGalleryUrl(galleryid));
+        br.getPage(galleryurl);
         if (jd.plugins.decrypter.PixivNet.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
