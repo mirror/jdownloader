@@ -673,6 +673,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
         final String id = ids[1];
+        final String oid_and_id = oid + "_" + id;
         String listID;
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_Z)) {
             listID = new Regex(this.CRYPTEDLINK_ORIGINAL, "z=video" + oid + "_" + id + "(?:%2F|/)([a-z0-9]+)(?:%2F|/)").getMatch(0);
@@ -714,14 +715,13 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             embedHash = PluginJSonUtils.getJsonValue(correctedBR, "hash");
             if (embedHash == null) {
-                decryptedLinks = null;
-                return;
+                logger.info("Video seems to be offline");
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
             filename = PluginJSonUtils.getJsonValue(correctedBR, "md_title");
             if (filename == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                decryptedLinks = null;
-                return;
+                /* Fallback */
+                filename = oid_and_id;
             }
             final FilePackage fp = FilePackage.getInstance();
             /* Find needed information */
@@ -802,9 +802,6 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } catch (final DecrypterException de) {
             throw de;
-        } catch (final Throwable e) {
-            // why do we do this??? -raztoki20161117
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
     }
 

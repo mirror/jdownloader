@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?(sharegadget\\.com|leteckaposta\\.cz)/[0-9]+." }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "http://[\\w\\.]*?(?:sharegadget\\.com|leteckaposta\\.cz)/[0-9]+" })
 public class ShareGadgetCom extends PluginForHost {
 
     public ShareGadgetCom(PluginWrapper wrapper) {
@@ -55,7 +55,9 @@ public class ShareGadgetCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("\\s+<h1><a href='(.*?)'").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         linkurl = "http://sharegadget.com" + linkurl;
         br.setFollowRedirects(true);
         // this.sleep(40000, downloadLink); //Remove if they find a better way
@@ -70,13 +72,18 @@ public class ShareGadgetCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setAllowedResponseCodes(400);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("class='download-link'>(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("class=\\'download\\-link\\'>(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex("File size: (.*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

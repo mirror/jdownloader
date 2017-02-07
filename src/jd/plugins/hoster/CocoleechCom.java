@@ -20,6 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -39,16 +41,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.IO;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.CountingOutputStream;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip.cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
-public class VipCocoleechCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
+public class CocoleechCom extends PluginForHost {
 
-    private static final String                            API_ENDPOINT         = "https://vip.cocoleech.com/api";
-    private static final String                            NICE_HOST            = "vip.cocoleech.com";
+    private static final String                            API_ENDPOINT         = "https://members.cocoleech.com/auth/api";
+    private static final String                            NICE_HOST            = "cocoleech.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
     private static final String                            PROPERTY_LOGINTOKEN  = "cocoleechlogintoken";
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
@@ -61,9 +64,9 @@ public class VipCocoleechCom extends PluginForHost {
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
 
-    /* Last updated: 31.03.15 */
+    /* Last updated: 2017-02-08 according to admin request. */
     private static final int                               defaultMAXDOWNLOADS  = 20;
-    private static final int                               defaultMAXCHUNKS     = -10;
+    private static final int                               defaultMAXCHUNKS     = -4;
     private static final boolean                           defaultRESUME        = true;
     private final String                                   apikey               = "cdb5efc9c72196c1bd8b7a594b46b44f";
 
@@ -75,14 +78,24 @@ public class VipCocoleechCom extends PluginForHost {
     private static String                                  currLogintoken       = null;
 
     @SuppressWarnings("deprecation")
-    public VipCocoleechCom(PluginWrapper wrapper) {
+    public CocoleechCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://vip.cocoleech.com/pricing.php");
+        this.enablePremium("https://members.cocoleech.com/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://vip.cocoleech.com/";
+        return "https://members.cocoleech.com/terms";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("vip.cocoleech.com".equals(getHost())) {
+            if (host == null || "vip.cocoleech.com".equals(host)) {
+                return "cocoleech.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     private Browser prepBR(final Browser br) {
@@ -140,13 +153,15 @@ public class VipCocoleechCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String maxchunksStr = null;
         if (dllink == null) {
             br.setFollowRedirects(true);
             /* request creation of downloadlink */
             /* Make sure that the file exists - unnecessary step in my opinion (psp) but admin wanted to have it implemented this way. */
-            this.getAPISafe(API_ENDPOINT + "/download.php?url=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = PluginJSonUtils.getJsonValue(br, "download_url");
-            if (dllink == null) {
+            this.getAPISafe(API_ENDPOINT + "?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            maxchunksStr = PluginJSonUtils.getJsonValue(this.br, "chunks");
+            dllink = PluginJSonUtils.getJsonValue(br, "download");
+            if (dllink == null || dllink.equals("")) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
             }
@@ -154,37 +169,39 @@ public class VipCocoleechCom extends PluginForHost {
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         boolean resume = account.getBooleanProperty("resume", defaultRESUME);
         int maxChunks = account.getIntegerProperty("account_maxchunks", defaultMAXCHUNKS);
-        /* Then check if we got an individual host limit. */
-        if (hostMaxchunksMap != null) {
-            final String thishost = link.getHost();
-            synchronized (hostMaxchunksMap) {
-                if (hostMaxchunksMap.containsKey(thishost)) {
-                    maxChunks = hostMaxchunksMap.get(thishost);
+        if (maxchunksStr != null && maxchunksStr.matches("\\d+")) {
+            maxChunks = Integer.parseInt(maxchunksStr);
+            if (maxChunks > 20) {
+                maxChunks = 0;
+            } else if (maxChunks > 1) {
+                maxChunks = -maxChunks;
+            } else {
+                maxChunks = 1;
+            }
+        } else {
+            /* Then check if we got an individual host limit. */
+            if (hostMaxchunksMap != null) {
+                final String thishost = link.getHost();
+                synchronized (hostMaxchunksMap) {
+                    if (hostMaxchunksMap.containsKey(thishost)) {
+                        maxChunks = hostMaxchunksMap.get(thishost);
+                    }
                 }
             }
-        }
 
-        if (hostResumeMap != null) {
-            final String thishost = link.getHost();
-            synchronized (hostResumeMap) {
-                if (hostResumeMap.containsKey(thishost)) {
-                    resume = hostResumeMap.get(thishost);
+            if (hostResumeMap != null) {
+                final String thishost = link.getHost();
+                synchronized (hostResumeMap) {
+                    if (hostResumeMap.containsKey(thishost)) {
+                        resume = hostResumeMap.get(thishost);
+                    }
                 }
             }
-        }
-        if (link.getBooleanProperty(NORESUME, false)) {
-            resume = false;
         }
         if (!resume) {
             maxChunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-        if (dl.getConnection().getResponseCode() == 416) {
-            logger.info("Resume impossible, disabling it for the next try");
-            link.setChunksProgress(null);
-            link.setProperty(VipCocoleechCom.NORESUME, Boolean.valueOf(true));
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
             br.followConnection();
             updatestatuscode();
@@ -237,7 +254,6 @@ public class VipCocoleechCom extends PluginForHost {
             }
         }
         this.setConstants(account, link);
-        login(false);
 
         handleDL(account, link);
     }
@@ -305,28 +321,29 @@ public class VipCocoleechCom extends PluginForHost {
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
 
-        login(false);
-        /*
-         * As long as we always perform a full login, this call is never needed as full login will return account type and expire date too.
-         */
-        // accessUserInfo();
+        login(true);
 
-        final String premiumstatus = PluginJSonUtils.getJsonValue(br, "premium_status");
+        final String accounttype = PluginJSonUtils.getJsonValue(br, "type");
+        final String trafficleft = PluginJSonUtils.getJsonValue(br, "traffic_left");
         final String validuntil = PluginJSonUtils.getJsonValue(br, "expire_date");
         long timestamp_validuntil = 0;
         if (validuntil != null) {
-            timestamp_validuntil = Long.parseLong(validuntil) * 1000;
+            timestamp_validuntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        if ("active".equalsIgnoreCase(premiumstatus)) {
+        if ("premium".equalsIgnoreCase(accounttype) && timestamp_validuntil > 0) {
             ai.setValidUntil(timestamp_validuntil);
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
             account.setConcurrentUsePossible(true);
             /*
-             * 2016-05-05: Accounts do not have general traffic limits - however there are individual host traffic limits see mainpage -->
-             * "Host Status": http://vip.cocoleech.com/
+             * 2017-02-08: Accounts do usually not have general traffic limits - however there are individual host traffic limits see
+             * mainpage (when logged in) --> Right side "Daily Limit(s)"
              */
-            ai.setUnlimitedTraffic();
+            if (trafficleft != null && !trafficleft.equalsIgnoreCase("unlimited")) {
+                ai.setTrafficLeft(Long.parseLong(trafficleft));
+            } else {
+                ai.setUnlimitedTraffic();
+            }
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
@@ -335,19 +352,25 @@ public class VipCocoleechCom extends PluginForHost {
             ai.setTrafficLeft(0);
         }
 
-        this.getAPISafe(API_ENDPOINT + "/status.php");
+        this.getAPISafe(API_ENDPOINT + "/hosts-status");
         ArrayList<String> supportedhostslist = new ArrayList();
-        final String[] supportedHosts = this.br.getRegex("\"([A-Za-z0-9\\-]+\\.[A-Za-z0-9\\-\\.]+)\"").getColumn(0);
-        for (String domain : supportedHosts) {
-            domain = correctHost(domain);
-            final int maxdownloads = defaultMAXDOWNLOADS;
-            final int maxchunks = defaultMAXCHUNKS;
-            boolean resumable = defaultRESUME;
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final ArrayList<Object> hosters = (ArrayList<Object>) entries.get("result");
+        for (final Object hostero : hosters) {
+            entries = (LinkedHashMap<String, Object>) hostero;
+            String host = (String) entries.get("host");
+            final String status = (String) entries.get("status");
+            if (host != null && "online".equalsIgnoreCase(status)) {
+                host = correctHost(host);
+                final int maxdownloads = defaultMAXDOWNLOADS;
+                final int maxchunks = defaultMAXCHUNKS;
+                boolean resumable = defaultRESUME;
 
-            hostMaxchunksMap.put(domain, maxchunks);
-            hostMaxdlsMap.put(domain, maxdownloads);
-            hostResumeMap.put(domain, resumable);
-            supportedhostslist.add(domain);
+                hostMaxchunksMap.put(host, maxchunks);
+                hostMaxdlsMap.put(host, maxdownloads);
+                hostResumeMap.put(host, resumable);
+                supportedhostslist.add(host);
+            }
         }
         account.setValid(true);
 
@@ -357,32 +380,8 @@ public class VipCocoleechCom extends PluginForHost {
         return ai;
     }
 
-    private void accessUserInfo() throws IOException, PluginException {
-        this.getAPISafe(API_ENDPOINT + "/info.php");
-    }
-
     private void login(final boolean force) throws IOException, PluginException {
-        if (currLogintoken != null && !force) {
-            try {
-                accessUserInfo();
-                logger.info("Successfully re-used previous login token");
-                return;
-            } catch (final PluginException e) {
-                logger.info("Failed to re-use previous login token - performing full login!");
-                prepBR(new Browser());
-            }
-        }
-        this.getAPISafe(API_ENDPOINT + "/login.php?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
-        currLogintoken = PluginJSonUtils.getJsonValue(br, "token");
-        if (currLogintoken == null) {
-            final String code = PluginJSonUtils.getJsonValue(br, "code");
-            if (br.containsHTML("Invalid username or password") || "102".equals(code)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            /* Should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.currAcc.setProperty(PROPERTY_LOGINTOKEN, currLogintoken);
+        this.getAPISafe(API_ENDPOINT + "/info?username=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
@@ -403,16 +402,7 @@ public class VipCocoleechCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(String accesslink) throws IOException, PluginException {
-        if (!accesslink.contains("?")) {
-            accesslink += "?";
-        } else {
-            accesslink += "&";
-        }
-        accesslink += "key=" + Encoding.urlEncode(apikey);
-        if (currLogintoken != null) {
-            accesslink += "&token=" + currLogintoken;
-        }
+    private void getAPISafe(final String accesslink) throws IOException, PluginException {
         this.br.getPage(accesslink);
         updatestatuscode();
         handleAPIErrors(this.br);
@@ -465,125 +455,26 @@ public class VipCocoleechCom extends PluginForHost {
     }
 
     /**
-     * 0 = everything ok, 100-300 = official errorcodes, 666 = hell
+     * 0 = everything ok, 666 = hell
      */
     private void updatestatuscode() {
-        /* First look for errorcode */
-        String code_str = PluginJSonUtils.getJsonValue(br, "code");
-        if (inValidate(code_str)) {
-            code_str = "0";
-        }
-        statuscode = Integer.parseInt(code_str);
+        /* 2017-02-08: They do not have valid statuscodes at the moment - only errormessages. */
+        statuscode = 0;
     }
 
     private void handleAPIErrors(final Browser br) throws PluginException {
-        final String lang = System.getProperty("user.language");
-        String statusMessage = null;
-        try {
-            switch (statuscode) {
-            case 0:
-                /* Everything ok */
-                break;
-            case 101:
-                /* Everything ok - info.php/info.php successful */
-                break;
-            case 102:
-                statusMessage = "Invalid account";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 103:
-                /* Invalid apikey - this should never happen. We'll just treat this as invalid logindata ... */
-                statusMessage = "Invalid apikey";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 104:
-                /* Missing parameter - this should never happen. We'll just treat this as invalid logindata ... */
-                statusMessage = "Missing parameter";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-
-            case 106:
-                /* ??? We'll just treat this as invalid logindata ... */
-                statusMessage = "Error getting user info";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 108:
-                /* Token not found - this should never happen. We'll just treat this as invalid logindata ... */
-                statusMessage = "Token not found";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 109:
-                /* Empty token - this should never happen. We'll just treat this as invalid logindata ... */
-                statusMessage = "Empty token";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-
-            case 201:
-                /* Everything ok */
-                break;
-            case 202:
-                /* I guess - this should never happen. */
-                statusMessage = "Missing http in front of link";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_missinghttp_should_never_happen", 5, 10 * 60 * 1000l);
-            case 203:
-                /* Individual host limit is reached --> Temp disable that */
-                statusMessage = "Individual host limit reached";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_individual_host", 3, 10 * 60 * 1000l);
-            case 204:
-                statusMessage = "Filehost is under maintenance";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_maintenance", 5, 10 * 60 * 1000l);
-            case 205:
-                /* TODO: Find a solution for this - this should never happen! */
-                statusMessage = "Token expired";
-                throw new PluginException(LinkStatus.ERROR_FATAL, statusMessage);
-            case 206:
-                /* I guess this happens if there is an issue with a particular link but not thze filehost?? */
-                statusMessage = "Error link";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage);
-            case 207:
-                statusMessage = "Failed to generate link";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_filehost_failed_to_generate_final_downloadlink", 30, 10 * 60 * 1000l);
-            case 666:
-                // /* Unknown error */
-                statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
-            default:
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
+        final String statusMessage = PluginJSonUtils.getJsonValue(br, "message");
+        if (statusMessage != null) {
+            if (statusMessage.equalsIgnoreCase("Incorrect log-in or password.")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (statusMessage.matches("Daily limit is reached\\. Hours left:\\s*?\\d+")) {
+                tempUnavailableHoster(10 * 60 * 1000l);
+            } else if (statusMessage.equalsIgnoreCase("Failed to generate link.")) {
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_failedtogeneratelink", 30, 10 * 60 * 1000l);
+            } else {
+                /* Unknown error */
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknownerror", 50, 5 * 60 * 1000l);
             }
-        } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
-            throw e;
         }
     }
 
