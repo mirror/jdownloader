@@ -94,7 +94,7 @@ public class XvideosCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Language", "en-gb");
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
+        while (br.getRedirectLocation() != null) {
             logger.info("Setting new downloadlink: " + br.getRedirectLocation());
             link.setUrlDownload(br.getRedirectLocation());
             br.getPage(link.getDownloadURL());
