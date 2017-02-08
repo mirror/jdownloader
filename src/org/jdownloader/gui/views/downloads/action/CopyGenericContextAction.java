@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -13,6 +15,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
@@ -61,7 +64,6 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     public CopyGenericContextAction() {
         super(true, true);
         setIconKey(IconKey.ICON_COPY);
-
         setName(_GUI.T.CopyGenericContextAction());
         setAccelerator(KeyEvent.VK_C);
     }
@@ -202,10 +204,27 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         }
     }
 
+    private final String replaceDate(String line) {
+        while (true) {
+            final String timeFormat[] = new Regex(line, "(\\{date_(.*?)\\})").getRow(0);
+            if (timeFormat != null) {
+                try {
+                    final SimpleDateFormat dateFormat = new SimpleDateFormat(timeFormat[1], Locale.ENGLISH);
+                    line = line.replace(timeFormat[0], dateFormat.format(new Date(System.currentTimeMillis())));
+                } catch (final Throwable e) {
+                    line = line.replace(timeFormat[0], "");
+                }
+            } else {
+                return line;
+            }
+        }
+    }
+
     public void add(StringBuilder sb, AbstractNode pv, final boolean contentPermission) {
         String line = null;
         if (pv instanceof FilePackage) {
             line = getPatternPackages();
+            line = replaceDate(line);
             final FilePackage pkg = (FilePackage) pv;
             final FilePackageView fpv = new FilePackageView(pkg);
             fpv.aggregate();
@@ -232,6 +251,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(null));
         } else if (pv instanceof DownloadLink) {
             line = getPatternLinks();
+            line = replaceDate(line);
             final DownloadLink link = (DownloadLink) pv;
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
@@ -260,6 +280,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledLink) {
             line = getPatternLinks();
+            line = replaceDate(line);
             final CrawledLink link = (CrawledLink) pv;
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
@@ -288,6 +309,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_URL_REFERRER, nulltoString(LinkTreeUtils.getUrlByType(UrlDisplayType.REFERRER, link)));
         } else if (pv instanceof CrawledPackage) {
             line = getPatternPackages();
+            line = replaceDate(line);
             final CrawledPackage pkg = (CrawledPackage) pv;
             final CrawledPackageView fpv = new CrawledPackageView();
             final boolean readL = pkg.getModifyLock().readLock();
