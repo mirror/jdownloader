@@ -2,22 +2,16 @@ package jd.controlling.downloadcontroller;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkCandidateHistory {
 
@@ -133,9 +127,8 @@ public class DownloadLinkCandidateHistory {
 
     public DownloadLinkCandidateResult getBlockingHistory(DownloadLinkCandidateSelector selector, DownloadLinkCandidate candidate) {
         if (selector != null && candidate != null) {
-            final List<DownloadLinkCandidateResult> ret = getResults(candidate.getCachedAccount());
-            final HashMap<RESULT, AtomicInteger> resultCounterMap = new HashMap<RESULT, AtomicInteger>();
-            final Iterator<DownloadLinkCandidateResult> it = ret.iterator();
+            final List<DownloadLinkCandidateResult> results = getResults(candidate.getCachedAccount());
+            final Iterator<DownloadLinkCandidateResult> it = results.iterator();
             while (it.hasNext()) {
                 final DownloadLinkCandidateResult next = it.next();
                 switch (next.getResult()) {
@@ -163,7 +156,6 @@ public class DownloadLinkCandidateHistory {
                     throw new WTFException("This should not happen! " + next.getResult() + " should already be handled in onDetach!");
                 case FILE_UNAVAILABLE:
                 case CONNECTION_ISSUES:
-                    resultCounterMap.clear();
                     /* these results(above) can TEMP. block */
                     if (next.getRemainingTime() <= 0) {
                         break;
@@ -175,25 +167,13 @@ public class DownloadLinkCandidateHistory {
                 case CAPTCHA:
                 case FAILED_INCOMPLETE:
                 case RETRY:
-                    AtomicInteger resultCounter = resultCounterMap.get(next.getResult());
-                    if (resultCounter == null) {
-                        resultCounter = new AtomicInteger(1);
-                        resultCounterMap.put(next.getResult(), resultCounter);
-                    } else {
-                        resultCounter.incrementAndGet();
-                    }
-                    if (resultCounter.get() > 5) {
-                        final DownloadLinkCandidateResult block = new DownloadLinkCandidateResult(RESULT.FILE_UNAVAILABLE, null, candidate.getCachedAccount().getHost(), false);
-                        block.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime());
-                        return block;
-                    }
                     /* these results(above) do NEVER block */
                     break;
                 }
             }
-            final int maxNumberOfDownloadLinkCandidates = selector.getMaxNumberOfDownloadLinkCandidatesResults(candidate);
-            if (maxNumberOfDownloadLinkCandidates > 0 && size() > maxNumberOfDownloadLinkCandidates) {
-                return new DownloadLinkCandidateResult(SkipReason.TOO_MANY_RETRIES, null, null);
+            final DownloadLinkCandidateResult block = selector.getBlockingDownloadLinkCandidateResult(candidate, results, this);
+            if (block != null) {
+                return block;
             }
         }
         return null;
