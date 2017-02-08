@@ -67,16 +67,26 @@ public class HlsContainer {
     private String codecs;
     private String downloadurl;
 
+    private int    width     = -1;
+    private int    height    = -1;
+    private int    bandwidth = -1;
+
+    public String getCodecs() {
+        return this.codecs;
+    }
+
     public String getDownloadurl() {
         return downloadurl;
     }
 
-    private int width     = -1;
-    private int height    = -1;
-    private int bandwidth = -1;
-
-    public String getCodecs() {
-        return this.codecs;
+    public boolean isVideo() {
+        if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34")) {
+            return false;
+        } else if (this.width == -1 && this.height == -1) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public int getWidth() {
@@ -111,14 +121,20 @@ public class HlsContainer {
         if (codecs != null) {
             filename += "_" + codecs;
         }
-        if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34")) {
-            filename += ".mp3";
-        } else if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2")) {
-            filename += ".aac";
-        } else {
-            filename += ".mp4";
-        }
+        filename += getFileExtension();
         return filename;
+    }
+
+    public String getFileExtension() {
+        final String ext;
+        if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34")) {
+            ext = ".mp3";
+        } else if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2")) {
+            ext = ".aac";
+        } else {
+            ext = ".mp4";
+        }
+        return ext;
     }
 
 }
