@@ -270,7 +270,11 @@ public class ExtractionListenerList implements ExtractionListener {
                     if (lastAccessArchiveFile != null && lastAccessArchiveFile == archiveFile) {
                         lastAccessArchiveFile.setStatus(controller, ExtractionStatus.ERROR_CRC);
                     } else {
-                        archiveFile.setMessage(controller, errorMsg);
+                        if (currentArchive.getCrcError().contains(archiveFile)) {
+                            archiveFile.setStatus(controller, ExtractionStatus.ERROR_CRC);
+                        } else {
+                            archiveFile.setMessage(controller, errorMsg);
+                        }
                     }
                 }
             } else {
@@ -322,7 +326,6 @@ public class ExtractionListenerList implements ExtractionListener {
             setProgress(controller, rootArchive, controller.getProcessedBytes(), controller.getCompleteBytes(), green);
             break;
         case EXTRACTION_FAILED_CRC:
-
             logger.warning("Extraction failed(CRC)");
             setStatus(controller, rootArchive, ExtractionStatus.ERROR);
             if (currentArchive == rootArchive) {
@@ -343,7 +346,6 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
             }
             cleanupIncompleteExtraction(controller, currentArchive);
-
             break;
         case FINISHED:
             setStatus(controller, rootArchive, ExtractionStatus.SUCCESSFUL);
