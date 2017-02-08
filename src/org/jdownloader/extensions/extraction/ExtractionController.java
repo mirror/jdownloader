@@ -476,8 +476,18 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
                 return null;
             } else {
-                crashLog.write("Failed");
-                fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
+                switch (archive.getExitCode()) {
+                case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
+                    crashLog.write("A CRC error occurred when unpacking " + archive);
+                    crashLog.write("CRC Error occured");
+                    crashLog.write("Failed");
+                    fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
+                    break;
+                default:
+                    crashLog.write("Failed");
+                    fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
+                    break;
+                }
             }
         } catch (Exception e) {
             logger.log(e);
@@ -524,7 +534,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 link.deleteFile(remove);
             }
             if (ArchiveType.RAR_MULTI.equals(archive.getArchiveType())) {
-                // Deleteing rar recovery volumes
+                // Deleting rar recovery volumes
                 final HashSet<String> done = new HashSet<String>();
                 for (final ArchiveFile link : archive.getArchiveFiles()) {
                     if (done.add(link.getName())) {

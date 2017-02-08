@@ -1266,6 +1266,19 @@ public class Multi extends IExtraction {
             initFilters();
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "can't be opened")) {
+                try {
+                    if (!validateArchiveParts(archive)) {
+                        if (archive.getCrcError().size() > 0) {
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                        }
+                        return false;
+                    }
+                } catch (final IOException e2) {
+                    logger.log(e);
+                    throw new ExtractionException(e2, null);
+                }
+            }
             if (e.getMessage() != null && (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided"))) {
                 /* password required */
                 archive.setProtected(true);
@@ -1278,6 +1291,20 @@ public class Multi extends IExtraction {
         } catch (Throwable e) {
             logger.log(e);
             throw new ExtractionException(e, null);
+        }
+        return true;
+    }
+
+    private boolean validateArchiveParts(Archive archive) throws IOException {
+        final ArchiveFormat format = archive.getArchiveFormat();
+        if (format.name().startsWith("RAR")) {
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                if (!ArchiveType.RAR_SINGLE.isValidPart(0, archiveFile)) {
+                    archive.addCrcError(archiveFile);
+                    logger.severe("Missing/Broken RAR Signature: " + archiveFile);
+                }
+            }
+            return archive.getCrcError().size() == 0;
         }
         return true;
     }

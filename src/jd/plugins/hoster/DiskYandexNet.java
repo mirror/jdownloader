@@ -51,7 +51,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -238,6 +238,7 @@ public class DiskYandexNet extends PluginForHost {
         String filename = (String) entries.get("name");
         final String path = (String) entries.get("path");
         final String md5 = (String) entries.get("md5");
+        final String sha256 = (String) entries.get("sha256");
         if (error != null || filename == null || path == null || hash == null || filesize == -1) {
             /* Whatever - our link is probably offline! */
             dl.setAvailable(false);
@@ -246,6 +247,9 @@ public class DiskYandexNet extends PluginForHost {
         filename = plugin.encodeUnicode(filename);
         if (md5 != null) {
             dl.setMD5Hash(md5);
+        }
+        if (sha256 != null) {
+            dl.setSha256Hash(sha256);
         }
         dl.setProperty("path", path);
         dl.setProperty("hash_main", hash);
