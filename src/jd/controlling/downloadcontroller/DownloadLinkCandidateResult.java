@@ -47,6 +47,11 @@ public class DownloadLinkCandidateResult {
     private String           message   = null;
     private final String     lastPluginHost;
     private final boolean    reachedDownloadInterface;
+    private final long       timeStamp = System.currentTimeMillis();
+
+    public long getTimeStamp() {
+        return timeStamp;
+    }
 
     public boolean isReachedDownloadInterface() {
         return reachedDownloadInterface;
@@ -92,7 +97,11 @@ public class DownloadLinkCandidateResult {
     }
 
     public long getFinishTime() {
-        return finishTime;
+        if (finishTime == -1) {
+            return getTimeStamp();
+        } else {
+            return finishTime;
+        }
     }
 
     private long finishTime = -1;
