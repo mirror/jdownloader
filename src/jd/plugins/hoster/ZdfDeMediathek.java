@@ -38,8 +38,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -49,7 +52,6 @@ public class ZdfDeMediathek extends PluginForHost {
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @SuppressWarnings("deprecation")
@@ -365,32 +367,11 @@ public class ZdfDeMediathek extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private static final String Q_SUBTITLES                                         = "Q_SUBTITLES";
-    private static final String Q_BEST                                              = "Q_BEST";
-    private static final String Q_LOW                                               = "Q_LOW";
-    private static final String Q_HIGH                                              = "Q_HIGH";
-    private static final String Q_VERYHIGH                                          = "Q_VERYHIGH";
-    private static final String Q_HD                                                = "Q_HD";
-    private static final String FASTLINKCHECK                                       = "FASTLINKCHECK";
     public static final String  NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE        = "NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE";
     public static final boolean defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE = false;
 
+    /* TODO 2017-02-08: Move NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE to the new settings, then remove that old stuff. */
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        // final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST,
-        // JDL.L("plugins.hoster.zdf.best", "Load best version ONLY")).setDefaultValue(false);
-        // getConfig().addEntry(bestonly);
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow",
-        // "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH,
-        // JDL.L("plugins.hoster.zdf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH,
-        // JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd",
-        // "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.zdf.fastlinkcheck", "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, JDL.L("plugins.hoster.zdf.neomagazin_royale_de_current_episode", "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?")).setDefaultValue(defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE));
     }
 
@@ -399,138 +380,138 @@ public class ZdfDeMediathek extends PluginForHost {
         return "Lade Video- und Audioinhalte aus der ZDFMediathek herunter";
     }
 
-    // @Override
-    // public Class<? extends PluginConfigInterface> getConfigInterface() {
-    // return ZdfmediathekConfigInterface.class;
-    // }
-    //
-    // public static interface ZdfmediathekConfigInterface extends PluginConfigInterface {
-    //
-    // public static class TRANSLATION {
-    //
-    // public String getGrabSubtitleEnabled() {
-    // return "Untertitel herunterladen?";
-    // }
-    //
-    // public String getGrabAudio_label() {
-    // return "Audio herunterladen?";
-    // }
-    //
-    // public String getGrabBESTEnabled_label() {
-    // return "Nur die beste (HLS) Qualitätsstufe herunterladen?";
-    // }
-    // }
-    //
-    // public static final TRANSLATION TRANSLATION = new TRANSLATION();
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(9)
-    // boolean isFastLinkcheckEnabled();
-    //
-    // void setFastLinkcheckEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(false)
-    // @Order(10)
-    // boolean isGrabSubtitleEnabled();
-    //
-    // void setGrabSubtitleEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(false)
-    // @Order(11)
-    // boolean isGrabAudio();
-    //
-    // void setGrabAudio(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(20)
-    // boolean isGrabBESTEnabled();
-    //
-    // void setGrabBESTEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(30)
-    // boolean isGrabHLS170pVideoEnabled();
-    //
-    // void setGrabHLS170pVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(40)
-    // boolean isGrabHLS270pVideoEnabled();
-    //
-    // void setGrabHLS270pVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(50)
-    // boolean isGrabHLS360pVideoEnabled();
-    //
-    // void setGrabHLS360pVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(60)
-    // boolean isGrabHLS480pVideoEnabled();
-    //
-    // void setGrabHLS480pVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(70)
-    // boolean isGrabHLS570pVideoEnabled();
-    //
-    // void setGrabHLS570pVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(80)
-    // boolean isGrabHLS720pVideoEnabled();
-    //
-    // void setGrabHLS720pVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(90)
-    // boolean isGrabHTTPMp4LowVideoEnabled();
-    //
-    // void setGrabHTTPMp4LowVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(100)
-    // boolean isGrabHTTPMp4MediumVideoEnabled();
-    //
-    // void setGrabHTTPMp4MediumVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(110)
-    // boolean isGrabHTTPMp4HighVideoEnabled();
-    //
-    // void setGrabHTTPMp4HighVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(120)
-    // boolean isGrabHTTPMp4VeryHighVideoEnabled();
-    //
-    // void setGrabHTTPMp4VeryHighVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(130)
-    // boolean isGrabHTTPWebmLowVideoEnabled();
-    //
-    // void setGrabHTTPWebmLowVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(140)
-    // boolean isGrabHTTPWebmMediumVideoEnabled();
-    //
-    // void setGrabHTTPWebmMediumVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(150)
-    // boolean isGrabHTTPWebmHighVideoEnabled();
-    //
-    // void setGrabHTTPWebmHighVideoEnabled(boolean b);
-    //
-    // @DefaultBooleanValue(true)
-    // @Order(160)
-    // boolean isGrabHTTPWebmVeryHighVideoEnabled();
-    //
-    // void setGrabHTTPWebmVeryHighVideoEnabled(boolean b);
-    //
-    // }
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return ZdfmediathekConfigInterface.class;
+    }
+
+    public static interface ZdfmediathekConfigInterface extends PluginConfigInterface {
+
+        public static class TRANSLATION {
+
+            public String getGrabSubtitleEnabled() {
+                return "Untertitel herunterladen?";
+            }
+
+            public String getGrabAudio_label() {
+                return "Audio herunterladen?";
+            }
+
+            public String getGrabBESTEnabled_label() {
+                return "Nur die beste (HLS) Qualitätsstufe herunterladen?";
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(10)
+        boolean isGrabSubtitleEnabled();
+
+        void setGrabSubtitleEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(11)
+        boolean isGrabAudio();
+
+        void setGrabAudio(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isGrabBESTEnabled();
+
+        void setGrabBESTEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrabHLS170pVideoEnabled();
+
+        void setGrabHLS170pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isGrabHLS270pVideoEnabled();
+
+        void setGrabHLS270pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(50)
+        boolean isGrabHLS360pVideoEnabled();
+
+        void setGrabHLS360pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(60)
+        boolean isGrabHLS480pVideoEnabled();
+
+        void setGrabHLS480pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(70)
+        boolean isGrabHLS570pVideoEnabled();
+
+        void setGrabHLS570pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(80)
+        boolean isGrabHLS720pVideoEnabled();
+
+        void setGrabHLS720pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(90)
+        boolean isGrabHTTPMp4LowVideoEnabled();
+
+        void setGrabHTTPMp4LowVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(100)
+        boolean isGrabHTTPMp4HighVideoEnabled();
+
+        void setGrabHTTPMp4HighVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(110)
+        boolean isGrabHTTPMp4VeryHighVideoEnabled();
+
+        void setGrabHTTPMp4VeryHighVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(120)
+        boolean isGrabHTTPMp4HDVideoEnabled();
+
+        void setGrabHTTPMp4HDVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(130)
+        boolean isGrabHTTPWebmLowVideoEnabled();
+
+        void setGrabHTTPWebmLowVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(140)
+        boolean isGrabHTTPWebmHighVideoEnabled();
+
+        void setGrabHTTPWebmHighVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(150)
+        boolean isGrabHTTPWebmVeryHighVideoEnabled();
+
+        void setGrabHTTPWebmVeryHighVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(160)
+        boolean isGrabHTTPWebmHDVideoEnabled();
+
+        void setGrabHTTPWebmHDVideoEnabled(boolean b);
+
+    }
 
 }
