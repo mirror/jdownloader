@@ -24,18 +24,16 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -50,38 +48,34 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "florenfile.com", "lafile.com" }, urls = { "https?://(www\\.)?(lafile|florenfile)\\.com/(vidembed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
-public class LaFileCom extends PluginForHost {
+public class LaFileCom extends antiDDoSForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                  = "";
+    private String               passCode                     = null;
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String            COOKIE_HOST                  = "http://florenfile.com";
+    private static final String  COOKIE_HOST                  = "http://florenfile.com";
     // domain names used within download links.
-    private static final String            DOMAINS                      = "(florenfile\\.com)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private final boolean                  useRUA                       = true;
+    private static final String  DOMAINS                      = "(florenfile\\.com)";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean SUPPORTSHTTPS                = true;
 
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
     // fail. .:. use [1-20]
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch the following!
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static AtomicReference<String> userAgent                    = new AtomicReference<String>(null);
-    private static Object                  LOCK                         = new Object();
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.0
@@ -108,6 +102,8 @@ public class LaFileCom extends PluginForHost {
         // link cleanup, but respect users protocol choosing.
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        } else {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
@@ -132,24 +128,24 @@ public class LaFileCom extends PluginForHost {
         return true;
     }
 
-    public void prepBrowser(final Browser br) {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (useRUA) {
-            if (userAgent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", userAgent.get());
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
         }
+        return prepBr;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        prepBrowser(br);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -239,7 +235,7 @@ public class LaFileCom extends PluginForHost {
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
             final Browser brv = br.cloneBrowser();
-            brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            getPage(brv, "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = brv.getRedirectLocation();
         }
         // Fourth, continue like normal.
@@ -260,7 +256,7 @@ public class LaFileCom extends PluginForHost {
                     }
                 }
                 // end of backward compatibility
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
@@ -361,7 +357,7 @@ public class LaFileCom extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
@@ -521,19 +517,21 @@ public class LaFileCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -809,7 +807,6 @@ public class LaFileCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -834,7 +831,7 @@ public class LaFileCom extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -846,15 +843,9 @@ public class LaFileCom extends PluginForHost {
                 } else {
                     account.setProperty("nopremium", false);
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(COOKIE_HOST));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -885,7 +876,7 @@ public class LaFileCom extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
