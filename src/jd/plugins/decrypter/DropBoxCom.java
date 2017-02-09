@@ -132,7 +132,7 @@ public class DropBoxCom extends PluginForDecrypt {
             if (redirect != null) {
                 br.getPage(redirect);
             }
-            if (con.getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel")) {
+            if (this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
                 final DownloadLink dl = this.createOfflinelink(link);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
