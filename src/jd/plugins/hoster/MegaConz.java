@@ -66,6 +66,7 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
@@ -73,13 +74,11 @@ import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/(#N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:///#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-]{16,}" })
 public class MegaConz extends PluginForHost {
-    private static AtomicLong CS             = new AtomicLong(System.currentTimeMillis());
-    private final String      USE_SSL        = "USE_SSL_V2";
-    private final String      CHECK_RESERVED = "CHECK_RESERVED";
-    private final String      USE_TMP        = "USE_TMP_V2";
-    private final String      HIDE_APP       = "HIDE_APP";
-    private final String      encrypted      = ".encrypted";
-    private final String      API_URL        = "https://eu.api.mega.co.nz";
+    private final String USE_SSL        = "USE_SSL_V2";
+    private final String CHECK_RESERVED = "CHECK_RESERVED";
+    private final String USE_TMP        = "USE_TMP_V2";
+    private final String HIDE_APP       = "HIDE_APP";
+    private final String encrypted      = ".encrypted";
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -278,7 +277,7 @@ public class MegaConz extends PluginForHost {
 
     private Map<String, Object> apiRequest(Account account, final String sid, final UrlQuery additionalUrlQuery, final String action, final Object[]... postParams) throws Exception {
         final UrlQuery query = new UrlQuery();
-        query.add("id", String.valueOf(CS.incrementAndGet()));
+        query.add("id", UniqueAlltimeID.create());
         if (StringUtils.isNotEmpty(sid)) {
             query.add("sid", sid);
         }
@@ -289,7 +288,7 @@ public class MegaConz extends PluginForHost {
         if (additionalUrlQuery != null) {
             query.addAll(additionalUrlQuery.list());
         }
-        final PostRequest request = new PostRequest(API_URL + "/cs?" + query);
+        final PostRequest request = new PostRequest(getAPI() + "/cs?" + query);
         if (!hideApp) {
             request.getHeaders().put("APPID", "JDownloader");
         } else {
@@ -867,11 +866,22 @@ public class MegaConz extends PluginForHost {
         return ret;
     }
 
+    private final static String USE_GLOBAL_CDN = "USE_GLOBAL_CDN";
+
+    private final String getAPI() {
+        if (getPluginConfig().getBooleanProperty(USE_GLOBAL_CDN, true)) {
+            return "https://g.api.mega.co.nz";
+        } else {
+            return "https://eu.api.mega.co.nz";
+        }
+    }
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Do not send application identifier?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
     }
 
     private static Object DECRYPTLOCK = new Object();
