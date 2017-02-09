@@ -16,16 +16,11 @@
 
 package jd.plugins.hoster;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,13 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @HostPlugin(revision = "$Revision: 35421 $", interfaceVersion = 3, names = { "f4m" }, urls = { "f4ms?://.+?(\\.f4m?(\\?.+)?|$)" })
 public class GenericF4M extends PluginForHost {
@@ -101,105 +92,25 @@ public class GenericF4M extends PluginForHost {
         if (referer != null) {
             br.getPage(referer);
         }
-        final URLConnectionAdapter con = br.openGetConnection(downloadLink.getPluginPatternMatcher());
-        if (!con.isOK()) {
-            br.followConnection();
+        br.getPage(downloadLink.getPluginPatternMatcher());
+        final HDSContainer container = HDSContainer.read(downloadLink);
+        if (container == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Document d;
-        try {
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            d = parser.parse(con.getInputStream());
-        } finally {
-            con.disconnect();
+        final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
+        if (all == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-        final NodeList root = (NodeList) xPath.evaluate("/manifest", d, XPathConstants.NODESET);
-        final Node durationNode = getNodeByName(root.item(0).getChildNodes(), "duration");
-        final NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-        final String fragmentURL = getBestMatchingFragmentURL(downloadLink, mediaUrls);
-        if (fragmentURL == null) {
+        final HDSContainer hit = HDSContainer.getBestMatchingContainer(all, container);
+        if (hit == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            downloadLink.setProperty("fragmentUrl", fragmentURL);
-            final HDSDownloader dl = new HDSDownloader(downloadLink, br, fragmentURL);
+            hit.write(downloadLink);
+            final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
             this.dl = dl;
-            if (durationNode != null) {
-                final String durationText = durationNode.getTextContent();
-                try {
-                    final long parsedDuration;
-                    final int dotIndex = durationText.indexOf('.');
-                    if (dotIndex != -1) {
-                        final String msnsCheck = durationText.substring(dotIndex + 1);
-                        if (msnsCheck.length() == 6) {
-                            parsedDuration = Long.parseLong(durationText.replace(".", "")) / 1000;
-                        } else if (msnsCheck.length() == 3) {
-                            parsedDuration = Long.parseLong(durationText.replace(".", ""));
-                        } else {
-                            throw new WTFException("Unparsable duration:" + durationText);
-                        }
-                    } else {
-                        throw new WTFException("Unparsable duration:" + durationText);
-                    }
-                    dl.setEstimatedDuration(parsedDuration);
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
-            }
+            dl.setEstimatedDuration(hit.getDuration());
             dl.startDownload();
         }
-    }
-
-    private String getBestMatchingFragmentURL(final DownloadLink downloadLink, NodeList mediaUrls) {
-        final String fragmentUrl = downloadLink.getStringProperty("fragmentUrl", null);
-        final String streamId = downloadLink.getStringProperty("streamId", null);
-        final String bitrate = downloadLink.getStringProperty("bitrate", null);
-        final String width = downloadLink.getStringProperty("width", null);
-        final String height = downloadLink.getStringProperty("height", null);
-        final String qualityMatch = bitrate + "_" + width + "_" + height;
-        for (int index = 0; index < mediaUrls.getLength(); index++) {
-            final Node media = mediaUrls.item(index);
-            final String media_fragmentUrl = getAttByNamedItem(media, "url");
-            if (media_fragmentUrl != null) {
-                if (fragmentUrl.equals(media_fragmentUrl)) {
-                    return media_fragmentUrl;
-                }
-                final String media_streamId = GenericF4M.getAttByNamedItem(media, "streamId");
-                if (streamId != null && streamId.equals(media_streamId)) {
-                    return media_fragmentUrl;
-                }
-                final String media_width = GenericF4M.getAttByNamedItem(media, "width");
-                final String media_height = GenericF4M.getAttByNamedItem(media, "height");
-                final String media_bitrate = GenericF4M.getAttByNamedItem(media, "bitrate");
-                if (qualityMatch.equals(media_bitrate + "_" + media_width + "_" + media_height)) {
-                    return media_fragmentUrl;
-                }
-            }
-        }
-        return null;
-    }
-
-    public static Node getNodeByName(final NodeList nodes, final String name) {
-        if (nodes != null && nodes.getLength() > 0) {
-            for (int index = 0; index < nodes.getLength(); index++) {
-                final Node node = nodes.item(index);
-                if (StringUtils.equals(node.getNodeName(), name)) {
-                    return node;
-                }
-            }
-        }
-        return null;
-    }
-
-    public static String getAttByNamedItem(final Node node, final String item) {
-        if (node != null && node.hasAttributes()) {
-            final Node attribute = node.getAttributes().getNamedItem(item);
-            if (attribute != null) {
-                final String content = attribute.getTextContent();
-                return (content != null ? content.trim() : null);
-            }
-        }
-        return null;
     }
 
     @Override
