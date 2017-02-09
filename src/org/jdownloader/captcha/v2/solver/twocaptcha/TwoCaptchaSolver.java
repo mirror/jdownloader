@@ -24,7 +24,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_TWO_CAPTCHA;
 
 public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
-    private TwoCaptchaConfigInterface     config;
+
     private static final TwoCaptchaSolver INSTANCE = new TwoCaptchaSolver();
 
     public static TwoCaptchaSolver getInstance() {
