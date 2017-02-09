@@ -65,8 +65,6 @@ public class NitroFlareCom extends antiDDoSForHost {
     private final String         baseURL                      = "https://nitroflare.com";
     private final String         apiURL                       = "http://nitroflare.com/api/v2";
 
-    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
@@ -383,8 +381,9 @@ public class NitroFlareCom extends antiDDoSForHost {
      *            (+1|-1)
      */
     private synchronized void controlFree(final int num) {
-        logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        int totalMaxSimultanFreeDownload = this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false) ? 20 : 1;
+        logger.info("maxFree was = " + maxFree.get() + " total is = " + totalMaxSimultanFreeDownload + " change " + num);
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload));
         logger.info("maxFree now = " + maxFree.get());
     }
 
@@ -525,9 +524,6 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (useAPI()) {
             return fetchAccountInfoApi(account);
         } else {
-            if (this.getPluginConfig().getBooleanProperty(allowMultipleFreeDownloads, false)) {
-                totalMaxSimultanFreeDownload.set(20);
-            }
             return fetchAccountInfoWeb(account, false, true);
         }
     }
