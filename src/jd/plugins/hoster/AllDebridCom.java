@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,10 +42,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://(?:[a-z]\\d+\\.alldebrid\\.com|[a-z0-9]+\\.alld\\.io)/dl/[a-z0-9]+/.+" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -97,8 +97,7 @@ public class AllDebridCom extends antiDDoSForHost {
                     if (host == null || host.length() == 0) {
                         continue;
                     }
-                    host = host.trim();
-                    host = host.substring(1, host.length() - 1);
+                    host = host.replace("\"", "").trim();
                     // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
                     try {
                         if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) {
