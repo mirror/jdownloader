@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.util.Scanner;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -36,7 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -367,14 +364,6 @@ public class ZdfDeMediathek extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    public static final String  NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE        = "NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE";
-    public static final boolean defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE = false;
-
-    /* TODO 2017-02-08: Move NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE to the new settings, then remove that old stuff. */
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, JDL.L("plugins.hoster.zdf.neomagazin_royale_de_current_episode", "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?")).setDefaultValue(defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE));
-    }
-
     @Override
     public String getDescription() {
         return "Lade Video- und Audioinhalte aus der ZDFMediathek herunter";
@@ -400,9 +389,23 @@ public class ZdfDeMediathek extends PluginForHost {
             public String getGrabBESTEnabled_label() {
                 return "Nur die beste (HLS) Qualitätsstufe herunterladen?";
             }
+
+            public String getNeoMagazinRoyaleDeOnlyGrabCurrentEpisode_label() {
+                return "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?";
+            }
+
+            public String getGrabUnknownQualitiesEnabled_label() {
+                return "[Empfohlen] Lade unbekannte Qualitätsstufen herunter?";
+            }
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(8)
+        boolean isNeoMagazinRoyaleDeOnlyGrabCurrentEpisode();
+
+        void setNeoMagazinRoyaleDeOnlyGrabCurrentEpisode(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(9)
@@ -427,6 +430,12 @@ public class ZdfDeMediathek extends PluginForHost {
         boolean isGrabBESTEnabled();
 
         void setGrabBESTEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(21)
+        boolean isGrabUnknownQualitiesEnabled();
+
+        void setGrabUnknownQualitiesEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(30)

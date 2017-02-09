@@ -71,6 +71,18 @@ public class HlsContainer {
     private int    height    = -1;
     private int    bandwidth = -1;
 
+    private boolean isAudioMp3() {
+        return StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34");
+    }
+
+    private boolean isAudioAac() {
+        return StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2");
+    }
+
+    private boolean isAudio() {
+        return isAudioMp3() || isAudioAac();
+    }
+
     public String getCodecs() {
         return this.codecs;
     }
@@ -80,9 +92,10 @@ public class HlsContainer {
     }
 
     public boolean isVideo() {
-        if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34")) {
+        if (isAudio()) {
             return false;
         } else if (this.width == -1 && this.height == -1) {
+            /* wtf case */
             return false;
         } else {
             return true;
@@ -90,15 +103,27 @@ public class HlsContainer {
     }
 
     public int getWidth() {
-        return this.width;
+        final int width;
+        if (this.isAudio()) {
+            width = 0;
+        } else {
+            width = this.width;
+        }
+        return width;
     }
 
     public int getHeight() {
-        return this.height;
+        final int height;
+        if (this.isAudio()) {
+            height = 0;
+        } else {
+            height = this.height;
+        }
+        return height;
     }
 
     public String getResolution() {
-        return this.width + "x" + this.height;
+        return this.getWidth() + "x" + this.getHeight();
     }
 
     public int getBandwidth() {
@@ -127,9 +152,9 @@ public class HlsContainer {
 
     public String getFileExtension() {
         final String ext;
-        if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34")) {
+        if (isAudioMp3()) {
             ext = ".mp3";
-        } else if (StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2")) {
+        } else if (isAudioAac()) {
             ext = ".aac";
         } else {
             ext = ".mp4";

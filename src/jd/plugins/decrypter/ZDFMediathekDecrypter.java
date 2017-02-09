@@ -30,7 +30,6 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -85,7 +84,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         this.br.setAllowedResponseCodes(500);
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         PARAMETER = param.toString();
         PARAMETER_ORIGINAL = param.toString();
 
@@ -95,7 +93,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (this.PARAMETER_ORIGINAL.matches(TYPE_ZDF_EMBEDDED_HEUTE)) {
             this.crawlEmbeddedUrlsHeute();
         } else if (this.PARAMETER_ORIGINAL.matches(TYPE_ZDF_EMBEDDED_NEO_MAGAZIN)) {
-            this.crawlEmbeddedUrlsNeoMagazin(cfg);
+            this.crawlEmbeddedUrlsNeoMagazin();
         } else if (PARAMETER_ORIGINAL.matches(TYPE_ZDF)) {
             getDownloadLinksZdfNew();
         } else {
@@ -132,13 +130,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return;
     }
 
-    private void crawlEmbeddedUrlsNeoMagazin(final SubConfiguration cfg) throws Exception {
+    private void crawlEmbeddedUrlsNeoMagazin() throws Exception {
         br.getPage(this.PARAMETER);
         if (br.containsHTML("Der Beitrag konnte nicht gefunden werden") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
             return;
         }
-        final boolean neomagazinroyale_only_add_current_episode = cfg.getBooleanProperty(jd.plugins.hoster.ZdfDeMediathek.NEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE, jd.plugins.hoster.ZdfDeMediathek.defaultNEOMAGAZINROYALE_DE_ADD_ONLY_CURRENT_EPISODE);
+        final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
+        final boolean neomagazinroyale_only_add_current_episode = cfg.isNeoMagazinRoyaleDeOnlyGrabCurrentEpisode();
         final String[] htmls = this.br.getRegex("<div[^>]*?class=\"modules\" id=\"teaser\\-\\d+\"[^>]*?>.*?</div>\\s*?</div>\\s*?</div>\\s*?</div>").getColumn(-1);
         for (final String html : htmls) {
             /* These urls go back into the decrypter. */
@@ -174,7 +173,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked" })
     private void getDownloadLinksZdfNew() throws Exception {
-        List<String> all_known_qualities = Arrays.asList("http_mp4_low", "http_mp4_high", "http_mp4_veryhigh", "http_mp4_hd", "http_webm_low", "http_webm_high", "http_webm_veryhigh", "http_webm_hd", "hls_mp4_170", "hls_mp4_270", "hls_mp4_360", "hls_mp4_480", "hls_mp4_720");
+        List<String> all_known_qualities = Arrays.asList("http_mp4_low", "http_mp4_high", "http_mp4_veryhigh", "http_mp4_hd", "http_webm_low", "http_webm_high", "http_webm_veryhigh", "http_webm_hd", "hls_mp4_170", "hls_mp4_270", "hls_mp4_360", "hls_mp4_480", "hls_mp4_720", "hls_aac_0");
         ArrayList<String> all_selected_qualities = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
@@ -182,8 +181,13 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         fastlinkcheck = cfg.isFastLinkcheckEnabled();
         grabSubtitles = cfg.isGrabSubtitleEnabled();
 
-        /* TODO */
-        // final boolean grabAudio = cfg.isGrabAudio();
+        final boolean grabUnknownQualities = cfg.isGrabUnknownQualitiesEnabled();
+
+        final boolean grabHlsAudio = cfg.isGrabAudio();
+
+        if (grabHlsAudio) {
+            all_selected_qualities.add("hls_aac_0");
+        }
 
         final boolean grabHls170 = cfg.isGrabHLS170pVideoEnabled();
         final boolean grabHls270 = cfg.isGrabHLS270pVideoEnabled();
@@ -243,8 +247,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             all_selected_qualities.add("http_webm_hd");
         }
 
-        /* TODO: If one of these is false, we can save http requests and thus time. */
-        final boolean grabHLS = grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls720;
+        final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls720;
         /*
          * 2017-02-08: The only thing download has and http stream has not == http veryhigh --> Only grab this if user has selected it
          * explicitly!
@@ -404,7 +407,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
 
                     final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("qualities");
-                    /* TODO: Skip unwanted types here! */
                     for (final Object qualities_o : qualities) {
 
                         if (this.isAbort()) {
@@ -521,8 +523,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             while (iterator_all_found_downloadlinks.hasNext()) {
                 final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
                 final String dl_quality_string = dl_entry.getKey();
-                /* Add quality if the user wants it or if it is an unknown quality. */
-                if (all_selected_qualities.contains(dl_quality_string) || !all_known_qualities.contains(dl_quality_string)) {
+                if (all_selected_qualities.contains(dl_quality_string) || (!all_known_qualities.contains(dl_quality_string) && grabUnknownQualities)) {
                     addDownloadLink(dl_entry.getValue());
                 }
             }
