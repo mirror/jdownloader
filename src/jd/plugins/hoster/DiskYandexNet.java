@@ -75,7 +75,7 @@ public class DiskYandexNet extends PluginForHost {
 
     /* Some constants which they used in browser */
     public static final String    CLIENT_ID                          = "6214e1ac6b579eb984b716151bcb5143";
-    public static String          VERSION                            = "2.22.1";
+    public static String          VERSION                            = "8.5";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Different languages == different 'downloads' directory names */
@@ -105,12 +105,19 @@ public class DiskYandexNet extends PluginForHost {
     private String                currHash                           = null;
     private String                currPath                           = null;
 
-    private static final boolean  use_api_file_free_availablecheck   = true;
-    private static final boolean  use_api_file_free_download         = true;
+    /* 2017-02-08: Disabled API usage due to issues/ especially the download API request seems not to work anymore. */
+    private static final boolean  use_api_file_free_availablecheck   = false;
+    private static final boolean  use_api_file_free_download         = false;
 
     /* Make sure we always use our main domain */
-    private String getMainLink(final DownloadLink dl) {
+    private String getMainLink(final DownloadLink dl) throws PluginException {
         String mainlink = dl.getStringProperty("mainlink", null);
+        if (mainlink == null && this.currHash != null) {
+            mainlink = String.format("https://yadi.sk/public/?hash=%s", this.currHash);
+        }
+        if (mainlink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!StringUtils.contains(mainlink, "yadi")) {
             mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[^/]+/(.+)").getMatch(0);
         }
@@ -170,12 +177,11 @@ public class DiskYandexNet extends PluginForHost {
         } else {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.currHash == null || this.currPath == null) {
+                /* Errorhandling for old urls */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (use_api_file_free_availablecheck) {
-                if (this.currHash == null || this.currPath == null) {
-                    /* Errorhandling for old urls */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
                 this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
                 if (apiAvailablecheckIsOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -207,9 +213,6 @@ public class DiskYandexNet extends PluginForHost {
                     filesize_str = filesize_str.replace(",", ".");
                     filesize_long = SizeFormatter.getSize(filesize_str);
                 }
-                if (final_filename == null && filename == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
                 if (final_filename == null) {
                     final_filename = filename;
                 }
@@ -220,10 +223,9 @@ public class DiskYandexNet extends PluginForHost {
                     link.setProperty("premiumonly", false);
                 }
             }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (final_filename == null && filename != null) {
+                link.setFinalFileName(filename);
             }
-            link.setFinalFileName(filename);
         }
         if (filesize_long > -1) {
             link.setDownloadSize(filesize_long);
@@ -312,15 +314,18 @@ public class DiskYandexNet extends PluginForHost {
                 }
             } else {
                 /* Free website download. */
-                String hash = getHash(downloadLink);
+                this.br = this.prepbrWebsite(new Browser());
+                br.getPage(getMainLink(downloadLink));
                 String sk = getSK(this.br);
+                /* 2017-02-09: Required */
+                br.getPage("https://yadi.sk/tns.html");
                 if (sk == null) {
                     logger.warning("sk in account handling (without move) is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
+                br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(this.currHash) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
                 /** TODO: Find out why we have the wrong SK here and remove this workaround! */
                 if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
                     sk = getSK(this.br);
@@ -328,7 +333,7 @@ public class DiskYandexNet extends PluginForHost {
                         logger.warning("sk in account handling (without move) is null");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
+                    br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(this.currHash) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
                 }
                 handleErrorsFree();
                 dllink = PluginJSonUtils.getJsonValue(br, "file");
@@ -417,13 +422,12 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
+    private String getIdClient() {
+        return String.format("undefined", System.currentTimeMillis());
+    }
+
     private String getHash(final DownloadLink dl) {
-        /* TODO: Remove this compatibility beginning 2016 */
-        String hash = dl.getStringProperty("plain_id", null);
-        if (hash == null) {
-            /* CURRENT property! */
-            hash = dl.getStringProperty("hash_main", null);
-        }
+        final String hash = dl.getStringProperty("hash_main", null);
         return hash;
     }
 
@@ -767,6 +771,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private Browser prepbrWebsite(final Browser br) {
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        br.setFollowRedirects(true);
         return br;
     }
 

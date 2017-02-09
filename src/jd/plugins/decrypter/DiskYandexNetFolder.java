@@ -160,6 +160,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 decryptSingleFile(dl, entries);
+                dl.setProperty("mainlink", parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }

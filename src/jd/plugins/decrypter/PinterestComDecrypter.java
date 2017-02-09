@@ -100,7 +100,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             fpName = linkpart.replace("/", "_");
         }
         if (numberof_pins_str == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("numberof_pins_str = null");
             return null;
         }
         final long numberof_pins = Long.parseLong(numberof_pins_str.replace(".", ""));
@@ -120,6 +120,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         if (json_source == null && force_api_usage) {
             // error handling, this has to be always not null!
+            logger.warning("json_source = null");
             return null;
         }
 
@@ -130,7 +131,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             final String board_id = PluginJSonUtils.getJsonValue(json_source, "board_id");
             final String source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
             if (board_id == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("board_id = null");
                 return null;
             }
             int i = 0;
