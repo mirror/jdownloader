@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -39,8 +40,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
@@ -65,9 +69,6 @@ public class PlayVidCom extends PluginForHost {
     private static final String ALLOW_480P    = "ALLOW_480P";
     private static final String ALLOW_720     = "ALLOW_720";
 
-    private Account             account       = null;
-    private String              qualityvalue  = null;
-
     private static final String quality_360   = "360p";
     private static final String quality_480   = "480p";
     private static final String quality_720   = "720p";
@@ -77,77 +78,110 @@ public class PlayVidCom extends PluginForHost {
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
+        final String qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
         this.setBrowserExclusive();
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("playvid.com");
-        if (account == null) {
-            account = AccountController.getInstance().getValidAccount(hostPlugin);
-        }
+        final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
-            try {
-                login(this.br, account, false);
-            } catch (final PluginException e) {
-                account = null;
-            }
+            login(this.br, account, false);
         }
-        br.setFollowRedirects(true);
-        String filename = downloadLink.getStringProperty("directname", null);
-        dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
-            /* Refresh directlink */
-            br.getPage(downloadLink.getStringProperty("mainlink", null));
-            if (isOffline(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
+            br.setFollowRedirects(true);
+            String filename = downloadLink.getStringProperty("directname", null);
+            dllink = checkDirectLink(downloadLink, "directlink");
+            if (dllink == null) {
+                /* Refresh directlink */
+                br.getPage(downloadLink.getStringProperty("mainlink", null));
+                if (isOffline(this.br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String videosource = getVideosource(this.br);
+                if (videosource == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (quality_720.equals(qualityvalue) && account == null) {
+                    logger.info("User is not logged in but tries to download a quality which needs login");
+                    return AvailableStatus.TRUE;
+                }
+                dllink = getQuality(qualityvalue, videosource);
             }
-            final String videosource = getVideosource(this.br);
-            if (videosource == null) {
+            if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (quality_720.equals(qualityvalue) && account == null) {
-                logger.info("User is not logged in but tries to download a quality which needs login");
-                return AvailableStatus.TRUE;
-            }
-            dllink = getQuality(downloadLink.getStringProperty("qualityvalue", null), videosource);
-        }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(filename);
-        // In case the link redirects to the finallink
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
+            downloadLink.setFinalFileName(filename);
+            // In case the link redirects to the finallink
+            if (downloadLink.getKnownDownloadSize() == -1) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(dllink);
+                    if (!con.getContentType().contains("html") && con.isOK()) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    downloadLink.setProperty("directlink", dllink);
+                } finally {
+                    try {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        doFree(downloadLink);
+        doDownload(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doDownload(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        if (quality_720.equals(qualityvalue) && account == null) {
-            /* Should never happen! */
-            logger.info("User is not logged in but tries to download a quality which needs login");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        final String qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
+        if (qualityvalue == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
+            final HDSContainer container = HDSContainer.read(downloadLink);
+            if (container == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                br.getPage(downloadLink.getStringProperty("mainlink", null));
+                final LinkedHashMap<String, String> foundQualities = getQualities(br);
+                final String f4m = foundQualities.get(qualityvalue);
+                if (f4m == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                br.getPage(f4m);
+                final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
+                if (all == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    final HDSContainer hit = HDSContainer.getBestMatchingContainer(all, container);
+                    if (hit == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        hit.write(downloadLink);
+                        final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
+                        this.dl = dl;
+                        dl.setEstimatedDuration(hit.getDuration());
+                    }
+                }
+            }
+        } else {
+            if (quality_720.equals(qualityvalue) && account == null) {
+                /* Should never happen! */
+                logger.info("User is not logged in but tries to download a quality which needs login");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
         dl.startDownload();
     }
@@ -249,8 +283,7 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.account = account;
-        doFree(link);
+        doDownload(link, account);
     }
 
     @Override
@@ -259,12 +292,12 @@ public class PlayVidCom extends PluginForHost {
     }
 
     public static String getVideosource(final Browser br) {
-        String videosource = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+        final String videosource = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
         if (videosource == null) {
             return null;
+        } else {
+            return Encoding.htmlDecode(videosource);
         }
-        videosource = Encoding.htmlDecode(videosource);
-        return videosource;
     }
 
     public static LinkedHashMap<String, String> getQualities(final Browser br) {
@@ -275,7 +308,7 @@ public class PlayVidCom extends PluginForHost {
         final LinkedHashMap<String, String> foundqualities = new LinkedHashMap<String, String>();
         /** Decrypt qualities START */
         /** First, find all available qualities */
-        final String[] qualities = { "720p", "480p", "360p" };
+        final String[] qualities = { "hds_manifest", "hds_manifest_720", "hds_manifest_480", "hds_manifest_360", "720p", "480p", "360p" };
         for (final String quality : qualities) {
             final String currentQualityUrl = getQuality(quality, videosource);
             if (currentQualityUrl != null) {
@@ -287,11 +320,11 @@ public class PlayVidCom extends PluginForHost {
     }
 
     public static String getQuality(final String quality, final String videosource) {
-        return new Regex(videosource, "video_vars\\[video_urls\\]\\[" + quality + "\\]= ?(https?://[^<>\"]*?)\\&").getMatch(0);
+        return new Regex(videosource, "video_vars(?:\\[video_urls\\])?\\[" + quality + "\\]= ?(https?://[^<>\"]*?)(\\&(?!sec)|$)").getMatch(0);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
@@ -300,7 +333,9 @@ public class PlayVidCom extends PluginForHost {
                     con = br2.openGetConnection(dllink);
                     if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                         downloadLink.setProperty(property, Property.NULL);
-                        dllink = null;
+                    } else {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        return dllink;
                     }
                 } finally {
                     if (con != null) {
@@ -309,10 +344,9 @@ public class PlayVidCom extends PluginForHost {
                 }
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -344,7 +378,6 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public void reset() {
-        account = null;
     }
 
     @Override

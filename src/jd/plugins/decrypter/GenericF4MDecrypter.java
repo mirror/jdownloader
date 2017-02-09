@@ -17,31 +17,22 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.GenericF4M;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 
 @DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
@@ -80,59 +71,41 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
             }
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final URLConnectionAdapter con = br.openGetConnection(param.getCryptedUrl());
-        if (!con.isOK() || con.getResponseCode() == 403 || con.getResponseCode() == 404) {
-            con.disconnect();
-            return ret;
-        }
-        final Document d;
-        try {
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            d = parser.parse(con.getInputStream());
-        } finally {
-            con.disconnect();
-        }
-        final String urlName = getFileNameFromURL(br._getURL());
-        final String linkURL = "f4m" + param.getCryptedUrl().substring(4);
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-        final NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
-        for (int j = 0; j < mediaUrls.getLength(); j++) {
-            final Node media = mediaUrls.item(j);
-            final String fragmentUrl = GenericF4M.getAttByNamedItem(media, "url");
-            if (fragmentUrl != null) {
+        br.getPage(param.getCryptedUrl());
+        final List<HDSContainer> containers = HDSContainer.getHDSQualities(br);
+        if (containers != null) {
+            final String urlName = getFileNameFromURL(br._getURL());
+            final String linkURL = "f4m" + param.getCryptedUrl().substring(4);
+            for (final HDSContainer container : containers) {
                 final DownloadLink link = createDownloadlink(linkURL);
+                link.setProperty("Referer", referer);
+                link.setProperty("cookies", cookiesString);
                 String fileName = null;
                 if (urlName == null) {
                     fileName = "Unknown";
                 } else {
                     fileName = urlName.replaceAll("\\.f4m", "");
                 }
-                final String width = GenericF4M.getAttByNamedItem(media, "width");
-                final String height = GenericF4M.getAttByNamedItem(media, "height");
-                if (width != null && height != null) {
-                    fileName += "_" + width + "x" + height;
+                if (container.getHeight() != -1 && container.getWidth() != -1) {
+                    fileName += "_" + container.getWidth() + "x" + container.getHeight();
                 }
-                final String bitrate = GenericF4M.getAttByNamedItem(media, "bitrate");
-                if (bitrate != null) {
-                    fileName += "_br" + bitrate;
+                if (container.getBitrate() != -1) {
+                    fileName += "_br" + container.getBitrate();
                 }
                 link.setFinalFileName(fileName + ".mp4");
                 link.setAvailable(true);
-                final String streamId = GenericF4M.getAttByNamedItem(media, "streamId");
-                // these propertes are used to find the correct url again
-                link.setProperty("fragmentUrl", fragmentUrl);
-                link.setProperty("streamId", streamId);
-                link.setProperty("width", width);
-                link.setProperty("height", height);
-                link.setProperty("bitrate", bitrate);
+                if (container.getEstimatedFileSize() > 0) {
+                    link.setDownloadSize(container.getEstimatedFileSize());
+                }
                 link.setLinkID("f4m://" + br.getHost() + "/" + Hash.getMD5(fileName));
+                container.write(link, null);
                 ret.add(link);
             }
-        }
-        if (ret.size() > 1) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(urlName);
-            fp.addLinks(ret);
+            if (ret.size() > 1) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(urlName);
+                fp.addLinks(ret);
+            }
         }
         return ret;
     }
