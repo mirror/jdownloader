@@ -389,7 +389,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         protocol = "hls";
                     }
 
-                    final String ext;
+                    String ext;
                     if (type.contains("vorbis")) {
                         /* http webm streams. */
                         ext = "webm";
@@ -461,6 +461,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     final String width = Integer.toString(hlscontainer.getWidth());
                                     final String resolution = hlscontainer.getResolution();
                                     final String final_download_url = hlscontainer.getDownloadurl();
+                                    ext = hlscontainer.getFileExtension().replace(".", "");
                                     linkid = String.format(linkid_format, id, type, cdn, language, protocol, resolution);
                                     final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, linkid, ext));
                                     dl = createDownloadlink(final_download_url);

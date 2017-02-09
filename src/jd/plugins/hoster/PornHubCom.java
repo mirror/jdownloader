@@ -39,6 +39,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -77,22 +78,22 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    /*
-                                                                                     * Format - name : videoCodec, videoBitrate,
-                                                                                     * videoResolution, audioCodec, audioBitrate
-                                                                                     */
-                                                                                    /*
-                                                                                     * Video - bitrates and resultions here are not exact as
-                                                                                     * they vary.
-                                                                                     */
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        {
+            /*
+             * Format - name : videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video - bitrates and resultions here are not exact as
+             * they vary.
+             */
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-                                                                                }
-                                                                            });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -244,64 +245,67 @@ public class PornHubCom extends PluginForHost {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static LinkedHashMap<String, String> getVideoLinksFree(final Browser br) throws Exception {
+        boolean success = false;
         final LinkedHashMap qualities = new LinkedHashMap<String, String>();
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
             flashVars = br.getRegex("var flashvars_\\d+ = (\\{.*?);\n").getMatch(0);
         }
-        if (flashVars == null) {
-            return null;
-        } else {
+        if (flashVars != null) {
             flashVars = flashVars.replaceAll("(\"\\s*\\+\\s*\")", "");
-        }
-        final LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
+            final LinkedHashMap<String, Object> values = flashVars == null ? null : (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
 
-        if (values == null || values.size() < 1) {
-            return null;
-        }
-        boolean success = false;
-        String dllink_temp = null;
-        // dllink_temp = (String) values.get("video_url");
-        for (Entry<String, Object> next : values.entrySet()) {
-            String key = next.getKey();
-            if (!(key.startsWith("quality_"))) {
-                continue;
+            if (values == null || values.size() < 1) {
+                return null;
             }
-            String quality = new Regex(key, "quality_(\\d+)p").getMatch(0);
-            if (quality == null) {
-                continue;
-            }
-            dllink_temp = (String) next.getValue();
-            final Boolean encrypted = values.get("encrypted") == null ? null : ((Boolean) values.get("encrypted")).booleanValue();
-            if (encrypted == Boolean.TRUE) {
-                final String decryptkey = (String) values.get("video_title");
-                try {
-                    dllink_temp = new BouncyCastleAESCounterModeDecrypt().decrypt(dllink_temp, decryptkey, 256);
-                } catch (Throwable e) {
-                    /* Fallback for stable version */
-                    dllink_temp = AESCounterModeDecrypt(dllink_temp, decryptkey, 256);
+            String dllink_temp = null;
+            // dllink_temp = (String) values.get("video_url");
+            for (Entry<String, Object> next : values.entrySet()) {
+                String key = next.getKey();
+                if (!(key.startsWith("quality_"))) {
+                    continue;
                 }
-                if (dllink_temp != null && (dllink_temp.startsWith("Error:") || !dllink_temp.startsWith("http"))) {
-                    success = false;
+                String quality = new Regex(key, "quality_(\\d+)p").getMatch(0);
+                if (quality == null) {
+                    continue;
+                }
+                dllink_temp = (String) next.getValue();
+                final Boolean encrypted = values.get("encrypted") == null ? null : ((Boolean) values.get("encrypted")).booleanValue();
+                if (encrypted == Boolean.TRUE) {
+                    final String decryptkey = (String) values.get("video_title");
+                    try {
+                        dllink_temp = new BouncyCastleAESCounterModeDecrypt().decrypt(dllink_temp, decryptkey, 256);
+                    } catch (Throwable e) {
+                        /* Fallback for stable version */
+                        dllink_temp = AESCounterModeDecrypt(dllink_temp, decryptkey, 256);
+                    }
+                    if (dllink_temp != null && (dllink_temp.startsWith("Error:") || !dllink_temp.startsWith("http"))) {
+                        success = false;
+                    } else {
+                        success = true;
+                    }
                 } else {
                     success = true;
                 }
-            } else {
-                success = true;
+                qualities.put(quality, next.getValue());
             }
-            qualities.put(quality, next.getValue());
         }
 
         if (!success) {
             final String[] quals = new String[] { "1080", "720", "480", "360", "240" };
-            // seems they have seperated into multiple vars
-            final String[][] var_player_quality_dp = br.getRegex("var player_quality_(1080|720|480|360|240)p[^=]*?=\\s*('|\")(https?://.*?)\\2\\s*;").getMatches();
+            /* 2017-02-07: seems they have seperated into multiple vars */
+            String[][] var_player_quality_dp = br.getRegex("var player_quality_(1080|720|480|360|240)p[^=]*?=\\s*('|\")(https?://.*?)\\2\\s*;").getMatches();
+            if (var_player_quality_dp.length == 0) {
+                /* 2017-02-09: For embed player - usually only 480p will be available. */
+                var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:(\\s*?)\"(http[^\"]+)\"").getMatches();
+            }
             for (final String q : quals) {
                 for (final String[] var : var_player_quality_dp) {
                     // so far any of these links will work.
                     if (var[0].equals(q)) {
                         String directurl = var[2];
                         directurl = directurl.replaceAll("( |\"|\\+)", "");
+                        directurl = Encoding.unescape(directurl);
                         qualities.put(q, directurl);
                     }
                 }
@@ -638,6 +642,10 @@ public class PornHubCom extends PluginForHost {
             /* Free url */
             return getProtocolFree() + "www.pornhub.com/view_video.php?viewkey=" + viewkey;
         }
+    }
+
+    public static String createPornhubVideoLinkEmbed(final String viewkey) {
+        return String.format("https://www.pornhub.com/embed/%s", viewkey);
     }
 
     public static String getProtocolPremium() {

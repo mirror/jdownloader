@@ -28,6 +28,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -141,6 +142,13 @@ public class PornHubCom extends PluginForDecrypt {
             return;
         }
 
+        if (aa == null || aa.getType() == AccountType.FREE) {
+            /*
+             * 2017-02-09: Last chance handling via embed player for non-account & free-account users --> This will only return 480p
+             * quality.
+             */
+            jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideoLinkEmbed(viewkey));
+        }
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this.br);
 
         if (foundLinks_all == null) {
