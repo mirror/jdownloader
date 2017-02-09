@@ -63,9 +63,16 @@ public class PixivNet extends PluginForDecrypt {
             if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple\\-image submission<")) {
                 /* Not multiple urls --> Switch to single-url view */
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                if (isAdultImageLoginRequired()) {
+                    logger.info("Adult content: Account required");
+                    return decryptedLinks;
+                }
                 links = br.getRegex("data\\-illust\\-id=\"\\d+\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
                 if (links.length == 0) {
                     links = this.br.getRegex("data\\-title=\"registerImage\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
+                }
+                if (links.length == 0) {
+                    links = this.br.getRegex("data\\-src=\"(http[^<>\"]+)\"[^>]+class=\"original\\-image\"").getColumn(0);
                 }
             } else {
                 /* Multiple urls */
@@ -75,6 +82,9 @@ public class PixivNet extends PluginForDecrypt {
                     return decryptedLinks;
                 } else if (isAccountOrRightsRequired(this.br)) {
                     logger.info("Account required to crawl this particular content");
+                    return decryptedLinks;
+                } else if (isAdultImageLoginRequired()) {
+                    logger.info("Adult content: Account required");
                     return decryptedLinks;
                 }
                 links = br.getRegex("data\\-filter=\"manga\\-image\" data\\-src=\"(http[^<>\"\\']+)\"").getColumn(0);
@@ -147,6 +157,10 @@ public class PixivNet extends PluginForDecrypt {
 
     public static boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("この作品は削除されました。|>This work was deleted");
+    }
+
+    private boolean isAdultImageLoginRequired() {
+        return this.br.containsHTML("r18=true");
     }
 
     public static boolean isAccountOrRightsRequired(final Browser br) {
