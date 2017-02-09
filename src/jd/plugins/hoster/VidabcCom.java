@@ -338,7 +338,7 @@ public class VidabcCom extends PluginForHost {
                             fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
                             // generic failover#1
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                fileInfo[1] = new Regex(correctedBR, "Normal quality.*?(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                             }
                             // generic failover#2
                             if (inValidate(fileInfo[1])) {
