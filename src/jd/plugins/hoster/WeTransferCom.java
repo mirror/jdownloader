@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -31,9 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-f0-9]{46}/[a-f0-9]{46}(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
@@ -109,7 +109,8 @@ public class WeTransferCom extends PluginForHost {
         }
         final String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
         final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
-        br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
+        br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
+        // br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
