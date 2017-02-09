@@ -111,6 +111,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return;
         }
+        /* Fix sometimes invalid json - very strange way of sending errors! */
+        this.br.getRequest().setHtmlCode(this.br.toString().replaceAll("\\[an error occurred\\s*?while processing this directive\\s*?\\]", ""));
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         final ArrayList<Object> daysList = (ArrayList<Object>) entries.get(channel_name_with_space);
 
@@ -339,7 +341,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Convert hds --> hls */
             dllink = hdsconvert.getMatch(0).replace("/z/", "/i/") + "/index_1_av.m3u8";
         }
+        String bitrate = null;
         if (dllink.contains(".m3u8")) {
+            final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)800\\.mp4/master\\.m3u8").getMatch(0);
             this.br.getPage(dllink);
             final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
             for (final HlsContainer singleHlsQuality : allqualities) {
@@ -352,13 +356,28 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 }
                 decryptedLinks.add(dl);
             }
+            if (http_url_part != null) {
+                /*
+                 * 2017-02-09: Add special higher quality http url - we could also add the lower 800 bitrate as http and completely leave
+                 * out hls but we cannot be sure if that works so we'll just do it this way.
+                 */
+                bitrate = "1800";
+                final String directlink_http = String.format("http://creativemedia3.rai.it/%s%s.mp4", http_url_part, bitrate);
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink_http);
+                dl.setFinalFileName(title + "_" + bitrate + "." + extension);
+                dl._setFilePackage(fp);
+                if (description != null) {
+                    dl.setComment(description);
+                }
+                decryptedLinks.add(dl);
+            }
         } else {
             /* Single http url --> We can sometimes grab multiple qualities */
             if (dllink.contains("_1800.mp4")) {
                 /* Multiple qualities availab.e */
                 final String[][] bitrates = { { "1800", "_1800.mp4" }, { "800", "_800.mp4" } };
                 for (final String[] qualityInfo : bitrates) {
-                    final String bitrate = qualityInfo[0];
+                    bitrate = qualityInfo[0];
                     final String url_bitrate_string = qualityInfo[1];
                     final String directlink = dllink.replace("_1800.mp4", url_bitrate_string);
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);

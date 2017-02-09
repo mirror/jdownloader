@@ -92,6 +92,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             parameter = parameter.replace("#", "?hash=");
             mainhashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
         }
+        boolean parameter_correct = false;
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
             br.getPage(parameter);
@@ -108,6 +109,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 return null;
             }
             parameter = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(mainhashID);
+            parameter_correct = true;
         }
         hash_decoded = Encoding.htmlDecode(mainhashID);
         if (hash_decoded.contains(":/")) {
@@ -115,8 +117,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             mainhashID = hashregex.getMatch(0);
             path_main = hashregex.getMatch(1);
         }
-        // mainhashID = fixHash(mainhashID);
-        parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
+        if (!parameter_correct) {
+            parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
+        }
 
         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

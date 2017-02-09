@@ -112,8 +112,9 @@ public class DiskYandexNet extends PluginForHost {
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) throws PluginException {
         String mainlink = dl.getStringProperty("mainlink", null);
+        mainlink = null;
         if (mainlink == null && this.currHash != null) {
-            mainlink = String.format("https://yadi.sk/public/?hash=%s", this.currHash);
+            mainlink = String.format("https://yadi.sk/public/?hash=%s", Encoding.urlEncode(this.currHash));
         }
         if (mainlink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -200,7 +201,7 @@ public class DiskYandexNet extends PluginForHost {
                 if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                filename = this.br.getRegex("class=\"nb-panel__title\" title=\"([^<>\"]*?)\"").getMatch(0);
+                filename = this.br.getRegex("class=\"info\\-public__name\" title=\"([^<>\"]+)\"").getMatch(0);
                 filesize_str = link.getStringProperty("plain_size", null);
                 if (filesize_str == null) {
                     filesize_str = this.br.getRegex("class=\"item-details__name\">Size:</span> ([^<>\"]+)</div>").getMatch(0);
