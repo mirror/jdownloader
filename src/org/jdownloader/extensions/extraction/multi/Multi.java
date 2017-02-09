@@ -1149,25 +1149,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
@@ -1295,18 +1295,65 @@ public class Multi extends IExtraction {
         return true;
     }
 
-    private boolean validateArchiveParts(Archive archive) throws IOException {
-        final ArchiveFormat format = archive.getArchiveFormat();
-        if (format.name().startsWith("RAR")) {
+    private boolean validateArchiveParts(final Archive archive) throws IOException {
+        final ArchiveType type = archive.getArchiveType();
+        switch (type) {
+        case RAR_SINGLE:
+        case RAR_MULTI:
+        case RAR_MULTI2:
+        case RAR_MULTI3:
+        case RAR_MULTI4:
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (!ArchiveType.RAR_SINGLE.isValidPart(0, archiveFile)) {
                     archive.addCrcError(archiveFile);
-                    logger.severe("Missing/Broken RAR Signature: " + archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
                 }
             }
-            return archive.getCrcError().size() == 0;
+            break;
+        case ZIP_SINGLE:
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                final String sig = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()));
+                final Signature signature = new FileSignatures().getSignature(sig);
+                if (!"ZIP".equalsIgnoreCase(signature.getId())) {
+                    archive.addCrcError(archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                }
+            }
+            break;
+        case GZIP_SINGLE:
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                final String sig = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()));
+                final Signature signature = new FileSignatures().getSignature(sig);
+                if (!"GZ".equalsIgnoreCase(signature.getId())) {
+                    archive.addCrcError(archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                }
+            }
+            break;
+        case BZIP2_SINGLE:
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                final String sig = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()));
+                final Signature signature = new FileSignatures().getSignature(sig);
+                if (!"BZ2".equalsIgnoreCase(signature.getId())) {
+                    archive.addCrcError(archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                }
+            }
+            break;
+        case SEVENZIP_SINGLE:
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                final String sig = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()));
+                final Signature signature = new FileSignatures().getSignature(sig);
+                if (!"7Z".equalsIgnoreCase(signature.getId())) {
+                    archive.addCrcError(archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                }
+            }
+            break;
+        default:
+            break;
         }
-        return true;
+        return archive.getCrcError().size() == 0;
     }
 
     private void updateContentView(ISimpleInArchive simpleInterface) {
