@@ -99,6 +99,11 @@ public class DepositFiles extends antiDDoSForHost {
 
     // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
 
+    // @Override
+    // public String[] siteSupportedNames() {
+    // return new String[] { "depositfiles.com", "depositfiles.org", "dfiles.eu", "dfiles.ru" };
+    // }
+
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();

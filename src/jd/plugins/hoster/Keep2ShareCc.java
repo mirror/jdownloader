@@ -691,13 +691,13 @@ public class Keep2ShareCc extends K2SApi {
                         handleGeneralServerErrors(account, link);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                if (dl.getConnection().getContentType().contains("html")) {
-                    logger.warning("The final dllink seems not to be a file!");
-                    br.followConnection();
-                    handleGeneralServerErrors(account, link);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                    if (dl.getConnection().getContentType().contains("html")) {
+                        logger.warning("The final dllink seems not to be a file!");
+                        br.followConnection();
+                        handleGeneralServerErrors(account, link);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 // add download slot
                 controlSlot(+1, account);
