@@ -325,30 +325,38 @@ public class IcerBoxCom extends antiDDoSForHost {
     }
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformationApi(downloadLink);
-        dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (inValidate(dllink)) {
-            // links that require premium...
-            if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
-                throwPremiumRequiredException(downloadLink, true);
-            }
-            br = new Browser();
-            br.getHeaders().put("Accept", "application/json");
-            if (account != null && account.getType() == AccountType.PREMIUM) {
-                final String req = apiURL + "/dl/ticket";
-                br.getHeaders().put("Authorization", "Bearer " + account.getStringProperty("token"));
-                postPage(req, "file=" + getFUID(downloadLink));
-                dllink = PluginJSonUtils.getJsonValue(br, "url");
-            } else {
-                // currently only premium accounts can download... pointless making other download support at this time
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-            handleApiErrors(br, account, downloadLink);
+        // prevent more than one download starting at a time, so that we don't perform relogin multiple times within synchronised queues
+        synchronized (LOCK) {
+            requestFileInformationApi(downloadLink);
+            dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (inValidate(dllink)) {
-                if (br.toString().matches("Connect failed: Can't connect to local MySQL server.+")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                // links that require premium...
+                if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
+                    throwPremiumRequiredException(downloadLink, true);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br = new Browser();
+                br.getHeaders().put("Accept", "application/json");
+                if (account != null && account.getType() == AccountType.PREMIUM) {
+                    final String token = account.getStringProperty("token", null);
+                    if (token == null) {
+                        // this should not happen.
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String req = apiURL + "/dl/ticket";
+                    br.getHeaders().put("Authorization", "Bearer " + token);
+                    postPage(req, "file=" + getFUID(downloadLink));
+                    dllink = PluginJSonUtils.getJsonValue(br, "url");
+                } else {
+                    // currently only premium accounts can download... pointless making other download support at this time
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
+                handleApiErrors(br, account, downloadLink);
+                if (inValidate(dllink)) {
+                    if (br.toString().matches("Connect failed: Can't connect to local MySQL server.+")) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -357,6 +365,7 @@ public class IcerBoxCom extends antiDDoSForHost {
             handleDownloadErrors(account, downloadLink, true);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
+
         dl.startDownload();
     }
 
@@ -377,8 +386,23 @@ public class IcerBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } else if (resCode == 403) {
-            // banned user
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.followConnection();
+            if (account != null && downloadLink == null) {
+                // banned user within login only
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // admin states that download routine can throw this as well.
+            // we will invalidate the session token, throw temp hoster unvail, and relogin.
+            else if (account != null && downloadLink != null) {
+                final long was = account.getAccountInfo().getTrafficLeft();
+                // relogin due to limit been reached and token equals null.
+                account.setAccountInfo(fetchAccountInfoApi(account));
+                final long now = account.getAccountInfo().getTrafficLeft();
+                // throw retry so that core can re-analyse if account has traffic left.
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You are possibly out of available traffic; 'was = " + was + "; now = " + now + ";", 30 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
