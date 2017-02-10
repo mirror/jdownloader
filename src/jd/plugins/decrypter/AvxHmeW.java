@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhome.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -42,7 +42,7 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "(?:https?:)?(?://(?!(www\\.imdb\\.com|avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro|avxsearch\\.(?:se|pro))))[\\S&]+";
+    private final String notThis = "(?:https?:)?(?://(?!(www\\.imdb\\.com|avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in)|avaxhome\\.pro|avxsearch\\.(?:se|pro))))[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -50,18 +50,22 @@ public class AvxHmeW extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br = new Browser();
+        br.setAllowedResponseCodes(new int[] { 401 });
         // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
+        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
         if (parameter.matches(".*/go/\\d+/.*")) {
             br.setFollowRedirects(false);
-            if (parameter.matches(this.getSupportedLinks().pattern()) && parameter.matches("^http://.+")) {
-                br.getPage(parameter);
-                br.followRedirect();
-            } else {
-                br.getPage(parameter);
+            br.getPage(parameter);
+            while (true) {
+                final String link = br.getRedirectLocation();
+                if (link != null && link.matches(this.getSupportedLinks().pattern()) && link.matches("^https?://.+")) {
+                    br.followRedirect();
+                } else {
+                    break;
+                }
             }
             final String link = br.getRedirectLocation();
-            if (!link.matches(this.getSupportedLinks().pattern())) {
+            if (link != null && !link.matches(this.getSupportedLinks().pattern())) {
                 decryptedLinks.add(createDownloadlink(link));
             }
             return decryptedLinks;
@@ -137,7 +141,7 @@ public class AvxHmeW extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(false);
-            String[] links = br.getRegex("<h3>Download Link: <a href=\"http://(www\\.)?avaxhome\\.pro/[a-z0-9\\-_]+/(\\d+)\"").getColumn(1);
+            String[] links = br.getRegex("<h3>Download Link: <a href=\"https?://(www\\.)?avaxhome\\.pro/[a-z0-9\\-_]+/(\\d+)\"").getColumn(1);
             if (links != null && links.length != 0) {
                 for (final String id : links) {
                     br.getPage("http://www.avaxhome.pro/wp-content/plugins/download-monitor/download.php?id=" + id);
