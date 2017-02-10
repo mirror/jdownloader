@@ -13,6 +13,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
@@ -194,7 +195,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.ON_NEW_CRAWLER_JOB();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the job
             return true;
         }
@@ -217,7 +218,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.ON_PACKAGIZER();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -240,7 +241,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.ON_DOWNLOADS_PAUSE();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -261,7 +262,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.ON_DOWNLOADS_RUNNING();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -282,7 +283,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.ON_DOWNLOADS_STOPPED();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -304,7 +305,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.RECONNECT_BEFORE();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -325,7 +326,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.RECONNECT_AFTER();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -347,7 +348,7 @@ public enum EventTrigger implements LabelInterface {
             return T.T.CAPTCHA_CHALLENGE_AFTER();
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return true;
         }
@@ -373,6 +374,7 @@ public enum EventTrigger implements LabelInterface {
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
             final Spinner spinner = new Spinner(1000, Integer.MAX_VALUE);
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
             try {
                 spinner.setValue(((Number) settings.get("interval")).intValue());
             } catch (Throwable e) {
@@ -381,15 +383,17 @@ public enum EventTrigger implements LabelInterface {
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
                     settings.put("interval", ((Number) spinner.getValue()).intValue());
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
 
             ret.addPair(T.T.interval_settings(), null, spinner);
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -413,10 +417,10 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
-
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.TOOLBAR_BUTTON_explain()), "spanx");
@@ -441,10 +445,12 @@ public enum EventTrigger implements LabelInterface {
                 }
             });
             ret.addPair("", null, toolbarManager);
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -468,10 +474,11 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.MAIN_MENU_BUTTON_explain()), "spanx");
@@ -494,10 +501,12 @@ public enum EventTrigger implements LabelInterface {
 
                 }
             }));
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -518,10 +527,10 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
-
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
@@ -545,10 +554,12 @@ public enum EventTrigger implements LabelInterface {
 
                 }
             }));
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -569,10 +580,10 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
-
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
@@ -596,10 +607,12 @@ public enum EventTrigger implements LabelInterface {
 
                 }
             }));
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -620,10 +633,10 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
-
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain()), "spanx");
@@ -646,10 +659,12 @@ public enum EventTrigger implements LabelInterface {
 
                 }
             }));
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -670,10 +685,11 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.LINKGRABBER_BOTTOM_BAR_BUTTON_explain()), "spanx");
@@ -696,10 +712,12 @@ public enum EventTrigger implements LabelInterface {
 
                 }
             }));
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -721,10 +739,11 @@ public enum EventTrigger implements LabelInterface {
 
         @Override
         public TriggerSetupPanel createSettingsPanel(final Map<String, Object> settings) {
+            final Checkbox checkBox = new Checkbox(isSynchronous(settings));
 
             TriggerSetupPanel ret = new TriggerSetupPanel(0) {
                 public void save() {
-
+                    setSynchronous(settings, checkBox.isSelected());
                 };
             };
             ret.add(new JLabel(T.T.TRAY_BUTTON_explain()), "spanx");
@@ -746,10 +765,12 @@ public enum EventTrigger implements LabelInterface {
 
                 }
             }));
+            ret.addDescriptionPlain(T.T.synchronous_desc());
+            ret.addPair(T.T.synchronous(), null, checkBox);
             return ret;
         }
 
-        public boolean isSynchronous() {
+        public boolean isDefaultSynchronous() {
             // scripts should be able to modify the link
             return false;
         }
@@ -828,8 +849,26 @@ public enum EventTrigger implements LabelInterface {
         return clazzes;
     }
 
-    public boolean isSynchronous() {
+    public boolean isDefaultSynchronous() {
         return false;
+    }
+
+    public void setSynchronous(Map<String, Object> settings, boolean isSynchronous) {
+        if (settings != null) {
+            settings.put("isSynchronous", isSynchronous);
+        }
+    }
+
+    public boolean isSynchronous(Map<String, Object> settings) {
+        if (settings != null) {
+            final Object isSynchronous = settings.get("isSynchronous");
+            if (isSynchronous instanceof Boolean && isSynchronous != null) {
+                return ((Boolean) isSynchronous).booleanValue();
+            } else if (isSynchronous instanceof String && ("true".equalsIgnoreCase((String) isSynchronous) || "false".equalsIgnoreCase((String) isSynchronous))) {
+                return Boolean.parseBoolean((String) isSynchronous);
+            }
+        }
+        return isDefaultSynchronous();
     }
 
     public TriggerSetupPanel createSettingsPanel(Map<String, Object> settings) {

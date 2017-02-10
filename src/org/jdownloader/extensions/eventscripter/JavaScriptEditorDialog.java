@@ -11,6 +11,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.Script;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
@@ -82,6 +83,18 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         p.add(toolbar);
         settingsMap = entry.getEventTriggerSettings();
         settingsPanel = entry.getEventTrigger().createSettingsPanel(settingsMap);
+        if (settingsPanel == null) {
+            final Checkbox checkBox = new Checkbox(entry.getEventTrigger().isSynchronous(settingsMap));
+            settingsPanel = new TriggerSetupPanel(0) {
+
+                @Override
+                public void save() {
+                    entry.getEventTrigger().setSynchronous(settingsMap, checkBox.isSelected());
+                }
+            };
+            settingsPanel.addDescriptionPlain(T.T.synchronous_desc());
+            settingsPanel.addPair(T.T.synchronous(), null, checkBox);
+        }
 
         final JEditorPane defaults = new JEditorPane();
         // defaults.setFocusable(false);
