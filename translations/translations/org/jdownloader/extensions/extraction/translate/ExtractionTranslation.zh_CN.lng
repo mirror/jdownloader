@@ -21,7 +21,6 @@ ask_for_password=压缩文档需要密码!
 bubble_text=提取压缩包！
 bubblecontent_progress=进度图标
 bubbletype=正在进行一个压缩文档提取
-cannot_extract_incopmplete=不能提取 %s1。压缩文档是不完整的!
 close=关闭
 context_cleanup=在提取后清理
 context_password=提取密码
