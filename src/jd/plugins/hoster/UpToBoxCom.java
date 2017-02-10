@@ -218,7 +218,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (md5hash != null) {
             link.setMD5Hash(md5hash.trim());
         }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        filename = Encoding.htmlOnlyDecode(filename.replaceAll("(</b>|<b>|\\.html)", ""));
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {

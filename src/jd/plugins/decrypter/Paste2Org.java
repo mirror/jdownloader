@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "http://(www\\.)?paste2\\.org/[A-Za-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "https?://(www\\.)?paste2\\.org/[A-Za-z0-9]+" })
 public class Paste2Org extends PluginForDecrypt {
 
     public Paste2Org(PluginWrapper wrapper) {
