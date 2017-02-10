@@ -22,6 +22,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,10 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -95,7 +95,7 @@ public class UlozTo extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCustomCharset("utf-8");
-        br.setAllowedResponseCodes(new int[] { 400, 401 });
+        br.setAllowedResponseCodes(new int[] { 400, 401, 410, 451 });
         br.setCookie(this.getHost(), "adblock_detected", "false");
         return br;
     }
@@ -163,8 +163,10 @@ public class UlozTo extends PluginForHost {
             if (br.containsHTML("The file is not available at this moment, please, try it later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
             }
+            // responseCode offline check
+            responseCodeOfflineCheck();
             // Wrong links show the mainpage so here we check if we got the mainpage or not
-            if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = null;
@@ -238,10 +240,15 @@ public class UlozTo extends PluginForHost {
             br.followConnection();
             i++;
         }
-        if (br.getHttpConnection().getResponseCode() == 400) {
+        responseCodeOfflineCheck();
+        return null;
+    }
+
+    private void responseCodeOfflineCheck() throws PluginException {
+        final int responseCode = br.getHttpConnection().getResponseCode();
+        if (responseCode == 400 || responseCode == 410 || responseCode == 451) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return null;
     }
 
     @SuppressWarnings("deprecation")
@@ -257,6 +264,7 @@ public class UlozTo extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         doFree(downloadLink);
