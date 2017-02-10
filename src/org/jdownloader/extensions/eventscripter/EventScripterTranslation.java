@@ -135,6 +135,12 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Call interval in ms" })
     String interval_settings();
 
+    @Default(lngs = { "en" }, values = { "Synchronous execution of script" })
+    String synchronous();
+
+    @Default(lngs = { "en" }, values = { "Enable synchronous execution if you don't want this script to be executed a second time while the first instance is still running. If you want to modify parameters by reference please make sure to enable this option." })
+    String synchronous_desc();
+
     @Default(lngs = { "en" }, values = { "Reset a Download if the speed is low" })
     String reset_link_on_low_speed();
 

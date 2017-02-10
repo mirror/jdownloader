@@ -3,6 +3,8 @@ package org.jdownloader.extensions.eventscripter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
@@ -54,8 +56,9 @@ public class IntervalController {
                                                 }
                                                 long waitFor = interval - (System.currentTimeMillis() - lastTs);
                                                 if (waitFor <= 0) {
-                                                    fire(scriptEntry, interval);
-                                                    settings.put("lastFire", System.currentTimeMillis());
+                                                    if (fire(scriptEntry, interval)) {
+                                                        settings.put("lastFire", System.currentTimeMillis());
+                                                    }
                                                     waitFor = interval;
                                                 }
                                                 minwait = Math.max(500, Math.min(minwait, waitFor));
@@ -91,12 +94,22 @@ public class IntervalController {
         }
     }
 
-    protected void fire(final ScriptEntry scriptEntry, long interval) {
+    private final WeakHashMap<ScriptThread, Long> scriptThreads = new WeakHashMap<ScriptThread, Long>();
+
+    protected synchronized boolean fire(final ScriptEntry scriptEntry, long interval) {
         if (scriptEntry.isEnabled() && StringUtils.isNotEmpty(scriptEntry.getScript())) {
             try {
+                final boolean isSynchronous = scriptEntry.getEventTrigger().isSynchronous(scriptEntry.getEventTriggerSettings());
+                if (isSynchronous) {
+                    for (final Entry<ScriptThread, Long> scriptThread : scriptThreads.entrySet()) {
+                        if (scriptEntry.getID() == scriptThread.getValue() && scriptThread.getKey().isAlive()) {
+                            return false;
+                        }
+                    }
+                }
                 final HashMap<String, Object> props = new HashMap<String, Object>();
                 props.put("interval", interval);
-                new ScriptThread(extension, scriptEntry, props, logger) {
+                final ScriptThread thread = new ScriptThread(extension, scriptEntry, props, logger) {
                     protected void finalizeEnvironment() throws IllegalAccessException {
                         super.finalizeEnvironment();
                         try {
@@ -106,11 +119,16 @@ public class IntervalController {
                             logger.log(e);
                         }
                     };
-                }.start();
+                };
+                if (isSynchronous) {
+                    scriptThreads.put(thread, scriptEntry.getID());
+                }
+                thread.start();
+                return true;
             } catch (Throwable e) {
                 logger.log(e);
             }
         }
+        return false;
     }
-
 }

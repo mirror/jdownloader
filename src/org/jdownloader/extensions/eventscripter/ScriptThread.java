@@ -47,6 +47,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     private final LogSource              logger;
 
     private final EventScripterExtension extension;
+    private final boolean                isSynchronous;
 
     public LogSource getLogger() {
         return logger;
@@ -57,12 +58,13 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         this.props = props;
         this.logger = logSource;
         this.extension = eventScripterExtension;
+        isSynchronous = script.getEventTrigger().isSynchronous(props);
     }
 
     @Override
     public void start() {
         super.start();
-        if (script.getEventTrigger().isSynchronous()) {
+        if (isSynchronous()) {
             try {
                 join();
             } catch (InterruptedException e) {
@@ -86,38 +88,51 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         }
     }
 
+    public boolean isSynchronous() {
+        return isSynchronous;
+    }
+
     @Override
     public void run() {
-        final Object scriptLock = getScriptLock(script);
-        synchronized (scriptLock) {
-            if (!script.isEnabled()) {
-                return;
+        if (isSynchronous()) {
+            final Object scriptLock = getScriptLock(script);
+            synchronized (scriptLock) {
+                if (script.isEnabled()) {
+                    executeScipt();
+                }
             }
-            scope = new Global();
-            cx = Context.enter();
+        } else {
+            if (script.isEnabled()) {
+                executeScipt();
+            }
+        }
+    }
+
+    private synchronized void executeScipt() {
+        scope = new Global();
+        cx = Context.enter();
+        try {
             cx.setOptimizationLevel(-1);
             scope.init(cx);
             cx.setOptimizationLevel(-1);
             cx.setLanguageVersion(Context.VERSION_1_5);
+            String preloadClasses = preInitClasses();
+            evalTrusted(preloadClasses);
+            // required by some libraries
+            evalTrusted("global=this;");
+            initEnvironment();
+            cleanupClasses();
             try {
-                String preloadClasses = preInitClasses();
-                evalTrusted(preloadClasses);
-                // required by some libraries
-                evalTrusted("global=this;");
-                initEnvironment();
-                cleanupClasses();
-                try {
-                    evalUNtrusted(script.getScript());
-                } finally {
-                    finalizeEnvironment();
-                }
-                // ProcessBuilderFactory.runCommand(commandline);
-            } catch (Throwable e) {
-                logger.log(e);
-                notifyAboutException(e);
+                evalUNtrusted(script.getScript());
             } finally {
-                Context.exit();
+                finalizeEnvironment();
             }
+            // ProcessBuilderFactory.runCommand(commandline);
+        } catch (Throwable e) {
+            logger.log(e);
+            notifyAboutException(e);
+        } finally {
+            Context.exit();
         }
     }
 
