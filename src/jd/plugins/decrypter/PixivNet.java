@@ -54,8 +54,7 @@ public class PixivNet extends PluginForDecrypt {
         }
         final String lid = new Regex(parameter, "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
-
-        String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
+        String fpName = null;
         if (parameter.matches(TYPE_GALLERY)) {
             /* Decrypt gallery */
             br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
@@ -63,6 +62,7 @@ public class PixivNet extends PluginForDecrypt {
             if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple\\-image submission<")) {
                 /* Not multiple urls --> Switch to single-url view */
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
+                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
                 if (isAdultImageLoginRequired()) {
                     logger.info("Adult content: Account required");
                     return decryptedLinks;
@@ -73,6 +73,9 @@ public class PixivNet extends PluginForDecrypt {
                 }
                 if (links.length == 0) {
                     links = this.br.getRegex("data\\-src=\"(http[^<>\"]+)\"[^>]+class=\"original\\-image\"").getColumn(0);
+                }
+                if (links.length == 0) {
+                    links = this.br.getRegex("pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
                 }
             } else {
                 /* Multiple urls */
@@ -87,6 +90,7 @@ public class PixivNet extends PluginForDecrypt {
                     logger.info("Adult content: Account required");
                     return decryptedLinks;
                 }
+                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
                 links = br.getRegex("data\\-filter=\"manga\\-image\" data\\-src=\"(http[^<>\"\\']+)\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
@@ -95,7 +99,8 @@ public class PixivNet extends PluginForDecrypt {
             }
             final DecimalFormat df = new DecimalFormat("000");
             int counter = 1;
-            for (final String singleLink : links) {
+            for (String singleLink : links) {
+                singleLink = singleLink.replaceAll("\\\\", "");
                 String filename = lid + (fpName != null ? fpName : fpName) + "_" + df.format(counter);
                 final String ext = getFileNameExtensionFromString(singleLink, jd.plugins.hoster.PixivNet.default_extension);
                 filename += ext;
@@ -104,6 +109,7 @@ public class PixivNet extends PluginForDecrypt {
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("galleryid", lid);
                 dl.setProperty("galleryurl", this.br.getURL());
+                dl.setContentUrl(parameter);
                 dl.setFinalFileName(filename);
                 decryptedLinks.add(dl);
                 counter++;
@@ -111,6 +117,7 @@ public class PixivNet extends PluginForDecrypt {
         } else {
             /* Decrypt user */
             br.getPage(parameter);
+            fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
             if (isOffline(this.br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
