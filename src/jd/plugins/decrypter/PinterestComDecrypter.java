@@ -239,12 +239,13 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         /* We've probably reached the end ... */
                         break;
                     }
-                    if (pin_list == null) {
-                        return null;
-                    }
-                    for (final Object pint : pin_list) {
-                        final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
-                        proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
+                    if (pin_list != null) {
+                        for (final Object pint : pin_list) {
+                            final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
+                            proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
+                        }
+                    } else {
+                        processPinsKamikaze(entries, board_id, source_url);
                     }
                     nextbookmark = (String) JavaScriptEngineFactory.walkJson(entries, "resource/options/bookmarks/{0}");
                     if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
@@ -265,11 +266,11 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void proccessLinkedHashMap(LinkedHashMap<String, Object> single_pinterest_data, final String board_id, final String source_url) throws DecrypterException {
+    private boolean proccessLinkedHashMap(LinkedHashMap<String, Object> single_pinterest_data, final String board_id, final String source_url) throws DecrypterException {
         final String type = (String) single_pinterest_data.get("type");
         if (type == null || !(type.equals("pin") || type.equals("interest"))) {
             /* Skip invalid objects! */
-            return;
+            return false;
         }
         final LinkedHashMap<String, Object> single_pinterest_pinner = (LinkedHashMap<String, Object>) single_pinterest_data.get("pinner");
         final LinkedHashMap<String, Object> single_pinterest_images = (LinkedHashMap<String, Object>) single_pinterest_data.get("images");
@@ -327,6 +328,36 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         fp.add(dl);
         decryptedLinks.add(dl);
         distribute(dl);
+        return true;
+    }
+
+    /**
+     * Recursive function to crawl all folders/subfolders
+     *
+     * @throws DecrypterException
+     */
+    @SuppressWarnings("unchecked")
+    private void processPinsKamikaze(final Object jsono, final String board_id, final String source_url) throws DecrypterException {
+        LinkedHashMap<String, Object> test;
+        if (jsono instanceof LinkedHashMap) {
+            test = (LinkedHashMap<String, Object>) jsono;
+            if (!proccessLinkedHashMap(test, board_id, source_url)) {
+                final Iterator<Entry<String, Object>> it = test.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Object> thisentry = it.next();
+                    final Object mapObject = thisentry.getValue();
+                    processPinsKamikaze(mapObject, board_id, source_url);
+                }
+            }
+        } else if (jsono instanceof ArrayList) {
+            ArrayList<Object> ressourcelist = (ArrayList<Object>) jsono;
+            for (final Object listo : ressourcelist) {
+                test = (LinkedHashMap<String, Object>) listo;
+                if (!proccessLinkedHashMap(test, board_id, source_url)) {
+                    processPinsKamikaze(listo, board_id, source_url);
+                }
+            }
+        }
     }
 
     private void decryptSite() {

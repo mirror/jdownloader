@@ -326,7 +326,7 @@ public class DiskYandexNet extends PluginForHost {
                 }
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(this.currHash) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
+                br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + getID0ForPostFree(isPartOfAFolder(downloadLink)) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
                 /** TODO: Find out why we have the wrong SK here and remove this workaround! */
                 if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
                     sk = getSK(this.br);
@@ -334,7 +334,7 @@ public class DiskYandexNet extends PluginForHost {
                         logger.warning("sk in account handling (without move) is null");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + Encoding.urlEncode(this.currHash) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
+                    br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + getID0ForPostFree(isPartOfAFolder(downloadLink)) + "&idClient=" + getIdClient() + "&version=" + VERSION + "&sk=" + sk);
                 }
                 handleErrorsFree();
                 dllink = PluginJSonUtils.getJsonValue(br, "file");
@@ -562,7 +562,7 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (dllink == null) {
-                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=%2Fpublic%2F" + Encoding.urlEncode(hash) + "&async.0=0&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
+                        postPage("https://disk.yandex.com/models/?_m=do-save-resource-public", "_model.0=do-save-resource-public&id.0=" + getID0ForPostFree(isPartOfAFolder(link)) + "&async.0=0&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + ACCOUNT_SK);
                         /* TODO: Maybe add/find a way to verify if the file really has been moved to the account. */
                         if (br.containsHTML("\"code\":85")) {
                             logger.info("No free space available, failed to move file to account");
@@ -641,6 +641,10 @@ public class DiskYandexNet extends PluginForHost {
 
     private boolean downloadableViaAccountOnly(final DownloadLink dl) {
         return dl.getBooleanProperty("premiumonly", false);
+    }
+
+    private boolean isPartOfAFolder(final DownloadLink dl) {
+        return dl.getBooleanProperty("is_part_of_a_folder", false);
     }
 
     @SuppressWarnings("deprecation")
@@ -764,6 +768,18 @@ public class DiskYandexNet extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return ACCOUNT_FREE_MAXDOWNLOADS;
+    }
+
+    private String getID0ForPostFree(final boolean isPartOfAFolder) {
+        final String hash = this.currHash.replace("/", "_").replace("+", "-");
+        final String path = this.currPath;
+        final String postValue;
+        if (isPartOfAFolder) {
+            postValue = "%2Fpublic%2F" + Encoding.urlEncode(hash + ":" + path);
+        } else {
+            postValue = "%2Fpublic%2F" + Encoding.urlEncode(hash);
+        }
+        return postValue;
     }
 
     public static String getSK(final Browser br) {

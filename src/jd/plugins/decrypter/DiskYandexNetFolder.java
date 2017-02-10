@@ -228,6 +228,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         /* md5 hash is usually given */
                         dl.setMD5Hash(md5);
                     }
+                    dl.setProperty("is_part_of_a_folder", true);
                     dl.setContentUrl(url_content);
                     dl.setLinkID(hash + path);
                     dl._setFilePackage(fp);

@@ -360,7 +360,7 @@ public class Keep2ShareCc extends K2SApi {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             }
         }
-        downloadLink.setProperty("directlink", dllink);
+        downloadLink.setProperty(directlinkproperty, dllink);
         // add download slot
         controlSlot(+1, account);
         try {
@@ -633,50 +633,53 @@ public class Keep2ShareCc extends K2SApi {
                 getPage(link.getDownloadURL());
                 doFree(link, account);
             } else {
-                br.setFollowRedirects(false);
-                getPage(link.getDownloadURL());
-                handleGeneralErrors(account);
-                // Set cookies for other domain if it is changed via redirect
-                String currentDomain = MAINPAGE.replace("http://", "");
-                String newDomain = null;
-                String dllink = br.getRedirectLocation();
-                if (inValidate(dllink)) {
-                    dllink = getDllinkPremium();
-                }
-                String possibleDomain = getDomain(dllink);
-                if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
-                    newDomain = getDomain(dllink);
-                } else if (!br.getURL().contains(currentDomain)) {
-                    newDomain = getDomain(br.getURL());
-                }
-                if (newDomain != null) {
-                    resetCookies(account, currentDomain, newDomain);
-                    if (dllink == null) {
-                        getPage(link.getDownloadURL().replace(currentDomain, newDomain));
-                        dllink = br.getRedirectLocation();
+                String dllink = link.getStringProperty(directlinkproperty, null);
+                if (dllink == null) {
+                    br.setFollowRedirects(false);
+                    getPage(link.getDownloadURL());
+                    handleGeneralErrors(account);
+                    // Set cookies for other domain if it is changed via redirect
+                    String currentDomain = MAINPAGE.replace("http://", "");
+                    String newDomain = null;
+                    dllink = br.getRedirectLocation();
+                    if (inValidate(dllink)) {
+                        dllink = getDllinkPremium();
+                    }
+                    String possibleDomain = getDomain(dllink);
+                    if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
+                        newDomain = getDomain(dllink);
+                    } else if (!br.getURL().contains(currentDomain)) {
+                        newDomain = getDomain(br.getURL());
+                    }
+                    if (newDomain != null) {
+                        resetCookies(account, currentDomain, newDomain);
                         if (dllink == null) {
-                            dllink = getDllinkPremium();
+                            getPage(link.getDownloadURL().replace(currentDomain, newDomain));
+                            dllink = br.getRedirectLocation();
+                            if (dllink == null) {
+                                dllink = getDllinkPremium();
+                            }
                         }
+                        currentDomain = newDomain;
                     }
-                    currentDomain = newDomain;
-                }
 
-                if (inValidate(dllink)) {
-                    if (br.containsHTML("Traffic limit exceed!<")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    }
-                    synchronized (ACCLOCK) {
-                        if (after == account.getProperty("cookies", null)) {
-                            account.setProperty("cookies", Property.NULL);
+                    if (inValidate(dllink)) {
+                        if (br.containsHTML("Traffic limit exceed!<")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                         }
-                        if (fresh) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        synchronized (ACCLOCK) {
+                            if (after == account.getProperty("cookies", null)) {
+                                account.setProperty("cookies", Property.NULL);
+                            }
+                            if (fresh) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            }
                         }
                     }
+                    dllink = Encoding.htmlDecode(dllink);
                 }
-                dllink = Encoding.htmlDecode(dllink);
                 logger.info("dllink = " + dllink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
                 if (dl.getConnection().getContentType().contains("html")) {
@@ -699,6 +702,7 @@ public class Keep2ShareCc extends K2SApi {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                link.setProperty(directlinkproperty, dllink);
                 // add download slot
                 controlSlot(+1, account);
                 try {

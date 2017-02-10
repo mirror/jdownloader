@@ -42,24 +42,26 @@ public class PanBaiduCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#(dir|list)/path=%.+)";
-    private static final String TYPE_FOLDER_GENERAL                   = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#(list|dir)/path=%2F.+))";
-    private static final String TYPE_FOLDER_NORMAL                    = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
-    private static final String TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "https?://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
-    private static final String TYPE_FOLDER_SHORT                     = "https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
-    private static final String APPID                                 = "250528";
+    private static final String                TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9]+#(dir|list)/path=%.+)";
+    private static final String                TYPE_FOLDER_GENERAL                   = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#(list|dir)/path=%2F.+))";
+    private static final String                TYPE_FOLDER_NORMAL                    = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
+    private static final String                TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "https?://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
+    private static final String                TYPE_FOLDER_SHORT                     = "https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
+    private static final String                TYPE_FOLDER_USER_HOME                 = ".+/share/home.+";
+    private static final String                APPID                                 = "250528";
 
-    private String              link_password                         = null;
-    private String              link_password_cookie                  = null;
-    private String              shareid                               = null;
-    private String              uk                                    = null;
-    private String              shorturl                              = null;
+    private String                             link_password                         = null;
+    private String                             link_password_cookie                  = null;
+    private String                             uk                                    = null;
+    private CryptedLink                        param                                 = null;
+    private String                             parameter                             = null;
+    private final ArrayList<DownloadLink>      decryptedLinks                        = new ArrayList<DownloadLink>();
+    private final HashMap<String, FilePackage> filePackages                          = new HashMap<String, FilePackage>();
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
-        shorturl = new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0);
+        this.param = param;
+        parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
         /* Extract password from url in case the url came from this decrypter before. */
         link_password = new Regex(parameter, "linkpassword=([^<>\"\\&=]+)").getMatch(0);
         if (link_password != null) {
@@ -68,7 +70,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             /* Revert urlencode */
             link_password = Encoding.htmlDecode(link_password);
         }
-        if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT)) {
+        if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT) && !parameter.matches(TYPE_FOLDER_USER_HOME)) {
             /* Correct invalid "view" linktypes - we need one general linkformat! */
             final String replace_part = new Regex(parameter, "(baidu\\.com/share/[a-z]+)").getMatch(0);
             if (replace_part != null) {
@@ -76,7 +78,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             }
         }
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0");
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         /* If we access urls without cookies we might get 404 responses for no reason so let's access the main page first. */
         this.br.getPage("http://pan.baidu.com");
         this.br.getPage(parameter);
@@ -86,9 +88,63 @@ public class PanBaiduCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        if (this.parameter.matches(TYPE_FOLDER_USER_HOME)) {
+            crawlHome();
+        } else {
+            crawlFoldersAndFiles();
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
+        return decryptedLinks;
+    }
+
+    private void crawlHome() throws Exception {
+        this.uk = new Regex(this.parameter, "uk=(\\d+)").getMatch(0);
+        int offset = 0;
+        int currentlinksnum = 0;
+        final int max_numberof_items_per_page = 60;
+        do {
+            if (this.isAbort()) {
+                return;
+            }
+            /* Reset that */
+            currentlinksnum = 0;
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            this.br.getPage(String.format("http://pan.baidu.com/pcloud/feed/getsharelist?t=%d&category=0&auth_type=1&request_location=share_home&start=%d&limit=60&query_uk=%s&channel=chunlei&clienttype=0&web=1&logid=&bdstoken=null", System.currentTimeMillis(), offset, this.uk));
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) entries.get("");
+            final ArrayList<Object> records = (ArrayList<Object>) entries.get("records");
+            ArrayList<Object> filelist = (ArrayList<Object>) entries.get("records");
+            if (records == null) {
+                break;
+            }
+            for (final Object recordo : records) {
+                entries = (LinkedHashMap<String, Object>) recordo;
+                final String shorturl_id = (String) entries.get("shorturl");
+                final String shareid = (String) entries.get("shareid");
+                if (shareid == null || shareid.equals("")) {
+                    continue;
+                }
+                filelist = (ArrayList<Object>) entries.get("filelist");
+                if (filelist == null) {
+                    continue;
+                }
+                for (final Object fileo : filelist) {
+                    crawlFolderObject(fileo, shorturl_id, shareid);
+                    currentlinksnum++;
+                    offset++;
+                }
+            }
+        } while (currentlinksnum >= max_numberof_items_per_page);
+    }
+
+    private void crawlFoldersAndFiles() throws Exception {
+        final String shorturl_id = new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0);
         uk = br.getRegex("\"uk\":(\\d+),").getMatch(0);
-        shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
+        String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
 
         if (br.getURL().contains("/share/init")) {
@@ -123,13 +179,13 @@ public class PanBaiduCom extends PluginForDecrypt {
                 final DownloadLink dl = this.createOfflinelink(parameter);
                 dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
                 decryptedLinks.add(dl);
-                return decryptedLinks;
+                return;
             }
         }
 
         if (uk == null || shareid == null) {
             /* Probably user added invalid url */
-            return decryptedLinks;
+            return;
         }
 
         String singleFolder = new Regex(parameter, "#dir/path=(.*?)$").getMatch(0);
@@ -140,8 +196,8 @@ public class PanBaiduCom extends PluginForDecrypt {
         String dirName = null;
         boolean is_subfolder = false;
         // Jump into folder or get content of the main link
-        if (param.toString().matches(TYPE_FOLDER_SUBFOLDER) || param.toString().matches(TYPE_FOLDER_GENERAL)) {
-            dirName = new Regex(param.toString(), "(?:(?:dir|list)/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
+        if (parameter.matches(TYPE_FOLDER_SUBFOLDER) || parameter.matches(TYPE_FOLDER_GENERAL)) {
+            dirName = new Regex(parameter, "(?:(?:dir|list)/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
             is_subfolder = true;
         }
@@ -154,15 +210,14 @@ public class PanBaiduCom extends PluginForDecrypt {
         int currentlinksnum = 0;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<Object> ressourcelist = null;
-        final HashMap<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
-                return decryptedLinks;
+                return;
             }
             currentlinksnum = 0;
             if (currentpage > 1 || is_subfolder) {
-                br.getPage(getFolder(parameter, dir, currentpage));
+                br.getPage(getFolder(parameter, dir, currentpage, shareid));
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 errno = JavaScriptEngineFactory.toLong(entries.get("errno"), -1);
                 if (errno == 2) {
@@ -170,14 +225,14 @@ public class PanBaiduCom extends PluginForDecrypt {
                     final DownloadLink dl = this.createOfflinelink(parameter);
                     dl.setFinalFileName(Encoding.htmlDecode(dirName));
                     decryptedLinks.add(dl);
-                    return decryptedLinks;
+                    return;
                 }
                 ressourcelist = (ArrayList) entries.get("list");
             } else {
                 final String json = this.br.getRegex("setData\\((\\{.+?);").getMatch(0);
                 if (json == null) {
                     logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
-                    return null;
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
                 }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
@@ -187,109 +242,114 @@ public class PanBaiduCom extends PluginForDecrypt {
                 final DownloadLink dl = this.createOfflinelink(parameter);
                 dl.setFinalFileName(Encoding.htmlDecode(dirName));
                 decryptedLinks.add(dl);
-                return decryptedLinks;
+                return;
             }
 
-            DownloadLink dl = null;
-
             for (final Object fileo : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) fileo;
-                final String server_filename = (String) entries.get("server_filename");
-                if (server_filename == null) {
-                    continue;
-                }
-                final String fsid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), 0));
-                final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                final long isdelete = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                final long isdir = JavaScriptEngineFactory.toLong(entries.get("isdir"), 0);
-                if (isdir == 1) {
-                    final String path = (String) entries.get("path");
-                    String subdir_link = null;
-                    if (path == null) {
-                        continue;
-                    }
-                    /* Subfolder --> Goes back into decrypter */
-                    if (shorturl == null) {
-                        String general_folder = parameter;
-                        String folder_path = new Regex(general_folder, "(#dir/path=.*?)$").getMatch(0);
-                        if (folder_path != null) {
-                            general_folder = general_folder.replace(folder_path, "");
-                        }
-                        subdir_link = general_folder + "#dir/path=" + Encoding.urlEncode(path);
-                    } else {
-                        subdir_link = "http://pan.baidu.com/s/" + shorturl + "#dir/path=" + Encoding.urlEncode(path);
-                    }
-                    if (link_password != null) {
-                        /*
-                         * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password
-                         * again for each subfolder :)
-                         */
-                        subdir_link += "&linkpassword=" + Encoding.urlEncode(link_password);
-                    }
-                    dl = createDownloadlink(subdir_link);
-                } else {
-                    if (fsid.equals("0") || server_filename == null) {
-                        continue;
-                    }
-                    final String md5 = (String) entries.get("md5");
-                    dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                    dl.setProperty("server_filename", server_filename);
-
-                    dl.setFinalFileName(server_filename);
-                    if (size > 0) {
-                        dl.setDownloadSize(size);
-                    }
-                    dl.setProperty("mainLink", getPlainLink(parameter));
-                    dl.setProperty("dirName", dir);
-                    dl.setProperty("important_link_password", link_password);
-                    dl.setProperty("important_link_password_cookie", link_password_cookie);
-                    dl.setProperty("important_fsid", fsid);
-
-                    dl.setContentUrl(parameter + "&fid=" + fsid);
-                    dl.setProperty("origurl_uk", uk);
-                    dl.setProperty("origurl_shareid", shareid);
-                    if (isdelete == 1) {
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                    }
-                    String path = (String) entries.get("path");
-                    if (path != null) {
-                        path = new Regex(path, "(/.+/)").getMatch(0);
-                        FilePackage fp = filePackages.get(path);
-                        if (fp == null) {
-                            final String name = new Regex(path, ".+/(.+)/").getMatch(0);
-                            if (name != null) {
-                                fp = FilePackage.getInstance();
-                                fp.setName(name);
-                                filePackages.put(path, fp);
-                            }
-                        }
-                        if (fp != null) {
-                            fp.add(dl);
-                        }
-                    }
-
-                    /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
-                    // if (md5 != null) {
-                    // they provide wrong md5 values
-                    // dl.setMD5Hash(md5);
-                    // }
-                }
-                decryptedLinks.add(dl);
+                crawlFolderObject(fileo, shorturl_id, shareid);
                 currentlinksnum++;
             }
             currentpage++;
         } while (currentlinksnum >= maxlinksperpage && currentpage <= maxpages);
-        if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-
-        return decryptedLinks;
     }
 
-    private String getFolder(final String parameter, String dir, final int page) {
+    private void crawlFolderObject(final Object fileo, final String shorturl_id, final String shareid) {
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) fileo;
+        final String server_filename = (String) entries.get("server_filename");
+        if (server_filename == null) {
+            /* Nothing to grab */
+            return;
+        }
+        DownloadLink dl;
+        final String fsid = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), 0));
+        final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final long isdelete = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final long isdir = JavaScriptEngineFactory.toLong(entries.get("isdir"), 0);
+        if (isdir == 1) {
+            final String path = (String) entries.get("path");
+            String subdir_link = null;
+            if (path == null) {
+                /* Nothing to grab */
+                return;
+            }
+            /* Subfolder --> Goes back into decrypter */
+            if (shorturl_id == null && !shorturl_id.equals("")) {
+                String general_folder = parameter;
+                String folder_path = new Regex(general_folder, "(#dir/path=.*?)$").getMatch(0);
+                if (folder_path != null) {
+                    general_folder = general_folder.replace(folder_path, "");
+                }
+                subdir_link = general_folder + "#dir/path=" + Encoding.urlEncode(path);
+            } else {
+                subdir_link = "http://pan.baidu.com/s/" + shorturl_id + "#dir/path=" + Encoding.urlEncode(path);
+            }
+            if (link_password != null) {
+                /*
+                 * Add passsword so in case user adds password protected mainfolder once he does not have to enter the password again for
+                 * each subfolder :)
+                 */
+                subdir_link += "&linkpassword=" + Encoding.urlEncode(link_password);
+            }
+            dl = createDownloadlink(subdir_link);
+        } else {
+            if (fsid.equals("0") || server_filename == null) {
+                /* Nothing to grab */
+                return;
+            }
+            final String contenturl = String.format("http://%s/s/%s", this.getHost(), shorturl_id);
+            // final String md5 = (String) entries.get("md5");
+            dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            dl.setProperty("server_filename", server_filename);
+
+            dl.setFinalFileName(server_filename);
+            if (size > 0) {
+                dl.setDownloadSize(size);
+            }
+            if (this.parameter.matches(TYPE_FOLDER_USER_HOME)) {
+                dl.setProperty("mainLink", contenturl);
+            } else {
+                dl.setProperty("mainLink", getPlainLink(parameter));
+            }
+            // dl.setProperty("dirName", dir);
+            dl.setProperty("important_link_password", link_password);
+            dl.setProperty("important_link_password_cookie", link_password_cookie);
+            dl.setProperty("important_fsid", fsid);
+
+            dl.setContentUrl(contenturl);
+            dl.setProperty("origurl_uk", uk);
+            dl.setProperty("origurl_shareid", shareid);
+            if (isdelete == 1) {
+                dl.setAvailable(false);
+            } else {
+                dl.setAvailable(true);
+            }
+            String path = (String) entries.get("path");
+            if (path != null) {
+                path = new Regex(path, "(/.+/)").getMatch(0);
+                FilePackage fp = filePackages.get(path);
+                if (fp == null) {
+                    final String name = new Regex(path, ".+/(.+)/").getMatch(0);
+                    if (name != null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(name);
+                        filePackages.put(path, fp);
+                    }
+                }
+                if (fp != null) {
+                    fp.add(dl);
+                }
+            }
+            decryptedLinks.add(dl);
+
+            /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
+            // if (md5 != null) {
+            // they provide wrong md5 values
+            // dl.setMD5Hash(md5);
+            // }
+        }
+    }
+
+    private String getFolder(final String parameter, String dir, final int page, String shareid) {
         // String unicode_stuff = new Regex(dir, "_(.+)$").getMatch(0);
         // if (unicode_stuff != null) {
         // dir = dir.replace(unicode_stuff, "");
