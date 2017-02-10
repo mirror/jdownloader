@@ -332,9 +332,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Recursive function to crawl all folders/subfolders
+     * Recursive function to crawl all PINs --> Easiest way as they often change their json.
      *
-     * @throws DecrypterException
      */
     @SuppressWarnings("unchecked")
     private void processPinsKamikaze(final Object jsono, final String board_id, final String source_url) throws DecrypterException {
@@ -352,10 +351,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         } else if (jsono instanceof ArrayList) {
             ArrayList<Object> ressourcelist = (ArrayList<Object>) jsono;
             for (final Object listo : ressourcelist) {
-                test = (LinkedHashMap<String, Object>) listo;
-                if (!proccessLinkedHashMap(test, board_id, source_url)) {
-                    processPinsKamikaze(listo, board_id, source_url);
-                }
+                processPinsKamikaze(listo, board_id, source_url);
             }
         }
     }
