@@ -1294,6 +1294,7 @@ TestWaitDialog_runInEDTnothing_found=Nenhum Download Disponível encontrado! Ten
 TimingTableModel_initColumns_waitloop_print=%s1 aguarda até %s2 por %s3
 TimingTableModel_initColumns_waitloop_title=Loop de tempo de espera detectado!
 TimingTableModel_initColumns_waitloop_warning=Você não pode alterar este valor. Isto irá resultar no seguinte conflito de loop de espera:\r\n\r\n%s1\r\n\r\nPor favor, interrompa este loop primeiro.
+TwoCaptcha_getName_=Solucionador de Captchas remoto totalmente automatizado
 UPNPRouterPlugin_accept_all=Confirmar tudo. Não perguntar novamente.
 UPNPRouterPlugin_runDetectionWizard_confirm_msg=O assistente irá testar este método de reconexão UPNP agora:\r\nServiço: %s1\r\nPonto de controle: %s2
 UninstalledExtension_getDescription_object_=%s1\r\n\r\nEsta extensão ainda não está instalada. Clique [Instalar agora] e o JDownloader irá iniciar a instalação
