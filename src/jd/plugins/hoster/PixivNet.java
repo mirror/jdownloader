@@ -108,7 +108,9 @@ public class PixivNet extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!con.getContentType().contains("html") && con.isOK()) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setProperty("directlink", dllink);
             } else {
@@ -150,30 +152,6 @@ public class PixivNet extends PluginForHost {
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
-
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // con = br2.openHeadConnection(dllink);
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

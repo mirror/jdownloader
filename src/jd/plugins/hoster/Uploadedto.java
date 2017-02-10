@@ -789,6 +789,7 @@ public class Uploadedto extends PluginForHost {
                  */
                 /* IP was changed - now we only have to switch to the next account! */
                 logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
+                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
@@ -1003,6 +1004,7 @@ public class Uploadedto extends PluginForHost {
             } else {
                 logger.info("Limit reached, disabling free account to use the next one!");
                 account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
+                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
@@ -1050,7 +1052,12 @@ public class Uploadedto extends PluginForHost {
                     }
                 }
             case 16:
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (acc != null) {
+                    acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Disabled because of flood protection", 60 * 60 * 1000l);
+                }
             case 18:
                 // {"err":{"code":18,"message":"Das \u00fcbergebene Passwort ist vom Typ sha1, erwartet wurde md5"}}
                 // messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
@@ -1080,8 +1087,10 @@ public class Uploadedto extends PluginForHost {
                     } else {
                         acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
                     }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 8011:
                 /* direct download but upload user deleted */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Upload User deleted");
@@ -1389,16 +1398,19 @@ public class Uploadedto extends PluginForHost {
                 }
                 if (error != null) {
                     if (error.contains("error_traffic")) {
+                        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k\\&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
                     logger.info("Download blocked (IP), disabling account...");
+                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (br.containsHTML("You used too many different IPs, Downloads have been blocked for today\\.")) {
                     // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
                     logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
+                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 int chunks = 0;
@@ -1412,6 +1424,7 @@ public class Uploadedto extends PluginForHost {
                         logger.info("Traffic exhausted, temp disabled account");
                         /* temp debug info */
                         logger.info(br.toString());
+                        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     logger.info("InDirect Downloads active");
@@ -1703,6 +1716,7 @@ public class Uploadedto extends PluginForHost {
                 } while (counter <= 5 && loginIssues);
                 if (loginIssues) {
                     logger.warning("Account check failed because of login/server issues");
+                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 60 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin issues", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 changeToEnglish(this.br);
