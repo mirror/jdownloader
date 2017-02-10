@@ -58,5 +58,7 @@ securityLoading=Você está tentando carregar e executar JavaScript de %s1. Por 
 securityLoading_title=Alerta de Segurança!
 showMessageDialog_title=Mensagem de alerta de %s1@%s2
 sure_delete_entries=Deseja realmente excluir %s1 script(s)?
+synchronous=Execução em sincronia do script
+synchronous_desc=Habilite a execução em sincronia se você não quiser que este script seja executado uma segunda vez enquanto a primeira instância ainda estiver em execução. Se você quiser modificar os parâmetros por referência, certifique-se de habilitar esta opção.
 syntax_error=Erro de sintaxe JavaScript
 title=Criador de Script de Evento
