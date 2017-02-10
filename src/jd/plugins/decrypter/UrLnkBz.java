@@ -34,9 +34,9 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 /**
  * @author raztoki
- *
+ * @author psp
  */
-@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(www\\.)?urlink\\.biz/[A-Za-z0-9]{4,6}" }) 
+@DecrypterPlugin(revision = "$Revision: 25143 $", interfaceVersion = 2, names = { "urlink.biz" }, urls = { "https?://(?:www\\.)?(?:urlink\\.biz|url\\-ink\\.biz|urli\\-nk\\.com)/[A-Za-z0-9]{4,6}" })
 public class UrLnkBz extends PluginForDecrypt {
 
     public UrLnkBz(PluginWrapper wrapper) {
@@ -48,21 +48,31 @@ public class UrLnkBz extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        // keycaptcha
-        final Form captchaForm = br.getForm(0);
-        if (captchaForm != null && captchaForm.containsHTML("capcode")) {
-            final String result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
-            if (StringUtils.isEmpty(result)) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if ("CANCEL".equals(result)) {
-                throw new PluginException(LinkStatus.ERROR_FATAL);
-            }
-            captchaForm.put("capcode", Encoding.urlEncode(result));
-            br.submitForm(captchaForm);
-            // captcha form and inputfield is shown even when the correct response is given.
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
-        String dl = br.getRegex("document\\.location\\.href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+        int counter = 0;
+        do {
+            /* 2017-02-10: A single URL can actually require 5 captchas (same via browser)! */
+            final Form captchaForm = br.getForm(0);
+            if (captchaForm != null && captchaForm.containsHTML("capcode")) {
+                final String result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
+                if (StringUtils.isEmpty(result)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                if ("CANCEL".equals(result)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                }
+                captchaForm.put("capcode", Encoding.urlEncode(result));
+                br.submitForm(captchaForm);
+                // captcha form and inputfield is shown even when the correct response is given.
+            } else {
+                break;
+            }
+            counter++;
+        } while (counter <= 10);
+        final String dl = br.getRegex("document\\.location\\.href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
         if (dl != null) {
             decryptedLinks.add(createDownloadlink(dl));
         }

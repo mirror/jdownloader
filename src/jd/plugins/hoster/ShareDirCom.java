@@ -50,6 +50,7 @@ public class ShareDirCom extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                   = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS                             = "NOCHUNKS";
 
+    private static final String                            API_BASE                             = "https://sharedir.com/sdapi.php";
     private static final String                            NICE_HOST                            = "sharedir.com";
     private static final String                            NICE_HOSTproperty                    = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
@@ -75,7 +76,7 @@ public class ShareDirCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://sharedir.com/terms.html";
+        return "https://sharedir.com/terms.html";
     }
 
     private Browser prepBr(final Browser br) {
@@ -140,7 +141,7 @@ public class ShareDirCom extends PluginForHost {
         prepBr(this.br);
         final AccountInfo ac = new AccountInfo();
         this.login(account, false);
-        safeAPIRequest("https://sharedir.com/sdapi.php?get_acc_type", account, null);
+        safeAPIRequest(API_BASE + "?get_acc_type", account, null);
         String acctype = null;
         if (br.containsHTML("0")) {
             ac.setTrafficMax(default_free_account_traffic_max);
@@ -150,15 +151,15 @@ public class ShareDirCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             acctype = "Premium account";
         }
-        safeAPIRequest("https://sharedir.com/sdapi.php?get_traffic_left", account, null);
+        safeAPIRequest(API_BASE + "?get_traffic_left", account, null);
         ac.setTrafficLeft(Long.parseLong(br.toString().trim()) * 1024);
-        safeAPIRequest("https://sharedir.com/sdapi.php?get_expire_date", account, null);
+        safeAPIRequest(API_BASE + "?get_expire_date", account, null);
         if (!br.toString().trim().equals("0")) {
             ac.setValidUntil(TimeFormatter.getMilliSeconds(br.toString(), "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         }
 
         ac.setProperty("multiHostSupport", Property.NULL);
-        safeAPIRequest("https://sharedir.com/sdapi.php?get_dl_limit", account, null);
+        safeAPIRequest(API_BASE + "?get_dl_limit", account, null);
         int maxSim = Integer.parseInt(br.toString().trim());
         if (maxSim < 0) {
             maxSim = 1;
@@ -167,7 +168,7 @@ public class ShareDirCom extends PluginForHost {
         account.setConcurrentUsePossible(true);
 
         // this should done at the point of link generating (which this host doesn't do). As not every hoster would have the same value...
-        safeAPIRequest("https://sharedir.com/sdapi.php?get_max_file_conn", account, null);
+        safeAPIRequest(API_BASE + "?get_max_file_conn", account, null);
         int maxcon = Integer.parseInt(br.toString().trim());
         if (maxcon >= 20) {
             maxcon = 0;
@@ -178,7 +179,7 @@ public class ShareDirCom extends PluginForHost {
         }
         account.setProperty("maxcon", maxcon);
         // now let's get a list of all supported hosts:
-        safeAPIRequest("https://sharedir.com/sdapi.php?get_dl_hosts", account, null);
+        safeAPIRequest(API_BASE + "?get_dl_hosts", account, null);
         String[] hosts = br.toString().split(",");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
@@ -338,7 +339,7 @@ public class ShareDirCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 final String lang = System.getProperty("user.language");
-                br.postPage("https://sharedir.com/login.html", "rem=1&login_submit=1&api=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://sharedir.com/login.html", "rem=1&login_submit=1&api=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("100: Invalid username/password combination")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
