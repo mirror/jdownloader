@@ -196,8 +196,8 @@ public class PanBaiduCom extends PluginForDecrypt {
         String dirName = null;
         boolean is_subfolder = false;
         // Jump into folder or get content of the main link
-        if (parameter.matches(TYPE_FOLDER_SUBFOLDER) || parameter.matches(TYPE_FOLDER_GENERAL)) {
-            dirName = new Regex(parameter, "(?:(?:dir|list)/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
+        if (param.toString().matches(TYPE_FOLDER_SUBFOLDER) || param.toString().matches(TYPE_FOLDER_GENERAL)) {
+            dirName = new Regex(param.toString(), "(?:(?:dir|list)/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
             is_subfolder = true;
         }
