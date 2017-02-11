@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,8 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+(\\?linkpassword=[^#&]+)?(?:#(dir|list)/path=%2F.+)?" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -339,14 +339,13 @@ public class PanBaiduCom extends PluginForDecrypt {
                     fp.add(dl);
                 }
             }
-            decryptedLinks.add(dl);
-
             /* 2016-05-19: Upon requests that their MD5 hashes are invalid we no longer set them */
             // if (md5 != null) {
             // they provide wrong md5 values
             // dl.setMD5Hash(md5);
             // }
         }
+        decryptedLinks.add(dl);
     }
 
     private String getFolder(final String parameter, String dir, final int page, String shareid) {
