@@ -22,10 +22,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -45,8 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
@@ -115,19 +116,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
-                try {
-                    distribute(e);
-                } catch (Throwable e1) {
-                }
+                distribute(e);
                 return super.add(e);
             }
 
             @Override
             public boolean addAll(Collection<? extends DownloadLink> c) {
-                try {
-                    distribute(c.toArray(new DownloadLink[] {}));
-                } catch (Throwable e) {
-                }
+                distribute(c.toArray(new DownloadLink[] {}));
                 return super.addAll(c);
             }
         };
@@ -145,12 +140,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             br.setConnectTimeout(3 * 60 * 1000);
             br.setReadTimeout(3 * 60 * 1000);
             br.setFollowRedirects(false);
-            try {
-                // They can have huge pages, allow eight times the normal load limit
-                br.setLoadLimit(8388608);
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
-            }
+            // They can have huge pages, allow eight times the normal load limit
+            br.setLoadLimit(8388608);
             // Login if possible, helps to get links which need the user to be logged in
             final List<Account> accs = AccountController.getInstance().getValidAccounts("soundcloud.com");
             if (accs != null && accs.size() > 0) {
@@ -246,7 +237,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void correctInputLinks() throws IOException, DecrypterException {
+    private void correctInputLinks() throws Exception {
         parameter = originalLink.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (parameter.matches(TYPE_INVALID)) {
             logger.info("Invalid link: " + parameter);
@@ -273,14 +264,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Link offline (offline track link): " + parameter);
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-            String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)\"").getMatch(0);
-            /* Maybe we got XML instead of json */
+            final LinkedHashMap<String, Object> api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            String newparameter = (String) api_data.get("permalink_url");
             if (newparameter == null) {
-                newparameter = br.getRegex("<permalink\\-url>(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)</permalink\\-url>").getMatch(0);
-            }
-            if (newparameter == null) {
-                logger.warning("Decrypter failed on redirect link: " + parameter);
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
+                newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)\"").getMatch(0);
+                /* Maybe we got XML instead of json */
+                if (newparameter == null) {
+                    newparameter = br.getRegex("<permalink\\-url>(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)</permalink\\-url>").getMatch(0);
+                    if (newparameter == null) {
+                        logger.warning("Decrypter failed on redirect link: " + parameter);
+                        throw new DecrypterException("Decrypter broken for link: " + parameter);
+                    }
+                }
             }
             newparameter = newparameter.replace("http://", "https://");
             parameter = newparameter;
