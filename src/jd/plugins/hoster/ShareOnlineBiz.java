@@ -550,6 +550,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 getPage("http://www.share-online.biz/");
                 postPage("https://www.share-online.biz/user/login", "l_rememberme=1&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("This account is disabled, please contact support")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "This account is disabled, please contact support", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 /* English language is needed for free download! */
                 getPage("http://www.share-online.biz/lang/set/english");
                 if (br.getCookie(COOKIE_HOST, "storage") == null) {

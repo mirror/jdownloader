@@ -176,19 +176,23 @@ public class FileBoomMe extends K2SApi {
     private final String formCaptcha     = "/file/captcha\\.html\\?v=[a-z0-9]+";
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
-        String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        String dllink = getDirectLinkAndReset(downloadLink, true);
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
-            logger.info("Reusing cached finallink!");
+            logger.info("Reusing cached final link!");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 401) {
-                br.followConnection();
-                handleGeneralServerErrors(account, downloadLink);
-                // we now want to restore!
-                br = obr;
+            if (!isValidDownloadConnection(dl.getConnection())) {
+                logger.info("Refresh final link");
                 dllink = null;
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
+                try {
+                    br.followConnection();
+                } catch (final Throwable e) {
+                    logger.log(e);
+                } finally {
+                    br = obr;
+                    dl.getConnection().disconnect();
+                }
             }
         }
         // if above has failed, dllink will be null
@@ -296,16 +300,27 @@ public class FileBoomMe extends K2SApi {
             }
             logger.info("dllink = " + dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!isValidDownloadConnection(dl.getConnection())) {
                 br.followConnection();
-                handleGeneralServerErrors(account, downloadLink);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    handleGeneralServerErrors(account, downloadLink);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = dllink.replace("\\", "");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+                if (!isValidDownloadConnection(dl.getConnection())) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    handleGeneralServerErrors(account, downloadLink);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        downloadLink.setProperty("directlink", dllink);
         // add download slot
         controlSlot(+1, account);
         try {
+            downloadLink.setProperty("directlink", dllink);
             dl.startDownload();
         } finally {
             // remove download slot
@@ -456,12 +471,27 @@ public class FileBoomMe extends K2SApi {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), resumes, chunks);
-                if (dl.getConnection().getContentType().contains("html")) {
-                    logger.warning("The final dllink seems not to be a file!");
+                logger.info("dllink = " + dllink);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                if (!isValidDownloadConnection(dl.getConnection())) {
                     br.followConnection();
-                    handleGeneralServerErrors(account, link);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (br.containsHTML("Download of file will start in")) {
+                        dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
+                    } else {
+                        dllink = null;
+                    }
+                    if (dllink == null) {
+                        logger.warning("The final dllink seems not to be a file!");
+                        handleGeneralServerErrors(account, link);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                    if (!isValidDownloadConnection(dl.getConnection())) {
+                        logger.warning("The final dllink seems not to be a file!");
+                        br.followConnection();
+                        handleGeneralServerErrors(account, link);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 // add download slot
                 controlSlot(+1, account);
@@ -507,6 +537,7 @@ public class FileBoomMe extends K2SApi {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        super.resetLink(link);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
