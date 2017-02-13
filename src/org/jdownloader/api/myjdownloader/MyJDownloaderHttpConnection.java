@@ -196,10 +196,11 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     protected HttpRequest buildRequest() throws IOException {
         HttpRequest ret = super.buildRequest();
         /* we do not allow gzip output */
-        accept_encoding = ret.getRequestHeaders().get("Accept-Encoding");
         final HTTPHeader xAcceptEncoding = ret.getRequestHeaders().get("X-Accept-Encoding");
         if (xAcceptEncoding != null && (StringUtils.containsIgnoreCase(xAcceptEncoding.getValue(), "gazeisp") || StringUtils.containsIgnoreCase(xAcceptEncoding.getValue(), "gzip_aes"))) {
             accept_encoding = xAcceptEncoding;
+        } else {
+            accept_encoding = ret.getRequestHeaders().get("Accept-Encoding");
         }
         ret.getRequestHeaders().remove(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING);
         return ret;
@@ -321,10 +322,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                                  // public void close() throws IOException {
-                                                                  // };
+                            // public void close() throws IOException {
+                            // };
 
-                                                              };
+                        };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {
