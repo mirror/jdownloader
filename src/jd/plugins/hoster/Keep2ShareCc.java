@@ -258,19 +258,23 @@ public class Keep2ShareCc extends K2SApi {
         if (isPremiumOnly()) {
             premiumDownloadRestriction("This file is only available to premium members");
         }
-        String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        String dllink = getDirectLinkAndReset(downloadLink, true);
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
         if (!inValidate(dllink)) {
             final Browser obr = br.cloneBrowser();
-            logger.info("Reusing cached finallink!");
+            logger.info("Reusing cached final link!");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 401) {
-                br.followConnection();
-                handleGeneralServerErrors(account, downloadLink);
-                // we now want to restore!
-                br = obr;
+            if (!isValidDownloadConnection(dl.getConnection())) {
+                logger.info("Refresh final link");
                 dllink = null;
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
+                try {
+                    br.followConnection();
+                } catch (final Throwable e) {
+                    logger.log(e);
+                } finally {
+                    br = obr;
+                    dl.getConnection().disconnect();
+                }
             }
         }
         // if above has failed, dllink will be null
@@ -347,23 +351,27 @@ public class Keep2ShareCc extends K2SApi {
             }
             logger.info("dllink = " + dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!isValidDownloadConnection(dl.getConnection())) {
                 br.followConnection();
-                logger.info(br.toString());
                 dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     handleGeneralServerErrors(account, downloadLink);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dllink = dllink.replace("\\", "");
-                // Try again...
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+                if (!isValidDownloadConnection(dl.getConnection())) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    handleGeneralServerErrors(account, downloadLink);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
         // add download slot
         controlSlot(+1, account);
         try {
+            downloadLink.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } finally {
             // remove download slot
@@ -633,7 +641,24 @@ public class Keep2ShareCc extends K2SApi {
                 getPage(link.getDownloadURL());
                 doFree(link, account);
             } else {
-                String dllink = link.getStringProperty(directlinkproperty, null);
+                String dllink = getDirectLinkAndReset(link, true);
+                if (!inValidate(dllink)) {
+                    final Browser obr = br.cloneBrowser();
+                    logger.info("Reusing cached final link!");
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                    if (!isValidDownloadConnection(dl.getConnection())) {
+                        logger.info("Refresh final link");
+                        dllink = null;
+                        try {
+                            br.followConnection();
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        } finally {
+                            br = obr;
+                            dl.getConnection().disconnect();
+                        }
+                    }
+                }
                 if (dllink == null) {
                     br.setFollowRedirects(false);
                     getPage(link.getDownloadURL());
@@ -682,7 +707,7 @@ public class Keep2ShareCc extends K2SApi {
                 }
                 logger.info("dllink = " + dllink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                if (dl.getConnection().getContentType().contains("html")) {
+                if (!isValidDownloadConnection(dl.getConnection())) {
                     br.followConnection();
                     if (br.containsHTML("Download of file will start in")) {
                         dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
@@ -695,17 +720,17 @@ public class Keep2ShareCc extends K2SApi {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                    if (dl.getConnection().getContentType().contains("html")) {
+                    if (!isValidDownloadConnection(dl.getConnection())) {
                         logger.warning("The final dllink seems not to be a file!");
                         br.followConnection();
                         handleGeneralServerErrors(account, link);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                link.setProperty(directlinkproperty, dllink);
                 // add download slot
                 controlSlot(+1, account);
                 try {
+                    link.setProperty(directlinkproperty, dllink);
                     dl.startDownload();
                 } finally {
                     // remove download slot
@@ -766,6 +791,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        super.resetLink(link);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

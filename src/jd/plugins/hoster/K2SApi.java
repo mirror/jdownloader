@@ -49,6 +49,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -110,6 +111,32 @@ public abstract class K2SApi extends PluginForHost {
      */
     protected boolean enforcesHTTPS() {
         return false;
+    }
+
+    @Override
+    public void resetLink(DownloadLink downloadLink) {
+        if (downloadLink != null) {
+            downloadLink.removeProperty("premlink");
+            downloadLink.removeProperty("freelink2");
+            downloadLink.removeProperty("freelink1");
+        }
+    }
+
+    protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
+        final String contentType = con.getContentType();
+        if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409) {
+            return false;
+        } else {
+            return con.isOK() || con.getResponseCode() == 206 || con.isContentDisposition();
+        }
+    }
+
+    protected final String getDirectLinkAndReset(DownloadLink downloadLink, boolean reset) {
+        final String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        if (reset) {
+            downloadLink.removeProperty(directlinkproperty);
+        }
+        return dllink;
     }
 
     /**

@@ -31,20 +31,17 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "get-my.link" }, urls = { "https?://(?:www\\.)?get\\-my\\.link/page\\.php\\?f=[a-zA-Z0-9_/\\+\\=\\-%]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "get-my.link" }, urls = { "https?://(?:www\\.)?get\\-my\\.link/page(\\.php\\?f=|\\.html/)[a-zA-Z0-9_/\\+\\=\\-%]+" })
 public class GetMyLink extends antiDDoSForDecrypt {
 
     public GetMyLink(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String parameter = null;
-    private String fuid;
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        set(param.toString());
-        parameter = param.toString();
+        final String parameter = param.toString();
+        final String fuid = new Regex(parameter, "(f=|html/)(.+)").getMatch(1);
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(fuid)) {
@@ -74,11 +71,6 @@ public class GetMyLink extends antiDDoSForDecrypt {
             finallink = br.getRegex("href=\"(http[^<>\"]+)\">\\s*?<button type=\"button\" class=\"btn btn\\-primary\">Télécharger le fichier").getMatch(0);
         }
         return finallink;
-    }
-
-    private void set(final String downloadLink) {
-        parameter = downloadLink;
-        fuid = new Regex(parameter, "f=(.+)").getMatch(0);
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {

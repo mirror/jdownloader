@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
 import jd.http.Browser;
@@ -108,7 +107,6 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         }
     }
 
-    protected AtomicLong      TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 2);
     protected volatile String connectToken = null;
 
     public static String getRevision() {
