@@ -23,13 +23,10 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
-import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
+import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -183,11 +180,12 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
 
         ret.put(JacSolverService.ID, 30000);
-        ret.put(DeathByCaptchaSolverService.ID, 60000);
+        // ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(NineKwSolverService.ID, 120000);
-        ret.put(CaptchaMyJDSolverService.ID, 60000);
-        ret.put(CheapCaptchaSolverService.ID, 60000);
-        ret.put(EndCaptchaSolverService.ID, 60000);
+        // ret.put(CaptchaMyJDSolverService.ID, 60000);
+        // ret.put(CheapCaptchaSolverService.ID, 60000);
+        // ret.put(EndCaptchaSolverService.ID, 60000);
+        ret.put(TwoCaptchaSolverService.ID, 60000);
 
         return ret;
     }

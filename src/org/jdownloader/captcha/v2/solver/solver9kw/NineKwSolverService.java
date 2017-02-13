@@ -24,13 +24,8 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
-import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -253,11 +248,11 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
         ret.put(JacSolverService.ID, 30000);
-        ret.put(DeathByCaptchaSolverService.ID, 60000);
-        ret.put(ImageTyperzSolverService.ID, 60000);
-        ret.put(CheapCaptchaSolverService.ID, 60000);
-        ret.put(EndCaptchaSolverService.ID, 60000);
-        ret.put(TwoCaptchaSolverService.ID, 60000);
+        // ret.put(DeathByCaptchaSolverService.ID, 60000);
+        // ret.put(ImageTyperzSolverService.ID, 60000);
+        // ret.put(CheapCaptchaSolverService.ID, 60000);
+        // ret.put(EndCaptchaSolverService.ID, 60000);
+        // ret.put(TwoCaptchaSolverService.ID, 60000);
         return ret;
     }
 

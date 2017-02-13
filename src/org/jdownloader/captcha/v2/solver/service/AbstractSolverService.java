@@ -151,7 +151,7 @@ public abstract class AbstractSolverService implements SolverService {
             // System.out.println(check.getName() + ": " + JSonStorage.serializeToJson(check.getWaitForMapCopy()));
             for (Entry<String, Integer> es : check.getWaitForMapCopy().entrySet()) {
                 final SolverService service = ChallengeResponseController.getInstance().getServiceByID(es.getKey());
-                if (service != null && es.getValue() != null && es.getValue().intValue() > 0) {
+                if (service != null && es.getValue() != null && es.getValue().intValue() > 0 && service.isEnabled()) {
                     // System.out.println(check.getName() + " waits for " + service.getName() + " : " + es.getValue().intValue());
                     final ArrayList<SolverService> ret = validateWaittimeQueue(start, service, new ArrayList<SolverService>(arrayList), new HashSet<SolverService>(dupe));
                     if (ret != null) {
