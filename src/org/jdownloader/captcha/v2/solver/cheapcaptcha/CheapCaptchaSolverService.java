@@ -23,7 +23,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
@@ -183,7 +182,7 @@ public class CheapCaptchaSolverService extends AbstractSolverService implements 
         ret.put(JacSolverService.ID, 30000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
-        ret.put(EndCaptchaSolverService.ID, 60000);
+        // ret.put(EndCaptchaSolverService.ID, 60000);
         ret.put(TwoCaptchaSolverService.ID, 60000);
         ret.put(NineKwSolverService.ID, 120000);
 
