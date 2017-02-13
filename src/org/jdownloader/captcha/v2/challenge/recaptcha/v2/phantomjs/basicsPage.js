@@ -26,18 +26,22 @@
 	}
 	clickReload = function() {
 
-		var evt = document.createEvent("MouseEvents");
-		evt.initEvent("mouseover", true, true);
+//		var evt = document.createEvent("MouseEvents");
+//		evt.initEvent("mouseover", true, true);
+		console.log("CLICK RELOAD");
 		verifyButton = document.getElementById("recaptcha-reload-button");
-		verifyButton.dispatchEvent(evt);
-		console.log("Dispatch Click event on reload Button " + verifyButton);
-		var evt = document.createEvent("MouseEvents");
-		evt.initEvent("mousedown", true, true);
-		verifyButton.dispatchEvent(evt);
-
-		var evt = document.createEvent("MouseEvents");
-		evt.initEvent("mouseup", true, true);
-		verifyButton.dispatchEvent(evt);
+		console.log(verifyButton);
+		verifyButton.click();
+		click(verifyButton);
+//		verifyButton.dispatchEvent(evt);
+//		console.log("Dispatch Click event on reload Button " + verifyButton);
+//		var evt = document.createEvent("MouseEvents");
+//		evt.initEvent("mousedown", true, true);
+//		verifyButton.dispatchEvent(evt);
+//
+//		var evt = document.createEvent("MouseEvents");
+//		evt.initEvent("mouseup", true, true);
+//		verifyButton.dispatchEvent(evt);
 
 	}
 	clickVerify = function() {

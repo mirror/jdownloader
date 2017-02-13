@@ -73,7 +73,6 @@ import jd.plugins.Account;
 
 public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2FallbackChallenge {
     private static LogSource LOGGER;
-
     static {
         LOGGER = LogController.getInstance().getLogger("PHANTOMJS");
     }
@@ -278,38 +277,29 @@ public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2F
                 // phantom.evalInPageContext("console.log(document.getElementsByClassName('recaptcha-checkbox-checkmark').length);");
                 phantom.waitUntilDOM(read("waitForCheckbox.js"));
                 phantom.evalInPageContext(read("clickCheckbox.js"));
-                final AtomicReference<String> initScript = new AtomicReference<String>();
-                waitFor(60000, null, new Condition() {
+                waitFor(30000, null, new Condition() {
                     @Override
                     public boolean breakIfTrue() throws InterruptedException, IOException {
-                        Thread.sleep(500);
-                        phantom.switchFrameToMain();
-                        // String mainHtml = (String) phantom.get("page.frameContent");
-                        phantom.switchFrameToChild(0);
-                        // String childHtml = (String) phantom.get("page.frameContent");
-                        final String token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
-                        if (StringUtils.isNotEmpty(token)) {
-                            Recaptcha2FallbackChallengeViaPhantomJS.this.token = token;
-                            StatsManager.I().track("direct", CollectionName.PJS);
-                            logger.info("Wow?!");
-                            return true;
-                        } else {
-                            Recaptcha2FallbackChallengeViaPhantomJS.this.token = null;
-                        }
-                        phantom.switchFrameToMain();
-                        if (phantom.evalInPageContext("document.getElementsByTagName('iframe').length>1") == Boolean.TRUE) {
-                            phantom.switchFrameToChild(1);
-                            final String initScriptJs = (String) phantom.evalInPageContext(read("getInitScript.js"));
-                            if (StringUtils.isNotEmpty(initScriptJs)) {
-                                initScript.set(initScriptJs);
-                                return true;
-                            }
-                        }
-                        return false;
+                        return hasSubChallenge() && StringUtils.isNotEmpty(reloadResponse);
                     }
                 });
-                readChallenge(initScript.get());
+                phantom.switchFrameToMain();
+                // String mainHtml = (String) phantom.get("page.frameContent");
+                phantom.switchFrameToChild(0);
+                // String childHtml = (String) phantom.get("page.frameContent");
+                final String token = (String) phantom.evalInPageContext("document.getElementById('g-recaptcha-response').value");
+                if (StringUtils.isNotEmpty(token)) {
+                    Recaptcha2FallbackChallengeViaPhantomJS.this.token = token;
+                    StatsManager.I().track("direct", CollectionName.PJS);
+                    logger.info("Wow?!");
+                    return;
+                }
+                phantom.switchFrameToMain();
+                phantom.switchFrameToChild(1);
                 phantom.evalInPageContext(read("basicsPage.js"));
+                phantom.execute(" _global['reloadResponse']=" + reloadResponse + ";");
+                Map<String, Object> initData = (Map<String, Object>) phantom.get(read("extractInitDataFromReloadResponse.js"));
+                handleInitData(initData);
                 // BasicWindow.showImage(phantom.getScreenShot());
                 // try {
                 // this.waitWhile(30000, isDone);
@@ -410,17 +400,6 @@ public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2F
         IO.writeStringToFile(file, Hash.getMD5(bytes) + "," + new Regex(url, "\\&id=([^\\&]+)").getMatch(0) + "," + phash + "\r\n", true);
     }
 
-    protected void readChallenge(String initScript) throws IOException, InterruptedException, TimeoutException {
-        String json = new Regex(initScript, "recaptcha\\.frame\\.Main\\.init\\(\"(.*)\"\\)\\;").getMatch(0);
-        if (StringUtils.isEmpty(json)) {
-            logger.info("InitScript JSON not found:" + initScript);
-            throw new IOException("InitScript JSON not found");
-        }
-        phantom.setVariable("initScript", json);
-        Map<String, Object> initData = (Map<String, Object>) phantom.get(read("extractInitData.js"));
-        handleInitData(initData);
-    }
-
     @Override
     protected void onNewChallenge(SubChallenge sc) {
         ArrayList<SubChallenge> all = getSubChallenges();
@@ -433,6 +412,28 @@ public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2F
 
     protected void handleInitData(Map<String, Object> initData) throws InterruptedException, IOException, TimeoutException {
         try {
+            for (int i = 0; i < 100; i++) {
+                boolean reloadChallenge = "unknown".equals(initData.get("challengeType"));
+                // reloadChallenge |= "dynamic".equals(initData.get("challengeType"));
+                // reloadChallenge |= "ImageSelectStoreFront".equals(initData.get("contentType"));
+                reloadChallenge |= "multicaptcha".equals(initData.get("challengeType"));
+                if (reloadChallenge) {
+                    reloadResponse = null;
+                    createNewSubChallenge();
+                    phantom.evalInPageContext("console.log(clickReload)");
+                    phantom.evalInPageContext("clickReload();");
+                    waitFor(30000, null, new Condition() {
+                        @Override
+                        public boolean breakIfTrue() throws InterruptedException, IOException {
+                            return hasSubChallenge() && getSubChallenge().hasPayload() && StringUtils.isNotEmpty(reloadResponse);
+                        }
+                    });
+                    phantom.execute(" _global['reloadResponse']=" + reloadResponse + ";");
+                    initData = (Map<String, Object>) phantom.get(read("extractInitDataFromReloadResponse.js"));
+                } else {
+                    break;
+                }
+            }
             final SubChallenge subChallenge = getSubChallenge();
             subChallenge.initGrid(((Number) initData.get("x")).intValue(), ((Number) initData.get("y")).intValue());
             doRunAntiDdos = true;
