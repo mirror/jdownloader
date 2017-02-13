@@ -75,23 +75,8 @@ public class SubyShareCom extends PluginForHost {
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or free account");
-    private static final boolean           VIDEOHOSTER                  = false;                                                                                                       // disabled
-                                                                                                                                                                                        // as
-                                                                                                                                                                                        // it
-                                                                                                                                                                                        // causes
-                                                                                                                                                                                        // high
-                                                                                                                                                                                        // load
-                                                                                                                                                                                        // on
-                                                                                                                                                                                        // servers
-                                                                                                                                                                                        // because
-                                                                                                                                                                                        // of
-                                                                                                                                                                                        // bug,
-                                                                                                                                                                                        // they
-                                                                                                                                                                                        // tried
-                                                                                                                                                                                        // to
-                                                                                                                                                                                        // fix
-                                                                                                                                                                                        // instant
-                                                                                                                                                                                        // download
+    // disabled for the moment because it causes high load on servers because they tried to fix instant load workaround bug
+    private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           ENFORCESHTTPS                = true;
