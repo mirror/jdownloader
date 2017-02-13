@@ -27,12 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -58,6 +52,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "subyshare.com" }, urls = { "https?://(?:www\\.)?subyshare\\.com/(?:vidembed\\-)?[a-z0-9]{12}" })
 public class SubyShareCom extends PluginForHost {
 
@@ -75,7 +75,23 @@ public class SubyShareCom extends PluginForHost {
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or free account");
-    private static final boolean           VIDEOHOSTER                  = true;
+    private static final boolean           VIDEOHOSTER                  = false;                                                                                                       // disabled
+                                                                                                                                                                                        // as
+                                                                                                                                                                                        // it
+                                                                                                                                                                                        // causes
+                                                                                                                                                                                        // high
+                                                                                                                                                                                        // load
+                                                                                                                                                                                        // on
+                                                                                                                                                                                        // servers
+                                                                                                                                                                                        // because
+                                                                                                                                                                                        // of
+                                                                                                                                                                                        // bug,
+                                                                                                                                                                                        // they
+                                                                                                                                                                                        // tried
+                                                                                                                                                                                        // to
+                                                                                                                                                                                        // fix
+                                                                                                                                                                                        // instant
+                                                                                                                                                                                        // download
     private static final boolean           VIDEOHOSTER_2                = false;
     private static final boolean           SUPPORTSHTTPS                = true;
     private static final boolean           ENFORCESHTTPS                = true;
