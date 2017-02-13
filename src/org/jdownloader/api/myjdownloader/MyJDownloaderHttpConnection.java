@@ -197,6 +197,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         HttpRequest ret = super.buildRequest();
         /* we do not allow gzip output */
         accept_encoding = ret.getRequestHeaders().get("Accept-Encoding");
+        final HTTPHeader xAcceptEncoding = ret.getRequestHeaders().get("X-Accept-Encoding");
+        if (xAcceptEncoding != null && (StringUtils.containsIgnoreCase(xAcceptEncoding.getValue(), "gazeisp") || StringUtils.containsIgnoreCase(xAcceptEncoding.getValue(), "gzip_aes"))) {
+            accept_encoding = xAcceptEncoding;
+        }
         ret.getRequestHeaders().remove(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING);
         return ret;
     }
@@ -297,12 +301,14 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 // "application/aesjson-jd; charset=utf-8"));
                 /* set chunked transfer header */
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
-                if (accept_encoding != null && (StringUtils.contains(accept_encoding.getValue(), "gazeisp") || StringUtils.contains(accept_encoding.getValue(), "gzip_aes"))) {
+                if (accept_encoding != null && (StringUtils.containsIgnoreCase(accept_encoding.getValue(), "gazeisp") || StringUtils.containsIgnoreCase(accept_encoding.getValue(), "gzip_aes"))) {
                     /* chunked->gzip->aes */
-                    if (StringUtils.contains(accept_encoding.getValue(), "gazeisp")) {
+                    if (StringUtils.containsIgnoreCase(accept_encoding.getValue(), "gazeisp")) {
                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gazeisp"));
+                        response.getResponseHeaders().add(new HTTPHeader("X-" + HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gazeisp"));
                     } else {
                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gzip_aes"));
+                        response.getResponseHeaders().add(new HTTPHeader("X-" + HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gzip_aes"));
                     }
                     this.sendResponseHeaders();
                     if (useDeChunkingOutputStream) {
@@ -315,10 +321,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getRawOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                            // public void close() throws IOException {
-                            // };
+                                                                  // public void close() throws IOException {
+                                                                  // };
 
-                        };
+                                                              };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {
