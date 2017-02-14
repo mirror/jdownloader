@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,16 +30,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgwet.com" }, urls = { "https?://(?:www\\.)?imgwet\\.com/img\\-[a-z0-9]+\\.html" }) 
-public class ImgwetCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgwallet.com" }, urls = { "https?://(?:www\\.)?imgwallet\\.com/img\\-[a-z0-9]+\\.html" })
+public class ImgwalletCom extends PluginForHost {
 
-    public ImgwetCom(PluginWrapper wrapper) {
+    public ImgwalletCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://imgwet.com/page-Terms%20Of%20Service.html";
+        return "http://www.imgwallet.com/page-terms.html";
     }
 
     @SuppressWarnings("deprecation")
@@ -61,24 +60,16 @@ public class ImgwetCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String postURL = this.br.getURL();
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            /* Try multiple times to guess the correct answer ... */
-            boolean failed = true;
-            final int random = new Random().nextInt(4);
-            for (int i = 0; i <= 4; i++) {
-                this.br.postPage(this.br.getURL(), "imgContinue=" + random);
-                if (this.br.containsHTML("name=\\'imgContinue\\'")) {
-                    this.sleep(2500l, downloadLink);
-                    continue;
-                }
-                failed = false;
-                break;
+            if (this.br.containsHTML("id=\"redirect\\-wait\"")) {
+                // br.getHeaders().put("Referer", "http://www.imgwallet.com/url.php?i=5");
+                this.br.postPage(postURL, "cti=1&ref=-&rc=0&bt=0&bw=gecko");
+                /* Make sure that Referer is correct. */
+                br.getHeaders().put("Referer", postURL);
+                this.br.getPage(postURL);
             }
-            if (failed) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Captcha failed", 60 * 60 * 1000l);
-            }
-
             dllink = jd.plugins.decrypter.ImgShotDecrypt.getFinallink(this.br, downloadLink.getDownloadURL());
         }
         if (dllink == null) {
