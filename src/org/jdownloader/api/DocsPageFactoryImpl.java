@@ -19,7 +19,7 @@ import org.jdownloader.myjdownloader.client.json.ServerErrorType;
 
 public class DocsPageFactoryImpl extends DefaultDocsPageFactory {
     public DocsPageFactoryImpl(SessionRemoteAPI<?> api, HttpRequest request, String namespace) throws SecurityException, NoSuchMethodException {
-        super(api, namespace, request);
+        super(api);
     }
 
     @Override
