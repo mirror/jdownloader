@@ -125,28 +125,24 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             br.setCookie("http://www.dailymotion.com", "family_filter", "off");
             br.setCookie("http://www.dailymotion.com", "ff", "off");
             br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-            try {
-                br.getPage(parameter);
-            } catch (final Exception e) {
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            // 404
+            br.getPage(parameter);
+            /* 404 */
             if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)") || this.br.getHttpConnection().getResponseCode() == 404) {
                 final DownloadLink dl = this.createOfflinelink(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            // 403
+            /* 403 */
             if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL") || this.br.getHttpConnection().getResponseCode() == 403) {
                 final DownloadLink dl = this.createOfflinelink(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            /* video == 'video_item', user == 'user_home' */
+            final String route_name = PluginJSonUtils.getJson(this.br, "route_name");
             if (parameter.matches(TYPE_PLAYLIST)) {
                 decryptPlaylist();
-            } else if (parameter.matches(TYPE_USER) || br.containsHTML("class=\"user_header__details\"")) {
+            } else if (parameter.matches(TYPE_USER) || "user_home".equalsIgnoreCase(route_name)) {
                 decryptUser();
             } else if (parameter.matches(TYPE_VIDEO)) {
                 decryptSingleVideo(decryptedLinks);

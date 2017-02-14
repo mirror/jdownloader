@@ -434,10 +434,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 continue;
                             }
 
+                            String final_download_url;
                             String linkid;
                             String final_filename;
                             final String linkid_format = "%s_%s_%s_%s_%s_%s";
-                            final String final_filename_format = "%s_%s.%s";
+                            final String final_filename_format = "%s_%s_%s.%s";
                             String quality_selector_string = "%s_%s_%s";
 
                             DownloadLink dl;
@@ -462,10 +463,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 for (final HlsContainer hlscontainer : allHlsContainers) {
                                     final String width = Integer.toString(hlscontainer.getWidth());
                                     final String resolution = hlscontainer.getResolution();
-                                    final String final_download_url = hlscontainer.getDownloadurl();
+                                    final_download_url = hlscontainer.getDownloadurl();
                                     ext = hlscontainer.getFileExtension().replace(".", "");
                                     linkid = String.format(linkid_format, id, type, cdn, language, protocol, resolution);
-                                    final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, linkid, ext));
+                                    final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, protocol, resolution, ext));
                                     dl = createDownloadlink(final_download_url);
                                     if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
                                         /*
@@ -483,8 +484,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
                             } else {
                                 /* http download */
+                                final_download_url = uri;
                                 linkid = String.format(linkid_format, id, type, cdn, language, protocol, quality);
-                                final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, linkid, ext));
+                                final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, protocol, quality, ext));
                                 /* TODO: Check if this might still be useful ... */
                                 // boolean isHBBTV = false;
                                 // final String fixme = new Regex(uri,
@@ -496,7 +498,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 // isHBBTV = true;
                                 // }
 
-                                dl = createDownloadlink(uri.replaceAll("https?://", "decryptedmediathek://"));
+                                dl = createDownloadlink(final_download_url);
                                 /* Usually the filesize is only given for the official downloads. */
                                 if (filesize > 0) {
                                     dl.setAvailable(true);

@@ -37,7 +37,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de", "one.ard.de" }, urls = { "https?://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)", "https?://(?:www\\.)?one\\.ard\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class WdrDeDecrypt extends PluginForDecrypt {
 
     private static final String Q_LOW           = "Q_LOW";
@@ -63,6 +63,8 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = fixVideourl(param.toString());
+        final String url_name = new Regex(parameter, "https?://[^/]+/(.+)").getMatch(0);
+        final String tvStationName = new Regex(parameter, "https?://(?:www\\.)?([^\\.]+)\\.").getMatch(0);
         br.setFollowRedirects(true);
 
         if (parameter.matches(TYPE_ROCKPALAST)) {
@@ -74,7 +76,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
 
         br.getPage(parameter);
 
-        /* Are we on a video-infor/overview page? We have to access the url which contains the player! */
+        /* Are we on a video-information/overview page? We have to access the url which contains the player! */
         String videourl_forward = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
         if (videourl_forward != null) {
             videourl_forward = fixVideourl(videourl_forward);
@@ -84,51 +86,59 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         /* fernsehen/.* links |mediathek/.* links */
         if (parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38) {
             final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
+            dl.setFinalFileName(url_name);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
 
-        final Regex inforegex = br.getRegex("(\\d{2}\\.\\d{2}\\.\\d{4}) \\| ([^<>]*?) \\| Das Erste</p>");
-        String date = inforegex.getMatch(0);
-        String sendung = br.getRegex("<strong>([^<>]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
-        if (sendung == null) {
-            sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>]*?)<span class=\"hover\">").getMatch(0);
-        }
-        if (sendung == null) {
-            sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>]*?)</strong>").getMatch(0);
-        }
-        if (sendung == null) {
-            sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>]*?)<span class=\"hidden\">:</span>").getMatch(0);
-        }
-        if (sendung == null) {
-            sendung = br.getRegex("<title>([^<>]*?)\\- WDR Fernsehen</title>").getMatch(0);
-        }
-        if (sendung == null) {
-            sendung = br.getRegex("class=\"ressort\">Startseite ([^<>\"]+)<").getMatch(0);
-        }
-        if (sendung == null) {
-            sendung = br.getRegex("<a href=\"/fernsehen/([^<>\"/]+)/startseite/index\\.html\">Startseite</a>").getMatch(0);
-        }
-        if (sendung == null) {
-            sendung = inforegex.getMatch(1);
+        final String json_api_url;
+        String date = null;
+        String sendung = null;
+        String episode_name = null;
+        if (parameter.matches(".+wdr\\.de/.+")) {
+            final Regex inforegex = br.getRegex("(\\d{2}\\.\\d{2}\\.\\d{4}) \\| ([^<>]*?) \\| Das Erste</p>");
+            date = inforegex.getMatch(0);
+            sendung = br.getRegex("<strong>([^<>]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
+            if (sendung == null) {
+                sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>]*?)<span class=\"hover\">").getMatch(0);
+            }
+            if (sendung == null) {
+                sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>]*?)</strong>").getMatch(0);
+            }
+            if (sendung == null) {
+                sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>]*?)<span class=\"hidden\">:</span>").getMatch(0);
+            }
+            if (sendung == null) {
+                sendung = br.getRegex("<title>([^<>]*?)\\- WDR Fernsehen</title>").getMatch(0);
+            }
+            if (sendung == null) {
+                sendung = br.getRegex("class=\"ressort\">Startseite ([^<>\"]+)<").getMatch(0);
+            }
+            if (sendung == null) {
+                sendung = br.getRegex("<a href=\"/fernsehen/([^<>\"/]+)/startseite/index\\.html\">Startseite</a>").getMatch(0);
+            }
+            if (sendung == null) {
+                sendung = inforegex.getMatch(1);
+            }
+            episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>]*?)<span class=\"hover\"").getMatch(0);
+            if (episode_name == null) {
+                episode_name = br.getRegex("class=\"hover\">:([^<>]*?)</span>").getMatch(0);
+            }
+            if (episode_name == null) {
+                episode_name = br.getRegex("class=\"siteHeadline hidden\">([^<>]*?)<").getMatch(0);
+            }
+            json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
+        } else {
+            final String thisvideo_src = jd.plugins.hoster.EinsfestivalDe.getVideoSrc(this.br);
+            sendung = jd.plugins.hoster.EinsfestivalDe.getTitleSubtitleWithErrorhandlingFromVideoSrc(thisvideo_src);
+            json_api_url = new Regex(thisvideo_src, "adaptivePath\\s*?:\\s*?\\'(http://[^<>\"\\']+)\\'").getMatch(0);
         }
         if (sendung == null) {
             /* Finally fallback to url-information */
-            sendung = new Regex(parameter, "wdr\\.de/(.+)").getMatch(0);
-            sendung = sendung.replace(".html", "");
+            sendung = url_name.replace(".html", "");
         }
-        String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>]*?)<span class=\"hover\"").getMatch(0);
-        if (episode_name == null) {
-            episode_name = br.getRegex("class=\"hover\">:([^<>]*?)</span>").getMatch(0);
-        }
-        if (episode_name == null) {
-            episode_name = br.getRegex("class=\"siteHeadline hidden\">([^<>]*?)<").getMatch(0);
-        }
+        sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
         String plain_name = null;
-        if (sendung != null) {
-            sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
-        }
         if (episode_name != null) {
             episode_name = Encoding.htmlDecode(episode_name).trim();
             episode_name = encodeUnicode(episode_name);
@@ -138,12 +148,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         } else {
             plain_name = sendung;
         }
-
-        final String json_api_url = this.br.getRegex("\\'mediaObj\\':[\t\n\r ]*?\\{[\t\n\r ]*?\\'url\\':[\t\n\r ]*?\\'(https?://[^<>\"]+\\.js)\\'").getMatch(0);
         if (json_api_url == null) {
             /* No player --> No downloadable video/content */
             final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
+            dl.setFinalFileName(url_name);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -153,7 +161,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
 
         /* Check for audio stream */
         if (finallink_audio != null && !finallink_audio.equals("")) {
-            final DownloadLink audio = createDownloadlink("http://wdrdecrypted.de/?format=mp3&quality=1x1&hash=" + JDHash.getMD5(parameter));
+            final DownloadLink audio = createDownloadlink("http://wdrdecrypted.de/?format=mp3&quality=0x0&hash=" + JDHash.getMD5(parameter));
             audio.setProperty("mainlink", parameter);
             audio.setProperty("direct_link", finallink_audio);
             audio.setProperty("plain_filename", plain_name + ".mp3");
@@ -161,7 +169,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         } else {
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
-            final SubConfiguration cfg = SubConfiguration.getConfig("wdr.de");
+            final SubConfiguration cfg = SubConfiguration.getConfig(this.br.getHost());
             final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
             boolean grab_low = cfg.getBooleanProperty(Q_LOW, true);
             boolean grab_medium = cfg.getBooleanProperty(Q_MEDIUM, true);
@@ -235,7 +243,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 if (date_formatted != null) {
                     final_video_name += date_formatted + "_";
                 }
-                final_video_name += "wdr_" + plain_name + "_" + resolution + ".mp4";
+                final_video_name += tvStationName + "_" + plain_name + "_" + resolution + ".mp4";
                 final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                 dl_video.setProperty("mainlink", parameter);
                 dl_video.setProperty("direct_link", final_url);
@@ -304,7 +312,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             if (date_formatted != null) {
                 packagename += date_formatted + "_";
             }
-            packagename += "wdr_" + plain_name;
+            packagename += tvStationName + "_" + plain_name;
             fp.setName(packagename);
             fp.addLinks(decryptedLinks);
         }
