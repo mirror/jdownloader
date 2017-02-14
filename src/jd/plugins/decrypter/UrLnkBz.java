@@ -75,7 +75,7 @@ public class UrLnkBz extends PluginForDecrypt {
                 try {
                     result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
                 } catch (final DecrypterException d) {
-                    if ("Wrong Captcha".equals(d.getMessage())) {
+                    if (DecrypterException.CAPTCHA.equals(d.getMessage())) {
                         continue;
                     }
                     throw d;
