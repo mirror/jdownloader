@@ -2,18 +2,6 @@ package org.jdownloader.gui.mainmenu;
 
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.menu.actions.AboutAction;
-import jd.gui.swing.jdgui.menu.actions.ExitAction;
-import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
-import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
-import jd.gui.swing.jdgui.menu.actions.MyJDownloaderTabAction;
-import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.gui.swing.jdgui.menu.actions.SettingsAccountUsageRulesAction;
-import jd.gui.swing.jdgui.menu.actions.SettingsAction;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -43,11 +31,24 @@ import org.jdownloader.gui.toolbar.action.CaptchaToogleImageTyperzAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleTwoCaptchaAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
+
+import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.menu.actions.AboutAction;
+import jd.gui.swing.jdgui.menu.actions.ExitAction;
+import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
+import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
+import jd.gui.swing.jdgui.menu.actions.MyJDownloaderTabAction;
+import jd.gui.swing.jdgui.menu.actions.RestartAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAccountUsageRulesAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAction;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -106,6 +107,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         CaptchaQuickSettingsContainer ocr;
         opt.add(ocr = new CaptchaQuickSettingsContainer());
         ocr.add(CaptchaModeChangeAction.class);
+        ocr.add(CaptchaToogleTwoCaptchaAction.class);
         ocr.add(CaptchaToogle9KWAction.class);
         ocr.add(CaptchaToogleDBCAction.class);
         ocr.add(CaptchaToogleCheapCaptchaAction.class);

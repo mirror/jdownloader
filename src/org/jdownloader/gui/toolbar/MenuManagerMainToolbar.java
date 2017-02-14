@@ -2,30 +2,6 @@ package org.jdownloader.gui.toolbar;
 
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.jdgui.components.toolbar.AlwaysOnTopGuiToogleAction;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.MyJDownloaderStatusAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.SpeedLimiterToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsButFinishRunningOnesAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
-import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
-import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
-import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.gui.swing.jdgui.menu.actions.SettingsAction;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -52,6 +28,7 @@ import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleTwoCaptchaAction;
 import org.jdownloader.gui.toolbar.action.CollapseExpandAllAction;
 import org.jdownloader.gui.toolbar.action.GenericDeleteFromTableToolbarAction;
 import org.jdownloader.gui.toolbar.action.MoveDownAction;
@@ -65,6 +42,30 @@ import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.action.ResetToolbarAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
+
+import jd.gui.swing.jdgui.components.toolbar.AlwaysOnTopGuiToogleAction;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.MyJDownloaderStatusAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.SpeedLimiterToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsButFinishRunningOnesAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
+import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
+import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
+import jd.gui.swing.jdgui.menu.actions.RestartAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAction;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -188,6 +189,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         // ocr.add(CaptchaExchangeToogleAction.class);
 
         // ocr.add(RemoteCaptchaToogleAction.class);
+        ocr.add(CaptchaToogleTwoCaptchaAction.class);
         ocr.add(CaptchaToogle9KWAction.class);
         ocr.add(CaptchaToogleDBCAction.class);
         ocr.add(CaptchaToogleCheapCaptchaAction.class);
