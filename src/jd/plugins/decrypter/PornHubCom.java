@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.com/(?:view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|users/[^/]+/videos/public)|https?://(?:[a-z]+\\.)?pornhubpremium\\.com/(?:view_video\\.php\\?viewkey=|embed/)[a-z0-9]+" })
 public class PornHubCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -113,7 +113,7 @@ public class PornHubCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
             }
-            final String newLink = br.getRegex("<link_url>(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-f0-9]+)</link_url>").getMatch(0);
+            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-f0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
                 throw new DecrypterException("Decrypter broken");
             }
@@ -141,13 +141,7 @@ public class PornHubCom extends PluginForDecrypt {
             return;
         }
 
-        if (aa == null) {
-            /*
-             * 2017-02-09: Last chance handling/workaround via embed player for non-account & free-account users --> This will only return
-             * 480p quality --> An attempt to get around their measures against automated downloadtools.
-             */
-            jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideoLinkEmbed(viewkey));
-        }
+        jd.plugins.hoster.PornHubCom.accessViewkeyBeforeGrabbingDirecturls(this.br, aa, viewkey);
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this.br);
 
         if (foundLinks_all == null) {

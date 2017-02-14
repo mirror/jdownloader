@@ -71,6 +71,7 @@ public class PornHubCom extends PluginForHost {
     private static final int                      ACCOUNT_FREE_MAXDOWNLOADS = 5;
 
     public static final long                      trust_cookie_age          = 300000l;
+    public static final boolean                   use_download_workarounds  = true;
 
     private static final String                   type_photo                = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
     public static final String                    html_privatevideo         = "id=\"iconLocked\"";
@@ -189,6 +190,8 @@ public class PornHubCom extends PluginForHost {
             if (source_url == null || filename == null || this.dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
+            accessViewkeyBeforeGrabbingDirecturls(this.br, aa, viewkey);
             fresh_directurls = getVideoLinksFree(this.br);
             downloadLink.setFinalFileName(filename);
         }
@@ -236,6 +239,16 @@ public class PornHubCom extends PluginForHost {
             } catch (final Throwable e) {
                 logger.info("e: " + e);
             }
+        }
+    }
+
+    public static void accessViewkeyBeforeGrabbingDirecturls(final Browser br, final Account aa, final String viewkey) throws Exception {
+        if (aa == null && use_download_workarounds) {
+            /*
+             * 2017-02-09: Last chance handling/workaround via embed player for non-account & free-account users --> This will only return
+             * 480p quality --> An attempt to get around their measures against automated downloadtools.
+             */
+            jd.plugins.hoster.PornHubCom.getPage(br, createPornhubVideoLinkEmbed(viewkey));
         }
     }
 
@@ -299,8 +312,8 @@ public class PornHubCom extends PluginForHost {
                 /* 2017-02-09: For embed player - usually only 480p will be available. */
                 var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(http[^\"]+)\"").getMatches();
                 matchPlaces = new int[] { 0, 1 };
-            } else if (isLoggedInHtmlFree(br)) {
-                /* 2017-02-10: Grab official downloadlinks via (free) account */
+            } else if (isLoggedInHtml(br) && use_download_workarounds) {
+                /* 2017-02-10: Grab official downloadlinks via free/premium account */
                 matchPlaces = new int[] { 1, 0 };
                 var_player_quality_dp = br.getRegex("href=\"(http[^<>\"]+)\"><i></i><span>[^<]*?</span>\\s*?(\\d+)p\\s*?</a").getMatches();
             } else {
