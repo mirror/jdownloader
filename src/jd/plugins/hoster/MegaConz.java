@@ -78,7 +78,7 @@ public class MegaConz extends PluginForHost {
     private final String USE_SSL        = "USE_SSL_V2";
     private final String CHECK_RESERVED = "CHECK_RESERVED";
     private final String USE_TMP        = "USE_TMP_V2";
-    private final String HIDE_APP       = "HIDE_APP";
+    private final String HIDE_APP       = "HIDE_APP_V2";
     private final String encrypted      = ".encrypted";
 
     public MegaConz(PluginWrapper wrapper) {
@@ -273,7 +273,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private boolean isHideApplication() {
-        return getPluginConfig().getBooleanProperty(HIDE_APP, false);
+        return getPluginConfig().getBooleanProperty(HIDE_APP, true);
     }
 
     private Map<String, Object> apiRequest(Account account, final String sid, final UrlQuery additionalUrlQuery, final String action, final Object[]... postParams) throws Exception {
@@ -282,27 +282,18 @@ public class MegaConz extends PluginForHost {
         if (StringUtils.isNotEmpty(sid)) {
             query.add("sid", sid);
         }
-        final boolean hideApp = isHideApplication();
-        if (hideApp) {
-            query.add("domain", "meganz");
-        }
         if (additionalUrlQuery != null) {
             query.addAll(additionalUrlQuery.list());
         }
         final PostRequest request = new PostRequest(getAPI() + "/cs?" + query);
-        if (!hideApp) {
+        if (!isHideApplication()) {
             request.getHeaders().put("APPID", "JDownloader");
         } else {
-            if (true) {
-                request.getHeaders().put(new HTTPHeader("User-Agent", null, false));
-                request.getHeaders().put(new HTTPHeader("Accept", null, false));
-                request.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
-                request.getHeaders().put(new HTTPHeader("Accept-Encoding", null, false));
-                request.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
-            } else {
-                request.getHeaders().put("Referer", "https://mega.nz");
-                request.getHeaders().put("Origin", "https://mega.nz");
-            }
+            request.getHeaders().put(new HTTPHeader("User-Agent", null, false));
+            request.getHeaders().put(new HTTPHeader("Accept", null, false));
+            request.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
+            request.getHeaders().put(new HTTPHeader("Accept-Encoding", null, false));
+            request.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
         }
         request.setContentType("text/plain;charset=UTF-8");
         if (postParams != null) {
@@ -750,16 +741,11 @@ public class MegaConz extends PluginForHost {
                 }
                 if (isHideApplication()) {
                     br.setRequest(null);
-                    if (true) {
-                        br.getHeaders().put(new HTTPHeader("User-Agent", null, false));
-                        br.getHeaders().put(new HTTPHeader("Accept", null, false));
-                        br.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
-                        br.getHeaders().put(new HTTPHeader("Accept-Encoding", null, false));
-                        br.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
-                    } else {
-                        br.setCurrentURL("https://mega.nz");
-                        br.getHeaders().put("Origin", "https://mega.nz");
-                    }
+                    br.getHeaders().put(new HTTPHeader("User-Agent", null, false));
+                    br.getHeaders().put(new HTTPHeader("Accept", null, false));
+                    br.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
+                    br.getHeaders().put(new HTTPHeader("Accept-Encoding", null, false));
+                    br.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
                 }
                 /* mega does not like much connections! */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
@@ -897,7 +883,7 @@ public class MegaConz extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Do not send application identifier?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Use minimal set of http headers?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
     }
 
