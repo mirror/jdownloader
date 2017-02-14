@@ -12,10 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.DefaultDocsPageFactory;
@@ -94,6 +90,10 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
 
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
+
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
     private final boolean              isJared  = Application.isJared(RemoteAPIController.class);
@@ -130,8 +130,8 @@ public class RemoteAPIController {
             }
 
             @Override
-            protected DefaultDocsPageFactory createHelpBuilder(HttpRequest request, String namespace) throws NoSuchMethodException {
-                return new DocsPageFactoryImpl(this, request, namespace);
+            protected DefaultDocsPageFactory createHelpBuilder() throws NoSuchMethodException {
+                return new DocsPageFactoryImpl(this);
             }
 
             @Override
