@@ -37,6 +37,14 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -66,14 +74,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youwatch.org" }, urls = { "https?://(?:www\\.)?(?:youwatch\\.org|sikafika\\.info|voodaith7e\\.com)/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
@@ -378,9 +378,9 @@ public class YouWatchOrg extends PluginForHost {
         if (linkInformation == null) {
             linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + " ((?:not )?found)").getRow(0);
         }
-        if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
+        if ("found".equalsIgnoreCase(linkInformation[0])) {
             downloadLink.setAvailable(true);
-            if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) {
+            if (linkInformation.length == 2 && !inValidate(linkInformation[1]) && inValidate(fileInfo[1])) {
                 fileInfo[1] = linkInformation[1];
             }
         } else {
