@@ -441,12 +441,12 @@ public class FileJokerNet extends antiDDoSForHost {
             checkServerErrors();
             handlePluginBroken(downloadLink, "dllinknofile", 3);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
         if (!downloadLink.getName().contains("…")) {
             fixFilename(downloadLink);
         }
         try {
             /* add a download slot */
+            downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
             controlFree(+1);
             /* start the dl */
             dl.startDownload();
@@ -1090,7 +1090,7 @@ public class FileJokerNet extends antiDDoSForHost {
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
             fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
+            downloadLink.setProperty("premlink", dl.getConnection().getURL().toString());
             dl.startDownload();
         }
     }

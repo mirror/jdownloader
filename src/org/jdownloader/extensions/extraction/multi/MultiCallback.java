@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.download.raf.FileBytesCache;
 import jd.plugins.download.raf.FileBytesCacheFlusher;
@@ -39,14 +40,15 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
  *
  */
 class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
-    protected final RandomAccessFile fos;
-    protected final CPUPriority      priority;
-    protected volatile long          fileWritePosition = 0;
-    protected volatile long          flushedBytes      = 0;
-    protected final File             file;
-    private final FileBytesCache     cache;
-    private final AtomicBoolean      fileOpen          = new AtomicBoolean(true);
-    private volatile IOException     ioException       = null;
+    protected final RandomAccessFile   fos;
+    protected final CPUPriority        priority;
+    protected final AtomicLong         fileWritePosition = new AtomicLong(0);
+    protected final AtomicLong         flushedBytes      = new AtomicLong(0);
+    protected final File               file;
+    private final FileBytesCache       cache;
+    private final AtomicBoolean        fileOpen          = new AtomicBoolean(true);
+    private volatile IOException       ioException       = null;
+    private final ExtractionController con;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config) throws IOException {
         final CPUPriority priority = config.getCPUPriority();
@@ -55,6 +57,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
         } else {
             this.priority = priority;
         }
+        this.con = con;
         this.file = file;
         this.fos = IO.open(file, "rw");
         cache = con.getFileBytesCache();
@@ -74,8 +77,8 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
 
     public int write(final byte[] data) throws SevenZipException {
         if (fileOpen.get()) {
-            cache.write(this, fileWritePosition, data, data.length);
-            fileWritePosition += data.length;
+            cache.write(this, fileWritePosition.get(), data, data.length);
+            fileWritePosition.addAndGet(data.length);
             waitCPUPriority();
             return data.length;
         } else {
@@ -93,7 +96,7 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
     }
 
     public long getWritten() {
-        return flushedBytes;
+        return flushedBytes.get();
     }
 
     /**
@@ -117,16 +120,15 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
             });
         } finally {
             try {
-                try {
-                    if (fos != null) {
+                if (fos != null) {
+                    try {
                         fos.getChannel().force(true);
-                    }
-                } finally {
-                    if (fos != null) {
+                    } finally {
                         fos.close();
                     }
                 }
             } catch (Throwable e) {
+                con.getLogger().log(e);
             }
         }
     }
@@ -137,8 +139,9 @@ class MultiCallback implements ISequentialOutStream, FileBytesCacheFlusher {
             try {
                 fos.seek(fileWritePosition);
                 fos.write(writeCache, writeCachePosition, length);
-                flushedBytes += length;
+                flushedBytes.addAndGet(length);
             } catch (final IOException e) {
+                con.getLogger().log(e);
                 ioException = e;
                 fileOpen.set(false);
             }

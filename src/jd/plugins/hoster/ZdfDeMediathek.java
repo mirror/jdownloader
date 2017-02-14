@@ -69,7 +69,7 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         server_issues = false;
         final String filename;
         prepBR(this.br);
@@ -81,6 +81,7 @@ public class ZdfDeMediathek extends PluginForHost {
         }
         link.setFinalFileName(link.getStringProperty("directName", null));
         if (dllink.contains("m3u8")) {
+            checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {

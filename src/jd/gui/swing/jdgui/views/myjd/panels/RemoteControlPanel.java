@@ -26,22 +26,21 @@ public class RemoteControlPanel extends AbstractConfigPanel {
 
         this.addHeader("Webinterface @ my.jdownloader.org", new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
         this.addDescription(_GUI.T.RemoteControlPanel_Webinterface());
-        addButton("http://my.jdownloader.org?referer=JDownloader", "botty/robot_info", "<html>" + _GUI.T.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
+        addButton("http://my.jdownloader.org?referer=JDownloader", IconKey.ICON_BOTTY_ROBOT_INFO, "<html>" + _GUI.T.RemoteControlPanel_website_open().replace("\r\n", "<br>") + "</html>");
 
         this.addHeader("Mobile Apps", new AbstractIcon(IconKey.ICON_MOBILE, 32));
         this.addDescription(_GUI.T.RemoteControlPanel_mobile_desc());
 
-        addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", "logo/android", "<html>" + _GUI.T.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", IconKey.ICON_LOGO_ANDROID, "<html>" + _GUI.T.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
 
-        // addButton("https://itunes.apple.com/app/apple-store/id683222457?pt=435060&ct=JD&mt=8", "ios", "<html>" +
-        // _GUI.T.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://itunes.apple.com/us/app/myjdownloader-remote/id1203271558?ls=1&mt=8", IconKey.ICON_LOGO_IOS, "<html>" + _GUI.T.RemoteControlPanel_ios_open2().replace("\r\n", "<br>") + "</html>");
 
-        addButton("http://www.pixelvalley.de/?page_id=1649", "logo/windows", "<html>" + _GUI.T.RemoteControlPanel_file_recon_open().replace("\r\n", "<br>") + "</html>");
+        addButton("http://www.pixelvalley.de/?page_id=1649", IconKey.ICON_LOGO_WINDOWS, "<html>" + _GUI.T.RemoteControlPanel_file_recon_open().replace("\r\n", "<br>") + "</html>");
         this.addHeader("Browser Extensions", new AbstractIcon("url", 32));
         this.addDescription(_GUI.T.RemoteControlPanel_browser_extension_desc());
 
-        addButton("https://chrome.google.com/webstore/detail/my-jdownloader/fbcohnmimjicjdomonkcbcpbpnhggkip", "logo/chrome", "<html>" + _GUI.T.RemoteControlPanel_chrome_open().replace("\r\n", "<br>") + "</html>");
-        addButton("https://addons.mozilla.org/de/firefox/addon/official-my-jdownloader-add/", "logo/firefox", "<html>" + _GUI.T.RemoteControlPanel_firefox_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://chrome.google.com/webstore/detail/my-jdownloader/fbcohnmimjicjdomonkcbcpbpnhggkip", IconKey.ICON_LOGO_CHROME, "<html>" + _GUI.T.RemoteControlPanel_chrome_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://addons.mozilla.org/de/firefox/addon/official-my-jdownloader-add/", IconKey.ICON_LOGO_FIREFOX, "<html>" + _GUI.T.RemoteControlPanel_firefox_open().replace("\r\n", "<br>") + "</html>");
 
     }
 

@@ -124,7 +124,7 @@ public abstract class K2SApi extends PluginForHost {
 
     protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
         final String contentType = con.getContentType();
-        if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409) {
+        if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409 || con.getResponseCode() == 440) {
             return false;
         } else {
             return con.isOK() || con.getResponseCode() == 206 || con.isContentDisposition();
@@ -412,7 +412,7 @@ public abstract class K2SApi extends PluginForHost {
         // linkcheck here..
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
-        String dllink = downloadLink.getStringProperty(directlinkproperty, null);
+        String dllink = getDirectLinkAndReset(downloadLink, true);
         // required to get overrides to work
         br = prepAPI(newBrowser());
         // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
@@ -420,13 +420,12 @@ public abstract class K2SApi extends PluginForHost {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 401) {
+            if (!isValidDownloadConnection(dl.getConnection())) {
                 br.followConnection();
                 handleGeneralServerErrors(account, downloadLink);
                 // we now want to restore!
                 br = obr;
                 dllink = null;
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
             }
         }
         // if above has failed, dllink will be null
@@ -517,17 +516,17 @@ public abstract class K2SApi extends PluginForHost {
             }
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 handleGeneralServerErrors(account, downloadLink);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
         // add download slot
         controlSlot(+1, account);
         try {
+            downloadLink.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         } finally {
             // remove download slot
