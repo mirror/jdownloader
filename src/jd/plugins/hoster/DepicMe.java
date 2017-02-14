@@ -26,12 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -51,6 +45,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depic.me" }, urls = { "https?://(?:www\\.)?depic\\.me/(?:embed\\-)?[a-z0-9]{12}" })
 public class DepicMe extends PluginForHost {
@@ -134,7 +134,7 @@ public class DepicMe extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.2.4<br />
-     * mods:<br />
+     * mods: dllink<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -863,7 +863,7 @@ public class DepicMe extends PluginForHost {
                 dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+(?!_t\\.[A-Za-z]{3,4}))").getMatch(0);
             }
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(https?://s\\d+\\." + DOMAINS + "/[A-Za-z0-9]+/[^/\"]+)").getMatch(0);
+                dllink = new Regex(correctedBR, "(https?://s\\d+\\.dpic\\.me/[A-Za-z0-9]+/[^/\"]+)").getMatch(0); // 20170214
             }
             if (dllink != null && dllink.matches(".+_t\\.[A-Za-z]{3,4}$")) {
                 /* Do NOT download thumbnails! */
