@@ -63,6 +63,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
@@ -292,8 +293,16 @@ public class MegaConz extends PluginForHost {
         if (!hideApp) {
             request.getHeaders().put("APPID", "JDownloader");
         } else {
-            request.getHeaders().put("Referer", "https://mega.nz");
-            request.getHeaders().put("Origin", "https://mega.nz");
+            if (true) {
+                request.getHeaders().put(new HTTPHeader("User-Agent", null, false));
+                request.getHeaders().put(new HTTPHeader("Accept", null, false));
+                request.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
+                request.getHeaders().put(new HTTPHeader("Accept-Encoding", null, false));
+                request.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
+            } else {
+                request.getHeaders().put("Referer", "https://mega.nz");
+                request.getHeaders().put("Origin", "https://mega.nz");
+            }
         }
         request.setContentType("text/plain;charset=UTF-8");
         if (postParams != null) {
@@ -741,8 +750,16 @@ public class MegaConz extends PluginForHost {
                 }
                 if (isHideApplication()) {
                     br.setRequest(null);
-                    br.setCurrentURL("https://mega.nz");
-                    br.getHeaders().put("Origin", "https://mega.nz");
+                    if (true) {
+                        br.getHeaders().put(new HTTPHeader("User-Agent", null, false));
+                        br.getHeaders().put(new HTTPHeader("Accept", null, false));
+                        br.getHeaders().put(new HTTPHeader("Accept-Language", null, false));
+                        br.getHeaders().put(new HTTPHeader("Accept-Encoding", null, false));
+                        br.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
+                    } else {
+                        br.setCurrentURL("https://mega.nz");
+                        br.getHeaders().put("Origin", "https://mega.nz");
+                    }
                 }
                 /* mega does not like much connections! */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
