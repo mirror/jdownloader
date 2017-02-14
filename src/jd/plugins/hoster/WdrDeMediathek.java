@@ -42,7 +42,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class WdrDeMediathek extends PluginForHost {
 
     public WdrDeMediathek(PluginWrapper wrapper) {
@@ -354,7 +354,7 @@ public class WdrDeMediathek extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's WDR Plugin helps downloading videoclips from wdr.de. You can choose between different video qualities.";
+        return "JDownloader's WDR Plugin helps downloading videoclips from wdr.de and one.ard.de. You can choose between different video qualities.";
     }
 
     public static final boolean defaultFAST_LINKCHECK = false;

@@ -17,42 +17,58 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "https://samepage\\.io/([a-z0-9]+/share/[a-z0-9]+|app/#(!|%21)/[a-z0-9]+/page\\-\\d+)" }) 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "https://samepage\\.io/([a-z0-9]+/share/[a-z0-9]+|app/#(!|%21)/[a-z0-9]+/page\\-\\d+)" })
 public class SamePageIoDecrypter extends PluginForDecrypt {
 
     public SamePageIoDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
+    private static final String     DOWNLOAD_ZIP   = "DOWNLOAD_ZIP";
 
-    private static final String TYPE_APP     = "https://samepage\\.io/app/#\\!/[a-z0-9]+/page\\-[a-z0-9]+";
-    private static final String TYPE_SHARE   = "https://samepage\\.io/[a-z0-9]+/share/[a-z0-9]+";
+    private static final String     TYPE_APP       = "https://samepage\\.io/app/#\\!/[a-z0-9]+/page\\-[a-z0-9]+";
+    private static final String     TYPE_SHARE     = "https://samepage\\.io/[a-z0-9]+/share/[a-z0-9]+";
+
+    private String                  id_1           = null;
+    private String                  id_2           = null;
+    private long                    totalSize      = 0;
+
+    private String                  parameter      = null;
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        parameter = param.toString();
         prepBR();
-        String id_1;
-        String id_2;
         if (parameter.matches(TYPE_APP)) {
             id_1 = new Regex(parameter, "samepage\\.io/app/#\\!/([a-z0-9]+)/").getMatch(0);
             id_2 = new Regex(parameter, "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)").getMatch(0);
         } else {
             id_1 = new Regex(parameter, "samepage\\.io/([a-z0-9]+)/share/([a-z0-9]+)").getMatch(0);
+            if (id_1 == null) {
+                /* We NEED that ID! */
+                logger.info("Unsupported or offline url");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             br.getPage(parameter);
             id_2 = new Regex(br.getURL(), "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)[A-Za-z0-9\\-_]+").getMatch(0);
             if (id_2 == null) {
@@ -62,100 +78,116 @@ public class SamePageIoDecrypter extends PluginForDecrypt {
         }
         parameter = "https://samepage.io/app/#!/" + id_1 + "/page-" + id_2;
 
-        final DownloadLink main = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        main.setProperty("mainlink", parameter);
-
         br.getPage("https://samepage.io/app/");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
 
-        br.postPageRaw("https://samepage.io/api/app/jsonrpc", "{\"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"Bootstrap.bootstrap\",\"params\":{\"tenantId\":\"" + id_1 + "\",\"itemId\":\"" + id_2 + "\"}}");
-        final String apiVersion = getJson("apiVersion", br.toString());
+        br.postPageRaw("https://samepage.io/api/app/jsonrpc?method=Bootstrap.bootstrap", String.format("{\"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"Bootstrap.bootstrap\",\"params\":{\"referral\":\"\",\"timezoneOffsetData\":{\"current\":\"2017-02-14T17:30:34+0100\",\"currentOffset\":3600,\"summer\":\"2017-08-01T17:30:34+0200\",\"summerOffset\":7200,\"winter\":\"2017-02-01T17:30:34+0100\",\"winterOffset\":3600},\"tenantId\":\"%s\",\"itemId\":\"%s\",\"branch\":\"production\"}}", id_1, id_2));
+        final String bootstrapAction = PluginJSonUtils.getJsonValue(this.br, "bootstrapAction");
         final String token = br.getCookie("http://samepage.io", "TOKEN_WORKSPACE");
-        if (token == null || apiVersion == null) {
+        if ("login".equalsIgnoreCase(bootstrapAction)) {
+            logger.info("Login required");
+            return decryptedLinks;
+        } else if (token == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
 
-        br.getHeaders().put("Referer", "https://samepage.io/app/");
-        br.getHeaders().put("X-Token", token);
-        br.getHeaders().put("Content-Type", "application/json; charset=UTF-8");
-        br.postPageRaw("https://samepage.io/" + id_1 + "/server/data?method=Items.get", "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"Items.get\",\"params\":{\"includeChildren\":-1,\"includeIamFollowing\":true,\"includeHasSubtree\":true,\"includeChain\":true,\"id\":\"" + id_2 + "\"},\"apiVersion\":\"" + apiVersion + "\"}");
+        // br.getHeaders().put("Referer", "https://samepage.io/app/");
+        // br.getHeaders().put("X-Token", token);
+        // br.getHeaders().put("Content-Type", "application/json; charset=UTF-8");
         /* Item not found */
         if (br.containsHTML("\"code\":6002")) {
-            main.setFinalFileName(new Regex(parameter, "samepage\\.io/(.+)").getMatch(0));
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
-        String folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"layout\":").getMatch(0);
-        String linktext = br.getRegex("\"value\":\\{\\},\"children\":\\[(.*?)\\],\"role\":\"Reader\",\"type\":\"LinkList\"").getMatch(0);
-        final String user_id = br.getRegex("\"children\":\\[\\{\"id\":\"([a-z0-9]+)\"").getMatch(0);
-        if (linktext == null || folderName == null || user_id == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        folderName = Encoding.htmlDecode(folderName.trim());
+        String folderName = null;
 
-        final String[] links = linktext.split("\\},\\{");
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        long totalSize = 0;
-        for (final String singleinfo : links) {
-            if (!singleinfo.contains("\"file\"")) {
-                continue;
-            }
-            final DownloadLink dl = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson("size", singleinfo);
-            String filename = getJson("name", singleinfo);
-            final String fileid = getJson("id", singleinfo);
-            final String hash = getJson("hash", singleinfo);
-            if (filesize == null || filename == null || fileid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            filename = Encoding.htmlDecode(filename.trim());
-            final long cursize = Long.parseLong(filesize);
-            dl.setDownloadSize(cursize);
-            totalSize += cursize;
-            dl.setFinalFileName(filename);
-            dl.setProperty("plain_name", filename);
-            dl.setProperty("plain_size", filesize);
-            if (hash != null) {
-                dl.setProperty("plain_hash", hash);
-                dl.setMD5Hash(hash);
-            }
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("plain_fileid", fileid);
-            dl.setProperty("plain_id_1", id_1);
-            dl.setProperty("plain_id_2", id_2);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-        }
+        processFilesKamikaze(JavaScriptEngineFactory.jsonToJavaMap(this.br.toString()));
 
-        if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("samepage.io").getBooleanProperty(DOWNLOAD_ZIP, false)) {
-            /* = all files (links) of the folder as .zip archive */
-            final String main_name = "all_files_" + folderName + ".zip";
-            main.setFinalFileName(folderName);
-            main.setProperty("plain_name", main_name);
-            main.setProperty("plain_size", Long.toString(totalSize));
-            main.setProperty("plain_fileid", user_id);
-            main.setProperty("plain_id_1", id_1);
-            main.setProperty("plain_id_2", id_2);
-            main.setProperty("complete_folder", true);
-            decryptedLinks.add(main);
-        }
+        // if (decryptedLinks.size() > 1 && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DOWNLOAD_ZIP, false)) {
+        // /* = all files (links) of the folder as .zip archive */
+        // final DownloadLink main = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new
+        // Random().nextInt(100000));
+        // final String main_name = "all_files_" + folderName + ".zip";
+        //
+        // main.setProperty("mainlink", parameter);
+        // main.setFinalFileName(folderName);
+        // main.setProperty("plain_name", main_name);
+        // main.setProperty("plain_size", Long.toString(totalSize));
+        // /* 2017-02-14: What is this for?? */
+        // main.setProperty("plain_fileid", null);
+        // main.setProperty("plain_id_1", id_1);
+        // main.setProperty("plain_id_2", id_2);
+        // main.setProperty("complete_folder", true);
+        // decryptedLinks.add(main);
+        // }
 
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderName);
-        fp.addLinks(decryptedLinks);
+        if (folderName != null) {
+            folderName = Encoding.htmlDecode(folderName.trim());
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(folderName);
+            fp.addLinks(decryptedLinks);
+        }
 
         return decryptedLinks;
+    }
+
+    private boolean processFile(final LinkedHashMap<String, Object> entries) {
+        final String type = (String) entries.get("type");
+        final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "file/size"), 0);
+        final String filename = (String) entries.get("name");
+        final Object fileido = entries.get("id");
+        final String fileid = fileido != null && fileido instanceof String ? (String) fileido : null;
+        final String hash = (String) entries.get("hash");
+        if (filename == null || fileid == null || !"file".equalsIgnoreCase(type)) {
+            return false;
+        }
+        final DownloadLink dl = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        dl.setDownloadSize(filesize);
+        totalSize += filesize;
+        dl.setFinalFileName(filename);
+        dl.setProperty("plain_name", filename);
+        dl.setProperty("plain_size", filesize);
+        if (hash != null) {
+            dl.setProperty("plain_hash", hash);
+            dl.setMD5Hash(hash);
+        }
+        dl.setProperty("mainlink", parameter);
+        dl.setProperty("plain_fileid", fileid);
+        dl.setProperty("plain_id_1", id_1);
+        dl.setProperty("plain_id_2", id_2);
+        dl.setAvailable(true);
+        dl.setContentUrl(parameter);
+        decryptedLinks.add(dl);
+        return true;
+    }
+
+    /**
+     * Recursive function to crawl all files --> Easiest way as they have different jsons and they are always huge.
+     *
+     */
+    @SuppressWarnings("unchecked")
+    private void processFilesKamikaze(final Object jsono) throws DecrypterException {
+        LinkedHashMap<String, Object> test;
+        if (jsono instanceof LinkedHashMap) {
+            test = (LinkedHashMap<String, Object>) jsono;
+            if (!processFile(test)) {
+                final Iterator<Entry<String, Object>> it = test.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Object> thisentry = it.next();
+                    final Object mapObject = thisentry.getValue();
+                    processFilesKamikaze(mapObject);
+                }
+            }
+        } else if (jsono instanceof ArrayList) {
+            ArrayList<Object> ressourcelist = (ArrayList<Object>) jsono;
+            for (final Object listo : ressourcelist) {
+                processFilesKamikaze(listo);
+            }
+        }
     }
 
     private String getJson(final String parameter, final String source) {

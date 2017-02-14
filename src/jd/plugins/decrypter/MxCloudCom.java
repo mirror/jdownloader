@@ -33,7 +33,7 @@ import jd.utils.JDHexUtils;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" })
 public class MxCloudCom extends antiDDoSForDecrypt {
 
     public MxCloudCom(final PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class MxCloudCom extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> tempLinks = new ArrayList<String>();
         final String parameter = param.toString().replace("http://", "https://");
-        if (parameter.matches("https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
+        if (parameter.matches("https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag|discover)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -161,7 +161,11 @@ public class MxCloudCom extends antiDDoSForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(theName));
         fp.addLinks(decryptedLinks);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        if ((decryptedLinks == null || decryptedLinks.size() == 0) && links != null && links.length > 0) {
+            logger.info("Found urls but all of them were offline");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }

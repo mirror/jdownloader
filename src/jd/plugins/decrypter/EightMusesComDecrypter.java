@@ -53,8 +53,8 @@ public class EightMusesComDecrypter extends antiDDoSForDecrypt {
         }
         final String[] links = br.getRegex("(/picture/[^<>\"]*?)\"").getColumn(0);
         if ((links == null || links.length == 0) && (categories == null || categories.length == 0)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Unsupported or offline url");
+            return decryptedLinks;
         }
         if (links != null && links.length > 0) {
             final FilePackage fp = FilePackage.getInstance();

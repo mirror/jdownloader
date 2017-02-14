@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "http://samepagedecrypted\\.io/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "http://samepagedecrypted\\.io/\\d+" })
 public class SamePageIo extends PluginForHost {
 
     public SamePageIo(PluginWrapper wrapper) {
@@ -57,12 +57,10 @@ public class SamePageIo extends PluginForHost {
         prepBR();
         // if (br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = link.getStringProperty("plain_name", null);
-        final String filesize = link.getStringProperty("plain_size", null);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -80,32 +78,6 @@ public class SamePageIo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        br.getPage("https://samepage.io/app/");
-        final String main = br.getRegex("ClientSamepage\\.main\\(\\'(/client/[a-z0-9]+)\\'").getMatch(0);
-        if (main == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
-        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
-        br.postPageRaw("https://samepage.io/api/app/jsonrpc", "{\"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"Bootstrap.bootstrap\",\"params\":{\"tenantId\":\"" + id_1 + "\",\"itemId\":\"" + id_2 + "\"}}");
-        final String apiVersion = getJson("apiVersion", br.toString());
-        final String token = br.getCookie("http://samepage.io", "TOKEN_WORKSPACE");
-        if (token == null || apiVersion == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
-        br.cloneBrowser().getPage("https://samepage.io" + main + "/lib/internal/translations/de.js");
-        br.getHeaders().put("Referer", "https://samepage.io/app/");
-        br.getHeaders().put("X-Token", token);
-        br.getHeaders().put("Content-Type", "application/json; charset=UTF-8");
-        br.postPageRaw("https://samepage.io/" + id_1 + "/server/data?method=Items.get", "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"Items.get\",\"params\":{\"includeChildren\":-1,\"includeIamFollowing\":true,\"includeHasSubtree\":true,\"includeChain\":true,\"id\":\"" + id_2 + "\"},\"apiVersion\":\"" + apiVersion + "\"}");
-        /* Item not found */
-        if (br.containsHTML("\"code\":6002")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
         final String dllink = getdllink(downloadLink);
         boolean resume = true;
         int maxchunks = 0;
@@ -114,8 +86,6 @@ public class SamePageIo extends PluginForHost {
             maxchunks = 1;
         }
 
-        br.setCookie("http://samepage.io/", "TENANT_WORKSPACE", "1");
-        br.setCookie("http://samepage.io/", "TOKEN_WORKSPACE", token);
         br.getHeaders().put("Referer", "https://samepage.io/app/");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);

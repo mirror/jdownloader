@@ -28,6 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bongobd.com" }, urls = { "https?://(?:www\\.)?bongobd\\.com/(?:en|bn)/watch\\?v=[A-Za-z0-9]+" })
 public class BongobdCom extends PluginForHost {
 
@@ -46,6 +50,8 @@ public class BongobdCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
+
+    private static final boolean prefer_hls        = true;
 
     private String               dllink            = null;
     private boolean              server_issues     = false;
@@ -89,32 +95,49 @@ public class BongobdCom extends PluginForHost {
         if (entry_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String[] flavorids = this.br.getRegex("flavorIds/([A-Za-z0-9\\-_,]+)").getMatch(0).split(",");
-        URLConnectionAdapter con = null;
         long filesize_max = 0;
-        String dllink_temp;
-        for (final String flavorid : flavorids) {
-            dllink_temp = "http://cdnbakmi.kaltura.com/p/" + partner_id + "/sp/" + sp + "/playManifest/entryId/" + entry_id + "/flavorId/" + flavorid + "/format/url/protocol/https/a.mp4";
-            try {
-                con = br.openHeadConnection(dllink_temp);
-                if (!con.getContentType().contains("html")) {
-                    if (con.getLongContentLength() > filesize_max) {
-                        filesize_max = con.getLongContentLength();
-                        dllink = dllink_temp;
+        final String flavorids_text = this.br.getRegex("flavorIds/([A-Za-z0-9\\-_,]+)").getMatch(0);
+        if (flavorids_text != null) {
+            if (prefer_hls) {
+                dllink = String.format("http://cdnbakmi.kaltura.com/p/%s/sp/%s/playManifest/entryId/%s/flavorIds/%s/forceproxy/true/format/applehttp/protocol/https/a.m3u8", partner_id, sp, entry_id, flavorids_text);
+                this.br.getPage(dllink);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                if (hlsbest != null) {
+                    dllink = hlsbest.getDownloadurl();
+                    final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+                    final StreamInfo streamInfo = downloader.getProbe();
+                    if (streamInfo == null) {
+                        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        server_issues = true;
+                    } else {
+                        filesize_max = downloader.getEstimatedSize();
                     }
-                    server_issues = false;
-                } else {
-                    server_issues = true;
                 }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+            } else {
+                final String[] flavorids = flavorids_text.split(",");
+                URLConnectionAdapter con = null;
+                String dllink_temp;
+                for (final String flavorid : flavorids) {
+                    dllink_temp = String.format("http://cdnbakmi.kaltura.com/p/%s/sp/%s/playManifest/entryId/%s/flavorId/%s/format/url/protocol/https/a.mp4", partner_id, sp, entry_id, flavorid);
+                    try {
+                        con = br.openHeadConnection(dllink_temp);
+                        if (!con.getContentType().contains("html")) {
+                            if (con.getLongContentLength() > filesize_max) {
+                                filesize_max = con.getLongContentLength();
+                                dllink = dllink_temp;
+                            }
+                            server_issues = false;
+                        } else {
+                            server_issues = true;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
                 }
             }
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         if (filename == null) {
@@ -124,7 +147,7 @@ public class BongobdCom extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         final String ext;
-        if (dllink != null) {
+        if (dllink != null && !dllink.contains("m3u8")) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
         } else {
             ext = default_extension;
@@ -147,21 +170,27 @@ public class BongobdCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (dllink.contains(".m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, this.dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

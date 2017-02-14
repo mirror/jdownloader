@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "einsfestival.de" }, urls = { "https?://(?:www\\.)?einsfestival\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "einsfestival.de" }, urls = { "https?://(?:www\\.)?einsfestival\\.de/[^/]+/[a-z0-9]+\\.jsp\\?vid=\\d+" })
 public class EinsfestivalDe extends PluginForHost {
 
     public EinsfestivalDe(PluginWrapper wrapper) {
@@ -47,8 +47,8 @@ public class EinsfestivalDe extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
-    private boolean              SERVERERROR       = false;
+    private String               dllink            = null;
+    private boolean              servererror       = false;
 
     @Override
     public String getAGBLink() {
@@ -59,9 +59,10 @@ public class EinsfestivalDe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        final String vid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        DLLINK = null;
-        SERVERERROR = false;
+        dllink = null;
+        servererror = false;
+
+        final String vid = getVideoid(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         downloadLink.setName(vid);
@@ -70,14 +71,9 @@ public class EinsfestivalDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title_subtitle = null;
-        String thisvideo_src = this.br.getRegex("arrVideos\\[" + vid + "\\] = \\{(.*?)\\}").getMatch(0);
+        String thisvideo_src = getVideoSrc(this.br);
         if (thisvideo_src != null) {
-            final String title_subtitle_alternative = new Regex(thisvideo_src, "zmdbTitle: \\'([^<>\"\\']+)\\'").getMatch(0);
-            title_subtitle = new Regex(thisvideo_src, "startAlt: \\'([^<>\"\\']+)\\'").getMatch(0);
-            /* Avoid extremely long filenames with unneeded information! */
-            if (title_subtitle == null || title_subtitle.matches(".+(SENDER:|SENDETITEL:|UNTERTITEL:).+")) {
-                title_subtitle = title_subtitle_alternative;
-            }
+            title_subtitle = getTitleSubtitleWithErrorhandlingFromVideoSrc(thisvideo_src);
         } else {
             thisvideo_src = this.br.toString();
         }
@@ -86,20 +82,20 @@ public class EinsfestivalDe extends PluginForHost {
         // /* 2016-02-02 */
         // server_rtmp = "rtmp://gffstream.fcod.llnwd.net/a792/e2";
         // }
-        String server_http = new Regex(thisvideo_src, "videoServerHttp: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        String server_http = new Regex(thisvideo_src, "videoServerHttp\\s*?:\\s*?\\'(http://[^<>\"\\']+)\\'").getMatch(0);
         if (server_http == null) {
             /* 2016-02-02 */
             server_http = "http://http-ras.wdr.de/";
         }
-        String dslsrc = new Regex(thisvideo_src, "dslSrc: \\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
+        String dslsrc = new Regex(thisvideo_src, "dslSrc\\s*?:\\s*?\\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
         if (dslsrc == null) {
             /* Fallback for older links ... */
             dslsrc = br.getRegex("dslSrc=rtmpe?://gffstream[^<>\"\\']+(/CMS[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
             if (dslsrc == null) {
-                dslsrc = br.getRegex("dslSrc: \\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
+                dslsrc = br.getRegex("dslSrc\\s*?:\\s*?\\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
             }
         }
-        final String isdnsrc = new Regex(thisvideo_src, "isdnSrc: \\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
+        final String isdnsrc = new Regex(thisvideo_src, "isdnSrc\\s*?:\\s*?\\'(/[^<>\"\\']+\\.mp4)\\'").getMatch(0);
         String date = br.getRegex("name=\\'VideoDate\\' content=\\'([^<>\"]*?)\\'").getMatch(0);
         if (date == null) {
             date = this.br.getRegex("<meta name=\\'DC\\.Date\\' content=\\'([^<>\"\\']+)\\'").getMatch(0);
@@ -117,8 +113,9 @@ public class EinsfestivalDe extends PluginForHost {
         if (title == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String tvStationName = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([^\\.]+)\\.").getMatch(0);
         final String date_formatted = formatDate(date);
-        String filename = date_formatted + "_einsfestival_" + title;
+        String filename = date_formatted + "_" + tvStationName + "_" + title;
         if (title_subtitle != null) {
             filename += " - " + title_subtitle;
         }
@@ -132,20 +129,20 @@ public class EinsfestivalDe extends PluginForHost {
         downloadLink.setFinalFileName(filename);
         if (server_http != null && (dslsrc != null || isdnsrc != null)) {
             if (dslsrc != null) {
-                DLLINK = server_http + dslsrc;
+                dllink = server_http + dslsrc;
             } else {
-                DLLINK = server_http + isdnsrc;
+                dllink = server_http + isdnsrc;
             }
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
-                    SERVERERROR = true;
+                    servererror = true;
                 }
             } finally {
                 try {
@@ -157,18 +154,48 @@ public class EinsfestivalDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static String getTitleSubtitleFromVideoSrc(final String videosrc) {
+        return new Regex(videosrc, "startAlt\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+    }
+
+    public static String getTitleSubtitleAlternativeFromVideoSrc(final String videosrc) {
+        return new Regex(videosrc, "zmdbTitle\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+    }
+
+    public static String getTitleSubtitleWithErrorhandlingFromVideoSrc(final String videosrc) {
+        final String title_subtitle_alternative = getTitleSubtitleAlternativeFromVideoSrc(videosrc);
+        String title_subtitle = getTitleSubtitleFromVideoSrc(videosrc);
+        /* Avoid extremely long filenames with unneeded information! */
+        if (title_subtitle == null || title_subtitle.matches(".+(SENDER:|SENDETITEL:|UNTERTITEL:).+")) {
+            title_subtitle = title_subtitle_alternative;
+        }
+        return title_subtitle;
+    }
+
+    public static String getVideoSrc(final Browser br) {
+        final String videoid = getVideoid(br.getURL());
+        if (videoid == null) {
+            return null;
+        }
+        return br.getRegex("arrVideos\\[" + videoid + "\\]\\s*?=\\s*?\\{(.*?)\\}").getMatch(0);
+    }
+
+    public static String getVideoid(final String url) {
+        return new Regex(url, "(\\d+)$").getMatch(0);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (this.br.containsHTML("id=\"fskInfo\"")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung aus Jugendschutzgründen aktuell nicht verfügbar", 60 * 60 * 1000l);
-        } else if (SERVERERROR) {
+        } else if (servererror) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video offline/not playable", 30 * 60 * 1000l);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
