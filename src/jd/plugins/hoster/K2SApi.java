@@ -421,6 +421,7 @@ public abstract class K2SApi extends PluginForHost {
             logger.info("Reusing cached finallink!");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
                 handleGeneralServerErrors(account, downloadLink);
                 // we now want to restore!
@@ -517,6 +518,7 @@ public abstract class K2SApi extends PluginForHost {
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 handleGeneralServerErrors(account, downloadLink);
