@@ -127,7 +127,7 @@ public abstract class K2SApi extends PluginForHost {
         if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409 || con.getResponseCode() == 440) {
             return false;
         } else {
-            return con.isOK() || con.getResponseCode() == 206 || con.isContentDisposition();
+            return con.getResponseCode() == 200 || con.getResponseCode() == 206 || con.isContentDisposition();
         }
     }
 
