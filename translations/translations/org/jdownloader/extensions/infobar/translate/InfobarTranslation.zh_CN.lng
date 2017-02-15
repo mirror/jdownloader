@@ -1,2 +1,6 @@
+EnableInfoBarGuiAction=显示信息栏
+InfoBarGuiToggleAction_deselected=打开信息栏
+InfoBarGuiToggleAction_deselected_tt=打开信息栏
 InfoBarGuiToggleAction_selected=关闭信息栏
+jd_plugins_optional_infobar_InfoDialog_hideWindow=隐藏信息栏
 jd_plugins_optional_infobar_jdinfobar=信息栏
