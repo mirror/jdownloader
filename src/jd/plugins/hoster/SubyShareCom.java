@@ -52,6 +52,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
@@ -443,8 +444,9 @@ public class SubyShareCom extends PluginForHost {
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!isValidDownloadConnection(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 503) {
+                dl.getConnection();
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
             }
             logger.warning("The final dllink seems not to be a file!");
@@ -618,23 +620,26 @@ public class SubyShareCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openGetConnection(dllink);
+                if (isValidDownloadConnection(con)) {
+                    return dllink;
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
+            downloadLink.setProperty(property, Property.NULL);
         }
-        return dllink;
+        return null;
     }
 
     private void getPage(String page) throws Exception {
@@ -1093,6 +1098,15 @@ public class SubyShareCom extends PluginForHost {
         }
     }
 
+    protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
+        final String contentType = con.getContentType();
+        if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409 || con.getResponseCode() == 440) {
+            return false;
+        } else {
+            return con.getResponseCode() == 200 || con.getResponseCode() == 206 || con.isContentDisposition();
+        }
+    }
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
@@ -1141,8 +1155,9 @@ public class SubyShareCom extends PluginForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!isValidDownloadConnection(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 503) {
+                    dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 }
                 logger.warning("The final dllink seems not to be a file!");
