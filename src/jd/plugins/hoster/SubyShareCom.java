@@ -572,7 +572,10 @@ public class SubyShareCom extends PluginForHost {
             dllink = new Regex(correctedBR, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {
                 /* Special: Usually for premium mode */
-                dllink = new Regex(correctedBR, "Location: (https?://[^/]+/d/[A-Za-z0-9]+/[^/]+)").getMatch(1);
+                final String ret = new Regex(correctedBR, "Location: (https?://[^/]+/d/[A-Za-z0-9]+/[^/]+)").getMatch(1);
+                if (ret != null && !getSupportedLinks().matcher(ret).matches()) {
+                    dllink = ret;
+                }
             }
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -1120,6 +1123,10 @@ public class SubyShareCom extends PluginForHost {
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(getSupportedLinks().pattern())) {
+                    // https <-> http redirect
+                    br.followRedirect();
+                }
                 if (isPremiumonlyNew()) {
                     if (downloadLink.getLinkStatus().getRetryCount() < 2) {
                         logger.info("Possible cookie failure");
@@ -1154,6 +1161,7 @@ public class SubyShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 503) {
