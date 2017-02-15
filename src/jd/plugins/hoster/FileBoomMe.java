@@ -186,6 +186,7 @@ public class FileBoomMe extends K2SApi {
                 logger.info("Refresh final link");
                 dllink = null;
                 try {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -301,6 +302,7 @@ public class FileBoomMe extends K2SApi {
             logger.info("dllink = " + dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
+                dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                 br.followConnection();
                 dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -310,6 +312,7 @@ public class FileBoomMe extends K2SApi {
                 dllink = dllink.replace("\\", "");
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
                 if (!isValidDownloadConnection(dl.getConnection())) {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
                     handleGeneralServerErrors(account, downloadLink);
@@ -474,6 +477,7 @@ public class FileBoomMe extends K2SApi {
                 logger.info("dllink = " + dllink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
                 if (!isValidDownloadConnection(dl.getConnection())) {
+                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
                     if (br.containsHTML("Download of file will start in")) {
                         dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
@@ -487,6 +491,7 @@ public class FileBoomMe extends K2SApi {
                     }
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
                     if (!isValidDownloadConnection(dl.getConnection())) {
+                        dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                         logger.warning("The final dllink seems not to be a file!");
                         br.followConnection();
                         handleGeneralServerErrors(account, link);
