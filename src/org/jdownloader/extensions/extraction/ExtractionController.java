@@ -241,11 +241,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 } else {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
-                        crashLog.write(" (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists());
+                        crashLog.write(" (DownloadLinkArchiveFile)File:" + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists() + "|FileSize:" + archiveFile.getFileSize());
                     } else if (archiveFile instanceof FileArchiveFile) {
-                        crashLog.write(" (FileArchiveFile)File: " + archiveFile.getFilePath());
+                        crashLog.write(" (FileArchiveFile)File:" + archiveFile.getFilePath() + "|FileSize:" + archiveFile.getFileSize());
                     } else {
-                        crashLog.write(" File: " + archiveFile.getFilePath());
+                        crashLog.write(" File:" + archiveFile.getFilePath() + "|FileSize:" + archiveFile.getFileSize());
                     }
                 }
             }

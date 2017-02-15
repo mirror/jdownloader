@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(?:yunfile|filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" })
 public class YunFileCom extends PluginForHost {
 
-    private static final String            MAINPAGE    = "http://yunfile.com/";
+    private static final String            MAINPAGE    = "http://www.yunfile.com/";
     private static final String            CAPTCHAPART = "/verifyimg/getPcv";
     private static Object                  LOCK        = new Object();
     private static AtomicReference<String> agent       = new AtomicReference<String>();
@@ -74,7 +74,7 @@ public class YunFileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/", "yunfile.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("share.yunfile.com/", "yunfile.com/").replaceFirst("(?:filemarkets|yfdisk|needisk|5xpan|dix3|dfpan)\\.com/", "www.yunfile.com/"));
 
     }
 

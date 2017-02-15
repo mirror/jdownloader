@@ -971,13 +971,13 @@ public class Multi extends IExtraction {
                     inStream = rarOpener.getStream(firstArchiveFile);
                     break;
                 case SEVENZIP_PARTS:
-                    final MultiOpener sevenZipPartsOpener = new MultiOpener(archive, password);
+                    final MultiOpener sevenZipPartsOpener = new MultiOpener(archive, password, getLogger());
                     closable = sevenZipPartsOpener;
                     callBack = sevenZipPartsOpener;
                     inStream = new ModdedVolumedArchiveInStream(firstArchiveFile.getFilePath(), sevenZipPartsOpener);
                     break;
                 default:
-                    final MultiOpener multiOpener = new MultiOpener(archive, password);
+                    final MultiOpener multiOpener = new MultiOpener(archive, password, getLogger());
                     closable = multiOpener;
                     callBack = multiOpener;
                     inStream = multiOpener.getStream(firstArchiveFile);
@@ -1224,13 +1224,13 @@ public class Multi extends IExtraction {
                     break;
                 case SEVENZIP_PARTS:
                 case ZIP_MULTI:
-                    final MultiOpener sevenZipPartsOpener = new MultiOpener(archive);
+                    final MultiOpener sevenZipPartsOpener = new MultiOpener(archive, getLogger());
                     closable = sevenZipPartsOpener;
                     callBack = sevenZipPartsOpener;
                     inStream = new ModdedVolumedArchiveInStream(firstArchiveFile.getFilePath(), sevenZipPartsOpener);
                     break;
                 default:
-                    final MultiOpener multiOpener = new MultiOpener(archive);
+                    final MultiOpener multiOpener = new MultiOpener(archive, getLogger());
                     closable = multiOpener;
                     callBack = multiOpener;
                     inStream = multiOpener.getStream(firstArchiveFile);
