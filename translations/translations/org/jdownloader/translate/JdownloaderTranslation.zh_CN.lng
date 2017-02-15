@@ -316,6 +316,7 @@ jd_plugins_PluginUtils_askPassword=请输入 %s1 的密码
 lit_add_subtitles=添加字幕
 lit_audio_bitrate=音频位率
 lit_audio_codec=音频编码解码器
+lit_connections=连接
 lit_expired=已过期
 lit_file_container=文件类型
 lit_hide=隐藏
