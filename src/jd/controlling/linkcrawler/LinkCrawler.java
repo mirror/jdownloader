@@ -125,6 +125,7 @@ public class LinkCrawler {
     private final ConcurrentHashMap<String, Object>        duplicateFinderCrawler;
     private final ConcurrentHashMap<String, CrawledLink>   duplicateFinderFinal;
     private final ConcurrentHashMap<String, Object>        duplicateFinderDeep;
+    private final ConcurrentHashMap<CrawledLink, Object>   loopPreventionEmbedded;
     private LinkCrawlerHandler                             handler                     = null;
     protected static final ThreadPoolExecutor              threadPool;
 
@@ -421,6 +422,7 @@ public class LinkCrawler {
             this.duplicateFinderFinal = parentCrawler.duplicateFinderFinal;
             this.duplicateFinderDeep = parentCrawler.duplicateFinderDeep;
             this.linkCrawlerRules = parentCrawler.linkCrawlerRules;
+            this.loopPreventionEmbedded = parentCrawler.loopPreventionEmbedded;
             setHandler(parentCrawler.getHandler());
             setDeepInspector(parentCrawler.getDeepInspector());
         } else {
@@ -428,6 +430,7 @@ public class LinkCrawler {
             duplicateFinderCrawler = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             duplicateFinderFinal = new ConcurrentHashMap<String, CrawledLink>(8, 0.9f, 1);
             duplicateFinderDeep = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            loopPreventionEmbedded = new ConcurrentHashMap<CrawledLink, Object>(8, 0.9f, 1);
             if (CONFIG.isLinkCrawlerRulesEnabled()) {
                 this.linkCrawlerRules = Collections.unmodifiableList(getLinkCrawlerRules());
             } else {
@@ -740,7 +743,7 @@ public class LinkCrawler {
                 WAIT.notifyAll();
             }
             if (getParent() == null) {
-                cleanupDuplicateFinder();
+                cleanup();
             }
             EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
             crawlerStopped();
@@ -749,13 +752,13 @@ public class LinkCrawler {
             synchronized (WAIT) {
                 WAIT.notifyAll();
             }
-            cleanupDuplicateFinder();
+            cleanup();
             EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.FINISHED));
             crawlerFinished();
         }
     }
 
-    protected void cleanupDuplicateFinder() {
+    protected void cleanup() {
         /*
          * all tasks are done , we can now cleanup our duplicateFinder
          */
@@ -763,6 +766,7 @@ public class LinkCrawler {
         duplicateFinderCrawler.clear();
         duplicateFinderFinal.clear();
         duplicateFinderDeep.clear();
+        loopPreventionEmbedded.clear();
     }
 
     protected void crawlerStopped() {
@@ -1456,6 +1460,35 @@ public class LinkCrawler {
         }
     }
 
+    protected CrawledLink createCopyOf(CrawledLink source) {
+        final CrawledLink ret;
+        if (source.getDownloadLink() != null) {
+            ret = new CrawledLink(source.getDownloadLink());
+        } else if (source.getCryptedLink() != null) {
+            ret = new CrawledLink(source.getCryptedLink());
+        } else {
+            ret = new CrawledLink(source.getURL());
+        }
+        ret.setCollectingInfo(source.getCollectingInfo());
+        ret.setSourceJob(source.getSourceJob());
+        ret.setSourceUrls(source.getSourceUrls());
+        if (source.hasArchiveInfo()) {
+            ret.setArchiveInfo(source.getArchiveInfo());
+        }
+        ret.setCustomCrawledLinkModifier(source.getCustomCrawledLinkModifier());
+        ret.setBrokenCrawlerHandler(source.getBrokenCrawlerHandler());
+        ret.setMatchingFilter(source.getMatchingFilter());
+        ret.setMatchingRule(source.getMatchingRule());
+        ret.setCreated(source.getCreated());
+        ret.setEnabled(source.isEnabled());
+        if (source.isNameSet()) {
+            ret.setName(source._getName());
+        }
+        ret.setDesiredPackageInfo(source.getDesiredPackageInfo());
+        ret.setParentNode(source.getParentNode());
+        return ret;
+    }
+
     protected void distribute(final LinkCrawlerGeneration generation, List<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
             return;
@@ -1487,6 +1520,8 @@ public class LinkCrawler {
                             case SKIP:
                             case NEXT:
                                 continue mainloop;
+                            case CONTINUE:
+                                break;
                             }
                         }
                         final boolean isDirect = url.startsWith("directhttp://");
@@ -1525,6 +1560,8 @@ public class LinkCrawler {
                                         continue mainloop;
                                     case SKIP:
                                         break loop;
+                                    case CONTINUE:
+                                        break;
                                     }
                                 }
                             }
@@ -1545,6 +1582,8 @@ public class LinkCrawler {
                                         continue mainloop;
                                     case SKIP:
                                         break loop;
+                                    case CONTINUE:
+                                        break;
                                     }
                                 }
                             }
@@ -1559,6 +1598,8 @@ public class LinkCrawler {
                                 case SKIP:
                                 case NEXT:
                                     continue mainloop;
+                                case CONTINUE:
+                                    break;
                                 }
                             }
                         } else if (!isFile) {
@@ -1576,6 +1617,8 @@ public class LinkCrawler {
                                         case SKIP:
                                         case NEXT:
                                             continue mainloop;
+                                        case CONTINUE:
+                                            break;
                                         }
                                     } else {
                                         // DirectHTTPPermission.FORBIDDEN
@@ -1599,6 +1642,8 @@ public class LinkCrawler {
                                         case SKIP:
                                         case NEXT:
                                             continue mainloop;
+                                        case CONTINUE:
+                                            break;
                                         }
                                         possibleCryptedLink.setSourceUrls(originalSourceURLS);
                                         possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
@@ -1621,6 +1666,28 @@ public class LinkCrawler {
                                 }
                                 try {
                                     if (canHandle(httpPlugin, newURL, possibleCryptedLink) && getFirstMatchingRule(possibleCryptedLink, matchURL, LinkCrawlerRule.RULE.SUBMITFORM, LinkCrawlerRule.RULE.FOLLOWREDIRECT, LinkCrawlerRule.RULE.DEEPDECRYPT) == null) {
+                                        synchronized (loopPreventionEmbedded) {
+                                            if (!loopPreventionEmbedded.containsKey(possibleCryptedLink)) {
+                                                final UnknownCrawledLinkHandler unknownLinkHandler = new UnknownCrawledLinkHandler() {
+                                                    @Override
+                                                    public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                                        lc.distribute(generation, Arrays.asList(new CrawledLink[] { possibleCryptedLink }));
+                                                    }
+                                                };
+                                                final DISTRIBUTE ret = distributeEmbeddedLink(generation, url, createCopyOf(possibleCryptedLink), unknownLinkHandler);
+                                                switch (ret) {
+                                                case STOP:
+                                                    return;
+                                                case SKIP:
+                                                    continue mainloop;
+                                                case NEXT:
+                                                    loopPreventionEmbedded.put(possibleCryptedLink, this);
+                                                    continue mainloop;
+                                                default:
+                                                    break;
+                                                }
+                                            }
+                                        }
                                         if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission)) {
                                             /* create new CrawledLink that holds the modified CrawledLink */
                                             final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
@@ -1629,13 +1696,15 @@ public class LinkCrawler {
                                             final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
                                             possibleCryptedLink.setCustomCrawledLinkModifier(null);
                                             forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
-                                            final DISTRIBUTE ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
-                                            switch (ret) {
+                                            final DISTRIBUTE ret2 = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
+                                            switch (ret2) {
                                             case STOP:
                                                 return;
                                             case SKIP:
                                             case NEXT:
                                                 continue mainloop;
+                                            case CONTINUE:
+                                                break;
                                             }
                                             /**
                                              * restore possibleCryptedLink properties because it is still unhandled
@@ -1673,11 +1742,21 @@ public class LinkCrawler {
                             } else if (Boolean.TRUE.equals(deeperOrFollow)) {
                                 continue mainloop;
                             }
-                            final Boolean embedded = distributeEmbeddedLink(generation, url, possibleCryptedLink);
-                            if (Boolean.FALSE.equals(embedded)) {
-                                return;
-                            } else if (Boolean.TRUE.equals(embedded)) {
-                                continue mainloop;
+                            synchronized (loopPreventionEmbedded) {
+                                if (!loopPreventionEmbedded.containsKey(possibleCryptedLink)) {
+                                    final DISTRIBUTE ret = distributeEmbeddedLink(generation, url, possibleCryptedLink, null);
+                                    switch (ret) {
+                                    case STOP:
+                                        return;
+                                    case SKIP:
+                                        continue mainloop;
+                                    case NEXT:
+                                        loopPreventionEmbedded.put(possibleCryptedLink, this);
+                                        continue mainloop;
+                                    default:
+                                        break;
+                                    }
+                                }
                             }
                         }
                         break mainloopretry;
@@ -1690,7 +1769,7 @@ public class LinkCrawler {
         }
     }
 
-    protected Boolean distributeEmbeddedLink(final LinkCrawlerGeneration generation, final String url, final CrawledLink source) {
+    protected DISTRIBUTE distributeEmbeddedLink(final LinkCrawlerGeneration generation, final String url, final CrawledLink source, UnknownCrawledLinkHandler unknownCrawledLinkHandler) {
         final LinkedHashSet<String> possibleEmbeddedLinks = new LinkedHashSet<String>();
         try {
             final String queryString = new Regex(source.getURL(), "\\?(.+)$").getMatch(0);
@@ -1775,13 +1854,14 @@ public class LinkCrawler {
                 source.setCustomCrawledLinkModifier(null);
                 source.setBrokenCrawlerHandler(null);
                 for (final CrawledLink embeddedLink : embeddedLinks) {
+                    embeddedLink.setUnknownHandler(unknownCrawledLinkHandler);
                     forwardCrawledLinkInfos(source, embeddedLink, sourceLinkModifier, sourceURLs, singleDest);
                 }
                 crawl(generation, embeddedLinks);
-                return true;
+                return DISTRIBUTE.NEXT;
             }
         }
-        return null;
+        return DISTRIBUTE.CONTINUE;
     }
 
     protected LinkCrawlerRule getFirstMatchingRule(CrawledLink link, String url, LinkCrawlerRule.RULE... ruleTypes) {

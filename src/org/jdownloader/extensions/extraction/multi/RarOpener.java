@@ -17,15 +17,12 @@
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.Closeable;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import jd.parser.Regex;
 import net.sf.sevenzipjbinding.IArchiveOpenCallback;
@@ -37,6 +34,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 
@@ -47,20 +45,32 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
  *
  */
 class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
-    private final Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
-    private String                                 name                       = null;
-    private final String                           password;
-    private final Archive                          archive;
-    private final HashMap<String, ArchiveFile>     map                        = new HashMap<String, ArchiveFile>();
-    private String                                 firstName;
-    private final Logger                           logger;
-    private long                                   accessCounter              = 0l;
 
-    RarOpener(Archive archive, Logger logger) {
+    private final class RandomAcessFileStats {
+
+        private final RandomAccessFile raf;
+        private long                   bytesRead = 0;
+        private long                   bytesSeek = 0;
+
+        private RandomAcessFileStats(RandomAccessFile raf) {
+            this.raf = raf;
+        }
+
+    }
+
+    private final Map<String, RandomAcessFileStats> openedRandomAccessFileList = new HashMap<String, RandomAcessFileStats>();
+    private String                                  name                       = null;
+    private final String                            password;
+    private final Archive                           archive;
+    private final HashMap<String, ArchiveFile>      map                        = new HashMap<String, ArchiveFile>();
+    private String                                  firstName;
+    private final LogInterface                      logger;
+
+    RarOpener(Archive archive, LogInterface logger) {
         this(archive, null, logger);
     }
 
-    RarOpener(Archive archive, String password, Logger logger) {
+    RarOpener(Archive archive, String password, LogInterface logger) {
         if (password == null) {
             /* password null will crash jvm */
             this.password = "";
@@ -70,12 +80,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         this.archive = archive;
         this.logger = logger;
         init();
-    }
-
-    public void resetTracker() {
-        for (OpenerAccessTracker tracker : getTrackedFiles()) {
-            tracker.setAccessIndex(0);
-        }
     }
 
     /*
@@ -137,7 +141,7 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     public IInStream getStream(String filename) throws SevenZipException {
         try {
-            OpenerAccessTracker tracker = openedRandomAccessFileList.get(filename);
+            RandomAcessFileStats tracker = openedRandomAccessFileList.get(filename);
             if (tracker == null) {
                 ArchiveFile af = map.get(filename);
                 if (af == null) {
@@ -147,31 +151,40 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
                     }
                 }
                 filename = af == null ? filename : af.getFilePath();
-                tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
+                tracker = new RandomAcessFileStats(new RandomAccessFile(filename, "r"));
+                logger.info("OpenFile:" + filename);
                 openedRandomAccessFileList.put(filename, tracker);
             }
             if (name == null) {
                 name = fixInternalName(filename);
             }
-            final OpenerAccessTracker finalTracker = tracker;
-            finalTracker.getRandomAccessFile().seek(0);
-            return new RandomAccessFileInStream(finalTracker.getRandomAccessFile()) {
+            final RandomAcessFileStats finalTracker = tracker;
+            finalTracker.raf.seek(0);
+            return new RandomAccessFileInStream(finalTracker.raf) {
                 @Override
                 public int read(byte[] abyte0) throws SevenZipException {
-                    finalTracker.setAccessIndex(++accessCounter);
-                    return super.read(abyte0);
+                    final int read = super.read(abyte0);
+                    if (read > 0) {
+                        finalTracker.bytesRead += read;
+                    }
+                    return read;
                 }
 
                 @Override
-                public long seek(long l, int i) throws SevenZipException {
-                    finalTracker.setAccessIndex(++accessCounter);
-                    return super.seek(l, i);
+                public synchronized long seek(long arg0, int arg1) throws SevenZipException {
+                    final long seek = super.seek(arg0, arg1);
+                    if (seek > 0) {
+                        finalTracker.bytesSeek += seek;
+                    }
+                    return seek;
                 }
 
             };
-        } catch (FileNotFoundException fileNotFoundException) {
+        } catch (IOException e) {
+            logger.log(e);
             return null;
         } catch (Exception e) {
+            logger.log(e);
             throw new RuntimeException(e);
         }
     }
@@ -182,19 +195,17 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
      * @throws IOException
      */
     public void close() throws IOException {
-        Iterator<Entry<String, OpenerAccessTracker>> it = openedRandomAccessFileList.entrySet().iterator();
+        final Iterator<Entry<String, RandomAcessFileStats>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<String, OpenerAccessTracker> next = it.next();
+            final Entry<String, RandomAcessFileStats> next = it.next();
             try {
-                next.getValue().getRandomAccessFile().close();
+                logger.info("CloseFile:" + next.getKey() + "|BytesRead:" + next.getValue().bytesRead + "|BytesSeek:" + next.getValue().bytesSeek);
+                next.getValue().raf.close();
             } catch (final Throwable e) {
+                logger.log(e);
             }
             it.remove();
         }
-    }
-
-    public Collection<OpenerAccessTracker> getTrackedFiles() {
-        return openedRandomAccessFileList.values();
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {

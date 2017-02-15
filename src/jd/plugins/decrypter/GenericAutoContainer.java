@@ -18,7 +18,8 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" }) public class GenericAutoContainer extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" })
+public class GenericAutoContainer extends PluginForDecrypt {
 
     @Override
     public Boolean siteTesterDisabled() {
@@ -43,7 +44,7 @@ import org.appwork.utils.StringUtils;
                 con = br.openGetConnection(url);
                 if (con.isOK()) {
                     boolean seemsValidContainer = StringUtils.containsIgnoreCase(con.getContentType(), type);
-                    seemsValidContainer = seemsValidContainer | (con.isContentDisposition() && StringUtils.containsIgnoreCase(Plugin.getFileNameFromHeader(con), type));
+                    seemsValidContainer = seemsValidContainer | (con.isContentDisposition() && StringUtils.containsIgnoreCase(Plugin.getFileNameFromHeader(con), type)) || (con.getContentLength() > 100 && (con.getContentType() == null || !StringUtils.containsIgnoreCase(con.getContentType(), "text")));
                     if (seemsValidContainer) {
                         containerTemp = org.appwork.utils.Application.getResource("tmp/autocontainer/" + System.nanoTime() + "." + type);
                         br.downloadConnection(containerTemp, con);

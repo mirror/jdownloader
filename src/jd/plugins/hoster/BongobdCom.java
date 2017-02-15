@@ -103,6 +103,7 @@ public class BongobdCom extends PluginForHost {
                 this.br.getPage(dllink);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 if (hlsbest != null) {
+                    checkFFProbe(link, "Download a HLS Stream");
                     dllink = hlsbest.getDownloadurl();
                     final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
                     final StreamInfo streamInfo = downloader.getProbe();
