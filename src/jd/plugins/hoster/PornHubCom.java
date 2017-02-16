@@ -79,22 +79,22 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    /*
-                                                                                     * Format - name : videoCodec, videoBitrate,
-                                                                                     * videoResolution, audioCodec, audioBitrate
-                                                                                     */
-                                                                                    /*
-                                                                                     * Video - bitrates and resultions here are not exact as
-                                                                                     * they vary.
-                                                                                     */
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        {
+            /*
+             * Format - name : videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video - bitrates and resultions here are not exact as
+             * they vary.
+             */
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-                                                                                }
-                                                                            });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -656,8 +656,8 @@ public class PornHubCom extends PluginForHost {
 
     public static void prepBr(final Browser br) {
         // br.setCookie("http://pornhub.com/", "platform", "pc");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
         br.setLoadLimit(br.getLoadLimit() * 4);
