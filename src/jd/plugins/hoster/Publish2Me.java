@@ -47,7 +47,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" })
 public class Publish2Me extends K2SApi {
 
     private final String MAINPAGE = "http://publish2.me";
@@ -123,7 +123,7 @@ public class Publish2Me extends K2SApi {
     /* end of K2SApi stuff */
 
     private void setConfigElements() {
-        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, "Use API (recommended!)").setDefaultValue(default_USE_API);
+        final ConfigEntry cfgapi = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), getUseAPIPropertyID(), "Use API (recommended!)").setDefaultValue(isUseAPIDefaultEnabled());
         getConfig().addEntry(cfgapi);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), EXPERIMENTALHANDLING, "Enable reconnect workaround (only for API mode!)?").setDefaultValue(default_eh).setEnabledCondidtion(cfgapi, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, this.getPluginConfig(), super.CUSTOM_REFERER, "Set custom Referer here (only non NON-API mode!)").setDefaultValue(null).setEnabledCondidtion(cfgapi, false));

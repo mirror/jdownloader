@@ -86,8 +86,7 @@ public abstract class K2SApi extends PluginForHost {
     private static String[]                IPCHECK                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     // plugin config definition
-    protected final String                 USE_API                = "USE_API_2";
-    protected final boolean                default_USE_API        = true;
+
     protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
     protected final String                 CUSTOM_REFERER         = "CUSTOM_REFERER";
     protected final boolean                default_SSL_CONNECTION = true;
@@ -167,6 +166,14 @@ public abstract class K2SApi extends PluginForHost {
         return default_SSL_CONNECTION;
     }
 
+    protected String getUseAPIPropertyID() {
+        return "USE_API_2";
+    }
+
+    protected boolean isUseAPIDefaultEnabled() {
+        return true;
+    }
+
     /**
      * useAPI frame work? <br />
      * Override this when incorrect
@@ -174,7 +181,7 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean useAPI() {
-        return getPluginConfig().getBooleanProperty(USE_API, default_USE_API);
+        return getPluginConfig().getBooleanProperty(getUseAPIPropertyID(), isUseAPIDefaultEnabled());
     }
 
     protected boolean useRUA() {
