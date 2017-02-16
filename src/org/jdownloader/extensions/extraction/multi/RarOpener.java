@@ -40,12 +40,6 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 
-/**
- * Used to join the separated rar files.
- *
- * @author botzi
- *
- */
 class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
 
     private final class RandomAcessFileStats {
@@ -202,11 +196,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         }
     }
 
-    /**
-     * Closes open files.
-     *
-     * @throws IOException
-     */
     public void close() throws IOException {
         final Iterator<Entry<String, RandomAcessFileStats>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
