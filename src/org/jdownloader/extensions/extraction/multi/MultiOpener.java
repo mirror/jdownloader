@@ -38,12 +38,6 @@ import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 
-/**
- * Used to join the separated HJSplit and 7z files.
- *
- * @author botzi
- *
- */
 class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
     private final class RandomAcessFileStats {
 
@@ -155,11 +149,6 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
         }
     }
 
-    /**
-     * Closes all open files.
-     *
-     * @throws IOException
-     */
     public void close() throws IOException {
         final Iterator<Entry<String, RandomAcessFileStats>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
