@@ -78,6 +78,16 @@ public class FileBoomMe extends K2SApi {
         return super.rewriteHost(host);
     }
 
+    @Override
+    protected String getUseAPIPropertyID() {
+        return super.getUseAPIPropertyID() + "_2";
+    }
+
+    @Override
+    protected boolean isUseAPIDefaultEnabled() {
+        return false;
+    }
+
     /* K2SApi setters */
 
     /**

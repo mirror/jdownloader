@@ -813,6 +813,16 @@ public class Keep2ShareCc extends K2SApi {
         return false;
     }
 
+    @Override
+    protected String getUseAPIPropertyID() {
+        return super.getUseAPIPropertyID() + "_2";
+    }
+
+    @Override
+    protected boolean isUseAPIDefaultEnabled() {
+        return false;
+    }
+
     /**
      * because stable is lame!
      */

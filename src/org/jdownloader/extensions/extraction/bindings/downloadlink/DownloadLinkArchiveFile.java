@@ -65,7 +65,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public String toString() {
-        return "DownloadLink: " + getFilePath() + " Complete:" + isComplete();
+        return "DownloadLink:" + getFilePath() + "|Complete:" + isComplete();
     }
 
     @Override
