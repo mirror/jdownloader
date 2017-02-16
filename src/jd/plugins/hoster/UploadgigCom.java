@@ -263,7 +263,7 @@ public class UploadgigCom extends antiDDoSForHost {
             throw e;
         }
         this.br.getPage("/user/my_account");
-        final Regex trafficregex = this.br.getRegex("(\\d+)/(\\d+) MB");
+        final Regex trafficregex = this.br.getRegex("<dt>Daily traffic usage</dt>\\s*<dd>(\\d+)/(\\d+) MB");
         final String traffic_used_str = trafficregex.getMatch(0);
         final String traffic_max_str = trafficregex.getMatch(1);
         String expire = br.getRegex("Package expire date:</dt>[\t\n\r ]*?<dd>(\\d{4}/\\d{2}/\\d{2})").getMatch(0);
@@ -285,7 +285,7 @@ public class UploadgigCom extends antiDDoSForHost {
         if (traffic_used_str != null && traffic_max_str != null) {
             final long traffic_used = SizeFormatter.getSize(traffic_used_str + "MB");
             final long traffic_max = SizeFormatter.getSize(traffic_max_str + " MB");
-            final long traffic_left = traffic_max + traffic_used;
+            final long traffic_left = Math.max(0, traffic_max - traffic_used);
             ai.setTrafficMax(traffic_max);
             ai.setTrafficLeft(traffic_left);
         }
