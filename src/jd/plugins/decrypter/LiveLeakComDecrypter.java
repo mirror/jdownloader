@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 //Decrypts embedded videos from liveleak.com
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleak\\.com/(view\\?i=[a-z0-9]+_\\d+|ll_embed\\?f=[a-z0-9]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "https?://(www\\.)?liveleak\\.com/(view\\?i=[a-z0-9]+_\\d+|ll_embed\\?f=[a-z0-9]+)" })
 public class LiveLeakComDecrypter extends PluginForDecrypt {
 
     public LiveLeakComDecrypter(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
         br.getPage(parameter);
         // Handle embedded links
-        if (parameter.matches("http://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
+        if (parameter.matches("https?://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
             if (br.containsHTML("File not found or deleted\\!")) {
                 final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
                 dl.setAvailable(false);
@@ -55,7 +55,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            parameter = "http://www.liveleak.com/view?i=" + originalID;
+            parameter = "/view?i=" + originalID;
             br.getPage(parameter);
         }
         if (br.containsHTML(">This item has been deleted because of a possible violation of our terms of service")) {
@@ -64,12 +64,12 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String externID = br.getRegex("\"(http://(www\\.)?prochan\\.com/embed\\?f=[^<>\"/]*?)\"").getMatch(0);
+        String externID = br.getRegex("\"(https?://(www\\.)?prochan\\.com/embed\\?f=[^<>\"/]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(http://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        externID = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -100,7 +100,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             }
         }
         // ...or do we have (multiple) pixtures?
-        final String[] allPics = br.getRegex("\"(http://[a-z0-9\\-_]+\\.liveleak\\.com/[^<>\"]*?)\" target=\"_blank\"><img").getColumn(0);
+        final String[] allPics = br.getRegex("\"(https?://[a-z0-9\\-_]+\\.liveleak\\.com/[^<>\"]*?)\" target=\"_blank\"><img").getColumn(0);
         if (allPics != null && allPics.length != 0) {
             int counter = 1;
             final DecimalFormat df = new DecimalFormat("000");
