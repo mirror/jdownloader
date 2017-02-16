@@ -50,6 +50,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -1984,9 +1985,23 @@ public class YoutubeHelper {
     }
 
     private List<YoutubeStreamData> loadThumbnails() {
-        StreamCollection ret = new StreamCollection();
-        String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        YoutubeStreamData match = new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null);
+        final StreamCollection ret = new StreamCollection();
+        final String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
+        YoutubeStreamData match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
+        if (isStreamDataAllowed(match)) {
+            final Browser check = br.cloneBrowser();
+            check.setFollowRedirects(true);
+            try {
+                check.openHeadConnection(match.getUrl()).disconnect();
+                final URLConnectionAdapter con = check.getHttpConnection();
+                if (con.isContentDisposition() || StringUtils.contains(con.getContentType(), "image")) {
+                    ret.add(match);
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+            }
+        }
+        match = new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null);
         if (isStreamDataAllowed(match)) {
             ret.add(match);
             if (best != null && best.equals("default.jpg")) {
@@ -2006,10 +2021,6 @@ public class YoutubeHelper {
             if (best != null && best.equals("hqdefault.jpg")) {
                 return ret;
             }
-        }
-        match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
-        if (isStreamDataAllowed(match)) {
-            ret.add(match);
         }
         return ret;
     }
