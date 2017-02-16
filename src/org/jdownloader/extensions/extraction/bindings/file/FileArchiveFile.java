@@ -67,7 +67,7 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     public String toString() {
-        return "File: " + filePath + " Complete:" + isComplete();
+        return "File:" + filePath + "|Complete:" + isComplete();
     }
 
     public String getName() {

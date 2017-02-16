@@ -17,6 +17,7 @@
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
+import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -89,24 +91,34 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
         return getStream(archiveFile.getFilePath());
     }
 
-    public IInStream getStream(String filename) throws SevenZipException {
+    private final String fixInternalName(final String name) {
+        return name;
+    }
+
+    public IInStream getStream(final String fileName) throws SevenZipException {
+        ArchiveFile af = null;
         try {
-            RandomAcessFileStats tracker = openedRandomAccessFileList.get(filename);
+            RandomAcessFileStats tracker = openedRandomAccessFileList.get(fileName);
             if (tracker == null) {
-                ArchiveFile af = map.get(filename);
+                af = map.get(fileName);
                 if (af == null) {
-                    af = archive.getBestArchiveFileMatch(filename);
+                    af = archive.getBestArchiveFileMatch(fileName);
                     if (af != null) {
-                        map.put(filename, af);
+                        map.put(fileName, af);
                     }
                 }
-                filename = af == null ? filename : af.getFilePath();
-                tracker = new RandomAcessFileStats(new RandomAccessFile(filename, "r"));
-                logger.info("OpenFile:" + filename);
-                openedRandomAccessFileList.put(filename, tracker);
+                final File file;
+                if (af != null) {
+                    file = new File(af.getFilePath());
+                } else {
+                    file = new File(fileName);
+                }
+                tracker = new RandomAcessFileStats(IO.open(file, "r"));
+                logger.info("OpenFile->Filename:+" + fileName + "|ArchiveFile:" + af + "|Filename(onDisk)" + file.getAbsolutePath());
+                openedRandomAccessFileList.put(fileName, tracker);
             }
             if (name == null) {
-                name = filename;
+                name = fixInternalName(fileName);
             }
             final RandomAcessFileStats finalTracker = tracker;
             finalTracker.raf.seek(0);
@@ -132,10 +144,14 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
             };
         } catch (IOException e) {
             logger.log(e);
-            return null;
+            if (af != null) {
+                throw new SevenZipException(e);
+            } else {
+                return null;
+            }
         } catch (Exception e) {
             logger.log(e);
-            throw new RuntimeException(e);
+            throw new SevenZipException(e);
         }
     }
 
@@ -149,12 +165,13 @@ class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, I
         while (it.hasNext()) {
             final Entry<String, RandomAcessFileStats> next = it.next();
             try {
-                logger.info("CloseFile:" + next.getKey() + "|BytesRead:" + next.getValue().bytesRead + "|BytesSeek:" + next.getValue().bytesSeek);
+                logger.info("CloseFile->Filename:" + next.getKey() + "|BytesRead:" + next.getValue().bytesRead + "|BytesSeek:" + next.getValue().bytesSeek);
                 next.getValue().raf.close();
             } catch (final Throwable e) {
                 logger.log(e);
+            } finally {
+                it.remove();
             }
-            it.remove();
         }
     }
 
