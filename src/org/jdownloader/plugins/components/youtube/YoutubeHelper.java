@@ -1987,35 +1987,35 @@ public class YoutubeHelper {
     private List<YoutubeStreamData> loadThumbnails() {
         final StreamCollection ret = new StreamCollection();
         final String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        YoutubeStreamData match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
+        YoutubeStreamData match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
         if (isStreamDataAllowed(match)) {
             final Browser check = br.cloneBrowser();
             check.setFollowRedirects(true);
             try {
                 check.openHeadConnection(match.getUrl()).disconnect();
                 final URLConnectionAdapter con = check.getHttpConnection();
-                if (con.isContentDisposition() || StringUtils.contains(con.getContentType(), "image")) {
+                if (con.isOK() && (con.isContentDisposition() || StringUtils.contains(con.getContentType(), "image"))) {
                     ret.add(match);
                 }
             } catch (final Exception e) {
                 logger.log(e);
             }
         }
-        match = new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null);
+        match = new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null);
         if (isStreamDataAllowed(match)) {
             ret.add(match);
             if (best != null && best.equals("default.jpg")) {
                 return ret;
             }
         }
-        match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
+        match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
         if (isStreamDataAllowed(match)) {
             ret.add(match);
             if (best != null && best.equals("mqdefault.jpg")) {
                 return ret;
             }
         }
-        match = (new YoutubeStreamData(null, vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
+        match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
         if (isStreamDataAllowed(match)) {
             ret.add(match);
             if (best != null && best.equals("hqdefault.jpg")) {

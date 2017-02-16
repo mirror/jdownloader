@@ -55,10 +55,8 @@ public class MangaTradersBiz extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("mangatraders.org".equals(getHost())) {
-            if (host == null || "mangatraders.org".equals(host)) {
-                return "mangatraders.biz";
-            }
+        if (host == null || "mangatraders.org".equals(host)) {
+            return "mangatraders.biz";
         }
         return super.rewriteHost(host);
     }
