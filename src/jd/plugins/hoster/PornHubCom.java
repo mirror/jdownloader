@@ -443,7 +443,11 @@ public class PornHubCom extends PluginForHost {
                         return;
                     }
                 }
+                getPage(br, "http://www." + account.getHoster());
                 getPage(br, "http://www." + account.getHoster() + "/login");
+                if (br.containsHTML("Sorry we couldn't find what you were looking for")) {
+                    getPage(br, "http://www." + account.getHoster() + "/login");
+                }
                 final Form loginform = br.getFormbyKey("username");
                 // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
                 // final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
