@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -46,6 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
@@ -57,11 +60,14 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
+    private final String                   NO_SOLVEMEDIA      = "1";
+    private String                         userretrys         = "10";
 
     private static AtomicReference<String> LAST_USED_PASSWORD = new AtomicReference<String>();
 
     public FileCryptCc(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     /* NO OVERRIDE!! */
@@ -94,7 +100,7 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         // Separate password and captcha. this is easier for count reasons!
         int counter = -1;
-        final int retry = 10;
+        final int retry = Integer.parseInt(userretrys);
 
         final ArrayList<String> toTry = new ArrayList<String>();
         final LinkedHashSet<String> tried = new LinkedHashSet<String>();
@@ -161,6 +167,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
             }
+
             final String captcha = captchaForm != null ? captchaForm.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0) : null;
             if (captcha != null && captcha.contains("circle.php")) {
                 final File file = this.getLocalCaptchaFile();
@@ -175,28 +182,32 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
-                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                File cf = null;
-                try {
-                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                } catch (final Exception e) {
-                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                if (getPluginConfig().getBooleanProperty(NO_SOLVEMEDIA, false) == false) {
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
+                        throw e;
                     }
-                    throw e;
-                }
-                final String code = getCaptchaCode("solvemedia", cf, param);
-                if (StringUtils.isEmpty(code)) {
-                    if (counter + 1 < retry) {
-                        continue;
-                    } else {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    final String code = getCaptchaCode("solvemedia", cf, param);
+                    if (StringUtils.isEmpty(code)) {
+                        if (counter + 1 < retry) {
+                            continue;
+                        } else {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
                     }
+                    final String chid = sm.getChallenge(code);
+                    captchaForm.put("adcopy_response", Encoding.urlEncode(code));
+                    captchaForm.put("adcopy_challenge", chid);
+                    submitForm(captchaForm);
+                } else {
+                    continue;
                 }
-                final String chid = sm.getChallenge(code);
-                captchaForm.put("adcopy_response", Encoding.urlEncode(code));
-                captchaForm.put("adcopy_challenge", chid);
-                submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
                 Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this);
                 try {
@@ -223,6 +234,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =
                 // http://filecrypt.cc/captcha/captcha.php?namespace=container
                 // using bismarck original observation, this type is skipable.
+
                 if (counter > 0) {
                     final String code = getCaptchaCode(captcha, param);
                     if (StringUtils.isEmpty(code)) {
@@ -473,4 +485,16 @@ public class FileCryptCc extends PluginForDecrypt {
         cleanUpHTML();
     }
 
+    private void setConfiguredDomain() {
+        final int chosenRetrys = getPluginConfig().getIntegerProperty(retrys, 0);
+        userretrys = this.allretrys[chosenRetrys];
+    }
+
+    private final String   retrys    = "retrys";
+    private final String[] allretrys = new String[] { "10", "15", "20" };
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NO_SOLVEMEDIA, JDL.L("plugins.decrypter.filecryptcc.nosolvemedia", "No solvemedia?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), retrys, allretrys, JDL.L("plugins.decrypter.filecryptcc.retrys", "Retrys")).setDefaultValue(0));
+    }
 }
