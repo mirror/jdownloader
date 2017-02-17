@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Crypted Link festgehalten.
@@ -23,21 +24,30 @@ package jd.plugins;
  * @author jiaz
  */
 public class CryptedLink {
-    private static final long serialVersionUID = 6493927031856751251L;
 
     /**
      * enthält die Url, welche an das Decrypter-Plugin übergeben wird
      */
-    private String            cryptedUrl;
+    private String cryptedUrl;
 
     // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
-    private String            decrypterPassword;
+    private String decrypterPassword;
 
     public CryptedLink(String cryptedUrl) {
         // this.cryptedUrl = cryptedUrl;
         // this.decrypterPassword = null;
         // this.progress = null;
         this(cryptedUrl, null);
+    }
+
+    private LazyCrawlerPlugin lazyC = null;
+
+    public LazyCrawlerPlugin getLazyC() {
+        return lazyC;
+    }
+
+    public void setLazyC(LazyCrawlerPlugin lazyC) {
+        this.lazyC = lazyC;
     }
 
     public CryptedLink(String cryptedUrl, String pw) {

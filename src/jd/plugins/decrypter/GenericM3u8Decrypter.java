@@ -73,6 +73,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
         }
         br.getPage(param.getCryptedUrl());
+        br.followRedirect();
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             // invalid link
             return ret;
