@@ -56,6 +56,7 @@ import org.appwork.utils.logging2.LogSource;
 public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.[A-Za-z]{1,5}\\.mp4.+";
+    private static final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\.*?\\.m3u8.+";
     private static final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
     private static final String type_player_private_forced_referer  = "https?://player\\.vimeo.com/video/\\d+.*?(\\&|\\?)forced_referer=[A-Za-z0-9=]+";
     public static final String  type_player                         = "https?://player\\.vimeo.com/video/\\d+.+";
@@ -78,9 +79,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         int skippedLinks = 0;
         String parameter = param.toString().replace("http://", "https://");
-        if (parameter.matches(type_player_private_external_direct)) {
-            final DownloadLink link;
-            decryptedLinks.add(link = this.createDownloadlink("directhttp://" + parameter.replaceFirst("%20.+$", "")));
+        if (parameter.matches(type_player_private_external_m3u8)) {
+            final DownloadLink link = this.createDownloadlink(parameter);
+            decryptedLinks.add(link);
+            return decryptedLinks;
+        } else if (parameter.matches(type_player_private_external_direct)) {
+            final DownloadLink link = this.createDownloadlink("directhttp://" + parameter.replaceFirst("%20.+$", ""));
+            decryptedLinks.add(link);
             final String fileName = Plugin.getFileNameFromURL(new URL(parameter));
             link.setForcedFileName(fileName);
             link.setFinalFileName(fileName);

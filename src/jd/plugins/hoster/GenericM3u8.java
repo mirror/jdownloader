@@ -90,6 +90,7 @@ public class GenericM3u8 extends PluginForHost {
         final String referer = downloadLink.getStringProperty("Referer", null);
         if (referer != null) {
             br.getPage(referer);
+            br.followRedirect();
         }
         final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
         final StreamInfo streamInfo = downloader.getProbe();
@@ -158,6 +159,7 @@ public class GenericM3u8 extends PluginForHost {
         final String referer = downloadLink.getStringProperty("Referer", null);
         if (referer != null) {
             br.getPage(referer);
+            br.followRedirect();
         }
         dl = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
         dl.startDownload();
