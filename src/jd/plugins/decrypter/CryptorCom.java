@@ -30,9 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-_]+(#password=.+)?" })
 public class CryptorCom extends PluginForDecrypt {
 
     public CryptorCom(PluginWrapper wrapper) {
@@ -51,7 +52,14 @@ public class CryptorCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String password = param.getDecrypterPassword();
+        final ArrayList<String> passwords = new ArrayList<String>();
+        if (param.getDecrypterPassword() != null) {
+            passwords.add(param.getDecrypterPassword());
+        }
+        final String passwordInURL = new Regex(parameter, "#password=(.+)").getMatch(0);
+        if (passwordInURL != null && !passwords.contains(passwordInURL)) {
+            passwords.add(passwordInURL);
+        }
         if (this.br.containsHTML(html_passwordrequired)) {
             boolean failed = true;
             for (int i = 0; i <= 3; i++) {
@@ -62,9 +70,9 @@ public class CryptorCom extends PluginForDecrypt {
                 }
                 if (this.br.containsHTML("\"folder_access_password_check\"")) {
                     final String passCode;
-                    if (password != null) {
-                        passCode = password;
-                        password = null;
+                    if (passwords.size() > 0) {
+                        passCode = passwords.remove(0);
+                        i = 0;
                     } else {
                         passCode = getUserInput("Password?", param);
                     }
