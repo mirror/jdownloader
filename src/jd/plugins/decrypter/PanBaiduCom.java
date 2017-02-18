@@ -273,7 +273,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 return;
             }
             /* Subfolder --> Goes back into decrypter */
-            if (shorturl_id == null && !shorturl_id.equals("")) {
+            if (shorturl_id == null && !shareid.equals("")) {
                 String general_folder = parameter;
                 String folder_path = new Regex(general_folder, "(#dir/path=.*?)$").getMatch(0);
                 if (folder_path != null) {
