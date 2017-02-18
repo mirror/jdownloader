@@ -328,6 +328,9 @@ public class WstreamVideo extends PluginForHost {
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "var strn = \"([^<>\"]*?)\"\\;").getMatch(0);
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<title>Watch ([^<>]*?)(avi)?</title>").getMatch(0);
+        }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
