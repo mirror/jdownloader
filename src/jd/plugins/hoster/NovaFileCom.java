@@ -56,7 +56,7 @@ public class NovaFileCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://novafile.com";
+    private static final String  COOKIE_HOST                  = "https://novafile.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode|No htmlCode read";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -75,13 +75,13 @@ public class NovaFileCom extends antiDDoSForHost {
     // non account: 1 * 1, no resume
     // free account: untested, set same as FREE
     // premium account: 1 * 10
-    // protocol: no https
+    // protocol: redirects to https
     // captchatype: recaptcha
-    // other: no redirects, OLD standard-JD User-Agent is blocked!
+    // other: OLD standard-JD User-Agent is blocked!
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @Override
@@ -130,7 +130,7 @@ public class NovaFileCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -622,7 +622,7 @@ public class NovaFileCom extends antiDDoSForHost {
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(https?://.*?)\\'\\)").getMatch(0);
                 }
             }
         }
