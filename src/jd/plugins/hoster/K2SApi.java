@@ -86,9 +86,6 @@ public abstract class K2SApi extends PluginForHost {
     private static String[]                IPCHECK                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     // plugin config definition
-    protected final String                 USE_API                = "USE_API_3";
-    protected final boolean                default_USE_API        = false;
-
     protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
     protected final String                 CUSTOM_REFERER         = "CUSTOM_REFERER";
     protected final boolean                default_SSL_CONNECTION = true;
@@ -1810,7 +1807,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                     // new sendRequest saves cookie session
                     return;
-                } else if (responseCode == 429 && ibr.containsHTML("<title>(?:Error 429 - )?Too Many Requests</title>")) {
+                } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>|<title>Error 429 - To many requests</title>")) {
                     if (a_responseCode429 == 4) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                     }
