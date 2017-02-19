@@ -23,6 +23,13 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -46,13 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -86,6 +86,8 @@ public abstract class K2SApi extends PluginForHost {
     private static String[]                IPCHECK                = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     // plugin config definition
+    protected final String                 USE_API                = "USE_API_3";
+    protected final boolean                default_USE_API        = false;
 
     protected final String                 SSL_CONNECTION         = "SSL_CONNECTION_2";
     protected final String                 CUSTOM_REFERER         = "CUSTOM_REFERER";
@@ -1808,7 +1810,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                     // new sendRequest saves cookie session
                     return;
-                } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
+                } else if (responseCode == 429 && ibr.containsHTML("<title>(?:Error 429 - )?Too Many Requests</title>")) {
                     if (a_responseCode429 == 4) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
                     }
