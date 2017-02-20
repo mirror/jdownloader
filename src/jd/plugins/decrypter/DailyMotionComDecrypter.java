@@ -105,7 +105,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        parameter = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("http://", "https://");
+        parameter = param.toString().replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("http://", "https://");
         br.setFollowRedirects(true);
 
         synchronized (ctrlLock) {
@@ -125,7 +125,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             br.setCookie("http://www.dailymotion.com", "family_filter", "off");
             br.setCookie("http://www.dailymotion.com", "ff", "off");
             br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-            br.getPage(parameter);
+            try { // Used to catch 410 http://www.dailymotion.com/video/x2hq4xa_bambi-full-movie_shortfilms
+                br.getPage(parameter);
+            } catch (final Exception e) {
+                final DownloadLink dl = this.createOfflinelink(parameter);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             /* 404 */
             if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)") || this.br.getHttpConnection().getResponseCode() == 404) {
                 final DownloadLink dl = this.createOfflinelink(parameter);
