@@ -163,10 +163,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return;
     }
 
-    // private String getApiTokenFromHtml() {
-    // String apitoken = this.br.getRegex("apiToken\\s*?:\\s*?\\'([a-f0-9]+)\\'").getMatch(0);
+    // private String getApiTokenFromHtml(Browser br, final String url) throws IOException {
+    // final Browser brc;
+    // if (br == null) {
+    // brc = this.br;
+    // } else {
+    // brc = br.cloneBrowser();
+    // brc.setFollowRedirects(true);
+    // brc.getPage(url);
+    // }
+    // String apitoken = brc.getRegex("apiToken\\s*?:\\s*?\\'([a-f0-9]+)\\'").getMatch(0);
     // if (apitoken == null) {
-    // apitoken = PluginJSonUtils.getJsonNested(this.br, "apiToken");
+    // apitoken = PluginJSonUtils.getJsonNested(brc, "apiToken");
     // }
     // return apitoken;
     // }
@@ -269,9 +277,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return;
         }
 
-        // final String apitoken = getApiToken();
+        final String apitoken = "d2726b6c8c655e42b68b0db26131b15b22bd1a32";// getApiTokenFromHtml();
         /* 2016-12-21: By hardcoding the apitoken we can save one http request thus have a faster crawl process :) */
-        final String apitoken = "f4ba81fa117681c42383194a7103251db2981962";
         this.br.getHeaders().put("Api-Auth", "Bearer " + apitoken);
         this.br.getPage(API_BASE + "/content/documents/" + sophoraID + ".json?profile=player");
 
