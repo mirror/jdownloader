@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -102,13 +103,11 @@ public class FileCryptCc extends PluginForDecrypt {
         int counter = -1;
         final int retry = Integer.parseInt(userretrys);
 
-        final ArrayList<String> toTry = new ArrayList<String>();
-        final LinkedHashSet<String> tried = new LinkedHashSet<String>();
-        if (StringUtils.isNotEmpty(LAST_USED_PASSWORD.get())) {
-            toTry.add(LAST_USED_PASSWORD.get());
-        }
-        if (StringUtils.isNotEmpty(param.getDecrypterPassword())) {
-            toTry.add(param.getDecrypterPassword());
+        final List<String> passwords = getPreSetPasswords();
+        final HashSet<String> avoidRetry = new HashSet<String>();
+        final String lastUsedPassword = LAST_USED_PASSWORD.get();
+        if (StringUtils.isNotEmpty(lastUsedPassword)) {
+            passwords.add(0, lastUsedPassword);
         }
         String usedPassword = null;
         while (counter++ < retry && containsPassword()) {
@@ -124,21 +123,23 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             /* If there is captcha + password, password comes first, then captcha! */
             if (passwordForm != null) {
-
-                String passCode = null;
-                if (!toTry.isEmpty()) {
-                    passCode = toTry.remove(0);
-                    if (!tried.add(passCode)) {
+                final String passCode;
+                if (passwords.size() > 0) {
+                    passCode = passwords.remove(0);
+                    if (!avoidRetry.add(passCode)) {
+                        counter--;
                         continue;
                     }
-                }
-
-                // when previous provided password has failed, or not provided we should ask
-                if (passCode == null) {
+                } else {
+                    // when previous provided password has failed, or not provided we should ask
                     passCode = getUserInput("Password?", param);
-                    if (!tried.add(passCode)) {
-                        // no need to submit password that has already been tried!
-                        continue;
+                    if (passCode == null) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    } else {
+                        if (!avoidRetry.add(passCode)) {
+                            // no need to submit password that has already been tried!
+                            continue;
+                        }
                     }
                 }
                 usedPassword = passCode;

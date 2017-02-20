@@ -68,10 +68,18 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterfaceFactory;
@@ -88,6 +96,7 @@ import org.appwork.timetracker.TrackerJob;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -98,6 +107,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -219,6 +229,113 @@ public abstract class PluginForHost extends Plugin {
         tracker.wait(trackerJob);
     }
 
+    public AccountInfo handleAccountException(final Account account, final LogSource logger, final Throwable throwable) {
+        final AccountInfo ai;
+        if (account.getAccountInfo() != null) {
+            ai = account.getAccountInfo();
+        } else {
+            ai = new AccountInfo();
+            account.setAccountInfo(ai);
+        }
+        logger.clear();
+        logger.log(throwable);
+        if (throwable instanceof NoGateWayException) {
+            account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, _JDT.T.AccountController_updateAccountInfo_no_gateway());
+            return ai;
+        }
+        if (throwable instanceof PluginException) {
+            final PluginException pluginException = (PluginException) throwable;
+            switch (pluginException.getLinkStatus()) {
+            case LinkStatus.ERROR_CAPTCHA: {
+                invalidateLastChallengeResponse();
+                final String errorMsg;
+                if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                    errorMsg = _JDT.T.DownloadLink_setSkipped_statusmessage_captcha();
+                } else {
+                    errorMsg = pluginException.getErrorMessage();
+                }
+                account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+                return ai;
+            }
+            case LinkStatus.ERROR_PREMIUM: {
+                validateLastChallengeResponse();
+                if (PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE == pluginException.getValue()) {
+                    final String errorMsg;
+                    if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                        if (!ai.isUnlimitedTraffic() && ai.getTrafficLeft() <= 0) {
+                            errorMsg = _JDT.T.AccountController_updateAccountInfo_status_traffic_reached();
+                        } else {
+                            errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
+                        }
+                    } else {
+                        errorMsg = pluginException.getErrorMessage();
+                    }
+                    account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+                } else {
+                    final String errorMsg;
+                    if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                        errorMsg = _JDT.T.AccountController_updateAccountInfo_status_logins_wrong();
+                    } else {
+                        errorMsg = pluginException.getErrorMessage();
+                    }
+                    account.setError(AccountError.INVALID, errorMsg);
+                }
+                return ai;
+            }
+            case LinkStatus.ERROR_PLUGIN_DEFECT: {
+                final String errorMsg;
+                if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                    errorMsg = _JDT.T.AccountController_updateAccountInfo_status_plugin_defect();
+                } else {
+                    errorMsg = pluginException.getErrorMessage();
+                }
+                account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+                return ai;
+            }
+            default: {
+                final String errorMsg;
+                if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                    errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
+                } else {
+                    errorMsg = pluginException.getErrorMessage();
+                }
+                account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+                return ai;
+            }
+            }
+        }
+        ProxySelectorInterface proxySelector = null;
+        final BrowserException browserException = Exceptions.getInstanceof(throwable, BrowserException.class);
+        if (browserException != null && browserException.getRequest() != null) {
+            final HTTPProxy proxy = browserException.getRequest().getProxy();
+            if (proxy != null) {
+                proxySelector = new StaticProxySelector(proxy);
+            }
+        }
+        if (proxySelector == null && getBrowser() != null && getBrowser().getRequest() != null) {
+            final HTTPProxy proxy = getBrowser().getRequest().getProxy();
+            if (proxy != null) {
+                proxySelector = new StaticProxySelector(proxy);
+            }
+        }
+        final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(proxySelector);
+        try {
+            onlineCheck.getExternalIP();
+        } catch (final OfflineException e2) {
+            account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, "No Internet Connection");
+            return ai;
+        } catch (final IPCheckException e2) {
+        }
+        final String errorMsg;
+        if (StringUtils.isEmpty(throwable.getMessage())) {
+            errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
+        } else {
+            errorMsg = throwable.getMessage();
+        }
+        account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
+        return ai;
+    }
+
     public void setLazyP(LazyHostPlugin lazyP) {
         this.lazyP = lazyP;
     }
@@ -233,12 +350,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected void checkAndReserve(final DownloadLink downloadLink, final DiskSpaceReservation reservation) throws Exception {
-        DISKSPACERESERVATIONRESULT result = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(reservation, downloadLink != null ? downloadLink.getDownloadLinkController() : null);
+        final DISKSPACERESERVATIONRESULT result = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(reservation, downloadLink != null ? downloadLink.getDownloadLinkController() : null);
         switch (result) {
         case FAILED:
             throw new SkipReasonException(SkipReason.DISK_FULL);
         case INVALIDDESTINATION:
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+        default:
+            break;
         }
     }
 

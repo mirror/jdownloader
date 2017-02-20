@@ -3,11 +3,13 @@ package org.jdownloader.startup.commands;
 import java.io.File;
 import java.util.Arrays;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.logging.LogController;
 
 public class AddLinkCommand extends AbstractStartupCommand {
 
@@ -25,20 +27,26 @@ public class AddLinkCommand extends AbstractStartupCommand {
 
     public static boolean add(final LinkOrigin linkOrigin, final String parameter) {
         if (StringUtils.isNotEmpty(parameter)) {
-            try {
-                final LinkCollectingJob job;
-                if (StringUtils.startsWithCaseInsensitive(parameter, "http")) {
-                    job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
-                } else if (StringUtils.startsWithCaseInsensitive(parameter, "file:/")) {
-                    job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
-                } else {
-                    job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), new File(parameter).toURI().toString());
+            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        final LinkCollectingJob job;
+                        if (StringUtils.startsWithCaseInsensitive(parameter, "http")) {
+                            job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
+                        } else if (StringUtils.startsWithCaseInsensitive(parameter, "file:/")) {
+                            job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), parameter);
+                        } else {
+                            job = new LinkCollectingJob(linkOrigin.getLinkOriginDetails(), new File(parameter).toURI().toString());
+                        }
+                        LinkCollector.getInstance().addCrawlerJob(job);
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
                 }
-                LinkCollector.getInstance().addCrawlerJob(job);
-                return true;
-            } catch (final Throwable e) {
-                e.printStackTrace();
-            }
+            });
+            return true;
         }
         return false;
     }

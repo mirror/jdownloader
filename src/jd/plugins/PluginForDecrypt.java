@@ -43,6 +43,8 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -89,6 +91,25 @@ public abstract class PluginForDecrypt extends Plugin {
     @Override
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(lazyC.getDisplayName());
+    }
+
+    protected final List<String> getPreSetPasswords() {
+        final List<String> ret = new ArrayList<String>();
+        CrawledLink crawledLink = getCurrentLink();
+        if (crawledLink != null && crawledLink.getCryptedLink() != null) {
+            final String password = crawledLink.getCryptedLink().getDecrypterPassword();
+            if (StringUtils.isNotEmpty(password)) {
+                ret.add(password);
+            }
+        }
+        while (crawledLink != null) {
+            final String password = new Regex(crawledLink.getURL(), "#password=(.*?)($|&)").getMatch(0);
+            if (StringUtils.isNotEmpty(password) && !ret.contains(password)) {
+                ret.add(password);
+            }
+            crawledLink = crawledLink.getSourceLink();
+        }
+        return ret;
     }
 
     public Browser getBrowser() {

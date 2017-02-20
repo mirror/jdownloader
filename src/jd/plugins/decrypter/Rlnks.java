@@ -20,14 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -45,6 +39,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.antibotsystem.AntiBotSystem;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.(?:us|to)/(?:(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]{30}|f/linkcrypt[0-9a-z]{15}|f/[a-f0-9]{10})" })
 public class Rlnks extends antiDDoSForDecrypt {
@@ -249,9 +250,16 @@ public class Rlnks extends antiDDoSForDecrypt {
             allForm = allForm != null && allForm.getAction() != null && allForm.getAction().matches("^https?://(\\w+\\.)?" + domains + "/container_password\\d*\\.php.*") ? allForm : null;
         }
         if (allForm != null) {
+            final List<String> passwords = getPreSetPasswords();
             for (int i = 0; i < 5; i++) {
                 if (allForm.containsHTML("password")) {
-                    final String passCode = Plugin.getUserInput(null, param);
+                    final String passCode;
+                    if (passwords.size() > 0) {
+                        passCode = passwords.remove(0);
+                        i = 0;
+                    } else {
+                        passCode = Plugin.getUserInput(null, param);
+                    }
                     allForm.put("password", passCode);
                 }
                 if (allForm.containsHTML("captcha")) {

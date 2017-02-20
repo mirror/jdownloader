@@ -57,25 +57,34 @@ public class AccountData implements Storable {
     private long                validUntil;
     private boolean             active;
     private boolean             enabled;
-    private boolean             valid                 = true;
+    private boolean             valid              = true;
+    private volatile long       tmpDisabledTimeout = -1;
 
-    private List<String>        hosterHistory         = null;
+    public long getTmpDisabledTimeout() {
+        return tmpDisabledTimeout;
+    }
 
-    private boolean             trafficUnlimited;
-    private boolean             specialtraffic;
-    private String              user;
+    public void setTmpDisabledTimeout(long tmpDisabledTimeout) {
+        this.tmpDisabledTimeout = tmpDisabledTimeout;
+    }
 
-    private boolean             concurrentUsePossible = true;
+    private List<String> hosterHistory         = null;
 
-    private long                id                    = -1;
+    private boolean      trafficUnlimited;
+    private boolean      specialtraffic;
+    private String       user;
 
-    private String              errorType;
+    private boolean      concurrentUsePossible = true;
 
-    private String              errorString;
+    private long         id                    = -1;
 
-    private String              statusString;
+    private String       errorType;
 
-    private boolean             trafficRefill         = true;
+    private String       errorString;
+
+    private String       statusString;
+
+    private boolean      trafficRefill         = true;
 
     public boolean isTrafficRefill() {
         return trafficRefill;
@@ -119,6 +128,7 @@ public class AccountData implements Storable {
         ret.properties = a.getProperties();
         ret.id = a.getId().getID();
         ret.errorType = enumToString(a.getError());
+        ret.tmpDisabledTimeout = a.getTmpDisabledTimeout();
         ret.errorString = a.getErrorString();
         ret.hosterHistory = a.getHosterHistory();
         final AccountInfo ai = a.getAccountInfo();
@@ -294,6 +304,7 @@ public class AccountData implements Storable {
         if (!valid && ret.getError() == null) {
             ret.setError(AccountError.INVALID, null);
         }
+        ret.setTmpDisabledTimeout(getTmpDisabledTimeout());
         return ret;
     }
 

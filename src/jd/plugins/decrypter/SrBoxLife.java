@@ -32,14 +32,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life)|isbox\\.net)/[0-9]+-.*?\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life|pw)|isbox\\.net)/[0-9]+-.*?\\.html" })
 public class SrBoxLife extends PluginForDecrypt {
 
     public SrBoxLife(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life)|isbox\\.net)/";
+    private final String base = "(?i)https?://[\\w\\.]*(?:israbox\\.(?:com|co|net|org|info|me|download|eu|be|club|life|pw)|isbox\\.net)/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -109,7 +109,7 @@ public class SrBoxLife extends PluginForDecrypt {
          * Array of image to download the cover (It can be usable if the user want to create a subfolder with the name of the package
          * because the folder is immediately created because it will download the cover in it
          */
-        String[] TabImage2 = br.getRegex("<img src=\"(http://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
+        String[] TabImage2 = br.getRegex("<img src=\"(https?://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
         String[] TabImage1 = br.getRegex("<img src=\"" + base + "uploads/(.*?)\"").getColumn(0);
 
         // Number of pictures
