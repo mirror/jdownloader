@@ -707,7 +707,6 @@ public class Keep2ShareCc extends K2SApi {
                             }
                         }
                     }
-                    dllink = Encoding.htmlDecode(dllink);
                 }
                 logger.info("dllink = " + dllink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
