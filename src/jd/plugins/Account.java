@@ -373,7 +373,7 @@ public class Account extends Property {
     private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
-        tmpDisabledTimeout = -1;
+        setTmpDisabledTimeout(-1);
         isMulti = false;
         id = new UniqueAlltimeID();
         isMultiPlugin = false;
@@ -393,7 +393,7 @@ public class Account extends Property {
         if (AccountError.TEMP_DISABLED.equals(getError())) {
             synchronized (this) {
                 if (getTmpDisabledTimeout() < 0 || System.currentTimeMillis() >= getTmpDisabledTimeout()) {
-                    tmpDisabledTimeout = -1;
+                    setTmpDisabledTimeout(-1);
                     setTempDisabled(false);
                     return false;
                 }
@@ -410,24 +410,35 @@ public class Account extends Property {
         PLUGIN_ERROR;
     }
 
-    public void setError(final AccountError error, String errorString) {
+    public void setError(final AccountError error, final long setTimeout, String errorString) {
         if (error == null) {
             errorString = null;
         }
         if (this.error != error || !StringUtils.equals(this.errorString, errorString)) {
+            final long timeout;
             if (AccountError.TEMP_DISABLED.equals(error)) {
-                long defaultTmpDisabledTimeOut = CFG_GENERAL.CFG.getAccountTemporarilyDisabledDefaultTimeout();
-                Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
-                if (timeout == null || timeout <= 0) {
-                    timeout = defaultTmpDisabledTimeOut;
+                if (setTimeout <= 0) {
+                    timeout = System.currentTimeMillis() + CFG_GENERAL.CFG.getAccountTemporarilyDisabledDefaultTimeout();
+                } else {
+                    timeout = System.currentTimeMillis() + setTimeout;
                 }
-                this.tmpDisabledTimeout = System.currentTimeMillis() + timeout;
             } else {
-                this.tmpDisabledTimeout = -1;
+                timeout = -1;
             }
+            setTmpDisabledTimeout(timeout);
             this.error = error;
             this.errorString = errorString;
             notifyUpdate(AccountProperty.Property.ERROR, error);
+        }
+    }
+
+    @Deprecated
+    public void setError(final AccountError error, String errorString) {
+        final Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, -1);
+        if (timeout != null) {
+            setError(error, timeout.longValue(), errorString);
+        } else {
+            setError(error, -1, errorString);
         }
     }
 
@@ -512,7 +523,7 @@ public class Account extends Property {
                 result = ut + stDifference;
             }
         }
-        this.tmpDisabledTimeout = result > 0 ? result : failOverTime;
+        setTmpDisabledTimeout(result > 0 ? result : failOverTime);
         this.error = AccountError.TEMP_DISABLED;
         this.errorString = errorString;
         notifyUpdate(AccountProperty.Property.ERROR, error);
@@ -595,6 +606,7 @@ public class Account extends Property {
         }
     }
 
+    @Deprecated
     public void setTempDisabled(final boolean tempDisabled) {
         if (tempDisabled) {
             setError(AccountError.TEMP_DISABLED, null);
