@@ -266,7 +266,7 @@ public class IcerBoxCom extends antiDDoSForHost {
                 if (odl != null) {
                     this.setDownloadLink(odl);
                 }
-                postPage(ajax, apiURL + apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                postPage(ajax, apiURL + "/auth/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
                 handleApiErrors(ajax, account, null);
                 if (ajax.getHttpConnection().getResponseCode() == 429) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
