@@ -68,8 +68,14 @@ public class ArchiveOrg extends PluginForHost {
         try {
             con = br.openHeadConnection(link.getDownloadURL());
             if (con.getResponseCode() == 403) {
-                registered_only = true;
-                return AvailableStatus.UNCHECKABLE;
+                con.disconnect();
+                br.getPage(link.getDownloadURL());
+                if (br.containsHTML(">Item not available<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    registered_only = true;
+                    return AvailableStatus.UNCHECKABLE;
+                }
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (con.isOK()) {
@@ -102,6 +108,10 @@ public class ArchiveOrg extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
+                br.followConnection();
+                if (br.containsHTML(">Item not available<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (account != null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
