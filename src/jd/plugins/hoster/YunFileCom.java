@@ -20,19 +20,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -41,6 +46,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.CookieStorable;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -417,8 +423,16 @@ public class YunFileCom extends PluginForHost {
         synchronized (LOCK) {
             final boolean ifr = br.isFollowingRedirects();
             try {
-                if (!force && account.loadCookies(br, "")) {
-                    return;
+                if (!force) {
+                    try {
+                        final HashMap<String, List<CookieStorable>> cookies = account.restoreObject("cookies", new TypeRef<HashMap<String, List<CookieStorable>>>() {
+                        });
+                        if (importBrowserCookies(br, cookies)) {
+                            return;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
                 }
                 prepBrowser(br);
                 br.setFollowRedirects(true);
@@ -449,7 +463,7 @@ public class YunFileCom extends PluginForHost {
                     }
                 }
                 // Save cookies - ALL OF THEM! they will save cookies to multiple domains! JD stores them in separate keys within hashmap.
-                account.saveCookies(br, "");
+                account.storeObject("cookies", exportBrowserCookies(br));
                 account.setProperty("name", account.getUser());
                 account.setProperty("pass", account.getPass());
             } finally {
@@ -487,6 +501,47 @@ public class YunFileCom extends PluginForHost {
             } catch (final Exception e) {
             }
         }
+    }
+
+    private boolean importBrowserCookies(Browser br, Map<String, List<CookieStorable>> cookies) {
+        if (cookies != null && !cookies.isEmpty()) {
+            for (final Map.Entry<String, List<CookieStorable>> cookieEntry : cookies.entrySet()) {
+                final String host = cookieEntry.getKey();
+                final List<CookieStorable> cs = cookieEntry.getValue();
+                final Cookies ret = new Cookies();
+                for (final CookieStorable storable : cs) {
+                    final Cookie cookie = storable._restore();
+                    if (!cookie.isExpired()) {
+                        ret.add(cookie);
+                    }
+                }
+                br.setCookies(host, ret);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private Map<String, List<CookieStorable>> exportBrowserCookies(Browser br) {
+        final HashMap<String, List<CookieStorable>> cookies = new HashMap<String, List<CookieStorable>>();
+        /*
+         * do not cache antiddos cookies, this is job of the antiddos module, otherwise it can and will cause conflicts!
+         */
+        final String antiddosCookies = org.jdownloader.plugins.components.antiDDoSForHost.antiDDoSCookiePattern;
+        final java.util.Iterator<Entry<String, Cookies>> it = br.getCookies().entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, Cookies> entry = it.next();
+            final ArrayList<CookieStorable> cs = new ArrayList<CookieStorable>();
+            final String domain = entry.getKey();
+            final Cookies ckies = entry.getValue();
+            for (final Cookie cookie : ckies.getCookies()) {
+                if (cookie.getKey() != null && !cookie.getKey().matches(antiddosCookies) && !cookie.isExpired()) {
+                    cs.add(new CookieStorable(cookie));
+                }
+            }
+            cookies.put(domain, cs);
+        }
+        return cookies;
     }
 
     @Override
