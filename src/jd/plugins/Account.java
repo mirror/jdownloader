@@ -523,10 +523,8 @@ public class Account extends Property {
                 result = ut + stDifference;
             }
         }
-        setTmpDisabledTimeout(result > 0 ? result : failOverTime);
-        this.error = AccountError.TEMP_DISABLED;
-        this.errorString = errorString;
-        notifyUpdate(AccountProperty.Property.ERROR, error);
+        final long timeout = (result > 0 ? result : failOverTime);
+        setError(AccountError.TEMP_DISABLED, timeout, errorString);
     }
 
     public void setTmpDisabledTimeout(long tmpDisabledTimeout) {
