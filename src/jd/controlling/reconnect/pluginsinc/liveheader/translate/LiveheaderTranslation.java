@@ -277,7 +277,7 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Check or modify the raw reconnect Script below." })
     String script_check_modify();
 
-    @Default(lngs = { "en" }, values = { "Browser Script Database" })
+    @Default(lngs = { "en" }, values = { "Browse Script Database" })
     String SearchScriptAction();
 
     @Default(lngs = { "en" }, values = { "Search in our huge community script database" })
