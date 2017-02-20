@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -155,7 +154,7 @@ names = { "imgwet.com", "ziddu.com", "imxd.net", "myvideo.de", "timsah.com", "sh
         "http://[\\w\\.]*?(megashare\\.vn/(download\\.php\\?uid=[0-9]+\\&id=[0-9]+|dl\\.php/\\d+)|share\\.megaplus\\.vn/dl\\.php/\\d+)", "http://(www\\.)?metahyper\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?missupload\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?netstorer\\.com/[a-zA-Z0-9]+/.+", "http://[\\w\\.]*?nextgenvidz\\.com/view/\\d+", "http://(www\\.)?piggyshare\\.com/file/[a-z0-9]+", "http://(www\\.)?profitupload\\.com/files/[A-Za-z0-9]+\\.html", "http://[\\w\\.]*?quickload\\.to/\\?Go=Player\\&HashID=FILE[A-Z0-9]+", "http://[\\w\\.]*?quickyshare\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?share\\.cx/(files/)?\\d+", "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+", "http://[\\w\\.]*?shareua.com/get_file/.*?/\\d+", "http://[\\w\\.]*?speedload\\.to/FILE[A-Z0-9]+", "http://(www\\.)?upfile\\.in/[a-z0-9]{12}", "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+",
         "http://[\\w\\.]*?upload\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://[\\w\\.]*?uploadmachine\\.com/(download\\.php\\?id=[0-9]+&type=[0-9]{1}|file/[0-9]+/)", "http://[\\w\\.]*?uploady\\.to/dl/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://(www\\.)?uploadstore\\.net/[a-z0-9]{12}", "http://[\\w\\.]*?vspace\\.cc/file/[A-Z0-9]+\\.html", "http://[\\w\\.]*?web-share\\.net/download/file/item/.*?_[0-9]+", "http://(www\\.)?yvh\\.cc/video\\.php\\?file=[a-z0-9_]+", "http://[\\w\\.]*?x-files\\.kz/[a-z0-9]+", "https?://(www\\.)?oteupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }
 
-)
+        )
 public class Offline extends PluginForHost {
 
     /**
@@ -184,10 +183,7 @@ public class Offline extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        ai.setStatus("Permanently Offline: Host provider no longer exists");
-        account.setError(AccountError.INVALID, "Permanently Offline: Host provider no longer exists");
-        return ai;
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Permanently Offline: Host provider no longer exists", PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

@@ -316,71 +316,68 @@ public class DebridLinkFr extends PluginForHost {
                 tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-        } else {
-            final String error = PluginJSonUtils.getJsonValue(br, "ERR");
-
-            if (error != null) {
-                // generic errors not specific to download routine!
-                if ("unknowR".equals(error)) {
-                    // Bad r argument
-                    // changes with the API? this shouldn't happen
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if ("badSign".equals(error)) {
-                    // Check the sign parameter
-                    dump(account);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if ("badRequest".equals(error)) {
-                    // not in error table yet..........
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if ("hidedToken".equals(error)) {
-                    // The token is not enabled. Redirect the user to validTokenUrl
-                    // this is done automatic at this stage, as users will hate dialog/popups!
-                    dump(account);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if ("badToken".equals(error)) {
-                    // Token expired or not valid
-                    dump(account);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if ("notToken".equals(error)) {
-                    // The request need token argument
-                    // should never happen, unless API changes!
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-
+        }
+        final String error = PluginJSonUtils.getJsonValue(br, "ERR");
+        if (error != null) {
+            // generic errors not specific to download routine!
+            if ("unknowR".equals(error)) {
+                // Bad r argument
+                // changes with the API? this shouldn't happen
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ("badSign".equals(error)) {
+                // Check the sign parameter
+                dump(account);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if ("badRequest".equals(error)) {
+                // not in error table yet..........
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ("hidedToken".equals(error)) {
+                // The token is not enabled. Redirect the user to validTokenUrl
+                // this is done automatic at this stage, as users will hate dialog/popups!
+                dump(account);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if ("badToken".equals(error)) {
+                // Token expired or not valid
+                dump(account);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if ("notToken".equals(error)) {
+                // The request need token argument
+                // should never happen, unless API changes!
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ("serverNotAllowed".equals(error)) {
+                tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+            } else if (downloadLink != null) {
                 // handling for download routines!
-
-                else if (downloadLink != null) {
-                    if ("notDebrid".equals(error)) {
-                        // Maybe the filehoster is down or the link is not online
-                        tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
-                    } else if ("fileNotFound".equals(error)) {
-                        // The filehoster return a 'file not found' error.
-                        // let another download method kick in? **
-                        // NOTE: ** = jiaz new handling behaviour
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    } else if ("badFileUrl".equals(error)) {
-                        // The link format is not valid
-                        // link generation?? lets go into another plugin **
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    } else if ("hostNotValid".equals(error)) {
-                        // The filehoster is not supported
-                        // shouldn't happen as we check supported array and remove hosts that are disabled/down etc.
-                        tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
-                    } else if ("disabledHost".equals(error)) {
-                        // The filehoster are disabled
-                        // remove from array!
-                        tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
-                    } else if ("noGetFilename".equals(error)) {
-                        // Unable to retrieve the file name
-                        // what todo here? revert to another plugin **
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    } else if ("notFreeHost".equals(error) || "needPremium".equals(error)) {
-                        /*
-                         * Filehost is disabled for current FREE account --> Disable it "forever" --> Should usually not happen as already
-                         * handled below in canHandle.
-                         */
-                        tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
-                    }
+                if ("notDebrid".equals(error)) {
+                    // Maybe the filehoster is down or the link is not online
+                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                } else if ("fileNotFound".equals(error)) {
+                    // The filehoster return a 'file not found' error.
+                    // let another download method kick in? **
+                    // NOTE: ** = jiaz new handling behaviour
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else if ("badFileUrl".equals(error)) {
+                    // The link format is not valid
+                    // link generation?? lets go into another plugin **
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else if ("hostNotValid".equals(error)) {
+                    // The filehoster is not supported
+                    // shouldn't happen as we check supported array and remove hosts that are disabled/down etc.
+                    tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
+                } else if ("disabledHost".equals(error)) {
+                    // The filehoster are disabled
+                    // remove from array!
+                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                } else if ("noGetFilename".equals(error)) {
+                    // Unable to retrieve the file name
+                    // what todo here? revert to another plugin **
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else if ("notFreeHost".equals(error) || "needPremium".equals(error)) {
+                    /*
+                     * Filehost is disabled for current FREE account --> Disable it "forever" --> Should usually not happen as already
+                     * handled below in canHandle.
+                     */
+                    tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
                 }
             }
         }

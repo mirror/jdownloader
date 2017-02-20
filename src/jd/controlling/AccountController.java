@@ -32,17 +32,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
@@ -50,8 +43,6 @@ import jd.plugins.Account.AccountPropertyChangeHandler;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountProperty;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -65,12 +56,10 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -85,7 +74,6 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.translate._JDT;
 
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
 
@@ -265,7 +253,6 @@ public class AccountController implements AccountControllerListener, AccountProp
             return ai;
         }
         final AccountError errorBefore = account.getError();
-        final String errorMessageBefore = account.getErrorString();
         PluginForHost plugin = null;
         final HashMap<AccountProperty.Property, AccountProperty> propertyChanges = new HashMap<AccountProperty.Property, AccountProperty>();
         try {
@@ -314,10 +301,10 @@ public class AccountController implements AccountControllerListener, AccountProp
                 }
             } catch (final Throwable e) {
                 LogController.CL().log(e);
-                account.setError(AccountError.PLUGIN_ERROR, null);
+                account.setError(AccountError.PLUGIN_ERROR, e.getMessage());
                 return null;
             }
-            String whoAmI = account.getUser() + "->" + account.getHoster();
+            final String whoAmI = account.getUser() + "->" + account.getHoster();
             LogSource logger = LogController.getFastPluginLogger("accountCheck:" + plugin.getHost() + "_" + plugin.getLazyP().getClassName());
             logger.info("Account Update: " + whoAmI + "(" + plugin.getLazyP().getClassName() + "|" + plugin.getVersion() + ")");
             plugin.setLogger(logger);
@@ -332,9 +319,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                 oldLogger = bThread.getLogger();
                 bThread.setLogger(logger);
             }
-            boolean validAccountCheck = false;
             try {
-                Browser br = new Browser();
+                final Browser br = new Browser();
                 br.setLogger(logger);
                 plugin.setBrowser(br);
                 plugin.init();
@@ -353,14 +339,15 @@ public class AccountController implements AccountControllerListener, AccountProp
                      * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                      */
                     ai = plugin.fetchAccountInfo(account);
-                    validAccountCheck = true;
+                    plugin.validateLastChallengeResponse();
                     account.setAccountInfo(ai);
                 } finally {
                     account.setUpdateTime(System.currentTimeMillis());
                 }
                 if (account.isValid() == false) {
                     /* account is invalid */
-                    LogController.CL().info("Account " + whoAmI + " is invalid!");
+                    logger.info("Account:" + whoAmI + "|Invalid!");
+                    account.setError(AccountError.INVALID, null);
                     return ai;
                 } else {
                     account.setLastValidTimestamp(System.currentTimeMillis());
@@ -368,7 +355,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 if (ai != null && ai.isExpired()) {
                     /* expired account */
                     logger.clear();
-                    LogController.CL().info("Account " + whoAmI + " is expired!");
+                    logger.info("Account:" + whoAmI + "|Expired!");
                     account.setError(AccountError.EXPIRED, null);
                     return ai;
                 }
@@ -380,114 +367,10 @@ public class AccountController implements AccountControllerListener, AccountProp
                 logger.clear();
             } catch (final Throwable e) {
                 logger.log(e);
-                ai = account.getAccountInfo();
-                if (ai == null) {
-                    ai = new AccountInfo();
-                    account.setAccountInfo(ai);
-                }
-                if (e instanceof PluginException) {
-                    PluginException pe = (PluginException) e;
-                    if ((pe.getLinkStatus() == LinkStatus.ERROR_PREMIUM)) {
-                        validAccountCheck = true;
-                        if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-                            logger.clear();
-                            LogController.CL().info("Account " + whoAmI + " traffic limit reached!");
-                            String errorMsg = pe.getErrorMessage();
-                            if (StringUtils.isEmpty(errorMsg)) {
-                                errorMsg = _JDT.T.AccountController_updateAccountInfo_status_traffic_reached();
-                            }
-                            /* needed because some plugins set invalid on pluginException */
-                            account.setError(AccountError.TEMP_DISABLED, errorMsg);
-                            return ai;
-                        } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-                            String errorMsg = pe.getErrorMessage();
-                            if (StringUtils.isEmpty(errorMsg)) {
-                                errorMsg = _JDT.T.AccountController_updateAccountInfo_status_logins_wrong();
-                            }
-                            account.setError(AccountError.INVALID, errorMsg);
-                            logger.clear();
-                            LogController.CL().info("Account " + whoAmI + " is invalid!");
-                            return ai;
-                        }
-                    } else if (pe.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
-                        logger.severe("AccountCheck: Failed because of PluginDefect, temp disable it!");
-                        logger.log(e);
-                        String errorMsg = pe.getErrorMessage();
-                        if (StringUtils.isEmpty(errorMsg)) {
-                            errorMsg = _JDT.T.AccountController_updateAccountInfo_status_plugin_defect();
-                        }
-                        if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) {
-                            account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
-                        }
-                        /* needed because some plugins set invalid on pluginException */
-                        account.setError(AccountError.TEMP_DISABLED, errorMsg);
-                        return ai;
-                    }
-
-                } else if (e instanceof NoGateWayException) {
-
-                    String errorMsg = null;
-
-                    errorMsg = _JDT.T.AccountController_updateAccountInfo_no_gateway();
-
-                    if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) {
-                        account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
-                    }
-                    /* needed because some plugins set invalid on pluginException */
-                    account.setError(AccountError.TEMP_DISABLED, errorMsg);
-                    return ai;
-
-                } else {
-                    ProxySelectorInterface proxySelector = null;
-                    final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
-                    if (browserException != null && browserException.getRequest() != null) {
-                        final HTTPProxy proxy = browserException.getRequest().getProxy();
-                        if (proxy != null) {
-                            proxySelector = new StaticProxySelector(proxy);
-                        }
-                    }
-                    if (proxySelector == null && plugin != null && plugin.getBrowser() != null && plugin.getBrowser().getRequest() != null) {
-                        final HTTPProxy proxy = plugin.getBrowser().getRequest().getProxy();
-                        if (proxy != null) {
-                            proxySelector = new StaticProxySelector(proxy);
-                        }
-                    }
-                    /* network exception, lets temp disable the account */
-                    final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(proxySelector);
-                    try {
-                        onlineCheck.getExternalIP();
-                    } catch (final OfflineException e2) { /*
-                     * we are offline, so lets just return without any account update
-                     */
-                        logger.clear();
-                        LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
-                        account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
-                        // try again in 1 min
-                        account.setTmpDisabledTimeout(System.currentTimeMillis() + 60 * 1000l);
-                        return ai;
-                    } catch (final IPCheckException e2) {
-                    }
-                }
-                logger.severe("AccountCheck: Failed because of exception, temp disable it!");
-                String errorMsg = null;
-                if (e instanceof PluginException && !StringUtils.isEmpty(((PluginException) e).getErrorMessage())) {
-                    errorMsg = ((PluginException) e).getErrorMessage();
-                } else if (!StringUtils.isEmpty(e.getMessage())) {
-                    errorMsg = e.getMessage();
-                } else {
-                    errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
-                }
-                if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) {
-                    account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
-                }
-                /* needed because some plugins set invalid on pluginException */
-                account.setError(AccountError.TEMP_DISABLED, errorMsg);
-                return ai;
+                return plugin.handleAccountException(account, logger, e);
             } finally {
                 try {
-                    if (validAccountCheck) {
-                        plugin.validateLastChallengeResponse();
-                    } else {
+                    if (plugin != null) {
                         plugin.invalidateLastChallengeResponse();
                     }
                 } catch (final Throwable e) {

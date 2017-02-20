@@ -32,11 +32,11 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 public class PluginConfigAdapter {
     private static final String   OLD_CONFIG_PREFIX = "deprecated";
 
-    private final LazyPlugin      lazyPlugin;
+    private final LazyPlugin<?>   lazyPlugin;
     private PluginConfigInterface config;
     private ConfigContainer       oldConfig;
 
-    public PluginConfigAdapter(LazyPlugin lazyPlugin) throws ClassNotFoundException {
+    public PluginConfigAdapter(LazyPlugin<?> lazyPlugin) throws ClassNotFoundException {
         this.lazyPlugin = lazyPlugin;
         if (this.lazyPlugin == null) {
             throw new ClassNotFoundException();
@@ -110,59 +110,70 @@ public class PluginConfigAdapter {
     }
 
     public Object getValue(String key) throws BadParameterException {
-        init();
-        if (this.isOldConfig()) {
-            if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
-                for (ConfigEntry entry : this.oldConfig.getEntries()) {
-                    if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
-                        return entry.getPropertyInstance().getProperty(key);
+        if (!StringUtils.isEmpty(key)) {
+            init();
+            if (this.isOldConfig()) {
+                if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
+                    for (ConfigEntry entry : this.oldConfig.getEntries()) {
+                        if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
+                            return entry.getPropertyInstance().getProperty(key);
+                        }
                     }
                 }
+            } else if (config != null) {
+                final KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
+                if (kh != null) {
+                    return kh.getValue();
+                }
             }
-        } else if (config != null) {
-            KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
-            return kh.getValue();
         }
         throw new BadParameterException("no matching config entry");
     }
 
     public Object getDefaultValue(String key) throws BadParameterException {
-        init();
-        if (this.isOldConfig()) {
-            if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
-                for (ConfigEntry entry : this.oldConfig.getEntries()) {
-                    if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
-                        return entry.getDefaultValue();
-                    }
-                }
-            }
-        } else if (config != null) {
-            KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
-            return kh.getDefaultValue();
-        }
-
-        throw new BadParameterException("no matching config entry");
-    }
-
-    public boolean setValue(String key, Object value) {
-        init();
-        if (!StringUtils.isEmpty(key) && isOldConfig()) {
-            if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
-                for (ConfigEntry entry : this.oldConfig.getEntries()) {
-                    if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
-                        entry.getPropertyInstance().setProperty(key, value);
-                        return true;
+        if (!StringUtils.isEmpty(key)) {
+            init();
+            if (this.isOldConfig()) {
+                if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
+                    for (ConfigEntry entry : this.oldConfig.getEntries()) {
+                        if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
+                            return entry.getDefaultValue();
+                        }
                     }
                 }
             } else if (config != null) {
                 final KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
-                Type rc = kh.getRawType();
-                String json = JSonStorage.serializeToJson(value);
-                TypeRef<Object> type = new TypeRef<Object>(rc) {
-                };
-                Object v = JSonStorage.stringToObject(json, type, null);
-                kh.setValue(v);
-                return true;
+                if (kh != null) {
+                    return kh.getDefaultValue();
+                }
+            }
+        }
+        throw new BadParameterException("no matching config entry:" + key);
+    }
+
+    public boolean setValue(String key, Object value) {
+        if (!StringUtils.isEmpty(key)) {
+            init();
+            if (isOldConfig()) {
+                if (this.oldConfig != null && this.oldConfig.getEntries().size() > 0) {
+                    for (ConfigEntry entry : this.oldConfig.getEntries()) {
+                        if (entry.getPropertyName() != null && entry.getPropertyName().equals(key)) {
+                            entry.getPropertyInstance().setProperty(key, value);
+                            return true;
+                        }
+                    }
+                }
+            } else if (config != null) {
+                final KeyHandler<Object> kh = this.config._getStorageHandler().getKeyHandler(key);
+                if (kh != null) {
+                    final Type rc = kh.getRawType();
+                    final String json = JSonStorage.serializeToJson(value);
+                    final TypeRef<Object> type = new TypeRef<Object>(rc) {
+                    };
+                    final Object v = JSonStorage.stringToObject(json, type, null);
+                    kh.setValue(v);
+                    return true;
+                }
             }
         }
         return false;

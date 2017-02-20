@@ -210,7 +210,6 @@ public class RealDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        account.setError(null, null);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final UserResponse user = callRestAPI(account, "/user", UserResponse.TYPE);

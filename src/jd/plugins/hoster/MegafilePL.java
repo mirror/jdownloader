@@ -6,7 +6,6 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,8 +38,7 @@ public class MegafilePL extends PluginForHost {
             String[] accountInfo = checkLogin.split(":");
             if (accountInfo[0].contains("ERROR")) {
                 ac.setStatus(accountInfo[1]);
-                account.setError(AccountError.INVALID, accountInfo[1]);
-                return ac;
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, accountInfo[1], PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 ac.setStatus("Account valid");
                 ac.setTrafficLeft(Long.parseLong(accountInfo[1]));

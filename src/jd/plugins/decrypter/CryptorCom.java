@@ -30,10 +30,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-_]+(#password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cryptor.to" }, urls = { "https?://(?:www\\.)?cryptor\\.to/folder/[A-Za-z0-9\\-_]+" })
 public class CryptorCom extends PluginForDecrypt {
 
     public CryptorCom(PluginWrapper wrapper) {
@@ -52,14 +51,7 @@ public class CryptorCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final ArrayList<String> passwords = new ArrayList<String>();
-        if (param.getDecrypterPassword() != null) {
-            passwords.add(param.getDecrypterPassword());
-        }
-        final String passwordInURL = new Regex(parameter, "#password=(.+)").getMatch(0);
-        if (passwordInURL != null && !passwords.contains(passwordInURL)) {
-            passwords.add(passwordInURL);
-        }
+        final List<String> passwords = getPreSetPasswords();
         if (this.br.containsHTML(html_passwordrequired)) {
             boolean failed = true;
             for (int i = 0; i <= 3; i++) {
