@@ -282,13 +282,19 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = new Regex(string, "name=\"twitter:player\" content=\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\\&").getMatch(0);
+        externID = new Regex(string, "(?:id|name)=\"twitter:player\" (?:src|content)=\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\\&").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = new Regex(string, "class=\"vine\\-embed\" src=\"(https?://vine\\.co/[^<>\"]*?)\"").getMatch(0);
+        externID = new Regex(string, "(?:id|name)=\"youtube_iframe\" (?:src|content)=\"(https?://(www\\.)?youtube\\.com/embed/.*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = new Regex(string, "(?:id|name)=\"vine\\-embed\" (?:src|content)=\"(https?://vine\\.co/[^<>\"]*?)\"").getMatch(0);
         if (externID == null) {
             // currently within iframe src -raztoki20160208
             externID = new Regex(string, "(\"|')(https?://vine\\.co/v/.*?)\\1").getMatch(1);
@@ -310,7 +316,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             if (externID != null) {
                 // the puid stays the same throughout all these requests
                 br.getPage(externID);
-                externID = br.getRegex("\"(https?://(www\\.)?tumblr\\.com/video_file/[^<>\"]*?)\"").getMatch(0);
+                externID = br.getRegex("\"(https?://[^<>\"]*?tumblr\\.com/video_file/[^<>\"]*?)\"").getMatch(0);
             }
         }
         if (externID != null) {
