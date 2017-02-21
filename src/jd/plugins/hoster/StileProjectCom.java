@@ -104,7 +104,7 @@ public class StileProjectCom extends PluginForHost {
 
     // Same code as for CelebrityCuntNet
     private void getdllink() throws PluginException, IOException {
-        dllink = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        dllink = br.getRegex("file: \\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
             final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
             final String type = videoMETA.getMatch(0);
