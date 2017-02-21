@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?" })
 public class YouPornCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -134,6 +134,12 @@ public class YouPornCom extends PluginForHost {
         }
         if (DLLINK == null) {
             DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("sources:[^']+?480: '([^']+)'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("sources:[^']+?240: '([^']+)'").getMatch(0);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
