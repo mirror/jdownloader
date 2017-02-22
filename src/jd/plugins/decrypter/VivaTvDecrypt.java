@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -305,6 +307,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         crawlDrupal();
         crawlMgids();
+        crawlTriforceManifestFeed();
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fpName = Encoding.htmlDecode(fpName.trim());
@@ -394,6 +397,28 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                     decryptedLinks.add(fina);
                 }
             }
+        } catch (final Throwable e) {
+        }
+    }
+
+    /* 2017-02-22: New - finds- and adds feed URLs --> These will then go back into the decrypter! */
+    private void crawlTriforceManifestFeed() {
+        try {
+            final String json_source = this.br.getRegex("var triforceManifestFeed\\s*?=\\s*?(\\{.*?\\})\\s+").getMatch(0);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            LinkedHashMap<String, Object> entries2 = null;
+            entries = (LinkedHashMap<String, Object>) entries.get("manifest");
+            entries = (LinkedHashMap<String, Object>) entries.get("zones");
+            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Object> entry = it.next();
+                entries2 = (LinkedHashMap<String, Object>) entry.getValue();
+                final String url_feed = (String) entries2.get("feed");
+                if (url_feed != null) {
+                    this.decryptedLinks.add(this.createDownloadlink(url_feed));
+                }
+            }
+
         } catch (final Throwable e) {
         }
     }

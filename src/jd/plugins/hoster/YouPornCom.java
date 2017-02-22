@@ -125,7 +125,17 @@ public class YouPornCom extends PluginForHost {
             parameter.setName(filename + defaultEXT);
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
+        /* Find highest quality */
+        final String[] qualities = { "1080", "720", "480", "240" };
+        for (final String possibleQuality : qualities) {
+            DLLINK = br.getRegex("sources\\s*?:.*?" + possibleQuality + "\\s*?:\\s*?\\'([^']+)\\'").getMatch(0);
+            if (DLLINK != null) {
+                break;
+            }
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
+        }
         if (DLLINK == null) {
             DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
         }
@@ -134,12 +144,6 @@ public class YouPornCom extends PluginForHost {
         }
         if (DLLINK == null) {
             DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
-        }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("sources:[^']+?480: '([^']+)'").getMatch(0);
-        }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("sources:[^']+?240: '([^']+)'").getMatch(0);
         }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

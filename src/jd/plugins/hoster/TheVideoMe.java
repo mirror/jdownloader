@@ -248,6 +248,9 @@ public class TheVideoMe extends antiDDoSForHost {
 
     @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        /* Prevent redirects when we access the main url again later below. */
+        final String url_from_availablecheck = this.br.getURL();
+
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
@@ -354,7 +357,7 @@ public class TheVideoMe extends antiDDoSForHost {
             }
             if (dllink == null) {
                 /* If failed, go back to the beginning */
-                getPage(downloadLink.getDownloadURL());
+                getPage(url_from_availablecheck);
             }
         }
         /* Fourth, continue like normal */
@@ -1008,14 +1011,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
                 logger.info("Only downloadable via premium");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
         } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
@@ -1030,6 +1026,9 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        } else if (new Regex(correctedBR, "Conversion Status:").matches()) {
+            /* 2017-02-22 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is still in conversion state, download & stream not possible yet", 30 * 60 * 1000l);
         }
     }
 

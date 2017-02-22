@@ -167,6 +167,8 @@ public class DropboxCom extends PluginForHost {
             final String json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/files/{0}");
+            final String preview_url = (String) entries.get("preview_url");
+            // final String href = (String) entries.get("href");
             final String filename = (String) entries.get("filename");
 
             if (filename == null) {
@@ -182,11 +184,19 @@ public class DropboxCom extends PluginForHost {
             }
             link.setName(filename);
             if (!this.br.getURL().matches(".+/s/[^/]+/[^/]+")) {
-                url = this.br.getURL();
-                if (!url.endsWith("/")) {
-                    url += "/";
+                if (preview_url != null) {
+                    url = new Regex(preview_url, "(http.*?dl=)(?:0|1).*?").getMatch(0);
+                    if (url != null) {
+                        url += "1";
+                    }
+                } else {
+                    url = this.br.getURL();
+                    if (!url.endsWith("/") && !Encoding.htmlDecode(url).contains(filename)) {
+                        url += "/";
+                        url += Encoding.urlEncode_light(filename);
+                    }
+                    url += "?dl=1";
                 }
-                url += Encoding.urlEncode_light(filename) + "?dl=1";
             }
             return AvailableStatus.TRUE;
         } else {

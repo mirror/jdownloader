@@ -44,7 +44,7 @@ public class DropmefilesCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 1;
+    private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = -1;
 
     private String               dllink            = null;
@@ -96,7 +96,7 @@ public class DropmefilesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue", 1 * 60 * 1000l);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();

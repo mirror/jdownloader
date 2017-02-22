@@ -40,6 +40,7 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -380,7 +381,7 @@ public class ZdfDeMediathek extends PluginForHost {
         public static class TRANSLATION {
 
             public String getGrabSubtitleEnabled() {
-                return "Untertitel herunterladen?";
+                return _JDT.T.lit_add_subtitles();
             }
 
             public String getGrabAudio_label() {
@@ -388,7 +389,7 @@ public class ZdfDeMediathek extends PluginForHost {
             }
 
             public String getGrabBESTEnabled_label() {
-                return "Nur die beste (HLS) Qualitätsstufe herunterladen?";
+                return _JDT.T.lit_add_only_the_best_video_quality();
             }
 
             public String getNeoMagazinRoyaleDeOnlyGrabCurrentEpisode_label() {

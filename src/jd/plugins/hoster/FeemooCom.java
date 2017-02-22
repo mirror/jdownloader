@@ -104,8 +104,10 @@ public class FeemooCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             // /* 2017-02-21: Experiment */
+            // final String original_url = this.br.getURL();
             // br.getPage("/yythems_ajax_file.php?action=load_down_addr2&id=" + fid);
             // dllink = br.getRegex("(fmdown\\.php[^<>\"\\']+)").getMatch(0);
+            // this.br.getHeaders().put("Referer", original_url);
             // br.getPage(dllink);
             // /* 2017-02-21: Experiment end */
 
