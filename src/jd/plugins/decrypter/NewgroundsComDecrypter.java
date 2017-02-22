@@ -28,15 +28,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "http://(?!www\\.)[^/]+\\.newgrounds\\.com/(?:art|audio|movies|games)/" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
 
     public NewgroundsComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // private static final String ARTLINK = "http://(?:www\\.)?newgrounds\\.com/art/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
-
+    private static final String TYPE_ART   = ".+/art/";
     private static final String TYPE_AUDIO = ".+/audio/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -61,12 +60,22 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                 dl.setLinkID(fid);
                 decryptedLinks.add(dl);
             }
-        } else {
+        } else if (parameter.matches(TYPE_ART)) {
             final String[] art_urls = this.br.getRegex("\"(https?://(?:www\\.)?newgrounds\\.com/art/view/[^<>\"]*?)\"").getColumn(0);
             if (art_urls == null || art_urls.length == 0) {
                 return null;
             }
             for (final String art_url : art_urls) {
+                final DownloadLink dl = createDownloadlink(art_url);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            /* movies & games */
+            final String[] portal_view_urls = this.br.getRegex("\"(https?://(?:www\\.)?newgrounds\\.com/portal/view/[^<>\"]*?)\"").getColumn(0);
+            if (portal_view_urls == null || portal_view_urls.length == 0) {
+                return null;
+            }
+            for (final String art_url : portal_view_urls) {
                 final DownloadLink dl = createDownloadlink(art_url);
                 decryptedLinks.add(dl);
             }
