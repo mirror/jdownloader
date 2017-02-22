@@ -16,6 +16,8 @@
 
 package jd.plugins.decrypter;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -35,10 +37,12 @@ public class UrlsecIo extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String finallink = "http://" + new Regex(parameter, "~(.+)").getMatch(0);
-        decryptedLinks.add(createDownloadlink(finallink));
-
+        final String finallink = "http://" + new Regex(param.toString(), "~(.+)").getMatch(0);
+        try {
+            new URL(finallink);
+            decryptedLinks.add(createDownloadlink(finallink));
+        } catch (final MalformedURLException ignore) {
+        }
         return decryptedLinks;
     }
 
