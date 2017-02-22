@@ -80,8 +80,8 @@ public class DropBoxCom extends PluginForDecrypt {
                 final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
                 if (path != null) {
                     subfolder = path;
-                    break;
                 }
+                break;
             }
             current = current.getSourceLink();
         }
