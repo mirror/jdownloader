@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -72,7 +73,19 @@ public class DropBoxCom extends PluginForDecrypt {
         br.setCookie("http://dropbox.com", "locale", "en");
         br.setLoadLimit(br.getLoadLimit() * 4);
 
-        decryptedLinks.addAll(decryptLink(parameter, ""));
+        CrawledLink current = getCurrentLink();
+        String subfolder = "";
+        while (current != null) {
+            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
+                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
+                if (path != null) {
+                    subfolder = path;
+                    break;
+                }
+            }
+            current = current.getSourceLink();
+        }
+        decryptedLinks.addAll(decryptLink(parameter, subfolder));
 
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
@@ -150,7 +163,9 @@ public class DropBoxCom extends PluginForDecrypt {
             }
         } finally {
             try {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (Throwable e) {
             }
         }
@@ -253,7 +268,9 @@ public class DropBoxCom extends PluginForDecrypt {
                     continue;
                 }
                 url += "&crawl_subfolders=true";
-                decryptedLinks.add(this.createDownloadlink(url));
+                final DownloadLink subFolderDownloadLink = this.createDownloadlink(url);
+                subFolderDownloadLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+                decryptedLinks.add(subFolderDownloadLink);
             }
         }
 
