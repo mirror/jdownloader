@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -44,9 +45,8 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         // Handle embedded links
         if (parameter.matches("https?://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
-            if (br.containsHTML("File not found or deleted\\!")) {
-                final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-                dl.setAvailable(false);
+            if (br.containsHTML("File not found or deleted\\!") || this.br.getHttpConnection().getResponseCode() == 404) {
+                final DownloadLink dl = this.createOfflinelink(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -58,9 +58,9 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             parameter = "/view?i=" + originalID;
             br.getPage(parameter);
         }
-        if (br.containsHTML(">This item has been deleted because of a possible violation of our terms of service")) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("liveleak.com/", "liveleakdecrypted.com/"));
-            dl.setAvailable(false);
+        if (isOffline(this.br)) {
+            /* e.g. 'a possible violation of our terms of service' or 'a copyright violation' */
+            final DownloadLink dl = this.createOfflinelink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -69,9 +69,9 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        externID = br.getRegex("\"[^\"]+(youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
+            decryptedLinks.add(createDownloadlink("https://www." + externID));
             return decryptedLinks;
         }
         String filename = br.getRegex("class=\"section_title\" style=\"vertical\\-align:top; padding\\-right:10px\">([^<>\"]*?)<img").getMatch(0);
@@ -83,7 +83,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         }
         filename = Encoding.htmlDecode(filename.trim());
         // There can also be multiple videos on one page
-        final String[] allEmbedcodes = br.getRegex("generate_embed_code_generator_html\\(\\'([a-z0-9]+)\\'\\)\\)").getColumn(0);
+        final String[] allEmbedcodes = br.getRegex("ll_embed\\?f=([A-Za-z0-9]+)").getColumn(0);
         if (allEmbedcodes != null && allEmbedcodes.length != 0) {
             int counter = 1;
             final DecimalFormat df = new DecimalFormat("000");
@@ -118,12 +118,16 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return decryptedLinks;
+            return null;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        return br.containsHTML(">This item has been deleted because of") || br.getHttpConnection().getResponseCode() == 404;
     }
 
     /* NO OVERRIDE!! */

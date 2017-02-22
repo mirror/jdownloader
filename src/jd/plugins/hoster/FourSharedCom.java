@@ -161,38 +161,38 @@ public class FourSharedCom extends PluginForHost {
     }
 
     private String getStreamLinks() {
-        String url = br.getRegex("<meta property=\"og:audio\" content=\"(http://.*?)\"").getMatch(0);
+        String url = br.getRegex("<meta property=\"og:audio\" content=\"(https?://.*?)\"").getMatch(0);
         if (url == null) {
-            url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = '(http://[^<>']{5,500})'").getMatch(1);
+            url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = '(https?://[^<>']{5,500})'").getMatch(1);
         }
         return url;
     }
 
     private String getNormalDownloadlink() {
-        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3.*?href='(http://[^<>']+)'").getMatch(0);
+        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3.*?href='(https?://[^<>']+)'").getMatch(0);
         if (url == null) {
             url = br.getRegex("<a href=\"(https?://[^<>\"]*?)\" class=\"linkShowD3").getMatch(0);
         }
         if (url == null) {
-            url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(http://dc\\d+\\.4shared\\.com/download-torrent/[^<>\"]+)\"").getMatch(0);
+            url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(https?://dc\\d+\\.4shared\\.com/download-torrent/[^<>\"]+)\"").getMatch(0);
             if (url != null) {
                 url = url.replace("/download-torrent/", "/download/");
             }
             /** For registered users */
             if (url == null) {
-                url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a href=\"(http://[^<>\"]+)\"").getMatch(0);
+                url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a href=\"(https?://[^<>\"]+)\"").getMatch(0);
             }
         }
         return url;
     }
 
     private String getDirectDownloadlink() {
-        String url = br.getRegex("size=\"tall\" annotation=\"inline\" width=\"200\" count=\"false\"[\t\n\r ]+href=\"(http://[^<>\"]+)\"").getMatch(0);
+        String url = br.getRegex("size=\"tall\" annotation=\"inline\" width=\"200\" count=\"false\"[\t\n\r ]+href=\"(https?://[^<>\"]+)\"").getMatch(0);
         if (url == null) {
-            url = br.getRegex("<a href=\"(http://[^<>\"']+)\"  class=\"dbtn nt gaClick\" data-element").getMatch(0);
+            url = br.getRegex("<a href=\"(https?://[^<>\"']+)\"  class=\"dbtn nt gaClick\" data-element").getMatch(0);
         }
         if (url == null) {
-            url = br.getRegex("value=\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]+)").getMatch(0);
+            url = br.getRegex("value=\"(https?://dc\\d+\\.4shared\\.com/download/[^<>\"]+)").getMatch(0);
         }
         return url;
     }
@@ -263,9 +263,9 @@ public class FourSharedCom extends PluginForHost {
                     if (DLLINK == null) {
                         /* If file isn't available for free users we can still try to get the stream link */
                         handleErrors(acc, downloadLink);
-                        continueLink = br.getRegex("<a href=\"(http://(www\\.)?4shared(-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+                        continueLink = br.getRegex("<a href=\"(https?://(?:www\\.)?4shared(-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
                         if (continueLink == null) {
-                            continueLink = br.getRegex("\"(http://(www\\.)?4shared(-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
+                            continueLink = br.getRegex("\"(https?://(?:www\\.)?4shared(-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
                         }
                     }
                     if (continueLink == null) {

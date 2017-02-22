@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lilfile.com" }, urls = { "http://(www\\.)?lilfile\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lilfile.com" }, urls = { "https?://(?:www\\.)?lilfile\\.com/[A-Za-z0-9]+" })
 public class LilFileCom extends PluginForHost {
 
     public LilFileCom(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class LilFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title> \\- lilFile\\.com</title>") || br.getURL().contains("?") || br.getHttpConnection().getResponseCode() == 403) {
+        if (br.getURL().contains("error.") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<title>([^<>\"]*?) \\- lilFile\\.com</title>").getMatch(0);

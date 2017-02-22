@@ -77,6 +77,7 @@ public class GelbooruCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://img\\.gelbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
+                /* 2017-02-18 */
                 String imglink = br.getRegex("Resize image.*?<a href=(\"|'|)(.*?)\\1").getMatch(1);
                 if (imglink == null) {
                     imglink = br.getRegex("<img alt=.*?src=(\"|'|)(.*?)\\1").getMatch(1);
