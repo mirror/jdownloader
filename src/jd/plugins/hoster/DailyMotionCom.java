@@ -99,7 +99,7 @@ public class DailyMotionCom extends PluginForHost {
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "ff", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-        prepBrowser();
+        prepBrowser(this.br);
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (downloadLink.getBooleanProperty("countryblock", false)) {
@@ -316,11 +316,7 @@ public class DailyMotionCom extends PluginForHost {
                         br.followConnection();
                         dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
                         br.getHeaders().put("Referer", dllink);
-                        if (isJDStable()) {
-                            con = br.openGetConnection(dllink);
-                        } else {
-                            con = br.openHeadConnection(dllink);
-                        }
+                        con = br.openHeadConnection(dllink);
                     }
                     if (con.getResponseCode() == 410 || con.getContentType().contains("html")) {
                         return false;
@@ -383,6 +379,7 @@ public class DailyMotionCom extends PluginForHost {
     public void login(final Account account, final Browser br) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        prepBrowser(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-Prototype-Version", "1.6.1");
         br.postPage("https://www.dailymotion.com/signin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
@@ -416,12 +413,19 @@ public class DailyMotionCom extends PluginForHost {
         rtmp.setResume(true);
     }
 
-    private void prepBrowser() {
+    public static Browser prepBrowser(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+
+        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
+        br.setCookie("http://www.dailymotion.com", "ff", "off");
+        br.setCookie("http://www.dailymotion.com", "lang", "en_US");
+
+        br.setAllowedResponseCodes(new int[] { 410 });
+        return br;
     }
 
     private boolean isHDS(final DownloadLink dl) {
@@ -489,10 +493,6 @@ public class DailyMotionCom extends PluginForHost {
             filename += ext;
         }
         return filename;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     private void setConfigElements() {

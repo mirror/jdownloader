@@ -107,6 +107,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         parameter = param.toString().replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("http://", "https://");
         br.setFollowRedirects(true);
+        jd.plugins.hoster.DailyMotionCom.prepBrowser(this.br);
 
         synchronized (ctrlLock) {
             /* Login if account available */
@@ -121,17 +122,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 }
             }
             /* Login end... */
-
-            br.setCookie("http://www.dailymotion.com", "family_filter", "off");
-            br.setCookie("http://www.dailymotion.com", "ff", "off");
-            br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-            try { // Used to catch 410 http://www.dailymotion.com/video/x2hq4xa_bambi-full-movie_shortfilms
-                br.getPage(parameter);
-            } catch (final Exception e) {
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
+            br.getPage(parameter);
             /* 404 */
             if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)") || this.br.getHttpConnection().getResponseCode() == 404) {
                 final DownloadLink dl = this.createOfflinelink(parameter);
@@ -140,6 +131,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             /* 403 */
             if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL") || this.br.getHttpConnection().getResponseCode() == 403) {
+                final DownloadLink dl = this.createOfflinelink(parameter);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            /* 410 */
+            if (br.getHttpConnection().getResponseCode() == 410) {
                 final DownloadLink dl = this.createOfflinelink(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;

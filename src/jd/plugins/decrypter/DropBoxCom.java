@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Dialog.ModalityType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -24,6 +25,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,10 +33,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DropboxCom.DropboxConfig;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/((sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)(?:\\&crawl_subfolders=(?:true|false))?|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean     pluginloaded;
@@ -78,6 +85,7 @@ public class DropBoxCom extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptLink(String link, String subfolder) throws Exception {
+        final String crawl_subfolder_string = new Regex(link, "(\\&crawl_subfolders=(?:true|false))").getMatch(0);
         currentPackage = null;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
@@ -91,6 +99,9 @@ public class DropBoxCom extends PluginForDecrypt {
         };
 
         link = link.replaceAll("\\?dl=\\d", "");
+        if (crawl_subfolder_string != null) {
+            link = link.replace(crawl_subfolder_string, "");
+        }
 
         URLConnectionAdapter con = null;
         try {
@@ -173,14 +184,38 @@ public class DropBoxCom extends PluginForDecrypt {
 
         /* 2017-01-27 new */
         boolean isSingleFile = false;
+        boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
+
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/contents/files");
-        if (ressourcelist == null) {
+        final ArrayList<Object> ressourcelist_folders = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/contents/folders");
+        ArrayList<Object> ressourcelist_files = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/contents/files");
+        if (ressourcelist_files == null) {
             /* Null? Then we probably have a single file */
-            ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/files");
+            ressourcelist_files = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/files");
             isSingleFile = true;
+        } else if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders) {
+            /* Only ask user if we actually have subfolders that can be decrypted! */
+            final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, link, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
+                @Override
+                public ModalityType getModalityType() {
+                    return ModalityType.MODELESS;
+                }
+
+                @Override
+                public boolean isRemoteAPIEnabled() {
+                    return true;
+                }
+            };
+            try {
+                UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                decryptSubfolders = true;
+            } catch (DialogCanceledException e) {
+                decryptSubfolders = false;
+            } catch (DialogClosedException e) {
+                decryptSubfolders = false;
+            }
         }
-        for (final Object o : ressourcelist) {
+        for (final Object o : ressourcelist_files) {
             entries = (LinkedHashMap<String, Object>) o;
             String url = (String) entries.get("href");
             if (url == null && isSingleFile) {
@@ -209,13 +244,25 @@ public class DropBoxCom extends PluginForDecrypt {
             }
         }
 
+        if (decryptSubfolders) {
+            for (final Object o : ressourcelist_folders) {
+                entries = (LinkedHashMap<String, Object>) o;
+                final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
+                String url = (String) entries.get("href");
+                if (!is_dir || url == null || url.equals("")) {
+                    continue;
+                }
+                url += "&crawl_subfolders=true";
+                decryptedLinks.add(this.createDownloadlink(url));
+            }
+        }
+
         return decryptedLinks;
     }
 
     @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-
+    protected DownloadLink createDownloadlink(final String link) {
+        final DownloadLink ret = super.createDownloadlink(link);
         return ret;
     }
 

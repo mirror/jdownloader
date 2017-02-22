@@ -128,7 +128,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl()));
                 return decryptedLinks;
             }
-            if (br.getURL().contains("crunchyroll.com/showmedia_wall?next=")) {
+            if (br.getURL().contains("maturity_wall")) {
                 logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
                 decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Account Holders"));
                 return decryptedLinks;

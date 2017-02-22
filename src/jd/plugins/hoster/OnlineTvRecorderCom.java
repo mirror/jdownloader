@@ -45,9 +45,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onlinetvrecorder.com" }, urls = { "http://(www\\.)?81\\.95\\.11\\.\\d{1,2}/download/\\d+/\\d+/\\d+/[a-f0-9]{32}/de/[^<>\"/]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onlinetvrecorder.com" }, urls = { "http://(www\\.)?81\\.95\\.11\\.\\d{1,2}/download/\\d+/\\d+/\\d+/[a-f0-9]{32}/de/[^<>\"/]+" })
 public class OnlineTvRecorderCom extends PluginForHost {
 
     public OnlineTvRecorderCom(PluginWrapper wrapper) {
@@ -71,11 +70,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            /* not available in old stable */
-            br.setAllowedResponseCodes(new int[] { 503 });
-        } catch (Throwable e) {
-        }
+        br.setAllowedResponseCodes(new int[] { 503 });
         final String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
 
@@ -308,7 +303,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
     }
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NIGHTDOWNLOAD, JDL.L("plugins.hoster.onlinetvrecorder.downloadInNight", "Only download in the night")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NIGHTDOWNLOAD, "Only download in the night").setDefaultValue(true));
     }
 
     @Override

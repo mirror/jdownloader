@@ -72,17 +72,20 @@ public class NewgroundsCom extends antiDDoSForHost {
         String filename = null;
         String ext = null;
         final boolean checkForFilesize;
+        String url_filename = null;
         if (downloadLink.getDownloadURL().matches(ARTLINK)) {
+            url_filename = new Regex(downloadLink.getDownloadURL(), "/view/(.+)").getMatch(0).replace("/", "_");
             checkForFilesize = true;
             dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         } else {
             /* 2017-02-02: Do not check for filesize as only 1 download per minute is possible --> Accessing directurls makes no sense here. */
             checkForFilesize = false;
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            url_filename = fid;
             if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
-                final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                 if (filename != null) {
-                    filename = Encoding.htmlDecode(filename).trim() + "_" + fid + ".mp3";
+                    filename = Encoding.htmlDecode(filename).trim() + "_" + fid;
                 }
                 dllink = "http://www." + this.getHost() + "/audio/download/" + fid;
                 ext = ".mp3";
@@ -101,6 +104,10 @@ public class NewgroundsCom extends antiDDoSForHost {
                 }
             }
         }
+        if (filename == null) {
+            /* Fallback */
+            filename = url_filename;
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -109,6 +116,9 @@ public class NewgroundsCom extends antiDDoSForHost {
         }
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, ".mp4");
+        }
+        if (!filename.endsWith(ext)) {
+            filename += ext;
         }
         downloadLink.setFinalFileName(filename);
         if (dllink != null && checkForFilesize) {

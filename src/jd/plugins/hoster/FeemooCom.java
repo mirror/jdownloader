@@ -103,11 +103,11 @@ public class FeemooCom extends PluginForHost {
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            /* 2017-02-21: Experiment */
-            br.getPage("/yythems_ajax_file.php?action=load_down_addr2&id=" + fid);
-            dllink = br.getRegex("(fmdown\\.php[^<>\"\\']+)").getMatch(0);
-            br.getPage(dllink);
-            /* 2017-02-21: Experiment end */
+            // /* 2017-02-21: Experiment */
+            // br.getPage("/yythems_ajax_file.php?action=load_down_addr2&id=" + fid);
+            // dllink = br.getRegex("(fmdown\\.php[^<>\"\\']+)").getMatch(0);
+            // br.getPage(dllink);
+            // /* 2017-02-21: Experiment end */
 
             int wait = 30;
             final String waittime = br.getRegex("").getMatch(0);

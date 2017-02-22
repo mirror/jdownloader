@@ -132,22 +132,25 @@ public class CamwhoresTv extends PluginForHost {
         if (dllink != null && dllink.contains("login-required")) {
             dllink = null;
         }
-        final String scriptUrl = this.br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
-        final String licenseCode = this.br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
-        final String videoUrl = this.br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        this.dllink = getDllinkCrypted(this.br);
+    }
+
+    public static String getDllinkCrypted(final Browser br) throws PluginException, IOException {
+        String dllink = null;
+        final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
+        final String licenseCode = br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
+        final String videoUrl = br.getRegex("video_url\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
         if (scriptUrl != null && videoUrl != null && licenseCode != null) {
             final Browser cbr = br.cloneBrowser();
             cbr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             cbr.getPage(scriptUrl);
             final String hashRange = cbr.getRegex("(\\d+)px").getMatch(0);
-            final String dllink = decryptHash(videoUrl, licenseCode, hashRange);
-            if (dllink != null) {
-                this.dllink = dllink;
-            }
+            dllink = decryptHash(videoUrl, licenseCode, hashRange);
         }
+        return dllink;
     }
 
-    private String decryptHash(final String videoUrl, final String licenseCode, final String hashRange) {
+    public static String decryptHash(final String videoUrl, final String licenseCode, final String hashRange) {
         String result = null;
         List<String> videoUrlPart = new ArrayList<String>();
         Collections.addAll(videoUrlPart, videoUrl.split("/"));
@@ -185,7 +188,7 @@ public class CamwhoresTv extends PluginForHost {
         return result;
     }
 
-    private String calcSeed(final String licenseCode, final String hashRange) {
+    public static String calcSeed(final String licenseCode, final String hashRange) {
         StringBuffer fb = new StringBuffer();
         String[] licenseCodeArray = licenseCode.split("");
         for (String c : licenseCodeArray) {
