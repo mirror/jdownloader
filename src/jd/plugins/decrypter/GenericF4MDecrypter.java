@@ -33,6 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
@@ -44,6 +45,11 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
 
     public GenericF4MDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
     }
 
     @Override

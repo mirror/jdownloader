@@ -2,12 +2,43 @@ package org.jdownloader.plugins.controller.crawler;
 
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.TooltipInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.translate._JDT;
 
 public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
+
+    public static enum FEATURE implements LabelInterface, TooltipInterface {
+
+        GENERIC {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
+            }
+        };
+        public static final long CACHEVERSION = 25082016l; // change when you add/change enums!
+
+        public boolean isSet(FEATURE[] features) {
+            if (features != null) {
+                for (final FEATURE feature : features) {
+                    if (this.equals(feature)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+    }
 
     public LazyCrawlerPlugin(LazyPluginClass lazyPluginClass, String pattern, String displayName, Class<PluginForDecrypt> pluginClass, PluginClassLoaderChild classLoaderChild) {
         super(lazyPluginClass, pattern, displayName, pluginClass, classLoaderChild);
@@ -21,8 +52,22 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     private boolean       hasConfig              = false;
     private String        configInterface        = null;
 
+    private FEATURE[]     features               = null;
+
+    public FEATURE[] getFeatures() {
+        return features;
+    }
+
     public long getPluginUsage() {
         return decrypts + pluginUsage;
+    }
+
+    public boolean hasFeature(FEATURE feature) {
+        return feature != null && feature.isSet(getFeatures());
+    }
+
+    protected void setFeatures(FEATURE[] features) {
+        this.features = features;
     }
 
     public void setPluginUsage(long pluginUsage) {

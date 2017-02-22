@@ -71,11 +71,12 @@ public class ArchiveOrg extends PluginForHost {
                 con.disconnect();
                 br.getPage(link.getDownloadURL());
                 if (br.containsHTML(">Item not available<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    registered_only = true;
-                    return AvailableStatus.UNCHECKABLE;
+                    if (br.containsHTML("The item is not available due to issues")) {
+                        registered_only = true;
+                        return AvailableStatus.UNCHECKABLE;
+                    }
                 }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (con.isOK()) {
@@ -86,11 +87,8 @@ public class ArchiveOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } finally {
-            try {
-                if (con != null) {
-                    con.disconnect();
-                }
-            } catch (final Throwable e) {
+            if (con != null) {
+                con.disconnect();
             }
         }
     }
@@ -107,19 +105,18 @@ public class ArchiveOrg extends PluginForHost {
     private void doDownload(final Account account, final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
-                br.followConnection();
-                if (br.containsHTML(">Item not available<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
                 if (account != null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (br.containsHTML(">Item not available<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
