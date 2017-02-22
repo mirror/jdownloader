@@ -18,10 +18,14 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -62,14 +66,15 @@ public class Ardmediathek extends PluginForDecrypt {
     private static final String                 type_ardvideo                  = "http://www\\.daserste\\.de/.+";
     private static final String                 type_rbb_mediathek             = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
     /* Variables */
-    private final ArrayList<DownloadLink>       newRet                         = new ArrayList<DownloadLink>();
-    private final HashMap<String, DownloadLink> bestMap                        = new HashMap<String, DownloadLink>();
+    private final HashMap<String, DownloadLink> foundQualitiesMap              = new HashMap<String, DownloadLink>();
+    ArrayList<DownloadLink>                     decryptedLinks                 = new ArrayList<DownloadLink>();
+    private final List<String>                  all_known_qualities            = Arrays.asList("hd", "high", "medium", "low");
+
     private String                              subtitleLink                   = null;
     private String                              parameter                      = null;
     private String                              title                          = null;
     private String                              date                           = null;
     private String                              date_formatted                 = null;
-    ArrayList<DownloadLink>                     decryptedLinks                 = new ArrayList<DownloadLink>();
     private long                                existingQualityNum             = 0;
     private long                                selectedAndAvailableQualityNum = 0;
 
@@ -84,6 +89,10 @@ public class Ardmediathek extends PluginForDecrypt {
 
         public String getOnlyBestVideoQualityEnabled_label() {
             return _JDT.T.lit_add_only_the_best_video_quality();
+        }
+
+        public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
+            return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
         }
     }
 
@@ -109,6 +118,13 @@ public class Ardmediathek extends PluginForDecrypt {
         boolean isOnlyBestVideoQualityEnabled();
 
         void setOnlyBestVideoQualityEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(21)
+        boolean isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
+
+        void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
 
         @AboutConfig
         @DefaultBooleanValue(true)
@@ -197,6 +213,7 @@ public class Ardmediathek extends PluginForDecrypt {
             } else {
                 decryptDasersteVideo();
             }
+            handleUserQualitySelection();
         } catch (final DecrypterException e) {
             try {
                 if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
@@ -308,9 +325,6 @@ public class Ardmediathek extends PluginForDecrypt {
             final Object stream_o = streammap.get("_stream");
             long filesize_max = -1;
             existingQualityNum++;
-            if (!userWantsQuality(quality)) {
-                continue;
-            }
             if (stream_o instanceof ArrayList) {
                 /*
                  * Array with even more qualities? Find the best - usually every array consists of max 2 entries so this should not take
@@ -360,7 +374,6 @@ public class Ardmediathek extends PluginForDecrypt {
             addQuality(network, title, extension, isRTMP, directlink, quality, streaming_type, filesize_max);
             selectedAndAvailableQualityNum++;
         }
-        findBEST();
         return;
     }
 
@@ -417,14 +430,62 @@ public class Ardmediathek extends PluginForDecrypt {
             if (isRTMP && PluginJsonConfig.get(getConfigInterface()).isRTMPEnabled()) {
                 continue;
             }
-            if (!userWantsQuality(Integer.valueOf(quality))) {
-                continue;
-            }
             addQuality(network, title, extension, isRTMP, directlink, quality, t, -1);
             selectedAndAvailableQualityNum++;
         }
-        findBEST();
         return;
+    }
+
+    private void handleUserQualitySelection() {
+        /* We have to re-add the subtitle for the best quality if wished by the user */
+        HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
+        if (PluginJsonConfig.get(getConfigInterface()).isOnlyBestVideoQualityEnabled()) {
+            /* User wants BEST only */
+            finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
+        } else {
+            final Iterator<Entry<String, DownloadLink>> it = foundQualitiesMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, DownloadLink> entry = it.next();
+                final String quality = entry.getKey();
+                final DownloadLink dl = entry.getValue();
+                if (userWantsQuality(quality)) {
+                    finalSelectedQualityMap.put(quality, dl);
+                }
+            }
+            /* Check if user maybe only wants the best quality inside his selected videoqualities. */
+            if (PluginJsonConfig.get(getConfigInterface()).isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+                finalSelectedQualityMap = findBESTInsideGivenMap(finalSelectedQualityMap);
+            }
+        }
+        /* Finally add selected URLs */
+        final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, DownloadLink> entry = it.next();
+            // final String quality = entry.getKey();
+            final DownloadLink dl = entry.getValue();
+            if (PluginJsonConfig.get(getConfigInterface()).isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
+                final String plain_name = dl.getStringProperty("plain_name", null);
+                final String orig_streamingtype = dl.getStringProperty("streamingType", null);
+                final String linkid = plain_name + "_" + orig_streamingtype + "_subtitle";
+                final String subtitle_filename = plain_name + ".xml";
+                final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                dl_subtitle.setAvailable(true);
+                dl_subtitle.setFinalFileName(subtitle_filename);
+                dl_subtitle.setProperty("directURL", subtitleLink);
+                dl_subtitle.setProperty("directName", subtitle_filename);
+                dl_subtitle.setProperty("streamingType", "subtitle");
+                dl_subtitle.setProperty("mainlink", parameter);
+                dl_subtitle.setContentUrl(parameter);
+                dl_subtitle.setLinkID(linkid);
+                decryptedLinks.add(dl_subtitle);
+            }
+            if (decryptedLinks.size() > 1) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                fp.addLinks(decryptedLinks);
+            }
+            decryptedLinks.add(dl);
+        }
     }
 
     private boolean isHTTPUrl(final String directlink) {
@@ -462,8 +523,19 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
+    private boolean userWantsQuality(final String assettype) {
+        final int quality;
+        if (all_known_qualities.contains(assettype)) {
+            /* Not an assettype but an fmt */
+            quality = this.fmtToQuality(assettype);
+        } else {
+            quality = this.convertASSETTYPEtoQuality(assettype);
+        }
+        return userWantsQuality(quality);
+    }
+
     /* Make fmt String out of quality Integer */
-    private String getFMT(final int quality) {
+    private String qualityToFMT(final int quality) {
         String fmt = null;
         switch (quality) {
         case 0:
@@ -480,6 +552,24 @@ public class Ardmediathek extends PluginForDecrypt {
             break;
         }
         return fmt;
+    }
+
+    /* Make fmt String out of quality Integer */
+    private int fmtToQuality(final String fmt) {
+        int quality;
+        if (fmt.equalsIgnoreCase("low")) {
+            quality = 0;
+        } else if (fmt.equalsIgnoreCase("medium")) {
+            quality = 1;
+        } else if (fmt.equalsIgnoreCase("high")) {
+            quality = 2;
+        } else if (fmt.equalsIgnoreCase("hd")) {
+            quality = 3;
+        } else {
+            /* Should never happen */
+            quality = 0;
+        }
+        return quality;
     }
 
     /* Converts asset-type Strings from daserste.de video to the same Integer values used for their Mediathek * */
@@ -499,59 +589,24 @@ public class Ardmediathek extends PluginForDecrypt {
         return quality;
     }
 
-    private void findBEST() {
-        String lastQualityFMT = null;
-        if (newRet.size() > 0) {
-            if (PluginJsonConfig.get(getConfigInterface()).isOnlyBestVideoQualityEnabled()) {
-                /* only keep best quality */
-                DownloadLink keep = bestMap.get("hd");
-                if (keep == null) {
-                    lastQualityFMT = "HIGH";
-                    keep = bestMap.get("high");
-                }
-                if (keep == null) {
-                    lastQualityFMT = "MEDIUM";
-                    keep = bestMap.get("medium");
-                }
-                if (keep == null) {
-                    lastQualityFMT = "LOW";
-                    keep = bestMap.get("low");
-                }
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
+        final HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        DownloadLink keep = null;
+        if (bestMap.size() > 0) {
+            for (final String quality : all_known_qualities) {
+                keep = bestMap.get(quality);
                 if (keep != null) {
-                    newRet.clear();
-                    newRet.add(keep);
-                    /* We have to re-add the subtitle for the best quality if wished by the user */
-                    if (PluginJsonConfig.get(getConfigInterface()).isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
-                        final String plain_name = keep.getStringProperty("plain_name", null);
-                        final String orig_streamingtype = keep.getStringProperty("streamingType", null);
-                        final String linkid = plain_name + "_" + orig_streamingtype + "_subtitle";
-                        final String subtitle_filename = plain_name + ".xml";
-                        final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                        dl_subtitle.setAvailable(true);
-                        dl_subtitle.setFinalFileName(subtitle_filename);
-                        dl_subtitle.setProperty("directURL", subtitleLink);
-                        dl_subtitle.setProperty("directName", subtitle_filename);
-                        dl_subtitle.setProperty("streamingType", "subtitle");
-                        dl_subtitle.setProperty("mainlink", parameter);
-                        dl_subtitle.setContentUrl(parameter);
-                        dl_subtitle.setLinkID(linkid);
-                        newRet.add(dl_subtitle);
-                    }
+                    newMap.put(quality, keep);
+                    break;
                 }
             }
-            if (newRet.size() > 1) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
-                fp.addLinks(newRet);
-            }
-            decryptedLinks = newRet;
         }
+        return newMap;
     }
 
-    @SuppressWarnings("deprecation")
     private void addQuality(final String network, final String title, final String extension, final boolean isRTMP, final String url, final int quality_int, final int streaming_type, final long filesize) {
         ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
-        final String fmt = getFMT(quality_int);
+        final String fmt = qualityToFMT(quality_int);
         final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
         final String plain_name = title + "@" + quality_part;
         final String full_name = plain_name + extension;
@@ -583,27 +638,8 @@ public class Ardmediathek extends PluginForDecrypt {
             link.setDownloadSize(filesize);
             link.setAvailable(true);
         }
-        /* Add subtitle link for every quality so players will automatically find it */
-        if (cfg.isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
-            linkid = plain_name + "_subtitle_" + streaming_type;
-            final String subtitle_filename = plain_name + ".xml";
-            final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-            /* JD2 only */
-            dl_subtitle.setContentUrl(this.parameter);
-            dl_subtitle.setLinkID(linkid);
-            dl_subtitle.setAvailable(true);
-            dl_subtitle.setFinalFileName(subtitle_filename);
-            dl_subtitle.setProperty("directURL", subtitleLink);
-            dl_subtitle.setProperty("directName", subtitle_filename);
-            dl_subtitle.setProperty("streamingType", "subtitle");
-            dl_subtitle.setProperty("mainlink", this.parameter);
-            newRet.add(dl_subtitle);
-        }
-        final DownloadLink best = bestMap.get(fmt);
-        if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-            bestMap.put(fmt, link);
-        }
-        newRet.add(link);
+
+        foundQualitiesMap.put(fmt, link);
     }
 
     private DownloadLink getOffline(final String parameter) {

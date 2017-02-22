@@ -49,30 +49,22 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "neo-magazin-royale.de", "heute.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/syncvideoimport_beitrag_\\d+", "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+", "https?://(?:www\\.)?heute\\.de/.+" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String Q_SUBTITLES                   = "Q_SUBTITLES";
-    private static final String Q_BEST                        = "Q_BEST";
-    private static final String Q_LOW                         = "Q_LOW";
-    private static final String Q_HIGH                        = "Q_HIGH";
-    private static final String Q_VERYHIGH                    = "Q_VERYHIGH";
-    private static final String Q_HD                          = "Q_HD";
-    private static final String FASTLINKCHECK                 = "FASTLINKCHECK";
-    private boolean             grabBest                      = false;
+    ArrayList<DownloadLink> decryptedLinks                = new ArrayList<DownloadLink>();
+    private String          PARAMETER                     = null;
+    private String          PARAMETER_ORIGINAL            = null;
+    private String          url_subtitle                  = null;
 
-    ArrayList<DownloadLink>     decryptedLinks                = new ArrayList<DownloadLink>();
-    private String              PARAMETER                     = null;
-    private String              PARAMETER_ORIGINAL            = null;
-    private String              url_subtitle                  = null;
+    private boolean         fastlinkcheck                 = false;
+    private boolean         grabBest                      = false;
+    private boolean         grabSubtitles                 = false;
+    private long            filesizeSubtitle              = 0;
 
-    private boolean             fastlinkcheck                 = false;
-    private boolean             grabSubtitles                 = false;
-    private long                filesizeSubtitle              = 0;
+    private final String    TYPE_ZDF                      = "https?://(?:www\\.)?zdf\\.de/.+";
+    private final String    TYPER_ZDF_REDIRECT            = ".+/uri/syncvideoimport_beitrag_\\d+";
+    private final String    TYPE_ZDF_EMBEDDED_HEUTE       = "https?://(?:www\\.)?heute\\.de/.+";
+    private final String    TYPE_ZDF_EMBEDDED_NEO_MAGAZIN = "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+";
 
-    private final String        TYPE_ZDF                      = "https?://(?:www\\.)?zdf\\.de/.+";
-    private final String        TYPER_ZDF_REDIRECT            = ".+/uri/syncvideoimport_beitrag_\\d+";
-    private final String        TYPE_ZDF_EMBEDDED_HEUTE       = "https?://(?:www\\.)?heute\\.de/.+";
-    private final String        TYPE_ZDF_EMBEDDED_NEO_MAGAZIN = "https?://(?:www\\.)?neo\\-magazin\\-royale\\.de/.+";
-
-    private final String        API_BASE                      = "https://api.zdf.de/";
+    private final String    API_BASE                      = "https://api.zdf.de/";
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);

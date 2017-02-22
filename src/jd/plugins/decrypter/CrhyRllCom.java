@@ -369,9 +369,10 @@ public class CrhyRllCom extends PluginForDecrypt {
         // Check if we can actually get the video
         if (androidBr.containsHTML("Video not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permission denied!");
-        }
-        if (androidBr.containsHTML("Media not found")) {
+        } else if (androidBr.containsHTML("Media not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist!");
+        } else if (androidBr.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "http 404");
         }
         if (!androidBr.containsHTML("\"exception_error_code\":null")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!");
