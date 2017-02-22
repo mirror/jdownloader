@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-f0-9]{46}/[a-f0-9]{46}(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
@@ -109,7 +109,12 @@ public class WeTransferCom extends PluginForHost {
         }
         final String filename1 = (String) JavaScriptEngineFactory.walkJson(map, "files/{0}/name");
         final long filesize1 = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(map, "files/{0}/size"), 0);
-        br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
+        final boolean withRecepient = false;
+        if (withRecepient) {
+            br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download?recipient_id=" + hash);
+        } else {
+            br.getPage("/api/ui/transfers/" + code + "/" + small_string + "/download");
+        }
         // br.getPage("/api/ui/transfers/" + code + "/" + hash + "/download");
         if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -121,14 +126,13 @@ public class WeTransferCom extends PluginForHost {
             final LinkedHashMap<String, Object> field = (LinkedHashMap<String, Object>) entries.get("fields");
             final String action = (String) JavaScriptEngineFactory.walkJson(entries, "formdata/action");
             final String method = (String) JavaScriptEngineFactory.walkJson(entries, "formdata/method");
-            if (action == null || field == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if ("GET".equalsIgnoreCase(method)) {
-                dllink = action + "?" + processJson(field.toString().substring(1, field.toString().length() - 1));
-            } else {
-                dllink = action;
-                param = processJson(field.toString().substring(1, field.toString().length() - 1));
+            if (action != null && field != null) {
+                if ("GET".equalsIgnoreCase(method)) {
+                    dllink = action + "?" + processJson(field.toString().substring(1, field.toString().length() - 1));
+                } else {
+                    dllink = action;
+                    param = processJson(field.toString().substring(1, field.toString().length() - 1));
+                }
             }
         }
         if (dllink != null) {
@@ -156,15 +160,12 @@ public class WeTransferCom extends PluginForHost {
             br.getHeaders().put("Referer", "https://www.wetransfer.com/index.swf?nocache=" + String.valueOf(System.currentTimeMillis() / 1000));
             br.postPageRaw("https://v1.wetransfer.com/amfphp/gateway.php", getAMFRequest());
 
-            /* TODO: remove me after 0.9xx public */
-            br.getHeaders().put("Content-Type", null);
-
             // successfully request?
-            final int rC = br.getHttpConnection().getResponseCode();
-            if (rC != 200) {
-                logger.warning("File not found! Link: " + dlink);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            // final int rC = br.getHttpConnection().getResponseCode();
+            // if (rC != 200) {
+            // logger.warning("File not found! Link: " + dlink);
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
 
             final StringBuffer sb = new StringBuffer();
             /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
@@ -182,7 +183,10 @@ public class WeTransferCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            final String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
+            String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
+            if (filename == null) {
+                filename = filename1;
+            }
             if (filesize1 == 0) {
                 final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
                 if (filesize != null) {
@@ -193,7 +197,7 @@ public class WeTransferCom extends PluginForHost {
             }
             dllink = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
 
-            if (filename == null || dllink == null) {
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
@@ -205,6 +209,9 @@ public class WeTransferCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // More chunks are possible for some links but not for all
         if (param != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, param, true, -2);

@@ -41,17 +41,17 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feemoo.com" }, urls = { "https?://(?:www\\.)?feemoo\\.com/file\\-[a-z0-9]+\\.html" })
-public class FeemooCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sju.wang" }, urls = { "https?://(?:www\\.)?sju\\.wang/file\\-[a-z0-9]+\\.html" })
+public class SjuWang extends PluginForHost {
 
-    public FeemooCom(PluginWrapper wrapper) {
+    public SjuWang(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("http://www.feemoo.com/upgrade.html");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.feemoo.com/terms.html";
+        return "http://www.sju.wang/terms.html";
     }
 
     /* Connection stuff */
@@ -68,15 +68,19 @@ public class FeemooCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/vip/", "/file/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("文件不存在或已删除") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("盘上传和传播条例，已被系统检测到后自行删除") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"info\"><h1>([^<>\"]+)</h1>").getMatch(0);
-        String filesize = br.getRegex(";文件大小：([^<>\"\\'\\&]+)\\&nbsp").getMatch(0);
+        final String filename = br.getRegex("<div class=\"span\\d+\">\\s*?<h1>([^<>\"]+)</h1>").getMatch(0);
+        String filesize = br.getRegex("文件大小：([^<>\"\\'\\&]+)\\&nbsp").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -98,16 +102,11 @@ public class FeemooCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = getFID(downloadLink);
         if (true) {
-            /* 2017-02-14: Seems like free downloads are impossible. */
+            /* 2017-02-21: Seems like free downloads are impossible. */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            /* 2017-02-21: Experiment */
-            br.getPage("/yythems_ajax_file.php?action=load_down_addr2&id=" + fid);
-            dllink = br.getRegex("(fmdown\\.php[^<>\"\\']+)").getMatch(0);
-            br.getPage(dllink);
-            /* 2017-02-21: Experiment end */
 
             int wait = 30;
             final String waittime = br.getRegex("").getMatch(0);

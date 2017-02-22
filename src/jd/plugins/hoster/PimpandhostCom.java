@@ -17,11 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,20 +29,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxetv\\-vimp\\.mivitec\\.net/.*?/?video/[^/]+/[a-f0-9]{32}.*" })
-public class DeluxemusicTv extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public DeluxemusicTv(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pimpandhost.com" }, urls = { "https?://(?:www\\.)?pimpandhost\\.com/image/\\d+" })
+public class PimpandhostCom extends PluginForHost {
+
+    public PimpandhostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     // Tags:
-    // protocol: https forced
+    // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    private static final String  default_extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -56,7 +55,7 @@ public class DeluxemusicTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://deluxetv-vimp.mivitec.net/pages/view/id/1";
+        return "http://pimpandhost.com/site/tos";
     }
 
     @SuppressWarnings("deprecation")
@@ -66,50 +65,18 @@ public class DeluxemusicTv extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(500);
-        final Regex urlregex = new Regex(link.getDownloadURL(), "/video/([^/]+).*([a-f0-9]{32})(/(\\d+))?");
-        final String fid = urlregex.getMatch(1);
-        final String category_id = urlregex.getMatch(3);
-        final String url_filename = urlregex.getMatch(0);
-        /* Set unique videoid. */
-        link.setLinkID(fid);
-
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !this.br.getURL().matches(".*?[a-f0-9]{32}.*?")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Image not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 500) {
-            /* Can be caused by trying to access wrong urls but also if there are server issues! */
-            server_issues = true;
-            return AvailableStatus.UNCHECKABLE;
         }
-        final String description = this.br.getRegex("name=\"description\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (description != null && link.getComment() == null) {
-            link.setComment(description);
-        }
-        String filename = br.getRegex("<title>([^<>\"]+):: Medien :: DELUXE MUSIC</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"title\" content=\"([^<>\"]+)MedienDELUXE MUSIC\"").getMatch(0);
-        }
+        final String url_filename = new Regex(link.getDownloadURL(), "").getMatch(0);
+        final String filesize = this.br.getRegex(">Size: ([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) \\| pimpandhost\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
         }
-        if (category_id != null) {
-            /*
-             * Actually the "/category/" if not needed even if a category_id is given but we'll handle it similar to how the website handles
-             * it.
-             */
-            dllink = "https://deluxetv-vimp.mivitec.net/category/" + category_id + "/getMedium/" + fid + ".mp4";
-        } else {
-            dllink = "https://deluxetv-vimp.mivitec.net/getMedium/" + fid + ".mp4";
-        }
-        final String discodeluxe_setnumber_str = new Regex(filename, Pattern.compile("DISCO.*?DELUXE.*?Set.{0,}?(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (discodeluxe_setnumber_str != null) {
-            final int discodeluxe_setnumber = Integer.parseInt(discodeluxe_setnumber_str);
-            final String discodeluxe_setnumber_str_formatted = new DecimalFormat("000").format(discodeluxe_setnumber);
-            filename = "deluxemusictv_disco_deluxe_set_" + discodeluxe_setnumber_str_formatted;
-        } else {
-            filename = "deluxemusictv_" + filename;
-        }
+        /* Maybe required to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
+        dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(http[^<>\"]+)\"").getMatch(0);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -122,15 +89,14 @@ public class DeluxemusicTv extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (dllink != null) {
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
+                con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("directlink", dllink);
@@ -148,17 +114,6 @@ public class DeluxemusicTv extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
-    }
-
-    private String getLowerQualityVideourl(final String fid) {
-        String dllink = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]+)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("(https?://deluxetv\\-vimp\\.mivitec\\.net/getMedium/[^<>\"/]+)").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = "https://deluxetv-vimp.mivitec.net/getMedium/" + fid + ".m4v";
-        }
-        return dllink;
     }
 
     @Override

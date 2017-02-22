@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakvideodecrypted\\.com/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakvideodecrypted\\.com/[a-z0-9]+" })
 public class LiveLeakCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -60,14 +60,14 @@ public class LiveLeakCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://www.liveleak.com/ll_embed?f=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        br.getPage("https://www." + this.getHost() + "/ll_embed?f=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         if (br.containsHTML("File not found or deleted\\!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String ext = ".mp4";
-        DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
+        DLLINK = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=\"HD\"").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=\"SD\"").getMatch(0);
         }
         if (DLLINK == null) {
             ext = ".flv";
