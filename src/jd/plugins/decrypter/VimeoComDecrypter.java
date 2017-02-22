@@ -80,6 +80,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         int skippedLinks = 0;
         String parameter = param.toString().replace("http://", "https://");
         if (parameter.matches(type_player_private_external_m3u8)) {
+            parameter = parameter.replaceFirst("(p=.*?)($|&)", "");
             final DownloadLink link = this.createDownloadlink(parameter);
             decryptedLinks.add(link);
             return decryptedLinks;

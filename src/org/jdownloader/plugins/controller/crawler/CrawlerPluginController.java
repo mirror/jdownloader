@@ -234,6 +234,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     }
                                     lazyCrawlerPlugin.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
                                     lazyCrawlerPlugin.setHasConfig(plg.hasConfig());
+                                    lazyCrawlerPlugin.setFeatures(plg.getFeatures());
                                     retList.add(lazyCrawlerPlugin);
                                 } catch (UpdateRequiredClassNotFoundException e) {
                                     logger.finest("@CrawlerPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
@@ -290,7 +291,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     *
+     * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {

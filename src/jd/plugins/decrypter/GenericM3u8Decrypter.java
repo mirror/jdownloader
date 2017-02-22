@@ -34,6 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|\\?[^\\s<>\"']*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -45,6 +46,11 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     public GenericM3u8Decrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
     }
 
     @Override

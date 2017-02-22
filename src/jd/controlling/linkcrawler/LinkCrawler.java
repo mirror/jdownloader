@@ -89,6 +89,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
@@ -1902,78 +1903,92 @@ public class LinkCrawler {
         final LinkCrawler parent = getParent();
         if (parent != null) {
             return parent.getSortedLazyCrawlerPlugins();
-        }
-        if (unsortedLazyCrawlerPlugins == null) {
-            unsortedLazyCrawlerPlugins = CrawlerPluginController.getInstance().list();
-        }
-        List<LazyCrawlerPlugin> ret = sortedLazyCrawlerPlugins.get();
-        if (ret == null) {
-            /* sort cHosts according to their usage */
-            ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
-            try {
-                Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
-
-                    @Override
-                    public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                        final LazyPluginClass l1 = o1.getLazyPluginClass();
-                        final LazyPluginClass l2 = o2.getLazyPluginClass();
-                        if (l1.getInterfaceVersion() == l2.getInterfaceVersion()) {
-                            return 0;
-                        }
-                        if (l1.getInterfaceVersion() > l2.getInterfaceVersion()) {
-                            return -1;
-                        }
-                        return 1;
-                    }
-
-                });
-                Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
-                    public final int compare(long x, long y) {
-                        return (x < y) ? 1 : ((x == y) ? 0 : -1);
-                    }
-
-                    @Override
-                    public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                        return compare(o1.getPluginUsage(), o2.getPluginUsage());
-                    }
-
-                });
-            } catch (final Throwable e) {
-                LogController.CL(true).log(e);
+        } else {
+            if (unsortedLazyCrawlerPlugins == null) {
+                unsortedLazyCrawlerPlugins = CrawlerPluginController.getInstance().list();
             }
-            sortedLazyCrawlerPlugins.compareAndSet(null, ret);
+            List<LazyCrawlerPlugin> ret = sortedLazyCrawlerPlugins.get();
+            if (ret == null) {
+                /* sort cHosts according to their usage */
+                ret = new ArrayList<LazyCrawlerPlugin>(unsortedLazyCrawlerPlugins);
+                try {
+                    Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+
+                        @Override
+                        public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                            final LazyPluginClass l1 = o1.getLazyPluginClass();
+                            final LazyPluginClass l2 = o2.getLazyPluginClass();
+                            if (l1.getInterfaceVersion() == l2.getInterfaceVersion()) {
+                                return 0;
+                            }
+                            if (l1.getInterfaceVersion() > l2.getInterfaceVersion()) {
+                                return -1;
+                            }
+                            return 1;
+                        }
+
+                    });
+                    Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+                        public final int compare(long x, long y) {
+                            return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                        }
+
+                        @Override
+                        public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                            return compare(o1.getPluginUsage(), o2.getPluginUsage());
+                        }
+
+                    });
+                    Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+
+                        public final int compare(boolean x, boolean y) {
+                            return (x == y) ? 0 : (x ? 1 : -1);
+                        }
+
+                        @Override
+                        public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                            return compare(o1.hasFeature(FEATURE.GENERIC), o2.hasFeature(FEATURE.GENERIC));
+                        }
+
+                    });
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+                sortedLazyCrawlerPlugins.compareAndSet(null, ret);
+            }
+            return ret;
         }
-        return ret;
     }
 
     protected List<LazyHostPlugin> getSortedLazyHostPlugins() {
         final LinkCrawler parent = getParent();
         if (parent != null) {
             return parent.getSortedLazyHostPlugins();
-        }
-        /* sort pHosts according to their usage */
-        List<LazyHostPlugin> ret = sortedLazyHostPlugins.get();
-        if (ret == null) {
-            ret = new ArrayList<LazyHostPlugin>(unsortedLazyHostPlugins);
-            try {
-                Collections.sort(ret, new Comparator<LazyHostPlugin>() {
+        } else {
+            /* sort pHosts according to their usage */
+            List<LazyHostPlugin> ret = sortedLazyHostPlugins.get();
+            if (ret == null) {
+                ret = new ArrayList<LazyHostPlugin>(unsortedLazyHostPlugins);
+                try {
+                    Collections.sort(ret, new Comparator<LazyHostPlugin>() {
 
-                    public final int compare(long x, long y) {
-                        return (x < y) ? 1 : ((x == y) ? 0 : -1);
-                    }
+                        public final int compare(long x, long y) {
+                            return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                        }
 
-                    @Override
-                    public final int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                        return compare(o1.getPluginUsage(), o2.getPluginUsage());
-                    }
+                        @Override
+                        public final int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                            return compare(o1.getPluginUsage(), o2.getPluginUsage());
+                        }
 
-                });
-            } catch (final Throwable e) {
-                LogController.CL(true).log(e);
+                    });
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+                sortedLazyHostPlugins.compareAndSet(null, ret);
             }
-            sortedLazyHostPlugins.compareAndSet(null, ret);
+            return ret;
         }
-        return ret;
     }
 
     protected boolean resetSortedLazyCrawlerPlugins(List<LazyCrawlerPlugin> resetSortedLazyCrawlerPlugins) {

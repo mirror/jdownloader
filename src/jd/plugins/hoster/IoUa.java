@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "io.ua" }, urls = { "https?://(?:www\\.)?io\\.ua/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "io.ua" }, urls = { "https?://(?:www\\.)?io\\.ua//?\\d+" })
 public class IoUa extends PluginForHost {
 
     public IoUa(PluginWrapper wrapper) {

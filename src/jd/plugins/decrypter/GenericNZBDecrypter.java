@@ -19,6 +19,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.NZBSAXHandler;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|\\?[^\\s<>\"']*)" })
 public class GenericNZBDecrypter extends PluginForDecrypt {
@@ -37,6 +38,11 @@ public class GenericNZBDecrypter extends PluginForDecrypt {
         final CrawledLink ret = super.convert(link);
         ret.setArchiveInfo(archiveInfo);
         return ret;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
     }
 
     private ArchiveInfo archiveInfo = null;

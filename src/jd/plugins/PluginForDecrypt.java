@@ -63,6 +63,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -91,6 +92,10 @@ public abstract class PluginForDecrypt extends Plugin {
     @Override
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(lazyC.getDisplayName());
+    }
+
+    public FEATURE[] getFeatures() {
+        return new FEATURE[0];
     }
 
     protected final List<String> getPreSetPasswords() {

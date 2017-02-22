@@ -17,6 +17,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" })
 public class GenericAutoContainer extends PluginForDecrypt {
@@ -28,6 +29,11 @@ public class GenericAutoContainer extends PluginForDecrypt {
 
     public GenericAutoContainer(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
     }
 
     @Override
