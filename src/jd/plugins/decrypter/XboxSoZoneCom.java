@@ -48,7 +48,7 @@ public class XboxSoZoneCom extends PluginForDecrypt {
             fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);
         }
         final String host = "http://theisozonedecrypted.com";
-        final String[] externalLinks = br.getRegex("(https?://(?:www\\.)?(?:cloudstor\\.es|firedrop\\.com|frd\\.li)/[^<>\"]+)").getColumn(0);
+        final String[] externalLinks = br.getRegex("(https?://(?:www\\.)?(?:cloudstor\\.es|firedrop\\.com|frd\\.li|urlsec\\.io)/[^<>;\"']+)").getColumn(0);
         final String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
         if (links != null && links.length != 0) {
             for (String finallink : links) {
