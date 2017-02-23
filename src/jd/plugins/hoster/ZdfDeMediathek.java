@@ -396,8 +396,8 @@ public class ZdfDeMediathek extends PluginForHost {
                 return "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?";
             }
 
-            public String getGrabUnknownQualitiesEnabled_label() {
-                return "[Empfohlen] Lade unbekannte Qualitätsstufen herunter?";
+            public String getAddUnknownQualitiesEnabled_label() {
+                return _JDT.T.lit_add_unknown_formats();
             }
         }
 
@@ -435,9 +435,9 @@ public class ZdfDeMediathek extends PluginForHost {
 
         @DefaultBooleanValue(true)
         @Order(21)
-        boolean isGrabUnknownQualitiesEnabled();
+        boolean isAddUnknownQualitiesEnabled();
 
-        void setGrabUnknownQualitiesEnabled(boolean b);
+        void setAddUnknownQualitiesEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(30)

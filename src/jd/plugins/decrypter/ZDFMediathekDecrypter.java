@@ -181,7 +181,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         fastlinkcheck = cfg.isFastLinkcheckEnabled();
         grabSubtitles = cfg.isGrabSubtitleEnabled();
 
-        final boolean grabUnknownQualities = cfg.isGrabUnknownQualitiesEnabled();
+        final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
 
         final boolean grabHlsAudio = cfg.isGrabAudio();
 

@@ -45,7 +45,7 @@ import org.appwork.utils.StringUtils;
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: http://api.imgur.com/models/image
  * (scroll down to "Image thumbnails"
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
 public class ImgUrCom extends PluginForHost {
 
     public ImgUrCom(PluginWrapper wrapper) {
@@ -84,6 +84,7 @@ public class ImgUrCom extends PluginForHost {
     /* Variables */
     private String              dllink                          = null;
     private boolean             dl_IMPOSSIBLE_APILIMIT_REACHED  = false;
+    private boolean             dl_IMPOSSIBLE_SERVER_ISSUE      = false;
     private String              imgUID                          = null;
     private boolean             start_DL                        = false;
 
@@ -96,7 +97,7 @@ public class ImgUrCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         imgUID = getImgUID(link);
         dllink = link.getStringProperty("directlink", null);
-        br.setFollowRedirects(true);
+        dl_IMPOSSIBLE_SERVER_ISSUE = false;
         /* Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API! */
         if (dllink == null || link.getLongProperty("decryptedfilesize", -1) == -1 || link.getStringProperty("decryptedfinalfilename", null) == null || getFiletype(link) == null) {
             prepBRAPI(this.br);
@@ -229,7 +230,8 @@ public class ImgUrCom extends PluginForHost {
                     } else if (con.getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (con.getContentType().contains("html") || !con.isOK()) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* E.g. HTTP/1.1 503 first byte timeout */
+                        dl_IMPOSSIBLE_SERVER_ISSUE = true;
                     }
                     final long size = con.getLongContentLength();
                     if (size >= 0) {
@@ -255,6 +257,8 @@ public class ImgUrCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
+        } else if (this.dl_IMPOSSIBLE_SERVER_ISSUE) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             /* Should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -444,6 +448,7 @@ public class ImgUrCom extends PluginForHost {
     public static Browser prepBRGeneral(final Browser br) {
         /* 502 == website overloadeds */
         br.setAllowedResponseCodes(responsecode_website_overloaded);
+        br.setFollowRedirects(true);
         return br;
     }
 

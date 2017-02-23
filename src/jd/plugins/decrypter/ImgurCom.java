@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -36,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ImgUrCom;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.|m\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.|m\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.|m\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.|m\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
 public class ImgurCom extends PluginForDecrypt {
 
     public ImgurCom(PluginWrapper wrapper) {
@@ -80,6 +81,7 @@ public class ImgurCom extends PluginForDecrypt {
                         logger.info("User prefers not to use the API");
                         throw new DecrypterException(API_FAILED);
                     }
+                    jd.plugins.hoster.ImgUrCom.prepBRAPI(this.br);
                     br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
                     try {
                         /* Gallery (single image) */
@@ -141,7 +143,7 @@ public class ImgurCom extends PluginForDecrypt {
                     if (!e.getMessage().equals(API_FAILED)) {
                         throw e;
                     }
-                    br.setLoadLimit(br.getLoadLimit() * 2);
+                    prepBRWebsite(this.br);
                     br.getPage(parameter);
                     if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"textbox empty\"|<h1>Zoinks! You've taken a wrong turn\\.</h1>|it's probably been deleted or may not have existed at all\\.</p>")) {
                         return createOfflineLink(parameter);
@@ -280,7 +282,7 @@ public class ImgurCom extends PluginForDecrypt {
         }
         /* Maybe it's just a single image in a gallery */
         if (jsonarray == null) {
-            jsonarray = br.getRegex("image[\t\n\r ]+:[\t\n\r ]+(\\{.*?\\})").getMatch(0);
+            jsonarray = br.getRegex("image\\s*?:\\s*?(\\{.*?\\})").getMatch(0);
         }
         if (jsonarray == null) {
             throw new DecrypterException("Decrypter broken!");
@@ -344,6 +346,12 @@ public class ImgurCom extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
+    }
+
+    private Browser prepBRWebsite(final Browser br) {
+        br.setLoadLimit(br.getLoadLimit() * 2);
+        jd.plugins.hoster.ImgUrCom.prepBRWebsite(br);
+        return br;
     }
 
     private String getJson(final String source, final String parameter) {
