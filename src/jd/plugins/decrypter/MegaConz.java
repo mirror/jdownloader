@@ -131,19 +131,38 @@ public class MegaConz extends PluginForDecrypt {
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
             } else if ("0".equals(nodeType)) {
-                if (parentNodeID != null && !StringUtils.equals(nodeParentID, parentNodeID)) {
-                    continue;
-                }
                 /* file */
-                final MegaFolder folder = folders.get(nodeParentID);
-                final FilePackage fp = FilePackage.getInstance();
-                final String path = getRelPath(folder, folders);
-                fp.setName(path.substring(1));
-                fp.setProperty("ALLOW_MERGE", true);
                 final String nodeSize = getField("s", node);
                 if (nodeSize == null) {
                     continue;
                 }
+                final MegaFolder folder = folders.get(nodeParentID);
+                if (parentNodeID != null && folder != null) {
+                    // check parentNodeID recursive of file
+                    MegaFolder checkParent = folder;
+                    while (checkParent != null) {
+                        if (parentNodeID.equals(checkParent.parent)) {
+                            break;
+                        } else {
+                            checkParent = folders.get(checkParent.parent);
+                        }
+                    }
+                    if (checkParent == null) {
+                        continue;
+                    }
+                }
+                final FilePackage fp;
+                final String path;
+                if (folder != null) {
+                    fp = FilePackage.getInstance();
+                    path = getRelPath(folder, folders);
+                    fp.setName(path.substring(1));
+                    fp.setProperty("ALLOW_MERGE", true);
+                } else {
+                    fp = null;
+                    path = null;
+                }
+
                 final String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
                 final DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
                 if (folderID != null) {
@@ -155,6 +174,9 @@ public class MegaConz extends PluginForDecrypt {
                     } else {
                         link.setContentUrl("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey + "=###n=" + folderID);
                     }
+                    link.setLinkID(getHost() + "N" + "/" + folderID + "/" + nodeID);
+                } else {
+                    link.setLinkID(getHost() + "N" + "/" + nodeID);
                 }
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);

@@ -821,6 +821,12 @@ public class D extends PluginsC {
 
         f = DocumentBuilderFactory.newInstance();
         f.setValidating(false);
+        // www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet
+        f.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        f.setXIncludeAware(false);
+        f.setExpandEntityReferences(false);
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("encrypted: "+dlcString);
         if (cs.trim().startsWith("<dlc")) {
             // New (cbc Änderung)
