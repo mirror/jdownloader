@@ -47,6 +47,12 @@ public class NZBSAXHandler extends DefaultHandler {
         final ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
         final NZBSAXHandler handler = new NZBSAXHandler(downloadLinks);
         final SAXParserFactory factory = SAXParserFactory.newInstance();
+        // www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setXIncludeAware(false);
+        factory.setValidating(false);
         final SAXParser saxParser = factory.newSAXParser();
         try {
             saxParser.parse(new InputSource(is), handler);

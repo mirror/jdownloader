@@ -570,13 +570,18 @@ public class Multi extends IExtraction {
                         logger.info("Extracted:" + item.getPath() + "|BytesWritten:" + call.getWritten() + "|FileSize(OnDisk):" + extractTo.length() + "|FileSize(InArchive):" + size + "|Result:" + res);
                         setLastModifiedDate(item, extractTo);
                         setPermissions(item, extractTo);
-                        if (size != null && size != extractTo.length()) {
-                            logger.info("Size missmatch for " + item.getPath() + "(" + size + "!=" + extractTo.length() + ")");
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
-                            return;
-                        }
                         switch (res) {
                         case OK:
+                            if (size != null && size < extractTo.length()) {
+                                if (extractTo.length() < size) {
+                                    logger.info("Size missmatch for " + item.getPath() + "(" + extractTo.length() + "<" + size + ")");
+                                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                                    return;
+                                }
+                                if (extractTo.length() > size) {
+                                    logger.info("Ignore Size missmatch for " + item.getPath() + "(" + extractTo.length() + ">" + size + ")");
+                                }
+                            }
                             /* extraction successfully ,continue with next file */
                             break;
                         case CRCERROR:
@@ -1145,25 +1150,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

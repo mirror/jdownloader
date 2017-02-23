@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.CharArrayWriter;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 
@@ -40,7 +41,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.(metalink|meta4)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.(metalink|meta4)" })
 public class MtLnk extends PluginForDecrypt {
 
     private ArrayList<DownloadLink>         decryptedLinks;
@@ -54,14 +55,14 @@ public class MtLnk extends PluginForDecrypt {
 
     final private UnknownCrawledLinkHandler handler       = new UnknownCrawledLinkHandler() {
 
-        @Override
-        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-            final DownloadLink dlLink = link.getDownloadLink();
-            if (dlLink != null && !StringUtils.startsWithCaseInsensitive(dlLink.getPluginPatternMatcher(), "directhttp://")) {
-                dlLink.setPluginPatternMatcher("directhttp://" + dlLink.getPluginPatternMatcher());
-            }
-        }
-    };
+                                                              @Override
+                                                              public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                                                  final DownloadLink dlLink = link.getDownloadLink();
+                                                                  if (dlLink != null && !StringUtils.startsWithCaseInsensitive(dlLink.getPluginPatternMatcher(), "directhttp://")) {
+                                                                      dlLink.setPluginPatternMatcher("directhttp://" + dlLink.getPluginPatternMatcher());
+                                                                  }
+                                                              }
+                                                          };
 
     public MtLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,6 +96,12 @@ public class MtLnk extends PluginForDecrypt {
         // Use the default (non-validating) parser
         final SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
+            // www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setXIncludeAware(false);
+            factory.setValidating(false);
             // Parse the input
             final SAXParser saxParser = factory.newSAXParser();
             final StringReader input = new StringReader(metalink);
@@ -129,6 +136,12 @@ public class MtLnk extends PluginForDecrypt {
         private String          sha256 = null;
 
         public MetalinkSAXHandler() {
+        }
+
+        @Override
+        public InputSource resolveEntity(String publicId, String systemId) throws IOException, SAXException {
+            // avoid parser to read external entities
+            return new InputSource(new StringReader(""));
         }
 
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
