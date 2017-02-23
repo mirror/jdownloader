@@ -1,15 +1,9 @@
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -32,7 +26,7 @@ import org.appwork.utils.parser.UrlQuery;
 
 //"https?://put\\.io/(?:file|v2/files)/\\d+" website link
 //actuall downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://api\\.put\\.io/v2/files/\\d+/download\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
 
     private static final String REQUIRES_ACCOUNT    = "requiresAccount";
@@ -130,12 +124,12 @@ public class PutIO extends PluginForHost {
         }
     }
 
-    private static final String ACCESS_TOKEN2 = "access_token";
+    private static final String ACCESS_TOKEN    = "access_token";
 
-    private static final String COOKIE_HOST   = "http://put.io";
-    private static Object       LOCK          = new Object();
+    private static final String COOKIE_HOST     = "http://put.io";
+    private static Object       LOCK            = new Object();
 
-    private static final String LOGIN_TOKEN22 = "login_token2";
+    private static final String SESSION_TOKEN_2 = "session2";
 
     private String              accessToken;
 
@@ -245,70 +239,58 @@ public class PutIO extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /** Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                String access_token = account.getStringProperty(ACCESS_TOKEN2);
-                String login_token2 = account.getStringProperty(LOGIN_TOKEN22);
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force && StringUtils.isNotEmpty(access_token) && StringUtils.isNotEmpty(login_token2)) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
+                final String access_token = account.getStringProperty(ACCESS_TOKEN);
 
-                        this.accessToken = access_token;
-                        br.getHeaders().put(X_PUTIO_LOGIN_TOKEN, account.getStringProperty(LOGIN_TOKEN22));
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force && StringUtils.isNotEmpty(access_token)) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    this.accessToken = access_token;
+                    setAccessTokenHeader(this.accessToken);
+                    return;
                 }
-                br.setFollowRedirects(true);
-                String infoJson = br.postPage("https://put.io/login", new UrlQuery().append("next", "/v2/account/info?access_token=1&intercom=1&sharing=1", true).append("name", account.getUser(), true).append("password", account.getPass(), true));
-                login_token2 = br.getCookie(br.getHost(), LOGIN_TOKEN22);
 
-                br.getHeaders().put(X_PUTIO_LOGIN_TOKEN, login_token2);
+                br.setFollowRedirects(false);
+                br.postPage("https://put.io/login", new UrlQuery().append("next", "/v2/account/info?access_token=1&intercom=1&sharing=1", true).append("name", account.getUser(), true).append("password", account.getPass(), true));
+                final String location = this.br.getRequest().getResponseHeader("Location");
+                accessToken = new Regex(location, "access_token=([^\\&=]+)$").getMatch(0);
+                if (accessToken == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                setAccessTokenHeader(this.accessToken);
+                br.getPage("https://api.put.io/v2/account/info?download_token=1&sharing=1&intercom=1&plan=1&features=1");
+
                 // String infoJson = br.getPage("https://put.io/v2/account/info?access_token=1&intercom=1&sharing=1");
-                InfoWrapper map = JSonStorage.restoreFromString(infoJson, new TypeRef<InfoWrapper>() {
+                final InfoWrapper map = JSonStorage.restoreFromString(br.toString(), new TypeRef<InfoWrapper>() {
                 });
 
-                if (map == null || map.getInfo() == null || StringUtils.isEmpty(map.getInfo().getAccess_token()) || StringUtils.isEmpty(login_token2)) {
+                if (map == null || map.getInfo() == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (br.getCookie(COOKIE_HOST, SESSION_TOKEN_2) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                accessToken = map.getInfo().getAccess_token();
-                account.setProperty(ACCESS_TOKEN2, accessToken);
-                account.setProperty(LOGIN_TOKEN22, login_token2);
 
-                if (br.getCookie(COOKIE_HOST, LOGIN_TOKEN22) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty(ACCESS_TOKEN, accessToken);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
+    private void setAccessTokenHeader(final String accessToken) {
+        br.getHeaders().put("Authorization", "token " + accessToken);
+        br.getHeaders().put("Accept", "application/json");
+        br.getHeaders().put("Referer", "https://app.put.io/files");
+        br.getHeaders().put("Origin", "https://app.put.io");
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
 
         // login(account, false);
         String url = link.getPluginPatternMatcher();

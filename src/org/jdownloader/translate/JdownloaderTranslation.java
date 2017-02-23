@@ -1107,6 +1107,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add only the best video quality within user selected formats" })
     String lit_add_only_the_best_video_quality_within_user_selected_formats();
 
+    @Default(lngs = { "en" }, values = { "Add unknown formats (recommended)" })
+    String lit_add_unknown_formats();
+
     @Default(lngs = { "en" }, values = { "Port" })
     String lit_port();
 

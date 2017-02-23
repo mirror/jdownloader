@@ -134,7 +134,7 @@ public class GoogleDrive extends PluginForDecrypt {
 
         String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"]*?) (?:– Google Drive)?</title>").getMatch(0);
         }
 
         /* 2016-08-26: TODO: Check if this works fine for big folders too */
@@ -219,25 +219,35 @@ public class GoogleDrive extends PluginForDecrypt {
                             continue;
                         }
                         addedlinks++;
+                        final String itemName = new Regex(result, "\\\\n,\\\\x22(.*?)\\\\x22").getMatch(0);
+                        final DownloadLink dl;
+                        String folder_path = null;
                         if (result.contains("vnd.google-apps.folder")) {
                             /* Folder */
-                            final DownloadLink folderLink = createDownloadlink("https://drive.google.com/drive/folders/" + id);
-                            final String folderName = new Regex(result, "\\\\n,\\\\x22(.*?)\\\\x22").getMatch(0);
-                            if (folderName != null) {
-                                final FilePackage fp = FilePackage.getInstance();
-                                fp.setName(folderName);
-                                fp.add(folderLink);
-                                if (subfolder != null) {
-                                    folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + folderName);
-                                } else {
-                                    folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, "/" + folderName);
-                                }
+                            if (subfolder != null) {
+                                folder_path = subfolder + "/" + itemName;
+                            } else {
+                                folder_path = "/" + itemName;
                             }
-                            decryptedLinks.add(folderLink);
+                            dl = createDownloadlink("https://drive.google.com/drive/folders/" + id);
                         } else {
                             /* Single file */
-                            decryptedLinks.add(createDownloadlink("https://drive.google.com/file/d/" + id));
+                            if (subfolder != null) {
+                                folder_path = subfolder;
+                            }
+                            dl = createDownloadlink("https://drive.google.com/file/d/" + id);
                         }
+                        if (folder_path != null) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
+                        }
+                        if (itemName != null) {
+                            // if (folder_path != null) {
+                            // final FilePackage fp = FilePackage.getInstance();
+                            // fp.setName(itemName);
+                            // fp.add(dl);
+                            // }
+                        }
+                        decryptedLinks.add(dl);
                     }
                 }
             } while (key != null && addedlinks >= 50);
