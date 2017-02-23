@@ -61,7 +61,7 @@ public class WorkuploadCom extends PluginForHost {
         fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         br.getPage("https://workupload.com/file/" + fid);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         passwordprotected = this.br.containsHTML(html_passwordprotected);
