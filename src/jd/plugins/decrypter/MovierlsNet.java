@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -50,15 +51,16 @@ public class MovierlsNet extends PluginForDecrypt {
         }
         for (final String singleLink : links) {
             String finallink = singleLink;
+            final Browser brc = br.cloneBrowser();
             int counter = 0;
             do {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
-                this.br.getPage(finallink);
-                finallink = this.br.getRedirectLocation();
+                brc.getPage(finallink);
+                finallink = brc.getRedirectLocation();
                 counter++;
-            } while (counter <= 3 && finallink != null && finallink.contains(this.getHost() + "/"));
+            } while (counter <= 3 && finallink != null && (finallink.contains(this.getHost() + "/") || finallink.startsWith("/")));
             if (finallink == null || finallink.contains(this.getHost() + "/")) {
                 continue;
             }
