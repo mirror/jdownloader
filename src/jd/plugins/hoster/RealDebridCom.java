@@ -546,8 +546,8 @@ public class RealDebridCom extends PluginForHost {
                         autoSolveBr.clearCookies(verificationUrl);
                         autoSolveBr.getPage(verificationUrl);
                         Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
-                        loginForm.getInputField("p").setValue(getAccount().getPass());
-                        loginForm.getInputField("u").setValue(getAccount().getUser());
+                        loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
+                        loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
                         autoSolveBr.submitForm(loginForm);
                         if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
                             loginsInvalid.set(true);
