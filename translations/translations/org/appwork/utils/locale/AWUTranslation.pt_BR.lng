@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Este diálogo possui uma contagem regressiva e fe
 active=Habilitado
 connecting=Conectando...
 crossSystem_open_url_failed_msg=Por favor, abra este link no seu navegador:
+debug_menu=Menu de Depuração & Desenvolvedor
 download_msg=Baixando arquivo
 download_title=Download
 extdatecolumn_dateandtimeformat=dd.MM.yy HH:mm
