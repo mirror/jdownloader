@@ -52,7 +52,7 @@ public class IcepornCom extends PluginForHost {
     }
 
     private void getDllink() throws IOException {
-        final boolean preferMobile = true;
+        final boolean preferMobile = false;
         if (preferMobile) {
             /* Usually we'll get a .mp4 here, quality is lower than via website. */
             final String videoid = new Regex(this.br.getURL(), "/video/(\\d+)").getMatch(0);
@@ -62,19 +62,16 @@ public class IcepornCom extends PluginForHost {
             }
         } else {
             /* 2017-01-23: pkey generation is wrong - fallback to mobile version of the website! */
-            final String h = this.br.getRegex("h=([a-z0-9]+)\\'").getMatch(0);
-            final String t = this.br.getRegex("t=([0-9]+)").getMatch(0);
+            final String h = this.br.getRegex("h=([a-f0-9]{32})\\'").getMatch(0);
+            final String t = this.br.getRegex("params\\s*?\\+=\\s*?\\'%26t=(\\d+)\\';").getMatch(0);
             String vkey = this.br.getRegex("vkey=([a-z0-9]+)").getMatch(0);
             if (vkey == null) {
                 /* 2017-01-23 */
                 vkey = this.br.getRegex("vkey=\\'\\s*?\\+\\s*?\\'([a-z0-9]+)\\'").getMatch(0);
             }
             if (h != null && t != null && vkey != null) {
-                br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("null_TODO")) + "&aid=&domain_id=");
-                dllink = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
-                }
+                br.getPage("http://www." + this.getHost() + "/player_config/?h=" + h + "&check_speed=1&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("UEZ4b2xITUY3SXQwdDg4dA==")) + "&aid=&domain_id=");
+                dllink = jd.plugins.hoster.VipTubeCom.getXmlDllink(this.br);
             }
         }
     }
