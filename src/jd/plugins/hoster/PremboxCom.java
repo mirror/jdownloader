@@ -22,10 +22,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class PremboxCom extends PluginForHost {
@@ -394,12 +394,12 @@ public class PremboxCom extends PluginForHost {
         } else {
             expire_timestamp = expire_timestamp_daily;
         }
+        expire_timestamp = expire_timestamp * 1000;
 
-        if ("premium".equals(accounttype)) {
+        if ("premium".equals(accounttype) && expire_timestamp > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
             status = "Premium" + status;
             ai.setStatus("Premium account");
-            ai.setValidUntil(expire_timestamp * 1000);
         } else {
             account.setType(AccountType.FREE);
             status = "Free" + status;
@@ -431,6 +431,9 @@ public class PremboxCom extends PluginForHost {
             if (isoffline == 1) {
                 /* Do not add hosts that do not work at the moment. */
                 continue;
+            }
+            if (host.equalsIgnoreCase("chomikuj.pl")) {
+                logger.warning("");
             }
             supportedHosts.add(host);
             if (cloudonly == 1) {

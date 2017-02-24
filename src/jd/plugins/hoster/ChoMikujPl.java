@@ -731,11 +731,6 @@ public class ChoMikujPl extends antiDDoSForHost {
         super.submitForm(form);
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-    }
-
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, JDL.L("plugins.hoster.chomikujpl.avoidPremiumMp3TrafficUsage", "Force download of the stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, JDL.L("plugins.hoster.chomikujpl.decryptfolders", "Decrypt subfolders in folders")).setDefaultValue(true));
