@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -42,19 +40,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noco.tv" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" })
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "noco.tv" }, urls = { "https?://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" })
 public class NocoTv extends PluginForHost {
 
     private String              dllink              = null;
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
     private boolean             notDownloadable     = false;
     private static Object       LOCK                = new Object();
-    private static final String MAINPAGE            = "http://noco.tv/";
+    private static final String MAINPAGE            = "https://noco.tv/";
     private static final String SALT                = "YTUzYmUxODUzNzcwZjBlYmUwMzExZDY5OTNjN2JjYmU=";
 
     public NocoTv(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.nolife-tv.com/souscription");
+        this.enablePremium("https://www.nolife-tv.com/souscription");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -177,7 +177,7 @@ public class NocoTv extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://" + this.getHost() + "/do.php", "cookie=1&a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://" + this.getHost() + "/do.php", "cookie=1&a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "id_user") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -248,7 +248,7 @@ public class NocoTv extends PluginForHost {
                 downloadLink.setName(filename + ".mp4");
                 return AvailableStatus.TRUE;
             }
-            dllink = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
+            dllink = br.getRegex("\\&url=(https?://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
