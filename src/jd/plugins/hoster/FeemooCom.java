@@ -97,64 +97,57 @@ public class FeemooCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = getFID(downloadLink);
-        if (true) {
-            /* 2017-02-14: Seems like free downloads are impossible. */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            // /* 2017-02-21: Experiment */
-            // final String original_url = this.br.getURL();
-            // br.getPage("/yythems_ajax_file.php?action=load_down_addr2&id=" + fid);
-            // dllink = br.getRegex("(fmdown\\.php[^<>\"\\']+)").getMatch(0);
-            // this.br.getHeaders().put("Referer", original_url);
-            // br.getPage(dllink);
-            // /* 2017-02-21: Experiment end */
+            br.getPage("/down2-" + fid + ".html");
 
-            int wait = 30;
-            final String waittime = br.getRegex("").getMatch(0);
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
+            final String down2_url = this.br.getURL();
+
+            final Browser ajax = this.br.cloneBrowser();
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.postPage("/yythems_ajax_file.php", "action=load_down_addr2&file_id=" + fid);
+            final String continue_url = ajax.getRegex("(fmdown\\.php[^<>\"\\']+)").getMatch(0);
+            if (continue_url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.sleep(wait * 1001l, downloadLink);
-            br.getPage("/down/" + fid + ".html");
-            final String code = getCaptchaCode("/downcode.php", downloadLink);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/downcode.php", "action=yz&id=" + fid + "&code=" + Encoding.urlEncode(code));
-            if (br.toString().equals("0")) {
+            final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), downloadLink);
+            ajax.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+            if (ajax.toString().equals("false")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            br.getPage("/dd.php?file_key=" + fid + "&p=1");
-            dllink = br.getRegex("").getMatch(0);
+            this.br.getHeaders().put("Referer", down2_url);
+            /* If we don't wait for some seconds here, the continue_url will redirect us to the main url!! */
+            this.sleep(5 * 1001l, downloadLink);
+            br.getPage(continue_url);
+            /* After the fmdown.php */
+            if (this.br.containsHTML(">非VIP用户每次下载间隔为")) {
+                /* Usually 10 minute wait --> Let's reconnect! */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+
+            dllink = br.getRegex("var\\s*?file_url\\s*?=\\s*?\\'(http[^<>\"\\']+)").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
+                dllink = br.getRegex("(https?://[^/]+/dl\\.php[^<>\"\\']+)").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+
+            int wait = 10;
+            final String waittime = br.getRegex("var\\s*?t\\s*?=\\s*?(\\d+);").getMatch(0);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
+            this.sleep(wait * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.getURL().endsWith("/two.html")) {
-                // this is when you're downloading too much or ip restriction (from google translate)
-                // <div class="title">
-                // <font color="#FF0000">普通用户只允许同时下载一个文件，请您先完成当前下载后，再尝试下载其他文件。</font>
-                // </div>
-                // <br />
-                // <div class="content">
-                // <div class="bottom"><br />
-                // 若您当前并没有下载文件，仍然收到此提示，请通过以下两条进行检查：
-                // <br />1. 如果您之前使用浏览器内置下载工具下载，我们建议您关闭并重新打开浏览器。
-                // <br />
-                // 2. 如果您之前使用迅雷等下载工具下载，我们建议您关闭并重新打开迅雷等下载工具。
-                // <br /><br /><br />
-                // <h1><a href="/pay_vip.php" target="_blank">升级为VIP会员将不受此限制</a></h1><br /><br /><br />
-                // </div>
-                // </div>
-                // </div>
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);

@@ -37,7 +37,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "https?://(?:www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" })
 public class NdrDeDecrypter extends PluginForDecrypt {
 
     public NdrDeDecrypter(PluginWrapper wrapper) {
@@ -118,9 +118,9 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             logger.info("Found no downloadable content: " + parameter);
             return decryptedLinks;
         }
-        String subtitle_url = br.getRegex("\"(/media/ut\\d+\\.xml)\"").getMatch(0);
+        String subtitle_url = br.getRegex("\"(/media/ut\\d+\\.(?:xml|html))\"").getMatch(0);
         if (subtitle_url != null) {
-            subtitle_url = "https://www.ndr.de" + subtitle_url;
+            subtitle_url = "https://www.ndr.de" + subtitle_url.replace(".html", ".xml");
         }
         final String linkdupeid = v_rest + "_%S_%S";
         final String[] availablequalities = availablequalitiestext.split(",");

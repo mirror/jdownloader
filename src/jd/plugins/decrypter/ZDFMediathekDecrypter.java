@@ -66,6 +66,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private final String    API_BASE                      = "https://api.zdf.de/";
 
+    /* Important: Keep this updated & keep this in order: Highest --> Lowest */
+    final List<String>      all_known_qualities           = Arrays.asList("hls_mp4_720", "http_mp4_hd", "http_webm_hd", "hls_mp4_480", "http_mp4_veryhigh", "http_webm_veryhigh", "hls_mp4_360", "http_webm_high", "hls_mp4_270", "http_mp4_high", "http_webm_low", "hls_mp4_170", "http_mp4_low", "hls_aac_0");
+
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -173,8 +176,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked" })
     private void getDownloadLinksZdfNew() throws Exception {
-        List<String> all_known_qualities = Arrays.asList("http_mp4_low", "http_mp4_high", "http_mp4_veryhigh", "http_mp4_hd", "http_webm_low", "http_webm_high", "http_webm_veryhigh", "http_webm_hd", "hls_mp4_170", "hls_mp4_270", "hls_mp4_360", "hls_mp4_480", "hls_mp4_720", "hls_aac_0");
-        ArrayList<String> all_selected_qualities = new ArrayList<String>();
+        List<String> all_selected_qualities = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
         grabBest = cfg.isGrabBESTEnabled();
@@ -245,6 +247,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         if (grabHttpWebmHD) {
             all_selected_qualities.add("http_webm_hd");
+        }
+
+        if (all_selected_qualities.size() == 0) {
+            logger.info("User selected no quality at all --> Adding ALL qualities instead");
+            all_selected_qualities = all_known_qualities;
         }
 
         final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls720;
@@ -334,7 +341,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         DownloadLink highestHlsDownload = null;
 
         do {
-
             if (this.isAbort()) {
                 return;
             }
@@ -407,7 +413,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
                     final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("qualities");
                     for (final Object qualities_o : qualities) {
-
+                        /* Extra abort handling within here to abort hls decryption as it also needs http requests. */
                         if (this.isAbort()) {
                             return;
                         }
@@ -517,23 +523,62 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         /* Finally, check which qualities the user actually wants to have. */
 
         if (this.grabBest && highestHlsDownload != null) {
+            /* Best is easy and even if it was an unknown quality, we knew that highest hls == always BEST! */
             addDownloadLink(highestHlsDownload);
         } else {
-            all_found_downloadlinks.entrySet();
+            HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
             final Iterator<Entry<String, DownloadLink>> iterator_all_found_downloadlinks = all_found_downloadlinks.entrySet().iterator();
             while (iterator_all_found_downloadlinks.hasNext()) {
                 final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
                 final String dl_quality_string = dl_entry.getKey();
-                if (all_selected_qualities.contains(dl_quality_string) || (!all_known_qualities.contains(dl_quality_string) && grabUnknownQualities)) {
-                    addDownloadLink(dl_entry.getValue());
+                if (all_selected_qualities.contains(dl_quality_string)) {
+                    all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                } else if (!all_known_qualities.contains(dl_quality_string) && grabUnknownQualities) {
+                    logger.info("Found unknown quality: " + dl_quality_string);
+                    if (grabUnknownQualities) {
+                        logger.info("Adding unknoqn quality: " + dl_quality_string);
+                        all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
+                    }
                 }
             }
+
+            if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+                all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+            }
+
+            /* Finally add selected URLs */
+            final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, DownloadLink> entry = it.next();
+                final DownloadLink dl = entry.getValue();
+                addDownloadLink(dl);
+            }
         }
+
+        if (all_selected_qualities.size() < all_known_qualities.size() && decryptedLinks.size() == 0) {
+            logger.info("Possible user error: User selected only qualities which are not available");
+        }
+
         if (decryptedLinks.size() > 1) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(filename_packagename_base_title);
             fp.addLinks(decryptedLinks);
         }
+    }
+
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
+        final HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        DownloadLink keep = null;
+        if (bestMap.size() > 0) {
+            for (final String quality : all_known_qualities) {
+                keep = bestMap.get(quality);
+                if (keep != null) {
+                    newMap.put(quality, keep);
+                    break;
+                }
+            }
+        }
+        return newMap;
     }
 
     private void addDownloadLink(final DownloadLink dl) {

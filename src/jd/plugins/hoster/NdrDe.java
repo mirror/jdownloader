@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "http://ndrdecrypted\\.de/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ndr.de" }, urls = { "http://ndrdecrypted\\.de/\\d+" })
 public class NdrDe extends PluginForHost {
 
     public NdrDe(PluginWrapper wrapper) {
@@ -141,6 +141,7 @@ public class NdrDe extends PluginForHost {
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
 
+        boolean success = false;
         BufferedWriter dest = null;
         try {
             File output = new File(source.getAbsolutePath().replace(".xml", ".srt"));
@@ -168,52 +169,62 @@ public class NdrDe extends PluginForHost {
             } finally {
                 in.close();
             }
-            /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek, NdrDe */
-            final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
-            try {
-                final int starttime = 0;
-                for (String[] match : matches) {
-                    dest.write(counter++ + lineseparator);
 
-                    final Double start = Double.valueOf(match[0]) + starttime;
-                    final Double end = Double.valueOf(match[1]) + starttime;
-                    dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+            final String xmlContent = xml.toString();
 
-                    String text = match[2].trim();
-                    text = text.replaceAll(lineseparator, " ");
-                    text = text.replaceAll("&amp;", "&");
-                    text = text.replaceAll("&quot;", "\"");
-                    text = text.replaceAll("&#39;", "'");
-                    text = text.replaceAll("&apos;", "'");
-                    text = text.replaceAll("<br />", lineseparator);
-                    text = text.replace("</p>", "");
-                    text = text.replace("<span ", "").replace("</span>", "");
+            if (xmlContent.contains("<ebuttm:documentEbuttVersion>")) {
+                success = jd.plugins.hoster.BrDe.convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
+            } else {
+                /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek, NdrDe */
+                final String[][] matches = new Regex(xmlContent, "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
+                try {
+                    final int starttime = 0;
+                    for (String[] match : matches) {
+                        dest.write(counter++ + lineseparator);
 
-                    final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
-                    if (textReplaces != null && textReplaces.length != 0) {
-                        for (final String[] singleText : textReplaces) {
-                            final String colorCode = singleText[0].trim();
-                            final String plainText = singleText[1].trim();
-                            final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
-                            dest.write(completeNewText + lineseparator + lineseparator);
+                        final Double start = Double.valueOf(match[0]) + starttime;
+                        final Double end = Double.valueOf(match[1]) + starttime;
+                        dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+
+                        String text = match[2].trim();
+                        text = text.replaceAll(lineseparator, " ");
+                        text = text.replaceAll("&amp;", "&");
+                        text = text.replaceAll("&quot;", "\"");
+                        text = text.replaceAll("&#39;", "'");
+                        text = text.replaceAll("&apos;", "'");
+                        text = text.replaceAll("<br />", lineseparator);
+                        text = text.replace("</p>", "");
+                        text = text.replace("<span ", "").replace("</span>", "");
+
+                        final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
+                        if (textReplaces != null && textReplaces.length != 0) {
+                            for (final String[] singleText : textReplaces) {
+                                final String colorCode = singleText[0].trim();
+                                final String plainText = singleText[1].trim();
+                                final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
+                                dest.write(completeNewText + lineseparator + lineseparator);
+                            }
+                        } else {
+                            dest.write(text + lineseparator + lineseparator);
                         }
-                    } else {
-                        dest.write(text + lineseparator + lineseparator);
-                    }
 
+                    }
+                    success = true;
+                } catch (final Exception e) {
+                    success = false;
                 }
-            } catch (Exception e) {
-                return false;
             }
+
         } finally {
             try {
                 dest.close();
-            } catch (IOException e) {
+            } catch (final IOException e) {
             }
         }
+
         source.delete();
 
-        return true;
+        return success;
     }
 
     /**

@@ -67,7 +67,7 @@ public class TakefileLink extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://takefile.link";
+    private static final String            COOKIE_HOST                        = "https://takefile.link";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -172,7 +172,7 @@ public class TakefileLink extends PluginForHost {
     @SuppressWarnings("deprecation")
     public TakefileLink(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -1298,14 +1298,14 @@ public class TakefileLink extends PluginForHost {
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Free Account");
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(expire_milliseconds);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(10);
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
@@ -1323,7 +1323,7 @@ public class TakefileLink extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     return;
                 }
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST + "/user_login");
                 final Form loginform = this.br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1372,7 +1372,7 @@ public class TakefileLink extends PluginForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, true, -2, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1398,7 +1398,7 @@ public class TakefileLink extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");

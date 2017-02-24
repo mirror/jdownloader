@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com", "dachix.com", "dagay.com" }, urls = { "http://(www\\.)?deviantclipdecrypted\\.com/watch/[a-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dachixdecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dagaydecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com", "dachix.com", "dagay.com" }, urls = { "http://(www\\.)?deviantclipdecrypted\\.com/watch/[a-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dachixdecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?", "http://(www\\.)?dagaydecrypted\\.com/watch/[A-Za-z0-9\\-]+(\\?fileid=[A-Za-z0-9]+)?" })
 public class DeviantClipCom extends PluginForHost {
 
     public DeviantClipCom(PluginWrapper wrapper) {
@@ -56,17 +55,18 @@ public class DeviantClipCom extends PluginForHost {
     // This hoster also got a decrypter called "DeviantClipComGallery" so if the
     // host goes down please also delete the decrypter!
     /* Tags: crakpass network, dagfs.com, bestgonzo.com, kinkyfrenchies.com */
-    public String dllink = null;
+    public String   dllink        = null;
+    private boolean server_issues = false;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        final String url_filename = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String thelink = downloadLink.getDownloadURL();
-        try {
-            br.getPage(thelink);
-        } catch (final BrowserException e) {
+        br.getPage(thelink);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (downloadLink.getDownloadURL().contains("?fileid=")) {
@@ -87,44 +87,66 @@ public class DeviantClipCom extends PluginForHost {
             }
             dllink = br.getRegex("\"file\":\"(.*?)\"").getMatch(0);
             if (dllink == null) {
+                dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            }
+            if (dllink == null) {
                 dllink = new Regex(Encoding.htmlDecode(br.toString()), "\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?\\.flv\\?.*?)\"").getMatch(0);
             }
-            if (filename == null || filename.matches("Free Porn Tube Videos, Extreme Hardcore Porn Galleries")) {
+            if (filename != null && filename.matches("Free Porn Tube Videos, Extreme Hardcore Porn Galleries")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (filename == null) {
+                filename = url_filename;
             }
             filename = Encoding.htmlDecode(filename.trim());
             if (filename.contains("\\x")) {
                 filename = Encoding.urlDecode(filename.replaceAll("\\\\x", "%"), false);
             }
-            downloadLink.setFinalFileName(filename + ".flv");
+            downloadLink.setName(filename + ".flv");
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        URLConnectionAdapter con = br.openGetConnection(dllink);
-        if (downloadLink.getDownloadURL().contains("?fileid=")) {
-            String ending = LoadImage.getFileType(dllink, con.getContentType());
-            if (ending != null && !downloadLink.getName().endsWith(ending)) {
-                downloadLink.setFinalFileName(downloadLink.getName() + ending);
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(dllink);
+                if (downloadLink.getDownloadURL().contains("?fileid=")) {
+                    final String ending = LoadImage.getFileType(dllink, con.getContentType());
+                    if (ending != null && !downloadLink.getName().endsWith(ending)) {
+                        downloadLink.setFinalFileName(downloadLink.getName() + ending);
+                    }
+                }
+                if (!con.getContentType().contains("html")) {
+                    long size = con.getLongContentLength();
+                    if (size != 0) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        server_issues = true;
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-        }
-        if (!con.getContentType().contains("html")) {
-            long size = con.getLongContentLength();
-            if (size != 0) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            if (this.br.containsHTML("<embed src=")) {
+                /* E.g. video not even playable via browser. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

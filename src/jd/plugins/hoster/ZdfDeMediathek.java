@@ -35,6 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -392,6 +393,10 @@ public class ZdfDeMediathek extends PluginForHost {
                 return _JDT.T.lit_add_only_the_best_video_quality();
             }
 
+            public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
+            }
+
             public String getNeoMagazinRoyaleDeOnlyGrabCurrentEpisode_label() {
                 return "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?";
             }
@@ -432,6 +437,13 @@ public class ZdfDeMediathek extends PluginForHost {
         boolean isGrabBESTEnabled();
 
         void setGrabBESTEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(21)
+        boolean isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
+
+        void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(21)
