@@ -68,6 +68,7 @@ public class Ardmediathek extends PluginForDecrypt {
     /* Variables */
     private final HashMap<String, DownloadLink> foundQualitiesMap        = new HashMap<String, DownloadLink>();
     ArrayList<DownloadLink>                     decryptedLinks           = new ArrayList<DownloadLink>();
+    /* Important: Keep this updated & keep this in order: Highest --> Lowest */
     private final List<String>                  all_known_qualities      = Arrays.asList("hd", "high", "medium", "low");
 
     private String                              subtitleLink             = null;
@@ -241,11 +242,6 @@ public class Ardmediathek extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            if (fsk != null) {
-                logger.info("ARD-Mediathek: " + fsk);
-                /** TODO: Check if this case still exists */
-                return decryptedLinks;
-            }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
@@ -279,7 +275,7 @@ public class Ardmediathek extends PluginForDecrypt {
             logger.info("ARDMediathek: MediaID is null! link offline?");
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
-        if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) {
+        if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         this.date = br.getRegex("Video der Sendung vom (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
@@ -457,16 +453,14 @@ public class Ardmediathek extends PluginForDecrypt {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
         } else {
-            boolean userSelectedNothing = true;
             for (final String quality : all_known_qualities) {
                 if (userWantsQuality(quality)) {
-                    userSelectedNothing = false;
                     selectedQualities.add(quality);
                 }
             }
-            if (userSelectedNothing) {
+            if (selectedQualities.size() == 0) {
                 /* Errorhandling */
-                logger.info("User selected no qualkity at all --> Adding ALL qualities instead");
+                logger.info("User selected no quality at all --> Adding ALL qualities instead");
                 selectedQualities = all_known_qualities;
             }
 
@@ -495,7 +489,6 @@ public class Ardmediathek extends PluginForDecrypt {
         final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, DownloadLink> entry = it.next();
-            // final String quality = entry.getKey();
             final DownloadLink dl = entry.getValue();
             if (PluginJsonConfig.get(getConfigInterface()).isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
                 final String plain_name = dl.getStringProperty("plain_name", null);
@@ -513,15 +506,14 @@ public class Ardmediathek extends PluginForDecrypt {
                 dl_subtitle.setLinkID(linkid);
                 decryptedLinks.add(dl_subtitle);
             }
-            if (decryptedLinks.size() > 1) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
-                fp.addLinks(decryptedLinks);
-            }
             decryptedLinks.add(dl);
         }
 
-        if (decryptedLinks.size() == 0 && selectedQualities.size() < all_known_qualities.size()) {
+        if (decryptedLinks.size() > 1) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(decryptedLinks);
+        } else if (decryptedLinks.size() == 0 && selectedQualities.size() < all_known_qualities.size()) {
             logger.info("Possible user error: User selected only qualities which are not available");
         }
     }
