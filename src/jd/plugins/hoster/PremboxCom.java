@@ -432,9 +432,6 @@ public class PremboxCom extends PluginForHost {
                 /* Do not add hosts that do not work at the moment. */
                 continue;
             }
-            if (host.equalsIgnoreCase("chomikuj.pl")) {
-                logger.warning("");
-            }
             supportedHosts.add(host);
             if (cloudonly == 1) {
                 cloudOnlyHosts.add(host);
