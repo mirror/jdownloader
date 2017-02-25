@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://((www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\s+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "https?://((www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\s+)" })
 public class AhMeCom extends PluginForHost {
 
     private String dllink = null;
@@ -69,7 +69,7 @@ public class AhMeCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         // <video src="http://ah-me.vstreamcdn.com/key=lGkvgzJE1Ds,end=1403083107/374070.flv"
-        dllink = br.getRegex("<video src=\"(http://.*?)\"").getMatch(0);
+        dllink = br.getRegex("<video src=\"(https?://.*?)\"").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
