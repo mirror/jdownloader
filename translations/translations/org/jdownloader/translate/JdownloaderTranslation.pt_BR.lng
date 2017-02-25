@@ -319,6 +319,7 @@ jd_plugins_PluginUtils_askPassword=Por favor, insira a senha para %s1
 lit_add_only_the_best_video_quality=Adicionar somente melhor qualidade de vídeo
 lit_add_only_the_best_video_quality_within_user_selected_formats=Adicionar apenas a melhor qualidade de vídeo entre os formatos selecionados pelo usuário
 lit_add_subtitles=Adicionar legendas
+lit_add_unknown_formats=Adicionar formatos desconhecidos (recomendado)
 lit_audio_bitrate=Taxa de bits do áudio
 lit_audio_codec=Codec do áudio
 lit_connections=Conexões
