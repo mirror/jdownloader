@@ -105,7 +105,7 @@ public class AuroravidTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         jd.plugins.hoster.VideoWeedCom.checkForContinueForm(this.br);
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|/download.php\\?file=\"") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // onlinecheck für Videolinks
@@ -126,7 +126,13 @@ public class AuroravidTo extends PluginForHost {
                 }
             }
             /* Add correct extension */
-            filename += ".flv";
+            dllink = jd.plugins.hoster.VideoWeedCom.getDllink(this.br);
+            if (dllink != null) {
+                final String ext = dllink.substring(dllink.lastIndexOf("."));
+                filename += ext;
+            } else {
+                filename += ".flv";
+            }
             downloadLink.setFinalFileName(filename);
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
@@ -137,6 +143,23 @@ public class AuroravidTo extends PluginForHost {
             } else if (br.containsHTML("error_msg=invalid token")) {
                 downloadLink.getLinkStatus().setStatusText("Server error 'invalid token'");
                 return AvailableStatus.TRUE;
+            }
+            Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html") && con.isOK()) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
 
         } else {
