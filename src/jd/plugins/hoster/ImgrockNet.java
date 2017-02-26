@@ -87,10 +87,10 @@ public class ImgrockNet extends antiDDoSForHost {
     private static final int               WAITSECONDSFORCED               = 5;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                     = true;
-    private static final int               FREE_MAXCHUNKS                  = 0;
+    private static final int               FREE_MAXCHUNKS                  = 1;
     private static final int               FREE_MAXDOWNLOADS               = 20;
     private static final boolean           ACCOUNT_FREE_RESUME             = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 0;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 1;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
     private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
