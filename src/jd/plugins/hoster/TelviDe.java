@@ -97,11 +97,11 @@ public class TelviDe extends PluginForHost {
         }
         /* First check if a filename was set before via decrypter */
         String filename = downloadLink.getStringProperty("decryptedfilename", null);
-        dllink = br.getRegex("<video xsi:type=\"xsd:string\">(/[^<>\"]*?)</video>").getMatch(0);
+        dllink = br.getRegex("<video xsi:type=\"xsd:string\">(\\d+/[^<>\"]*?)</video>").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://video.telvi.de" + Encoding.htmlDecode(dllink);
+        dllink = "http://video.telvi.de/" + Encoding.htmlDecode(dllink);
         if (filename == null) {
             filename = new Regex(dllink, "([a-z0-9]+)\\.[a-z0-9]{2,5}$").getMatch(0);
         }
