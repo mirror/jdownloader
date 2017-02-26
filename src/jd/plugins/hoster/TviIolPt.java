@@ -57,8 +57,9 @@ public class TviIolPt extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)/[a-z0-9]$").getMatch(0));
         br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Lamentamos mas o conteúdo")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename;
