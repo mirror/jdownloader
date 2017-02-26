@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "temp-share.com" }, urls = { "https?://(www\\.)?temp-share\\.com/f/[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "temp-share.com" }, urls = { "https?://(www\\.)?temp-share\\.com/f/[a-z0-9]+" })
 public class TempShareCom extends PluginForHost {
 
     private static final String mainPage = "http://temp-share.com";
@@ -43,6 +43,7 @@ public class TempShareCom extends PluginForHost {
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.setAllowedResponseCodes(new int[] { 410 });
     }
 
     @Override
@@ -59,7 +60,9 @@ public class TempShareCom extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-
+        if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText("Site is under maintenance");
             return AvailableStatus.UNCHECKABLE;
