@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Tento dialog má odpočet a zavře se za několik
 active=Povoleno
 connecting=Připojování...
 crossSystem_open_url_failed_msg=Otevřete tento odkaz ve svém prohlížeči:
+debug_menu=Nabídka pro ladění a vývojáře
 download_msg=Stahování souboru
 download_title=Stahování
 extdatecolumn_dateandtimeformat=dd.MM.yy HH:mm

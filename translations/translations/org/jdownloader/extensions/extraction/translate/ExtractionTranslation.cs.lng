@@ -21,7 +21,6 @@ ask_for_password=Vyžadováno heslo archivu!
 bubble_text=Rozbalování archivu!
 bubblecontent_progress=Ikona průběhu
 bubbletype=probíhá rozbalování archivu
-cannot_extract_incopmplete=Nelze rozbalit %s1. Archiv je nekompletní!
 close=Zavřít
 context_cleanup=Vyčistit po rozbalení
 context_password=Heslo pro rozbalení
