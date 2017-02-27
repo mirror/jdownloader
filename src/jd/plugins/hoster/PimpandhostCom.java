@@ -69,7 +69,7 @@ public class PimpandhostCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Image not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "/(.*)$").getMatch(0);
         final String filesize = this.br.getRegex(">Size: ([^<>\"]+)<").getMatch(0);
         String filename = br.getRegex("<title>([^<>\"]+) \\| pimpandhost\\.com</title>").getMatch(0);
         if (filename == null) {
