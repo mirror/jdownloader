@@ -96,7 +96,7 @@ public class NonktubeCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "nonktube\\.com/video/\\d+/([a-z0-9\\-]+)").getMatch(0);
         }
-        dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        dllink = br.getRegex("<file>(https?://[^<>\"]*?)</file>").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
