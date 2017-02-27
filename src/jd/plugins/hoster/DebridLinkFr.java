@@ -317,8 +317,11 @@ public class DebridLinkFr extends PluginForHost {
         }
         final String error = PluginJSonUtils.getJsonValue(br, "ERR");
         if (error != null) {
-            // generic errors not specific to download routine!
-            if ("unknowR".equals(error)) {
+            if ("maxLinkHost".equals(error)) {
+                // max link limit reached, see linkLimit
+                tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
+            } else if ("unknowR".equals(error)) {
+                // generic errors not specific to download routine!
                 // Bad r argument
                 // changes with the API? this shouldn't happen
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
