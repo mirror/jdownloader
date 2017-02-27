@@ -1042,10 +1042,30 @@ public class YoutubeHelper {
     }
 
     protected void extractData() {
-        if (StringUtils.isEmpty(vid.title) && this.br.containsHTML("&title=")) {
-            final String match = this.br.getRegex("&title=([^&$]+)").getMatch(0);
-            if (StringUtils.isNotEmpty(match)) {
-                vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
+        if (StringUtils.isEmpty(vid.title)) {
+            if (this.br.containsHTML("&title=")) {
+                final String match = this.br.getRegex("&title=([^&$]+)").getMatch(0);
+                if (StringUtils.isNotEmpty(match)) {
+                    vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
+                }
+            }
+            if (StringUtils.isEmpty(vid.title)) {
+                final String match = this.br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
+                if (StringUtils.isNotEmpty(match)) {
+                    vid.title = Encoding.htmlDecode(match.trim());
+                }
+            }
+            if (StringUtils.isEmpty(vid.title)) {
+                final String match = this.br.getRegex("<title>(.*?) - YouTube</title>").getMatch(0);
+                if (StringUtils.isNotEmpty(match)) {
+                    vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
+                }
+            }
+            if (StringUtils.isEmpty(vid.title)) {
+                final String match = this.br.getRegex("document\\.title\\s*=\\s*\"(.*?) - YouTube\"").getMatch(0);
+                if (StringUtils.isNotEmpty(match)) {
+                    vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
+                }
             }
         }
         if (StringUtils.isEmpty(vid.description)) {
@@ -1074,24 +1094,14 @@ public class YoutubeHelper {
                 }
             }
         }
-        if (StringUtils.isEmpty(vid.title)) {
-            final String match = this.br.getRegex("<title>(.*?) - YouTube</title>").getMatch(0);
-            if (StringUtils.isNotEmpty(match)) {
-                vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
-            }
-        }
+
         if (vid.length <= 0) {
             final String match = this.br.getRegex("\"length_seconds\"\\\\s*:\\s*(\\d+)").getMatch(0);
             if (StringUtils.isNotEmpty(match)) {
                 vid.length = Integer.parseInt(match);
             }
         }
-        if (StringUtils.isEmpty(vid.title)) {
-            final String match = this.br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
-            if (StringUtils.isNotEmpty(match)) {
-                vid.title = Encoding.htmlDecode(match.trim());
-            }
-        }
+
         if (vid.date <= 0) {
             // dd MMM yyyy - old
             final Locale locale = Locale.ENGLISH;
