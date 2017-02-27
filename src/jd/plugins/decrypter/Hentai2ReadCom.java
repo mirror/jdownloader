@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/(?!latest)[a-z0-9\\-_]+/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai2read.com" }, urls = { "http://(www\\.)?hentai2read.com/(?!latest)[a-z0-9\\-_]+/\\d+" })
 public class Hentai2ReadCom extends PluginForDecrypt {
 
     public Hentai2ReadCom(PluginWrapper wrapper) {
@@ -66,7 +66,10 @@ public class Hentai2ReadCom extends PluginForDecrypt {
             }
         } else {
             // all links are now within json!
-            final String json = br.getRegex("var rff_imageList = (\\[.*?\\]);").getMatch(0);
+            String json = br.getRegex("var rff_imageList = (\\[.*?\\]);").getMatch(0);
+            if (json == null) {
+                json = br.getRegex("'images'\\s*:\\s*(\\[.*?\\]),").getMatch(0);
+            }
             if (json != null) {
                 final String[] results = PluginJSonUtils.getJsonResultsFromArray(json);
                 String base = null;
