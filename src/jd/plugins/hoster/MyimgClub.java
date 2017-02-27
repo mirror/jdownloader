@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myimg.club" }, urls = { "https?://(www\\.)?myimg\\.club/(embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myimg.club" }, urls = { "https?://(www\\.)?myimg\\.club/(embed\\-)?[a-z0-9]{12}" })
 public class MyimgClub extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -122,7 +122,7 @@ public class MyimgClub extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.7.0.0
     // Tags: Script, template
-    // mods:
+    // mods: br.getHttpConnection().getResponseCode() == 404
     // limit-info:
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
@@ -175,7 +175,7 @@ public class MyimgClub extends PluginForHost {
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
