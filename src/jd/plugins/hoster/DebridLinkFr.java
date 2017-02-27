@@ -147,7 +147,6 @@ public class DebridLinkFr extends PluginForHost {
                 final String validateToken = PluginJSonUtils.getJsonValue(br, "validTokenUrl");
                 if (validateToken == null) {
                     logger.warning("Can't find validateToken!");
-                    dump(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br2.getPage(validateToken);
@@ -157,7 +156,6 @@ public class DebridLinkFr extends PluginForHost {
                     final String apiKey = br2.getRegex("Recaptcha\\.create\\(\"([^\"]+)\"").getMatch(0);
                     if (apiKey == null || recap == null) {
                         logger.warning("can't find captcha regex!");
-                        dump(account);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     DownloadLink dummyLink = new DownloadLink(this, "Account", "http://" + this.getHost(), "http://" + this.getHost(), true);
@@ -178,9 +176,8 @@ public class DebridLinkFr extends PluginForHost {
                 // validate token externally.. this is good idea in principle but in practice not so, as it will drive users/customers
                 // NUTTS!
                 // Your better off doing 2 factor to email, as it can't be bypassed like this!
-                Form vT = br2.getForm(0);
+                final Form vT = br2.getForm(0);
                 if (vT == null) {
-                    dump(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (vT.hasInputFieldByName("user") && vT.hasInputFieldByName("password")) {
@@ -192,15 +189,16 @@ public class DebridLinkFr extends PluginForHost {
                     if (br2.containsHTML("<div class=\"alert alert-success\">[\\w\\.\\s]+</div>")) {
                         logger.info("success!!");
                     } else if (br2.containsHTML(">Password or username not valid<|>Bad username or password\\.<")) {
-                        dump(account);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         logger.warning("Problemo, submitting login form!");
-                        dump(account);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-            } catch (Exception e) {
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM || e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                    dump(account);
+                }
                 throw e;
             }
         }

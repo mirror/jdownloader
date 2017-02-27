@@ -26,7 +26,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         // from fallback url
         secureToken = new Regex(source, "&stoken=([^\"]+)").getMatch(0);
         if (secureToken == null) {
-            secureToken = new Regex(source, "data-stoken\\s*=\\s*\"([^\"]+)").getMatch(0);
+            secureToken = new Regex(source, "data-stoken\\s*=\\s*\"\\s*([^\"]+)").getMatch(0);
         }
         return secureToken;
     }
@@ -103,7 +103,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         if (divs != null) {
             for (final String div : divs) {
                 if (new Regex(div, "class=('|\")g-recaptcha(\\1|\\s+)").matches()) {
-                    siteKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
+                    siteKey = new Regex(div, "data-sitekey=('|\")\\s*([\\w-]+)\\s*\\1").getMatch(1);
                     if (siteKey != null) {
                         return siteKey;
                     }
@@ -114,7 +114,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
         if (scripts != null) {
             for (final String script : scripts) {
-                siteKey = new Regex(script, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
+                siteKey = new Regex(script, "data-sitekey=('|\")\\s*([\\w-]+)\\s*\\1").getMatch(1);
                 if (siteKey != null) {
                     return siteKey;
                 }
@@ -133,7 +133,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
         // json values in script or json
         final String jssource = new Regex(source, "recaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
         if (jssource != null) {
-            siteKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\2").getMatch(2);
+            siteKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*([\\w-]+)\\s*\\2").getMatch(2);
         }
         return siteKey;
     }

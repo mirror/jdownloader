@@ -297,9 +297,9 @@ public class Keep2ShareCc extends K2SApi {
                 if (br.containsHTML("Free user can't download large files")) {
                     premiumDownloadRestriction("This file is only available to premium members");
                 }
-                Browser br2 = br.cloneBrowser();
+                // Browser br2 = br.cloneBrowser();
                 // domain not transferable!
-                getPage(br2, getProtocol() + "static.k2s.cc/ext/evercookie/evercookie.swf");
+                // getPage(br2, getProtocol() + "static.k2s.cc/ext/evercookie/evercookie.swf");//404 no longer exists
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
                 if (inValidate(dllink)) {
