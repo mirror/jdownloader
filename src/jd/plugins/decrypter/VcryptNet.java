@@ -50,7 +50,10 @@ public class VcryptNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches("https?://[^/]+/[^/]+/[a-z0-9]+")) {
-            final Form continueForm = this.br.getFormByInputFieldKeyValue("submit", "Continue");
+            Form continueForm = this.br.getFormByInputFieldKeyValue("submit", "Continue");
+            if (continueForm == null) {
+                continueForm = this.br.getFormBySubmitvalue("Continue");
+            }
             if (continueForm != null) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));

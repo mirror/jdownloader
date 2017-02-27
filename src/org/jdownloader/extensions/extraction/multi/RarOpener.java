@@ -18,6 +18,7 @@ package org.jdownloader.extensions.extraction.multi;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
@@ -154,8 +155,8 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
                 } else {
                     file = new File(fileName);
                 }
+                logger.info("OpenFile->Filename:" + fileName + "|ArchiveFile:" + af + "|Filename(onDisk)" + file.getAbsolutePath());
                 tracker = new RandomAcessFileStats(IO.open(file, "r"));
-                logger.info("OpenFile->Filename:+" + fileName + "|ArchiveFile:" + af + "|Filename(onDisk)" + file.getAbsolutePath());
                 openedRandomAccessFileList.put(fileName, tracker);
             }
             if (name == null) {
@@ -183,6 +184,13 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
                 }
 
             };
+        } catch (FileNotFoundException e) {
+            if (af != null) {
+                logger.log(e);
+                throw new SevenZipException(e);
+            } else {
+                return null;
+            }
         } catch (IOException e) {
             logger.log(e);
             if (af != null) {

@@ -48,10 +48,22 @@ public class StreamClientImpl implements StreamClient<StreamClientConfigurationI
         HTTPConnection urlConnection = null;
         InputStream inputStream;
         try {
+            final byte[] bodyBytes;
+            if (requestMessage.getBodyType().equals(UpnpMessage.BodyType.STRING)) {
+                if (requestMessage.getBodyString() != null) {
+                    bodyBytes = requestMessage.getBodyString().getBytes("UTF-8");
+                } else {
+                    bodyBytes = null;
+                }
+            } else if (requestMessage.getBodyType().equals(UpnpMessage.BodyType.BYTES)) {
+                bodyBytes = requestMessage.getBodyBytes();
+            } else {
+                bodyBytes = null;
+            }
             urlConnection = new HTTPConnectionImpl(url) {
                 @Override
                 protected boolean isRequiresOutputStream() {
-                    return super.isRequiresOutputStream() || requestMessage.hasBody();
+                    return super.isRequiresOutputStream() || bodyBytes != null;
                 }
             };
             urlConnection.setRequestMethod(RequestMethod.valueOf(requestOperation.getHttpMethodName()));
@@ -65,18 +77,6 @@ public class StreamClientImpl implements StreamClient<StreamClientConfigurationI
                     final String headerName = entry.getKey();
                     urlConnection.setRequestProperty(headerName, v);
                 }
-            }
-            final byte[] bodyBytes;
-            if (requestMessage.getBodyType().equals(UpnpMessage.BodyType.STRING)) {
-                if (requestMessage.getBodyString() != null) {
-                    bodyBytes = requestMessage.getBodyString().getBytes("UTF-8");
-                } else {
-                    bodyBytes = null;
-                }
-            } else if (requestMessage.getBodyType().equals(UpnpMessage.BodyType.BYTES)) {
-                bodyBytes = requestMessage.getBodyBytes();
-            } else {
-                bodyBytes = null;
             }
             if (bodyBytes != null) {
                 urlConnection.setRequestProperty("Content-Length", Integer.toString(bodyBytes.length));

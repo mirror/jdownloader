@@ -299,11 +299,17 @@ public class RealDebridCom extends PluginForHost {
                 return host;
             }
         };
+        final boolean resume;
+        if ("mega.co.nz".equals(link.getHost())) {
+            resume = false;
+        } else {
+            resume = true;
+        }
         final Browser br2 = br.cloneBrowser();
         br2.setAllowedResponseCodes(new int[0]);
         boolean increment = false;
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), true, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), resume, resume ? maxChunks : 1);
             if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
                 /* content disposition, lets download it */
                 RUNNING_DOWNLOADS.incrementAndGet();
