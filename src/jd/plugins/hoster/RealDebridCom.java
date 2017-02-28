@@ -38,6 +38,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -58,6 +59,7 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.components.realDebridCom.RealDebridComConfig;
 import org.jdownloader.plugins.components.realDebridCom.api.Error;
@@ -548,10 +550,14 @@ public class RealDebridCom extends PluginForHost {
                 @Override
                 public boolean autoSolveChallenge(SolverJob<Boolean> job) {
                     try {
-                        String verificationUrl = getUrl();
+                        final String verificationUrl = getUrl();
                         autoSolveBr.clearCookies(verificationUrl);
                         autoSolveBr.getPage(verificationUrl);
-                        Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                        final Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                        if (loginForm.containsHTML("g-recaptcha")) {
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
+                            loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        }
                         loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
                         loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
                         autoSolveBr.submitForm(loginForm);
@@ -560,7 +566,11 @@ public class RealDebridCom extends PluginForHost {
                             job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                             return false;
                         }
-                        Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
+                        if (autoSolveBr.containsHTML("Error:")) {
+                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                            return false;
+                        }
+                        final Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
                         allow.setPreferredSubmit("Allow");
                         autoSolveBr.submitForm(allow);
                         final ClientSecret clientSecret = checkCredentials(code);
@@ -569,6 +579,12 @@ public class RealDebridCom extends PluginForHost {
                             job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
                             return true;
                         }
+                    } catch (CaptchaException e) {
+                        logger.log(e);
+                        job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                    } catch (InterruptedException e) {
+                        logger.log(e);
+                        job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                     } catch (Throwable e) {
                         logger.log(e);
                     }
