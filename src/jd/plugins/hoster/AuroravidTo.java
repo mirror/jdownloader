@@ -105,7 +105,7 @@ public class AuroravidTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         jd.plugins.hoster.VideoWeedCom.checkForContinueForm(this.br);
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|/download.php\\?file=\"") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|/download\\.php\\?file=\"") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // onlinecheck für Videolinks

@@ -40,7 +40,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
         "http://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "http://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/", "http://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?pornalized\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "http://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-]+/",
         "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/",
         "http://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(www\\.)?sex3\\.com/\\d+/", "http://(?:www\\.)?egbo\\.com/video/\\d+/?", "http://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "http://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://xcafe\\.com/\\d+/", "http://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/embed/\\d+",
-"https?://(?:www\\.)?pornpillow\\.com/\\d+/[^/]+\\.html" })
+        "https?://(?:www\\.)?pornpillow\\.com/\\d+/[^/]+\\.html" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
 
     public KernelVideoSharingCom(PluginWrapper wrapper) {
@@ -91,7 +91,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     private static final String  type_special_alotporn_com = "^http://(?:www\\.)?alotporn\\.com/(?:\\d+/[A-Za-z0-9\\-_]+/|(?:embed\\.php\\?id=|embed/)\\d+)|https?://m\\.alotporn\\.com/\\d+/[a-z0-9\\-]+/";
 
     private String               dllink                    = null;
-    private boolean              isDownload                = false;                                                                                                                                          ;
+    private boolean              isDownload                = false;
+    private boolean              server_issues             = false;                                                                                                                                          ;
 
     @Override
     public String getAGBLink() {
@@ -112,6 +113,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
+        server_issues = false;
         String filename = null;
         final String host = downloadLink.getHost();
         this.setBrowserExclusive();
@@ -121,6 +123,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             /* Without this Referer we cannot access their content plus they only have embed URLs! */
             br.getHeaders().put("Referer", "http://www.camwhores.tv/");
         }
+
         getPage(downloadLink.getDownloadURL());
         String filename_url = null;
         if (br.containsHTML("KernelTeamVideoSharingSystem\\.js|KernelTeamImageRotator_")) {
@@ -267,21 +270,22 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                         /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
                         final String redirect_url = br.getHttpConnection().getRequest().getUrl();
                         con = br.openHeadConnection(redirect_url);
-                        if (br.getHttpConnection().getResponseCode() == 404) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
                     }
                 } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
+                    return AvailableStatus.TRUE;
                 }
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                final long filesize = con.getLongContentLength();
+                if (!con.getContentType().contains("html") && filesize > 100000) {
+                    downloadLink.setDownloadSize(filesize);
                     final String redirect_url = br.getHttpConnection().getRequest().getUrl();
                     if (redirect_url != null) {
                         dllink = redirect_url;
                         logger.info("DLLINK: " + dllink);
                     }
                     downloadLink.setProperty("directlink", dllink);
+                } else {
+                    server_issues = true;
                 }
             } finally {
                 try {
@@ -304,6 +308,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         if (this.dllink.contains(".m3u8")) {
             /* hls download */
@@ -342,8 +348,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
-         *
+         * 
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         String httpurl_temp = null;

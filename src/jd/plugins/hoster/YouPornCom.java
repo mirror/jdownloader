@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/?.+/?" })
 public class YouPornCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -78,7 +78,7 @@ public class YouPornCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "youporn\\.com/watch/(\\d+)").getMatch(0) + "/" + System.currentTimeMillis() + "/");
+        link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "/watch/(\\d+)").getMatch(0) + "/" + System.currentTimeMillis() + "/");
     }
 
     private static final String defaultEXT = ".mp4";
