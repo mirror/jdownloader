@@ -158,6 +158,19 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return;
     }
 
+    private void crawlEmbeddedUrlsZdfNew() throws IOException {
+        this.br.getPage(this.PARAMETER);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
+            return;
+        }
+        final String[] embedded_player_ids = this.br.getRegex("data\\-zdfplayer\\-id=\"([^<>\"]+)\"").getColumn(0);
+        for (final String embedded_player_id : embedded_player_ids) {
+            final String finallink = String.format("https://www.zdf.de/jdl/jdl/%s.html", embedded_player_id);
+            this.decryptedLinks.add(super.createDownloadlink(finallink));
+        }
+    }
+
     // private String getApiTokenFromHtml(Browser br, final String url) throws IOException {
     // final Browser brc;
     // if (br == null) {
@@ -183,6 +196,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         fastlinkcheck = cfg.isFastLinkcheckEnabled();
         grabSubtitles = cfg.isGrabSubtitleEnabled();
 
+        boolean atLeastOneSelectedItemExists = false;
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
 
         final boolean grabHlsAudio = cfg.isGrabAudio();
@@ -303,7 +317,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
         entries_2 = (LinkedHashMap<String, Object>) entries.get("mainVideoContent");
         if (entries_2 == null) {
-            logger.info("Content is not a video --> Nothing to download");
+            /* Not a single video? Maybe we have a playlist / embedded video(s)! */
+            logger.info("Content is not a video --> Scanning html for embedded content");
+            crawlEmbeddedUrlsZdfNew();
             return;
         }
         entries_2 = (LinkedHashMap<String, Object>) entries_2.get("http://zdf.de/rels/target");
@@ -532,6 +548,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
                 final String dl_quality_string = dl_entry.getKey();
                 if (all_selected_qualities.contains(dl_quality_string)) {
+                    atLeastOneSelectedItemExists = true;
                     all_selected_downloadlinks.put(dl_quality_string, dl_entry.getValue());
                 } else if (!all_known_qualities.contains(dl_quality_string) && grabUnknownQualities) {
                     logger.info("Found unknown quality: " + dl_quality_string);
@@ -542,21 +559,29 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             }
 
-            if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
-                all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
-            }
+            if (!atLeastOneSelectedItemExists) {
+                logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
+                while (iterator_all_found_downloadlinks.hasNext()) {
+                    final Entry<String, DownloadLink> dl_entry = iterator_all_found_downloadlinks.next();
+                    decryptedLinks.add(dl_entry.getValue());
+                }
+            } else {
+                /* Finally add selected URLs */
+                final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, DownloadLink> entry = it.next();
+                    final DownloadLink dl = entry.getValue();
+                    addDownloadLink(dl);
+                }
 
-            /* Finally add selected URLs */
-            final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, DownloadLink> entry = it.next();
-                final DownloadLink dl = entry.getValue();
-                addDownloadLink(dl);
+                if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+                    all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+                }
             }
         }
 
-        if (all_selected_qualities.size() < all_known_qualities.size() && decryptedLinks.size() == 0) {
-            logger.info("Possible user error: User selected only qualities which are not available");
+        if (all_found_downloadlinks.isEmpty()) {
+            logger.info("Failed to find any quality at all");
         }
 
         if (decryptedLinks.size() > 1) {

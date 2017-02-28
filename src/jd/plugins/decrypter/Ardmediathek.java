@@ -241,7 +241,7 @@ public class Ardmediathek extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter, "STREAMS_BROKEN"));
             return decryptedLinks;
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        if (decryptedLinks == null) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
@@ -453,13 +453,20 @@ public class Ardmediathek extends PluginForDecrypt {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
         } else {
+            boolean atLeastOneSelectedItemExists = false;
             for (final String quality : all_known_qualities) {
                 if (userWantsQuality(quality)) {
                     selectedQualities.add(quality);
+                    if (foundQualitiesMap.containsKey(quality)) {
+                        atLeastOneSelectedItemExists = true;
+                    }
                 }
             }
-            if (selectedQualities.size() == 0) {
-                /* Errorhandling */
+            if (atLeastOneSelectedItemExists) {
+                /* Only logger */
+                logger.info("Possible user error: User selected only qualities which are not available --> Adding ALL");
+            } else if (selectedQualities.size() == 0) {
+                /* Errorhandling for bad user selection */
                 logger.info("User selected no quality at all --> Adding ALL qualities instead");
                 selectedQualities = all_known_qualities;
             }
@@ -476,7 +483,8 @@ public class Ardmediathek extends PluginForDecrypt {
                         logger.info("Adding unknoqn quality: " + quality);
                         finalSelectedQualityMap.put(quality, dl);
                     }
-                } else if (selectedQualities.contains(quality)) {
+                } else if (selectedQualities.contains(quality) || atLeastOneSelectedItemExists) {
+                    /* User has selected this particular quality OR we have to add it because user plugin settings were bad! */
                     finalSelectedQualityMap.put(quality, dl);
                 }
             }
@@ -509,12 +517,13 @@ public class Ardmediathek extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
+        if (all_known_qualities.isEmpty()) {
+            logger.info("Failed to find any quality at all");
+        }
         if (decryptedLinks.size() > 1) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
             fp.addLinks(decryptedLinks);
-        } else if (decryptedLinks.size() == 0 && selectedQualities.size() < all_known_qualities.size()) {
-            logger.info("Possible user error: User selected only qualities which are not available");
         }
     }
 
