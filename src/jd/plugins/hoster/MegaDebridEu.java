@@ -20,8 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -31,8 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MegaDebridEu extends PluginForHost {
@@ -41,7 +43,7 @@ public class MegaDebridEu extends PluginForHost {
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static Object                                  ACCLOCK            = new Object();
     private final String                                   mName              = "www.mega-debrid.eu";
-    private final String                                   mProt              = "http://";
+    private final String                                   mProt              = "https://";
 
     public MegaDebridEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,32 +60,22 @@ public class MegaDebridEu extends PluginForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
+    private void prepBrowser(final Browser br) {
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "JDownloader-" + Math.max(super.getVersion(), 0));
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        br.setFollowRedirects(true);
-        final String token = login(account);
-        if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
-            ac.setStatus("\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!");
-            logger.severe("mega-debrid.eu: Error, can not parse left days. Account: " + account.getUser() + "\r\nAPI response:\r\n\r\n" + br.toString());
-            account.setValid(false);
-            return ac;
-        }
-        if (token != null) {
-            account.setProperty("token", token);
-        } else {
-            logger.warning("token could not be found");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        ac.setValidUntil(-1);
-        final String daysLeft = getJson("vip_end");
+        prepBrowser(br);
+        login(account);
+        final String daysLeft = PluginJSonUtils.getJson(br, "vip_end");
         if (daysLeft != null && !"0".equals(daysLeft)) {
             ac.setValidUntil(Long.parseLong(daysLeft) * 1000l);
         } else if ("0".equals(daysLeft)) {
             ac.setExpired(true);
-            ac.setStatus("No vip? Expired?");
+            ac.setStatus("Expired VIP!");
             return ac;
         } else {
             ac.setStatus("Can not determine account expire time!");
@@ -94,7 +86,7 @@ public class MegaDebridEu extends PluginForHost {
 
         // now it's time to get all supported hosts
         br.getPage("/api.php?action=getHosters");
-        if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
+        if (!"ok".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_code"))) {
             ac.setStatus("can not get supported hosts");
             logger.severe("Error, can not parse supported hosts. API response:\r\n\r\n" + br.toString());
             account.setValid(false);
@@ -104,14 +96,26 @@ public class MegaDebridEu extends PluginForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         account.setValid(true);
         ac.setMultiHostSupport(this, supportedHosts);
-        ac.setStatus("Account valid");
+        ac.setStatus("VIP Account");
         return ac;
     }
 
     private String login(Account account) throws Exception {
         synchronized (ACCLOCK) {
             br.getPage(mProt + mName + "/api.php?action=connectUser&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final String token = getJson("token");
+            if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+                // server issue
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Host provider has server issues!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            final String token = PluginJSonUtils.getJson(br, "token");
+            if (!"ok".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_code"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (token != null) {
+                account.setProperty("token", token);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             return token;
         }
     }
@@ -150,7 +154,7 @@ public class MegaDebridEu extends PluginForHost {
         url = Encoding.urlEncode(url);
 
         showMessage(link, "Phase 1/2: Generate download link");
-        br.setFollowRedirects(true);
+        prepBrowser(br);
         String token = account.getStringProperty("token", null);
         if (token == null) {
             // this shouldn't happen!
@@ -162,7 +166,7 @@ public class MegaDebridEu extends PluginForHost {
         }
         for (int i = 0; i != 3; i++) {
             br.postPage(mProt + mName + "/api.php?action=getLink&token=" + token, "link=" + url);
-            if ("TOKEN_ERROR".equalsIgnoreCase(getJson("response_code")) && "Token error, please log-in".equalsIgnoreCase(getJson("response_text"))) {
+            if ("TOKEN_ERROR".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_code")) && "Token error, please log-in".equalsIgnoreCase(PluginJSonUtils.getJson(br, "response_text"))) {
                 if (i == 2) {
                     // big problem!
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n BIG PROBLEM_2", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -279,14 +283,6 @@ public class MegaDebridEu extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         return true;
-    }
-
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
     }
 
     @Override
