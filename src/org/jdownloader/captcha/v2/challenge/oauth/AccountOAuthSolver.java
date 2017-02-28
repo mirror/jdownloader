@@ -1,13 +1,13 @@
 package org.jdownloader.captcha.v2.challenge.oauth;
 
+import jd.controlling.captcha.SkipException;
+
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-
-import jd.controlling.captcha.SkipException;
 
 public class AccountOAuthSolver extends ChallengeSolver<Boolean> {
     private static final AccountOAuthSolver INSTANCE = new AccountOAuthSolver();
@@ -18,7 +18,6 @@ public class AccountOAuthSolver extends ChallengeSolver<Boolean> {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-
         return c != null && (c instanceof OAuthChallenge);
     }
 
@@ -33,20 +32,20 @@ public class AccountOAuthSolver extends ChallengeSolver<Boolean> {
     }
 
     @Override
-    public void solve(SolverJob<Boolean> solverJob) throws InterruptedException, SolverException, SkipException {
-        final OAuthChallenge challenge = ((OAuthChallenge) solverJob.getChallenge());
-
-        try {
-            if (challenge instanceof AccountLoginOAuthChallenge) {
-                if (((AccountLoginOAuthChallenge) challenge).autoSolveChallenge()) {
-                    solverJob.addAnswer(new AbstractResponse<Boolean>(challenge, this, 100, true));
-                    return;
+    public void solve(SolverJob<Boolean> job) throws InterruptedException, SolverException, SkipException {
+        if (job.getChallenge() instanceof OAuthChallenge) {
+            final OAuthChallenge challenge = ((OAuthChallenge) job.getChallenge());
+            try {
+                if (challenge instanceof AccountLoginOAuthChallenge) {
+                    if (((AccountLoginOAuthChallenge) challenge).autoSolveChallenge(job)) {
+                        job.addAnswer(new AbstractResponse<Boolean>(challenge, this, 100, true));
+                        return;
+                    }
                 }
+            } catch (Throwable e) {
+                job.getLogger().log(e);
+                challenge.sendStatsError(this, e);
             }
-
-        } catch (Throwable e) {
-            solverJob.getLogger().log(e);
-            challenge.sendStatsError(this, e);
         }
     }
 }
