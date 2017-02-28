@@ -555,6 +555,9 @@ public class RealDebridCom extends PluginForHost {
                         autoSolveBr.getPage(verificationUrl);
                         final Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
                         if (loginForm.containsHTML("g-recaptcha")) {
+                            logger.info("Login requires Recaptcha");
+                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account", getHost(), "https://real-debrid.com", true);
+                            RealDebridCom.this.setDownloadLink(dummyLink);
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
                             loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         }
@@ -563,10 +566,6 @@ public class RealDebridCom extends PluginForHost {
                         autoSolveBr.submitForm(loginForm);
                         if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
                             loginsInvalid.set(true);
-                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
-                            return false;
-                        }
-                        if (autoSolveBr.containsHTML("Error:")) {
                             job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                             return false;
                         }
