@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,15 +27,18 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brightcove.com" }, urls = { "https?://c\\.brightcove\\.com/services/viewer/htmlFederated\\?.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brightcove.com" }, urls = { "https?://c\\.brightcove\\.com/services/viewer/htmlFederated\\?.+" })
 public class BrightcoveDecrypter extends PluginForDecrypt {
 
     public BrightcoveDecrypter(PluginWrapper wrapper) {
@@ -52,11 +56,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         // Keep this in mind for future implementations: http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId= +
@@ -126,16 +126,16 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             }
 
             final BrightcoveClipData clip = new BrightcoveClipData();
-            clip.creationDate = creationDate;
-            clip.publisherName = publisherName;
-            clip.displayName = title;
-            clip.size = filesize;
-            clip.encodingRate = encodingRate;
-            clip.width = frameWidth;
-            clip.height = frameHeight;
-            clip.videoCodec = videoCodec;
-            clip.downloadurl = downloadurl;
-            clip.mediaDeliveryType = mediaDeliveryType;
+            clip.setCreationDate(creationDate);
+            clip.setPublisherName(publisherName);
+            clip.setDisplayname(title);
+            clip.setFilesize(filesize);
+            clip.setEncodingRate(encodingRate);
+            clip.setWidth((int) frameWidth);
+            clip.setHeight((int) frameHeight);
+            clip.setVideoCodec(videoCodec);
+            clip.setDownloadURL(downloadurl);
+            clip.setMediaDeliveryType(mediaDeliveryType);
             media.add(clip);
         }
         return media;
@@ -216,22 +216,120 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     public static class BrightcoveClipData {
 
-        public static final String ext = ".mp4";
-        public String              displayName;
-        public String              shortDescription;
-        public String              publisherName;
-        public String              videoCodec;
-        public String              downloadurl;
-        public long                width;
-        public long                height;
-        public long                length;
-        public long                creationDate;
-        public long                encodingRate;
-        public long                size;
-        public long                mediaDeliveryType;
+        private final String ext = ".mp4";
+        private String       displayName;
+        private String       shortDescription;
+        private String       publisherName;
+        private String       videoCodec;
+        private String       downloadurl;
+
+        private int          width;
+        private int          height;
+        private int          length;
+
+        private long         creationDate;
+        private long         encodingRate;
+        private long         size;
+        private long         mediaDeliveryType;
 
         public BrightcoveClipData() {
             //
+        }
+
+        public String getDisplayName() {
+            return this.displayName;
+        }
+
+        public String getShortDescription() {
+            return this.shortDescription;
+        }
+
+        public String getPublisherName() {
+            return this.publisherName;
+        }
+
+        public String getVideoCodec() {
+            return this.videoCodec;
+        }
+
+        public String getDownloadURL() {
+            return this.downloadurl;
+        }
+
+        public int getWidth() {
+            return this.width;
+        }
+
+        public int getHeight() {
+            return this.height;
+        }
+
+        public int getLength() {
+            return this.length;
+        }
+
+        public long getFilesize() {
+            return this.size;
+        }
+
+        public long getCreationDate() {
+            return this.creationDate;
+        }
+
+        public long getEncodingRate() {
+            return this.encodingRate;
+        }
+
+        public long getMediaDeliveryType() {
+            return this.mediaDeliveryType;
+        }
+
+        public void setDisplayname(final String displayName) {
+            this.displayName = displayName;
+        }
+
+        public void setShortDescription(final String shortDescription) {
+            this.shortDescription = shortDescription;
+        }
+
+        public void setPublisherName(final String publisherName) {
+            this.publisherName = publisherName;
+        }
+
+        public void setVideoCodec(final String videoCodec) {
+            this.videoCodec = videoCodec;
+        }
+
+        public void setDownloadURL(final String downloadURL) {
+            this.downloadurl = downloadURL;
+        }
+
+        public void setWidth(final int width) {
+            this.width = width;
+        }
+
+        public void setHeight(final int height) {
+            this.height = height;
+        }
+
+        public void setLength(final int length) {
+            this.length = length;
+        }
+
+        public void setFilesize(final long filesize) {
+            this.size = filesize;
+        }
+
+        public void setCreationDate(final long creationDate) {
+            this.creationDate = creationDate;
+        }
+
+        public void setEncodingRate(final long encodingRate) {
+            this.encodingRate = encodingRate;
+        }
+
+        public void setMediaDeliveryType(final long mediaDeliveryType) {
+            this.mediaDeliveryType = mediaDeliveryType;
         }
 
         @Override
@@ -256,6 +354,213 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             }
             return formattedDate;
         }
+
+    }
+
+    public static String brightcoveEdgeRegexIDAccount(final Browser br) {
+        return br.getRegex("data\\-account\\s*=\\s*(\"|')(\\d+)\\1").getMatch(1);
+    }
+
+    public static String brightcoveEdgeRegexIDVideo(final Browser br) {
+        return br.getRegex("data\\-video\\-id\\s*=\\s*(\"|')(\\d+)\\1").getMatch(1);
+    }
+
+    public static String getPolicyKey(final Browser br, final String accountID) throws DecrypterException, Exception {
+        if (br == null || StringUtils.isEmpty(accountID)) {
+            return null;
+        }
+        final String bcJS = br.getRegex("<script src=(\"|')(//players\\.brightcove\\.net/" + accountID + "/.*?)\\1></script>").getMatch(1);
+        if (StringUtils.isEmpty(bcJS)) {
+            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+        }
+        final Browser js = br.cloneBrowser();
+        js.getHeaders().put("Accept", "*/*");
+        js.getPage(bcJS);
+        final String policyKey = PluginJSonUtils.getJson(js, "policyKey");
+        return policyKey;
+    }
+
+    public static void setAPIHeaders(final Browser br, final String policyKey) {
+        br.getHeaders().put("Accept", "application/json;pk=" + policyKey);
+    }
+
+    public static ArrayList<BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br) throws DecrypterException, Exception {
+        final String accountID = brightcoveEdgeRegexIDAccount(br);
+        final String videoID = brightcoveEdgeRegexIDAccount(br);
+        final String policyKey = getPolicyKey(br, accountID);
+        return findAllQualities(br, accountID, videoID, policyKey);
+    }
+
+    public static ArrayList<BrightcoveEdgeContainer> findAllQualities(final Browser br, final String accountID, final String videoID, final String policyKey) throws IOException {
+        if (br == null || StringUtils.isEmpty(accountID) || StringUtils.isEmpty(videoID) || StringUtils.isEmpty(policyKey)) {
+            return null;
+        }
+        /* TODO: Brightcove edge parser goes here */
+        setAPIHeaders(br, policyKey);
+        br.getPage(String.format("https://edge.api.brightcove.com/playback/v1/accounts/%s/videos/%s", accountID, videoID));
+        /* TODO: Add functionality */
+        return null;
+    }
+
+    public static class BrightcoveEdgeContainer {
+
+        private String ext;
+        private String account_id;
+        private String reference_id;
+
+        private String name;
+        private String description;
+        private String descriptionLong;
+        private String published_at;
+        private String created_at;
+
+        private String publisherName;
+        private String videoCodec;
+        private String downloadurl;
+
+        private long   width;
+        private long   height;
+        private long   length;
+        private long   size;
+
+        public BrightcoveEdgeContainer() {
+            ext = ".mp4";
+        }
+
+        public String getAccountID() {
+            return this.account_id;
+        }
+
+        public String getReferenceID() {
+            return this.reference_id;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public String getDescription() {
+            return this.description;
+        }
+
+        public String getDescriptionLong() {
+            return this.descriptionLong;
+        }
+
+        public String getPublishedAT() {
+            return this.published_at;
+        }
+
+        public String getCreatedAT() {
+            return this.created_at;
+        }
+
+        public String getPublisherName() {
+            return this.publisherName;
+        }
+
+        public String getVideoCodec() {
+            return this.videoCodec;
+        }
+
+        public String getDownloadURL() {
+            return this.downloadurl;
+        }
+
+        public long getWidth() {
+            return this.width;
+        }
+
+        public long getHeight() {
+            return this.height;
+        }
+
+        public long getDuration() {
+            return this.length;
+        }
+
+        public long getFilesize() {
+            return this.size;
+        }
+
+        public void setAccountID(final String accountID) {
+            this.account_id = accountID;
+        }
+
+        public void setReferenceID(final String referenceID) {
+            this.reference_id = referenceID;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public void setDescription(final String description) {
+            this.description = description;
+        }
+
+        public void setDescriptionLong(final String descriptionLong) {
+            this.descriptionLong = descriptionLong;
+        }
+
+        public void setPublishedAT(final String publishedAT) {
+            this.published_at = publishedAT;
+        }
+
+        public void setCreatedAT(final String createdAT) {
+            this.created_at = createdAT;
+        }
+
+        public void setPublisherName(final String publisherName) {
+            this.publisherName = publisherName;
+        }
+
+        public void setVideoCodec(final String videoCodec) {
+            this.videoCodec = videoCodec;
+        }
+
+        public void setDownloadURL(final String downloadURL) {
+            this.downloadurl = downloadURL;
+        }
+
+        public void setWidth(final long width) {
+            this.width = width;
+        }
+
+        public void setHeight(long height) {
+            this.height = height;
+        }
+
+        public void setDuration(final long duration) {
+            this.length = duration;
+        }
+
+        public void setFilesize(final long filesize) {
+            this.size = filesize;
+        }
+
+        @Override
+        public String toString() {
+            return name + "_" + width + "x" + height;
+        }
+
+        public String getStandardFilename() {
+            return "null_date_formatted" + "_" + publisherName + "_" + name + "_" + width + "x" + height + "_" + videoCodec + ext;
+        }
+
+        // private String formatDate(final long date) {
+        // String formattedDate = null;
+        // final String targetFormat = "yyyy-MM-dd";
+        // Date theDate = new Date(date);
+        // try {
+        // final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+        // formattedDate = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent input error killing plugin */
+        // formattedDate = Long.toString(date);
+        // }
+        // return formattedDate;
+        // }
 
     }
 

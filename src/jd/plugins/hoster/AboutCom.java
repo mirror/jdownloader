@@ -28,7 +28,7 @@ import jd.plugins.download.DownloadInterface;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "about.com" }, urls = { "http://(www\\.)?video\\.about\\.com/\\w+/[\\w\\-]+\\.htm" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "about.com" }, urls = { "https?://(?:www\\.)?video\\.about\\.com/\\w+/[\\w\\-]+\\.htm" })
 public class AboutCom extends PluginForHost {
 
     private String DLLINK = null;

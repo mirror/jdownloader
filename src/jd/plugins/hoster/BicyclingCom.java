@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -28,6 +26,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bicycling.com" }, urls = { "http://(?:www\\.)?bicycling\\.com/video/[a-z0-9\\-_]+" })
 public class BicyclingCom extends antiDDoSForHost {
@@ -85,12 +85,12 @@ public class BicyclingCom extends antiDDoSForHost {
         getPage(brightcove_URL);
         final jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this, this.br);
 
-        String filename = bestBrightcoveVersion.displayName;
-        if (bestBrightcoveVersion == null || bestBrightcoveVersion.creationDate == -1 || filename == null || bestBrightcoveVersion.downloadurl == null) {
+        String filename = bestBrightcoveVersion.getDisplayName();
+        if (bestBrightcoveVersion == null || bestBrightcoveVersion.getCreationDate() == -1 || filename == null || bestBrightcoveVersion.getDownloadURL() == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = bestBrightcoveVersion.downloadurl;
-        final String date_formatted = formatDate(bestBrightcoveVersion.creationDate);
+        dllink = bestBrightcoveVersion.getDownloadURL();
+        final String date_formatted = formatDate(bestBrightcoveVersion.getCreationDate());
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -100,7 +100,7 @@ public class BicyclingCom extends antiDDoSForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        downloadLink.setDownloadSize(bestBrightcoveVersion.size);
+        downloadLink.setDownloadSize(bestBrightcoveVersion.getFilesize());
         return AvailableStatus.TRUE;
     }
 

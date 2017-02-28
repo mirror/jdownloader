@@ -40,7 +40,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|http://realitykingsdecrypted.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realitykings.com" }, urls = { "https?://(?:new\\.)?members\\.realitykings\\.com/video/download/\\d+/[A-Za-z0-9\\-_]+/|realitykingsdecrypted://.+" })
 public class RealityKingsCom extends PluginForHost {
 
     public RealityKingsCom(PluginWrapper wrapper) {
@@ -55,26 +55,26 @@ public class RealityKingsCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME          = false;
+    private static final int     FREE_MAXCHUNKS       = 1;
+    private static final int     FREE_MAXDOWNLOADS    = 1;
+    private static final boolean ACCOUNT_RESUME       = true;
+    private static final int     ACCOUNT_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_MAXDOWNLOADS = 20;
 
-    private final String         type_premium_pic             = ".+\\.jpg.*?";
+    private final String         type_premium_pic     = ".+\\.jpg.*?";
 
-    public static final String   html_loggedin                = "/member/profile/";
+    public static final String   html_loggedin        = "/member/profile/";
 
-    private String               dllink                       = null;
-    private boolean              server_issues                = false;
+    private String               dllink               = null;
+    private boolean              server_issues        = false;
 
     public static Browser prepBR(final Browser br) {
         return jd.plugins.hoster.BrazzersCom.pornportalPrepBR(br, jd.plugins.decrypter.RealityKingsCom.DOMAIN_PREFIX_PREMIUM + jd.plugins.decrypter.RealityKingsCom.DOMAIN_BASE);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://realitykingsdecrypted", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("realitykingsdecrypted://", "http://"));
     }
 
     @SuppressWarnings("deprecation")
@@ -152,14 +152,7 @@ public class RealityKingsCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
@@ -230,11 +223,20 @@ public class RealityKingsCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ai.setUnlimitedTraffic();
-        account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        if (this.br.containsHTML("class=\"js\\-upgrade\\-banner hidden\"")) {
+            /*
+             * 2017-02-28: Added free account support. Advantages: View trailers (also possible without account), view picture galleries
+             * (only possible via free/premium account, free is limited to max 99 viewable pictures!)
+             */
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Account");
+        } else {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Account");
+        }
+        account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium Account");
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
@@ -247,7 +249,7 @@ public class RealityKingsCom extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -274,7 +276,7 @@ public class RealityKingsCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return ACCOUNT_MAXDOWNLOADS;
     }
 
     @Override

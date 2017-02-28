@@ -182,7 +182,7 @@ public class DigitalplaygroundCom extends PluginForDecrypt {
                 return null;
             }
 
-            final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.BrazzersCom.getVideoMap(json);
+            final LinkedHashMap<String, Object> entries = jd.plugins.decrypter.WickedCom.getVideoMapHttpStream(json);
 
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {

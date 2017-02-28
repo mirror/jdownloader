@@ -62,6 +62,10 @@ public class YounowComChannel extends PluginForDecrypt {
                 return decryptedLinks;
             }
             do {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                }
+
                 addedlinks_temp = 0;
                 this.br.getHeaders().put("Accept", "application/json, text/plain, */*");
                 this.br.getHeaders().put("Referer", "https://www.younow.com/" + username + "/channel");

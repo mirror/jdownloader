@@ -38,6 +38,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wicked.com" }, urls = { "https?://ma\\.wicked\\.com/(?:watch/\\d+(?:/[a-z0-9\\-_]+/?)?|galleries/\\d+(?:/[a-z0-9\\-_]+/?)?)|https?://(?:www\\.)?wicked\\.com/tour/movie/\\d+(?:/[a-z0-9\\-_]+/?)?" })
 public class WickedCom extends PluginForDecrypt {
 
@@ -92,7 +94,7 @@ public class WickedCom extends PluginForDecrypt {
                     return null;
                 }
 
-                entries = jd.plugins.decrypter.BrazzersCom.getVideoMap(json);
+                entries = getVideoMapHttpStream(json);
             } else {
                 /* We're not logged in but maybe the user has an account to download later. */
                 entries = getDummyQualityMap(fid);
@@ -177,6 +179,16 @@ public class WickedCom extends PluginForDecrypt {
             return false;
         }
         return true;
+    }
+
+    public static LinkedHashMap<String, Object> getVideoMapHttpStream(final String json_source) {
+        LinkedHashMap<String, Object> entries = null;
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = (LinkedHashMap<String, Object>) entries.get("stream_info");
+        } catch (final Throwable e) {
+        }
+        return jd.plugins.decrypter.BrazzersCom.getVideoMapHttpStreams(entries);
     }
 
     public static String[] getPictureArray(final Browser br) {
