@@ -56,7 +56,7 @@ public class SexZindianCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/video_missing")) {
+        if (br.getURL().contains("/video_missing") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);

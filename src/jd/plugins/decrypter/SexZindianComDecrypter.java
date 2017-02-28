@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "http://(?:www\\.)?sexzindian\\.com/video/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "https?://(?:www\\.)?sexzindian\\.com/videos?/\\d+" })
 public class SexZindianComDecrypter extends PornEmbedParser {
 
     public SexZindianComDecrypter(PluginWrapper wrapper) {
