@@ -522,7 +522,7 @@ public class RealDebridCom extends PluginForHost {
             final AtomicBoolean loginsInvalid = new AtomicBoolean(false);
             final AccountLoginOAuthChallenge challenge = new AccountLoginOAuthChallenge(getHost(), null, account, code.getDirect_verification_url()) {
 
-                private long lastValidation;
+                private volatile long lastValidation = -1;
 
                 @Override
                 public Plugin getPlugin() {
@@ -546,7 +546,7 @@ public class RealDebridCom extends PluginForHost {
                 }
 
                 @Override
-                public boolean autoSolveChallenge() {
+                public boolean autoSolveChallenge(SolverJob<Boolean> job) {
                     try {
                         String verificationUrl = getUrl();
                         autoSolveBr.clearCookies(verificationUrl);
@@ -557,6 +557,7 @@ public class RealDebridCom extends PluginForHost {
                         autoSolveBr.submitForm(loginForm);
                         if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
                             loginsInvalid.set(true);
+                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                             return false;
                         }
                         Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
@@ -565,6 +566,7 @@ public class RealDebridCom extends PluginForHost {
                         final ClientSecret clientSecret = checkCredentials(code);
                         if (clientSecret != null) {
                             clientSecretResult.set(clientSecret);
+                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
                             return true;
                         }
                     } catch (Throwable e) {

@@ -1,8 +1,9 @@
 package org.jdownloader.captcha.v2.challenge.oauth;
 
-import org.jdownloader.translate._JDT;
-
 import jd.plugins.Account;
+
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.translate._JDT;
 
 public abstract class AccountLoginOAuthChallenge extends OAuthChallenge {
 
@@ -29,6 +30,6 @@ public abstract class AccountLoginOAuthChallenge extends OAuthChallenge {
         return false;
     }
 
-    public abstract boolean autoSolveChallenge();
+    public abstract boolean autoSolveChallenge(SolverJob<Boolean> job);
 
 }
