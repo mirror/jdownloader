@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "http://(www\\.)?nonktube\\.com/(?:porn/)?video/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "https?://(www\\.)?nonktube\\.com/(?:porn/)?video/\\d+/[a-z0-9\\-]+" })
 public class NonktubeCom extends PluginForHost {
 
     public NonktubeCom(PluginWrapper wrapper) {
@@ -55,6 +55,11 @@ public class NonktubeCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.nonktube.com/static/terms";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        // 20170228 Referrer should be https
+        link.setUrlDownload(link.getDownloadURL().replace("http:", "https:"));
     }
 
     @SuppressWarnings("deprecation")
