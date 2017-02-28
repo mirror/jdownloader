@@ -183,11 +183,35 @@ public class BrazzersCom extends PluginForDecrypt {
         return br.getRegex("\\.addVideoInfo\\((.*?)\\)").getMatch(0);
     }
 
-    public static LinkedHashMap<String, Object> getVideoMap(final String json_source) {
+    public static LinkedHashMap<String, Object> getVideoMapHttpStreams(final String json) {
         LinkedHashMap<String, Object> entries = null;
         try {
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "player/stream_info/http/paths");
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+        } catch (final Throwable e) {
+        }
+        return getVideoMapHttpStreams(entries);
+    }
+
+    public static LinkedHashMap<String, Object> getVideoMapHttpStreams(LinkedHashMap<String, Object> entries) {
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "stream_info/http/paths");
+        } catch (final Throwable e) {
+        }
+        return entries;
+    }
+
+    public static LinkedHashMap<String, Object> getVideoMapHttpDownloads(final String json) {
+        LinkedHashMap<String, Object> entries = null;
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+        } catch (final Throwable e) {
+        }
+        return getVideoMapHttpDownloads(entries);
+    }
+
+    public static LinkedHashMap<String, Object> getVideoMapHttpDownloads(LinkedHashMap<String, Object> entries) {
+        try {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "downloadHttp/paths");
         } catch (final Throwable e) {
         }
         return entries;

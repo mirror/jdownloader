@@ -86,12 +86,12 @@ public class HandelsblattCom extends PluginForHost {
         this.br.getPage(brightcove_URL);
         final jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this, this.br);
 
-        String filename = bestBrightcoveVersion.displayName;
-        if (bestBrightcoveVersion == null || bestBrightcoveVersion.creationDate == -1 || filename == null || bestBrightcoveVersion.downloadurl == null) {
+        String filename = bestBrightcoveVersion.getDisplayName();
+        if (bestBrightcoveVersion == null || bestBrightcoveVersion.getCreationDate() == -1 || filename == null || bestBrightcoveVersion.getDownloadURL() == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = bestBrightcoveVersion.downloadurl;
-        final String date_formatted = formatDate(bestBrightcoveVersion.creationDate);
+        dllink = bestBrightcoveVersion.getDownloadURL();
+        final String date_formatted = formatDate(bestBrightcoveVersion.getCreationDate());
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -101,7 +101,7 @@ public class HandelsblattCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        downloadLink.setDownloadSize(bestBrightcoveVersion.size);
+        downloadLink.setDownloadSize(bestBrightcoveVersion.getFilesize());
         return AvailableStatus.TRUE;
     }
 

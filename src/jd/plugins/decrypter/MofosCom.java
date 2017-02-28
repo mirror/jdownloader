@@ -68,7 +68,7 @@ public class MofosCom extends PluginForDecrypt {
                 title = fid;
             }
             final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
-            final String htmldownload = this.br.getRegex("<div class=\"download\\-frame\">(.*?</a>)[\t\n\r ]*?</div>").getMatch(0);
+            final String htmldownload = this.br.getRegex("<div class=\"[^\"]*?download\\-frame[^\"]*?\">(.*?</a>)[\t\n\r ]*?</div>").getMatch(0);
             final String[] dlinfo = htmldownload.split("</a>");
             for (final String video : dlinfo) {
                 final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
