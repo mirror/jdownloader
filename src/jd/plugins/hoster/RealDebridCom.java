@@ -553,10 +553,13 @@ public class RealDebridCom extends PluginForHost {
                         final String verificationUrl = getUrl();
                         autoSolveBr.clearCookies(verificationUrl);
                         autoSolveBr.getPage(verificationUrl);
-                        final Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                        Form loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                        if (loginForm == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                         if (loginForm.containsHTML("g-recaptcha")) {
                             logger.info("Login requires Recaptcha");
-                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account", getHost(), "https://real-debrid.com", true);
+                            final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getPass(), getHost(), "https://real-debrid.com", true);
                             RealDebridCom.this.setDownloadLink(dummyLink);
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
                             loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -569,16 +572,43 @@ public class RealDebridCom extends PluginForHost {
                             job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                             return false;
                         }
-                        final Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
-                        allow.setPreferredSubmit("Allow");
-                        autoSolveBr.submitForm(allow);
-                        final ClientSecret clientSecret = checkCredentials(code);
-                        if (clientSecret != null) {
-                            clientSecretResult.set(clientSecret);
-                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
-                            return true;
+                        Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
+                        if (allow == null) {
+                            loginForm = autoSolveBr.getFormbyActionRegex("/authorize\\?.+");
+                            if (loginForm == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            if (loginForm.containsHTML("g-recaptcha")) {
+                                logger.info("Login requires Recaptcha");
+                                final DownloadLink dummyLink = new DownloadLink(RealDebridCom.this, "Account:" + getAccount().getPass(), getHost(), "https://real-debrid.com", true);
+                                RealDebridCom.this.setDownloadLink(dummyLink);
+                                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(RealDebridCom.this, autoSolveBr).getToken();
+                                loginForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            }
+                            loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
+                            loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
+                            autoSolveBr.submitForm(loginForm);
+                            if (autoSolveBr.containsHTML("Your login informations are incorrect")) {
+                                loginsInvalid.set(true);
+                                job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                                return false;
+                            }
+                            allow = autoSolveBr.getFormBySubmitvalue("Allow");
+                        }
+                        if (allow != null) {
+                            allow.setPreferredSubmit("Allow");
+                            autoSolveBr.submitForm(allow);
+                            final ClientSecret clientSecret = checkCredentials(code);
+                            if (clientSecret != null) {
+                                clientSecretResult.set(clientSecret);
+                                job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
+                                return true;
+                            }
                         }
                     } catch (CaptchaException e) {
+                        logger.log(e);
+                        job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
+                    } catch (PluginException e) {
                         logger.log(e);
                         job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, false));
                     } catch (InterruptedException e) {
