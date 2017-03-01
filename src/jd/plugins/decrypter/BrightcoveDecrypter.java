@@ -20,12 +20,15 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -36,6 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brightcove.com" }, urls = { "https?://c\\.brightcove\\.com/services/viewer/htmlFederated\\?.+" })
@@ -216,24 +220,28 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     public static class BrightcoveClipData {
 
-        private final String ext = ".mp4";
-        private String       displayName;
-        private String       shortDescription;
-        private String       publisherName;
-        private String       videoCodec;
-        private String       downloadurl;
+        private String ext;
+        private String displayName;
+        private String shortDescription;
+        private String publisherName;
+        private String videoCodec;
+        private String downloadurl;
 
-        private int          width;
-        private int          height;
-        private int          length;
+        private int    width;
+        private int    height;
+        private int    length;
 
-        private long         creationDate;
-        private long         encodingRate;
-        private long         size;
-        private long         mediaDeliveryType;
+        private long   creationDate;
+        private long   encodingRate;
+        private long   size;
+        private long   mediaDeliveryType;
 
         public BrightcoveClipData() {
-            //
+            ext = ".mp4";
+        }
+
+        public String getFileExtension() {
+            return this.ext;
         }
 
         public String getDisplayName() {
@@ -282,6 +290,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
         public long getMediaDeliveryType() {
             return this.mediaDeliveryType;
+        }
+
+        public void setFileExtension(final String fileExtension) {
+            this.ext = fileExtension;
         }
 
         public void setDisplayname(final String displayName) {
@@ -338,7 +350,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public String getStandardFilename() {
-            return formatDate(creationDate) + "_" + publisherName + "_" + displayName + "_" + width + "x" + height + "_" + videoCodec + ext;
+            return formatDate(this.getCreationDate()) + "_" + this.getPublisherName() + "_" + this.getDisplayName() + "_" + this.getWidth() + "x" + this.getHeight() + "_" + this.getVideoCodec() + this.getFileExtension();
         }
 
         private String formatDate(final long date) {
@@ -384,22 +396,140 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         br.getHeaders().put("Accept", "application/json;pk=" + policyKey);
     }
 
-    public static ArrayList<BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br) throws DecrypterException, Exception {
+    public static String getAPIPlaybackUrl(final String accountID, final String videoID) {
+        return String.format("https://edge.api.brightcove.com/playback/v1/accounts/%s/videos/%s", accountID, videoID);
+    }
+
+    public static String getHlsMasterHttp(final String videoID) {
+        /* Possible additional (not required) parameter: 'pubId' e.g. '&pubId=4013' */
+        return String.format("http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=%s", videoID);
+    }
+
+    public static String getHlsMasterHttps(final String videoID) {
+        /* Possible additional (not required) parameter: 'pubId' e.g. '&pubId=4013' */
+        return String.format("https://secure.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=%s&secure=true", videoID);
+    }
+
+    public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br) throws DecrypterException, Exception {
         final String accountID = brightcoveEdgeRegexIDAccount(br);
         final String videoID = brightcoveEdgeRegexIDAccount(br);
         final String policyKey = getPolicyKey(br, accountID);
-        return findAllQualities(br, accountID, videoID, policyKey);
+        return findAllQualities(br, accountID, videoID, policyKey, true);
     }
 
-    public static ArrayList<BrightcoveEdgeContainer> findAllQualities(final Browser br, final String accountID, final String videoID, final String policyKey) throws IOException {
-        if (br == null || StringUtils.isEmpty(accountID) || StringUtils.isEmpty(videoID) || StringUtils.isEmpty(policyKey)) {
+    public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br, final boolean crawlHLS) throws DecrypterException, Exception {
+        final String accountID = brightcoveEdgeRegexIDAccount(br);
+        final String videoID = brightcoveEdgeRegexIDAccount(br);
+        final String policyKey = getPolicyKey(br, accountID);
+        return findAllQualities(br, accountID, videoID, policyKey, crawlHLS);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static HashMap<String, BrightcoveEdgeContainer> findAllQualities(final Browser br, final String accountID, final String referenceID, final String policyKey, final boolean crawlHLS) throws IOException {
+        if (br == null || StringUtils.isEmpty(accountID) || StringUtils.isEmpty(referenceID) || StringUtils.isEmpty(policyKey)) {
             return null;
         }
+        final String source_host = br.getHost();
+
+        final HashMap<String, BrightcoveEdgeContainer> all_found_qualities = new HashMap<String, BrightcoveEdgeContainer>();
         /* TODO: Brightcove edge parser goes here */
         setAPIHeaders(br, policyKey);
-        br.getPage(String.format("https://edge.api.brightcove.com/playback/v1/accounts/%s/videos/%s", accountID, videoID));
-        /* TODO: Add functionality */
-        return null;
+        br.getPage(getAPIPlaybackUrl(accountID, referenceID));
+        try {
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final ArrayList<Object> sources = (ArrayList<Object>) entries.get("sources");
+            final String name = (String) entries.get("name");
+            final String published_at = (String) entries.get("published_at");
+            final String created_at = (String) entries.get("created_at");
+            String description = null;
+            String description_long = null;
+            /* The videoID which can be used to build hls-master-urls. */
+            String videoID = null;
+            String publisherInfo = null;
+            try {
+                /* Rather unimportant things */
+                description = (String) entries.get("description");
+                description_long = (String) entries.get("long_description");
+                videoID = (String) entries.get("id");
+                publisherInfo = (String) JavaScriptEngineFactory.walkJson(entries, "link/url");
+            } catch (final Throwable e) {
+            }
+            final long duration_general = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
+
+            if (publisherInfo == null || publisherInfo.equals("")) {
+                publisherInfo = source_host;
+            }
+            final String publisher_name = new Regex(publisherInfo, "https?://(?:www\\.)?([^/]+)").getMatch(0).replace(".", "_");
+
+            for (final Object sourceo : sources) {
+                entries = (LinkedHashMap<String, Object>) sourceo;
+                final long duration = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
+                final long width = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+                final long height = JavaScriptEngineFactory.toLong(entries.get("height"), 0);
+                final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                final String codec = (String) entries.get("codec");
+                final String src = (String) entries.get("src");
+                final String app_name = (String) entries.get("app_name");
+                final String type = (String) entries.get("type");
+
+                if (src == null || codec == null || width == 0 || height == 0) {
+                    /* Skip invalid items */
+                    continue;
+                }
+
+                BrightcoveEdgeContainer bcont = null;
+                if (type != null && type.equalsIgnoreCase("application/x-mpegURL") || src.contains(".m3u8")) {
+                    /* HLS */
+                    if (!crawlHLS) {
+                        /* Skip HLS if it's not required. */
+                        continue;
+                    }
+                    final Browser brc = br.cloneBrowser();
+                    /* Access hls master. */
+                    br.getPage(src);
+                    final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(brc);
+                    if (hlsContainers != null) {
+                        for (final HlsContainer hlsCont : hlsContainers) {
+                            bcont = new BrightcoveEdgeContainer(accountID, referenceID, name, hlsCont.getHeight(), hlsCont.getWidth());
+                            bcont.setDuration(duration_general);
+                            bcont.setVideoCodec(codec);
+                            bcont.setDownloadURL(hlsCont.getDownloadurl());
+                            bcont.setPublishedAT(published_at);
+                            bcont.setPublisherName(publisher_name);
+                            bcont.setCreatedAT(created_at);
+                            bcont.setDescription(description);
+                            bcont.setDescriptionLong(description_long);
+                            /* TODO: Set protocol!, What to do with multiple same widths but different/higher "BANDWIDTH" values?? */
+                            all_found_qualities.put(Integer.toString(hlsCont.getWidth()), bcont);
+                        }
+                    }
+
+                } else if (src.startsWith("rtmp") || src.startsWith("http")) {
+                    bcont = new BrightcoveEdgeContainer(accountID, referenceID, name, (int) height, (int) width);
+                    bcont.setFilesize(size);
+                    bcont.setDuration(duration);
+                    bcont.setVideoCodec(codec);
+                    bcont.setDownloadURL(src);
+                    bcont.setPublishedAT(published_at);
+                    bcont.setPublisherName(publisher_name);
+                    bcont.setCreatedAT(created_at);
+                    bcont.setDescription(description);
+                    bcont.setDescriptionLong(description_long);
+                    /* TODO: Set protocol! */
+                    if (src.startsWith("rtmp")) {
+                        bcont.setAppName(app_name);
+                    } else {
+                    }
+                    all_found_qualities.put(Long.toString(width), bcont);
+                } else {
+                    /* Skip unknown formats/protocols */
+                    continue;
+                }
+            }
+
+        } catch (final Throwable e) {
+        }
+        return all_found_qualities;
     }
 
     public static class BrightcoveEdgeContainer {
@@ -417,14 +547,35 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         private String publisherName;
         private String videoCodec;
         private String downloadurl;
+        private String app_name;
 
         private long   width;
         private long   height;
         private long   length;
         private long   size;
 
-        public BrightcoveEdgeContainer() {
+        public void init() {
             ext = ".mp4";
+        }
+
+        public BrightcoveEdgeContainer() {
+            init();
+        }
+
+        public BrightcoveEdgeContainer(final String accountID, final String referenceID) {
+            init();
+            this.setAccountID(accountID);
+            this.setReferenceID(referenceID);
+        }
+
+        public BrightcoveEdgeContainer(final String accountID, final String referenceID, final String name, final int height, final int width) {
+            init();
+            this.setHeight(height);
+            this.setWidth(width);
+        }
+
+        public String getFileExtension() {
+            return this.ext;
         }
 
         public String getAccountID() {
@@ -467,6 +618,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             return this.downloadurl;
         }
 
+        public String getAppName() {
+            return this.app_name;
+        }
+
         public long getWidth() {
             return this.width;
         }
@@ -481,6 +636,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
         public long getFilesize() {
             return this.size;
+        }
+
+        public void setFileExtension(final String fileExtension) {
+            this.ext = fileExtension;
         }
 
         public void setAccountID(final String accountID) {
@@ -523,6 +682,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             this.downloadurl = downloadURL;
         }
 
+        public void setAppName(final String appName) {
+            this.app_name = appName;
+        }
+
         public void setWidth(final long width) {
             this.width = width;
         }
@@ -532,11 +695,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public void setDuration(final long duration) {
-            this.length = duration;
+            if (duration > 0) {
+                this.length = duration;
+            }
         }
 
         public void setFilesize(final long filesize) {
-            this.size = filesize;
+            if (filesize > 0) {
+                this.size = filesize;
+            }
         }
 
         @Override
@@ -545,22 +712,20 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public String getStandardFilename() {
-            return "null_date_formatted" + "_" + publisherName + "_" + name + "_" + width + "x" + height + "_" + videoCodec + ext;
+            return formatDate(this.getPublishedAT()) + "_" + this.getPublisherName() + "_" + this.getName() + "_" + this.getWidth() + "x" + this.getHeight() + "_" + this.getVideoCodec() + this.getFileExtension();
         }
 
-        // private String formatDate(final long date) {
-        // String formattedDate = null;
-        // final String targetFormat = "yyyy-MM-dd";
-        // Date theDate = new Date(date);
-        // try {
-        // final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-        // formattedDate = formatter.format(theDate);
-        // } catch (Exception e) {
-        // /* prevent input error killing plugin */
-        // formattedDate = Long.toString(date);
-        // }
-        // return formattedDate;
-        // }
+        /** Formats input to yyyy-MM-dd */
+        private static String formatDate(final String input) {
+            if (input == null) {
+                return null;
+            }
+            String output = new Regex(input, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            if (output == null) {
+                output = input;
+            }
+            return output;
+        }
 
     }
 
