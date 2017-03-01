@@ -41,7 +41,7 @@ import jd.plugins.components.UnavailableHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "" })
 public class RapidsPl extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
@@ -88,10 +88,10 @@ public class RapidsPl extends PluginForHost {
             if (apikey == null) {
                 br.getPage("/profil/api");
                 // 64-bit key (changed 08.08.2016)
-                apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{64})\\s*<").getMatch(0);
+                apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{64})\\s*<").getMatch(0);
                 if (apikey == null) {
                     // 32 bit key (old)
-                    apikey = br.getRegex("<strong>Klucz: ([a-z0-9]{32})\\s*<").getMatch(0);
+                    apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{32})\\s*<").getMatch(0);
                 }
                 if (apikey == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -174,7 +174,7 @@ public class RapidsPl extends PluginForHost {
         this.br = newBrowser();
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
-            br.postPage("http://rapids.pl/api/check", "key=" + account.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.postPage("https://rapids.pl/api/check", "key=" + account.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
             handleAPIErrors(account, link);
             dllink = PluginJSonUtils.getJsonValue(br, "dlUrl");
             showMessage(link, "Phase 1/2: Generating final downloadlink");
@@ -288,7 +288,7 @@ public class RapidsPl extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 final String lang = System.getProperty("user.language");
-                br.postPage("http://rapids.pl/konto/zaloguj", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://rapids.pl/konto/loguj", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "remember_me") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
