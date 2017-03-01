@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "https?://(www\\.)?shooshtime\\.com/(videos/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shooshtime.com" }, urls = { "https?://(www\\.)?shooshtime\\.com/(videos/(?:[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+/|webcam\\-girls/[A-Za-z0-9\\-_]+/)" })
 public class ShooshTimeCom extends PluginForHost {
 
     public ShooshTimeCom(PluginWrapper wrapper) {
@@ -49,10 +49,11 @@ public class ShooshTimeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([^/]+)/$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("id=\"player\"") | !br.containsHTML("shooshtime\\.com")) {
+        if (!br.containsHTML("id=\"player\"") | !br.containsHTML("shooshtime\\.com") | br.containsHTML("<h1></h1>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- Porn, Sex, Free Porno</title>").getMatch(0);
