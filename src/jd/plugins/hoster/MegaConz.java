@@ -570,7 +570,12 @@ public class MegaConz extends PluginForHost {
             final String parentNode = getParentNodeID(link);
             if (Thread.currentThread() instanceof SingleDownloadController) {
                 final Account account = ((SingleDownloadController) (Thread.currentThread())).getAccount();
-                response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
+                if (account != null && getHost().equals(account.getHosterByPlugin())) {
+                    response = apiRequest(account, getSID(account), parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
+                } else {
+                    response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
+                }
+
             } else {
                 response = apiRequest(null, null, parentNode != null ? (UrlQuery.parse("n=" + parentNode)) : null, "g", new Object[] { isPublic(link) ? "p" : "n", fileID });
             }
