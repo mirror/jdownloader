@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 /**
  * @author raztoki
@@ -59,8 +59,9 @@ public class UrLnkBz extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 400 });
         br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 400 || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

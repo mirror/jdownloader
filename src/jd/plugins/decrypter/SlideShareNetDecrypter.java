@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "http://(?:(?:www|es|de|fr|pt)\\.)?slideshare\\.net/(?!search|business)[a-z0-9\\-_]+/[a-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "http://(?:(?:www|es|de|fr|pt)\\.)?slideshare\\.net/(?!search|business)[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class SlideShareNetDecrypter extends PluginForDecrypt {
 
     public SlideShareNetDecrypter(PluginWrapper wrapper) {
@@ -43,13 +43,13 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
 
     // This decrypter checks whether a document is downloadable or not. In case it's not, it will try to get the document in pictures.
 
-    private static final String FILENOTFOUND    = ">Sorry\\! We could not find what you were looking for|>Don\\'t worry, we will help you get to the right place|<title>404 error\\. Page Not Found\\.</title>";
     private static final String NOTDOWNLOADABLE = "class=\"sprite iconNoDownload j\\-tooltip\"";
 
     private static final String TYPE_INVALID    = "https?://(?:[a-z0-9]+\\.)?slideshare\\.net/(?:search|business).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        jd.plugins.hoster.SlideShareNet.prepBR(this.br);
         final String parameter = param.toString().replaceAll("https?://(?:[a-z0-9]+\\.)?slideshare\\.net/", "http://www.slideshare.net/");
         if (parameter.matches(TYPE_INVALID)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -58,16 +58,10 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
         final DownloadLink mainlink = createDownloadlink(parameter.replace("slideshare.net/", "slidesharedecrypted.net/"));
         String filename = null;
         getUserLogin(false);
-        try {
-            br.getPage(parameter);
-        } catch (final Exception e) {
-            if (br.getHttpConnection().getResponseCode() == 410) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            } else {
-                decryptedLinks.add(mainlink);
-                return decryptedLinks;
-            }
+        br.getPage(parameter);
+        if (jd.plugins.hoster.SlideShareNet.isOffline(this.br)) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         if (this.br.containsHTML("class=\"profileHeader\"")) {
             /* All documents/presentations/videos/info graphics of a user */
@@ -96,15 +90,11 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
             } while (next != null);
         } else {
             /* Single url */
-            if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename.trim());
             }
-            // Only decrypt pictures if the document itself isn't downloadable
+            /* Only decrypt pictures if the document itself isn't officially downloadable */
             if (br.containsHTML(NOTDOWNLOADABLE)) {
                 if (filename == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

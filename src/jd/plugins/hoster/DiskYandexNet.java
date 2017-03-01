@@ -149,7 +149,7 @@ public class DiskYandexNet extends PluginForHost {
             br.getPage(link.getDownloadURL());
             if (link.getDownloadURL().matches(TYPE_VIDEO_USER)) {
                 /* offline|empty|enything else (e.g. abuse) */
-                if (br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+                if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);

@@ -40,24 +40,17 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("http://", "https://");
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
-        br.getPage(parameter);
-        // Handle embedded links
+        br.setFollowRedirects(true);
+        /* Embedded URL --> Will not contain external embed urls! --> Just pass that to our hosterplugin! */
         if (parameter.matches("https?://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
-            if (br.containsHTML("File not found or deleted\\!") || this.br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            final String originalID = br.getRegex("\\&item_token=([a-z0-9]+_\\d+)\\&embed=").getMatch(0);
-            if (originalID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            parameter = "/view?i=" + originalID;
-            br.getPage(parameter);
+            final String singleEmbedID = new Regex(parameter, "ll_embed\\?f=([a-z0-9]+)$").getMatch(0);
+            final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + singleEmbedID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
+        br.getPage(parameter);
         if (isOffline(this.br)) {
             /* e.g. 'a possible violation of our terms of service' or 'a copyright violation' */
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -69,9 +62,12 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"[^\"]+(youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("https://www." + externID));
+        /* Page can contain multiple embedded YouTube videos. */
+        final String[] embedURLs = this.br.getRegex("\"[^\"]+(youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
+        if (embedURLs.length > 0) {
+            for (final String embedURLPart : embedURLs) {
+                decryptedLinks.add(createDownloadlink("https://www." + embedURLPart));
+            }
             return decryptedLinks;
         }
         String filename = br.getRegex("class=\"section_title\" style=\"vertical\\-align:top; padding\\-right:10px\">([^<>\"]*?)<img").getMatch(0);

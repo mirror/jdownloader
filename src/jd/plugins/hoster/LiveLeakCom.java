@@ -55,15 +55,20 @@ public class LiveLeakCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
-        String filename = downloadLink.getName();
-        // This should never happen
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("https://www." + this.getHost() + "/ll_embed?f=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        final String linkid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        downloadLink.setLinkID(linkid);
+
+        br.getPage("https://www." + this.getHost() + "/ll_embed?f=" + linkid);
         if (br.containsHTML("File not found or deleted\\!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
+        String filename = this.br.getRegex("shareTitle\\s*?:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
+        if (filename == null) {
+            /* Fallback */
+            filename = linkid;
+        }
+
         String ext = ".mp4";
         DLLINK = br.getRegex("source src=\"(http[^<>\"]+)\"[^>]*?label=\"HD\"").getMatch(0);
         if (DLLINK == null) {

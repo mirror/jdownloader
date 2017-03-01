@@ -67,6 +67,21 @@ public class SlideShareNet extends PluginForHost {
     private boolean             isVideo         = false;
     private boolean             server_issues   = false;
 
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 410, 500 });
+        return br;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 410) {
+            return true;
+        } else if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
+            return true;
+        }
+        return false;
+    }
+
     // TODO: Implement API: http://www.slideshare.net/developers/documentation
     @SuppressWarnings("deprecation")
     @Override
@@ -75,8 +90,7 @@ public class SlideShareNet extends PluginForHost {
         isVideo = false;
         server_issues = false;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(410);
+        prepBR(this.br);
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -127,38 +141,43 @@ public class SlideShareNet extends PluginForHost {
                 final String embedCode = this.br.getRegex("embed_code/key/([A-Za-z0-9]+)").getMatch(0);
                 if (embedCode != null && !embedCode.equals("")) {
                     this.br.getPage("/slideshow/embed_code/key/" + embedCode);
-                    /* E.g. https://vcdn.slidesharecdn.com/160818dataanalyticsandsocialmedia-160907135456-lva1-app6892-video-SD.mp4 */
-                    /*
-                     * 2016-11-23: videourl can also be built via information in json (in multiple places) but it (currently) makes more
-                     * sense to grad it from the "embed_code" html code."
-                     */
-                    dllink = this.br.getRegex("(//[^<>\"]+\\.mp4)").getMatch(0);
-                    if (dllink != null) {
-                        /* Fix protocol/beginning of the url. */
-                        dllink = "https:" + dllink;
+                    if (this.br.getHttpConnection().getResponseCode() == 500) {
+                        /* HTTP/1.1 500 INKApi Error */
+                        server_issues = true;
+                    } else {
+                        /* E.g. https://vcdn.slidesharecdn.com/160818dataanalyticsandsocialmedia-160907135456-lva1-app6892-video-SD.mp4 */
                         /*
-                         * Try HD first as most videos are available in HD ... and we can only try as there is no indicator on which
-                         * resolution is available - browser (http version) always uses SD.
+                         * 2016-11-23: videourl can also be built via information in json (in multiple places) but it (currently) makes more
+                         * sense to grad it from the "embed_code" html code."
                          */
-                        dllink = videourlSDtoHD(this.dllink);
-                        URLConnectionAdapter con = null;
-                        try {
-                            con = br.openHeadConnection(dllink);
-                            if (con.getResponseCode() == 403) {
-                                /* Probably HD not available --> Try SD */
-                                dllink = videourlHDtoSD(this.dllink);
-                                con = br.openHeadConnection(dllink);
-                            }
-                            if (!con.getContentType().contains("html")) {
-                                link.setDownloadSize(con.getLongContentLength());
-                                link.setProperty("directlink", dllink);
-                            } else {
-                                server_issues = true;
-                            }
-                        } finally {
+                        dllink = this.br.getRegex("(//[^<>\"]+\\.mp4)").getMatch(0);
+                        if (dllink != null) {
+                            /* Fix protocol/beginning of the url. */
+                            dllink = "https:" + dllink;
+                            /*
+                             * Try HD first as most videos are available in HD ... and we can only try as there is no indicator on which
+                             * resolution is available - browser (http version) always uses SD.
+                             */
+                            dllink = videourlSDtoHD(this.dllink);
+                            URLConnectionAdapter con = null;
                             try {
-                                con.disconnect();
-                            } catch (final Throwable e) {
+                                con = br.openHeadConnection(dllink);
+                                if (con.getResponseCode() == 403) {
+                                    /* Probably HD not available --> Try SD */
+                                    dllink = videourlHDtoSD(this.dllink);
+                                    con = br.openHeadConnection(dllink);
+                                }
+                                if (!con.getContentType().contains("html")) {
+                                    link.setDownloadSize(con.getLongContentLength());
+                                    link.setProperty("directlink", dllink);
+                                } else {
+                                    server_issues = true;
+                                }
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Throwable e) {
+                                }
                             }
                         }
                     }
