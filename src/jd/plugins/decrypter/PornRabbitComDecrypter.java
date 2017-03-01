@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" })
 public class PornRabbitComDecrypter extends PornEmbedParser {
 
     public PornRabbitComDecrypter(PluginWrapper wrapper) {
@@ -50,8 +50,8 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.isEmpty()) {
-            return null;
+        if (!decryptedLinks.isEmpty()) {
+            return decryptedLinks;
         }
         decryptedLinks = new ArrayList<DownloadLink>();
         decryptedLinks.add(createDownloadlink(parameter.replace("pornrabbit.com/", "pornrabbitdecrypted.com/")));
