@@ -420,12 +420,20 @@ public class AlfafileNet extends PluginForHost {
 
     private void handleErrorsGeneral() throws PluginException {
         final String errorcode = PluginJSonUtils.getJsonValue(br, "status");
-        final String errormessage = PluginJSonUtils.getJsonValue(br, "details");
+        String errormessage = PluginJSonUtils.getJsonValue(br, "details");
         if (errorcode != null) {
             if (errorcode.equals("401")) {
                 /* This can sometimes happen in premium mode */
                 /* {"response":null,"status":401,"details":"Unauthorized. Token doesn't exist"} */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401 - unauthorized", 5 * 60 * 1000l);
+            } else if (errorcode.equals("404")) {
+                /*
+                 * E.g. detailed errormessages: "details":"File with file_id: '1234567' doesn't exist"
+                 */
+                if (errormessage == null) {
+                    errormessage = "File does not exist according to API";
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 30 * 60 * 1000l);
             } else if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:

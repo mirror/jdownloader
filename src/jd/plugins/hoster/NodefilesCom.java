@@ -139,7 +139,7 @@ public class NodefilesCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.2.4<br />
-     * mods: scanInfo[2 new filename RegExes]<br />
+     * mods: scanInfo[2 new filename RegExes], getDllink[1 new dllink RegEx]<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -823,6 +823,11 @@ public class NodefilesCom extends PluginForHost {
         }
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                /* 2017-03-01: Special - grab embedded pdf URLs (can skip captcha, waittime and Forms) */
+                dllink = new Regex(correctedBR, "url=(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
+            }
+
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {

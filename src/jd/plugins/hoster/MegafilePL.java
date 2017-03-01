@@ -91,7 +91,7 @@ public class MegafilePL extends PluginForHost {
         showMessage(link, "Phase 1/2: Generating link");
 
         // br.setFollowRedirects(true);
-        String genlink = br.postPage("https://" + this.getHost() + "/managersAPI/downloadLink", "username=" + username + "&password=" + password + "&link=" + url);
+        final String genlink = br.postPage("https://" + this.getHost() + "/managersAPI/downloadLink", "username=" + username + "&password=" + password + "&link=" + url);
 
         // JOptionPane.showMessageDialog(null, genlink);
         showMessage(link, "Phase 2/2: Download begins!");
@@ -111,16 +111,15 @@ public class MegafilePL extends PluginForHost {
 
         dl.setAllowFilenameFromURL(true);
         if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* 2017-03-01: file offline --> Do NOT trust that message for this multihoster! */
+            logger.info("MOCH 404 --> Do temporarily disable host as this offline message is not trustworthy!");
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
+            tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
         }
-        try {
-            dl.startDownload();
-        } catch (Throwable e) {
-            link.getLinkStatus().setStatusText("Unknown error.");
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
+        dl.startDownload();
     }
 
     @Override

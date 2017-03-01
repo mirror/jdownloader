@@ -67,7 +67,8 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
         }
-        final String subtitle = this.br.getRegex("class=\"rtbf\\-media\\-item__subtitle\">([^<>\"]+)<").getMatch(0);
+        /* 2017-03-01: Removed subtitle for now as we got faulty names before. Title should actually contain everything we need! */
+        final String subtitle = null;
         final String uploadDate = PluginJSonUtils.getJsonValue(this.br, "uploadDate");
         if (uploadDate != null) {
             date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
@@ -77,23 +78,24 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String vid_text = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
-        if (vid_text == null) {
-            vid_text = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
+        // final String video_json_metadata = this.br.getRegex("<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
+        String video_json = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
+        if (video_json == null) {
+            video_json = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
         }
-        if (vid_text == null) {
-            vid_text = this.br.getRegex("data\\-media=\"(.*?)\"></div>").getMatch(0);
+        if (video_json == null) {
+            video_json = this.br.getRegex("data\\-media=\"(.*?)\"></div>").getMatch(0);
         }
-        if (vid_text == null) {
+        if (video_json == null) {
             return null;
         }
         // this is json encoded with htmlentities.
-        vid_text = HTMLEntities.unhtmlentities(vid_text);
-        vid_text = Encoding.htmlDecode(vid_text);
-        vid_text = PluginJSonUtils.unescape(vid_text);
+        video_json = HTMLEntities.unhtmlentities(video_json);
+        video_json = Encoding.htmlDecode(video_json);
+        video_json = PluginJSonUtils.unescape(video_json);
         // we can get filename here also.
         if (title == null) {
-            title = PluginJSonUtils.getJsonValue(vid_text, "title");
+            title = PluginJSonUtils.getJsonValue(video_json, "title");
         }
         if (title == null) {
             return null;
@@ -102,7 +104,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (date_formatted != null) {
             title = date_formatted + "_" + title;
         }
-        if (subtitle != null) {
+        if (subtitle != null && !subtitle.equalsIgnoreCase("{{subtitle}}")) {
             title = title + " - " + subtitle;
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -112,7 +114,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         for (final String[] qualityinfo : qualities) {
             final String qualityCfg = qualityinfo[0];
             final String qualityJson = qualityinfo[1];
-            final String qualityDllink = PluginJSonUtils.getJsonValue(vid_text, qualityJson);
+            final String qualityDllink = PluginJSonUtils.getJsonValue(video_json, qualityJson);
             if (qualityDllink != null && formats.containsKey(qualityCfg) && cfg.getBooleanProperty("ALLOW_" + qualityCfg, true)) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String[] vidinfo = formats.get(qualityCfg);
