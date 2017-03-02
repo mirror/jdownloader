@@ -17,7 +17,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision: 35284 $", interfaceVersion = 3, names = { "oracle.com" }, urls = { "https://updates.oracle.com/Orion/Services/download/.*?\\?aru=\\d+&patch_file=(.+)" })
+@HostPlugin(revision = "$Revision: 35284 $", interfaceVersion = 3, names = { "oracle.com" }, urls = { "(https?://updates\\.oracle\\.com/Orion/Services/download/.*?\\?aru=\\d+&patch_file=(.+)|https?://.*?oracle\\.com/.*?download\\?fileName=.*?&token=.+)" })
 public class OracleCom extends PluginForHost {
 
     public OracleCom(PluginWrapper wrapper) {
@@ -80,7 +80,10 @@ public class OracleCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        final String name = new Regex(parameter.getPluginPatternMatcher(), "patch_file=(.+?)(&|$)").getMatch(0);
+        String name = new Regex(parameter.getPluginPatternMatcher(), "patch_file=(.+?)(&|$)").getMatch(0);
+        if (name == null) {
+            name = new Regex(parameter.getPluginPatternMatcher(), "fileName=(.+?)(&|$)").getMatch(0);
+        }
         if (name != null) {
             parameter.setName(name);
         } else {
@@ -106,6 +109,18 @@ public class OracleCom extends PluginForHost {
             }
         } else if (StringUtils.contains(con.getContentType(), "text")) {
             br.followConnection();
+            // Form form = br.getForm(0);
+            // if (form != null) {
+            // form.put("username", Encoding.urlEncode(account.getUser()));
+            // form.put("password", Encoding.urlEncode(account.getPass()));
+            // br.submitForm(form);
+            // form = br.getForm(0);
+            // if (form != null) {
+            // form.put("ssousername", Encoding.urlEncode(account.getUser()));
+            // form.put("password", Encoding.urlEncode(account.getPass()));
+            // br.submitForm(form);
+            // }
+            // }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
