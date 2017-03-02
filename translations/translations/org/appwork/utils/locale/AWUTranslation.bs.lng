@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Ovaj dijalog ima odbrojavanje i zatvara se nakon 
 active=Omogućeno
 connecting=Povezivanje...
 crossSystem_open_url_failed_msg=Molimo otvorite ovaj link u svom internet pregledniku
+debug_menu=Otklanjanja grešaka - & Razvojni meni
 download_msg=Uredu
 download_title=Download
 extdatecolumn_dateandtimeformat=dd.MM.yy.HH:mm
