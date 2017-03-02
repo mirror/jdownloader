@@ -21,8 +21,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -35,6 +33,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "skai.gr" }, urls = { "http://skaidecrypted\\d+" })
 public class SkaiGr extends PluginForHost {
@@ -78,7 +78,8 @@ public class SkaiGr extends PluginForHost {
         final String date = getXML("Date");
         final String description = getXML("Description");
         dllink = getXML("File");
-        if (show == null || title == null || date == null || dllink == null) {
+        downloadLink.setContentUrl(dllink);
+        if (title == null || date == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String date_formatted = formatDate(date);
