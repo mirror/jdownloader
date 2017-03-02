@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Questa finestra ha un contatore e si chiuderà do
 active=Abilitato
 connecting=Connessione...
 crossSystem_open_url_failed_msg=Apri questo collegamento nel browser:
+debug_menu=Debug & Menu developer
 download_msg=Download file
 download_title=Download
 extdatecolumn_dateandtimeformat=gg.MM.aa HH:mm

@@ -58,5 +58,7 @@ securityLoading=Stai cercando di caricare e eseguire Javascript da %s1. Ricordat
 securityLoading_title=Avviso sicurezza
 showMessageDialog_title=Messaggio di allerta da %s1@%s2
 sure_delete_entries=Vuoi veramente eliminare %s1 script?
+synchronous=Esecuzione sincrona degli script
+synchronous_desc=Abilita l'esecuzione asincrona se non vuoi che questo script sia eseguito di nuovo mentre la prima istanza è ancora in esecuzione. Se desideri modificare i parametri correlati assicurati di aver abilitato l'opzione.
 syntax_error=Errore sintassi Javascript
 title=Scripter eventi
