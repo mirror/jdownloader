@@ -301,7 +301,6 @@ public class Zip4J extends IExtraction {
                     break;
                 }
             }
-            initFilters();
             updateContentView(zipFile);
         } catch (Throwable e) {
             logger.log(e);
@@ -314,6 +313,7 @@ public class Zip4J extends IExtraction {
         final Archive archive = getExtractionController().getArchive();
         try {
             if (archive != null) {
+                initFilters();
                 final ContentView newView = new ContentView();
                 final List<Object> fileHeaders = zipFile.getFileHeaders();
                 for (int index = 0; index < fileHeaders.size(); index++) {
