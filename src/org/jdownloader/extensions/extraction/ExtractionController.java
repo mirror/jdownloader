@@ -218,7 +218,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         try {
             fireEvent(ExtractionEvent.Type.START);
             archive.onStartExtracting();
-            crashLog.write("Date: " + new Date());
+            crashLog.write("Date:" + new Date());
             crashLog.write("Start Extracting");
             crashLog.write("Extension Setup: \r\n" + extension.getSettings().toString());
 
