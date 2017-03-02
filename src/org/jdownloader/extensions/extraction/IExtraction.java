@@ -18,6 +18,7 @@ package org.jdownloader.extensions.extraction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -43,16 +44,16 @@ public abstract class IExtraction {
     private ArchiveFile          lastAccessedArchiveFile;
     private ExtractLogFileWriter crashLog;
 
-    private List<Pattern>        filters = new ArrayList<Pattern>();
+    private List<Matcher>        filters = new ArrayList<Matcher>();
 
     protected void initFilters() {
         final String[] patternStrings = getConfig().getBlacklistPatterns();
-        final List<Pattern> filters = new ArrayList<Pattern>();
+        final List<Matcher> filters = new ArrayList<Matcher>();
         if (patternStrings != null && patternStrings.length > 0) {
             for (final String patternString : patternStrings) {
                 try {
                     if (StringUtils.isNotEmpty(patternString) && !patternString.startsWith("##")) {
-                        filters.add(Pattern.compile(patternString));
+                        filters.add(Pattern.compile(patternString).matcher(""));
                     }
                 } catch (final Throwable e) {
                     getLogger().log(e);
@@ -64,9 +65,9 @@ public abstract class IExtraction {
 
     protected boolean isFiltered(final String path) {
         final String check = "/".concat(path);
-        for (final Pattern regex : filters) {
+        for (final Matcher regex : filters) {
             try {
-                if (regex.matcher(check).matches()) {
+                if (regex.reset(check).matches()) {
                     return true;
                 }
             } catch (final Throwable e) {
