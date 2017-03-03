@@ -597,8 +597,10 @@ public class PobierzTo extends PluginForHost {
             /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
+            ai.setUnlimitedTraffic();
         } else {
             br.getPage("/account_edit." + type);
+
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -617,15 +619,30 @@ public class PobierzTo extends PluginForHost {
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
                 ai.setStatus("Registered (free) user");
+                ai.setUnlimitedTraffic();
             } else {
                 ai.setValidUntil(expire_milliseconds);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
                 ai.setStatus("Premium account");
+                /*
+                 * Free accounts also show traffic related information at this position in the html code but that is the storage-space left
+                 * of the account --> Show unlimited trafficleft for free accounts!
+                 */
+                final Regex trafficleftStuff = this.br.getRegex("<span>\\s*?Pobrano\\s*?<span>([^<>\"]+)</span>\\s*?/\\s*?([0-9\\.]+ (?:GB|MB|KB))");
+                final String trafficUsedStr = trafficleftStuff.getMatch(0);
+                final String trafficMaxDailyStr = trafficleftStuff.getMatch(1);
+                if (trafficUsedStr != null && trafficMaxDailyStr != null) {
+                    final long trafficUsed = SizeFormatter.getSize(trafficUsedStr);
+                    final long trafficMaxDaily = SizeFormatter.getSize(trafficMaxDailyStr);
+                    ai.setTrafficLeft(trafficMaxDaily - trafficUsed);
+                    ai.setTrafficMax(trafficMaxDaily);
+                } else {
+                    ai.setUnlimitedTraffic();
+                }
             }
         }
         account.setValid(true);
-        ai.setUnlimitedTraffic();
         return ai;
     }
 
