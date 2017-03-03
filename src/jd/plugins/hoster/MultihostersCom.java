@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.WeakHashMap;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
@@ -34,11 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multihosters.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multihosters.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class MultihostersCom extends PluginForHost {
 
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap = new WeakHashMap<Account, HashMap<String, Long>>();
@@ -113,6 +113,9 @@ public class MultihostersCom extends PluginForHost {
             account.setValid(false);
             account.setTempDisabled(false);
         } else {
+            if (br.containsHTML("<[^>]+>")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Provider issued html", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             ArrayList<String> supportedHosts = new ArrayList<String>();
             if (!"0".equals(hosts.trim())) {
                 String hoster[] = new Regex(hosts, "(.*?)(,|$)").getColumn(0);
