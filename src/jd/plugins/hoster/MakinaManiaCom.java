@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.net" }, urls = { "http://(www\\.)?makinamania\\.(com|net)/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" })
 public class MakinaManiaCom extends PluginForHost {
 
     public MakinaManiaCom(PluginWrapper wrapper) {
@@ -48,13 +48,13 @@ public class MakinaManiaCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.makinamania.com/";
+        return "http://www.makinamania.net/";
     }
 
-    private static final String MAINPAGE         = "http://makinamania.com";
+    private static final String MAINPAGE         = "http://makinamania.net";
     private static Object       LOCK             = new Object();
     private static final String NOCHUNKS         = "NOCHUNKS";
-    private static final String ATTACHEDFILELINK = "http://(www\\.)?makinamania\\.com/index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+";
+    private static final String ATTACHEDFILELINK = "http://(www\\.)?makinamania\\.(com|net)/index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -139,7 +139,7 @@ public class MakinaManiaCom extends PluginForHost {
                         return;
                     }
                 }
-                br.postPage("http://www.makinamania.com/index.php?action=login2", "&user=" + Encoding.urlEncode(account.getUser()) + "&passwrd=" + Encoding.urlEncode(account.getPass()) + "&cookielength=999&hash_passwrd=");
+                br.postPage("http://www.makinamania.net/index.php?action=login2", "&user=" + Encoding.urlEncode(account.getUser()) + "&passwrd=" + Encoding.urlEncode(account.getPass()) + "&cookielength=999&hash_passwrd=");
                 if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("sa=check")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -183,7 +183,7 @@ public class MakinaManiaCom extends PluginForHost {
         br.setFollowRedirects(false);
         String dllink = br.getRegex("\"javascript:download\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(\"|\\')(http://machines\\.makinamania\\.com/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
+            dllink = br.getRegex("(\"|\\')(http://machines\\.makinamania\\.(?:com|net)/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
         }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
