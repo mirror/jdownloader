@@ -483,7 +483,7 @@ public class Ardmediathek extends PluginForDecrypt {
                         logger.info("Adding unknoqn quality: " + quality);
                         finalSelectedQualityMap.put(quality, dl);
                     }
-                } else if (selectedQualities.contains(quality) || atLeastOneSelectedItemExists) {
+                } else if (selectedQualities.contains(quality) || !atLeastOneSelectedItemExists) {
                     /* User has selected this particular quality OR we have to add it because user plugin settings were bad! */
                     finalSelectedQualityMap.put(quality, dl);
                 }

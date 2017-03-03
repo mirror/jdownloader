@@ -16,9 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -241,98 +238,73 @@ public class NowVideoEu extends PluginForHost {
                 }
             }
         }
-        // 20160805-raztoki
-        final String[] sources = br.getRegex("<source src=\"(.*?)\"").getColumn(0);
-        if (sources != null && sources.length > 0) {
-            final ArrayList<String> s = new ArrayList<String>(Arrays.asList(sources));
-            Collections.shuffle(s);
-            Browser br2 = null;
-            for (final String d : s) {
-                br2 = br.cloneBrowser();
-                try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, d, true, 0);
-                } catch (final Throwable e) {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (final Throwable ee) {
-                    }
-                    logger.info("Download attempt failed:\r\n");
-                    e.printStackTrace();
-                    continue;
-                }
-                if (!dl.getConnection().getContentType().contains("html")) {
-                    if (downloadLink.getFinalFileName() == null) {
-                        downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(d, ".mp4"));
-                    }
-                    dl.startDownload();
-                    return;
-                }
+        final String newWay = this.br.getRegex("\"(/download\\.php\\?file=[^<>\"]+)\"").getMatch(0);
+        if (newWay != null) {
+            /* 2017-03-03 */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, newWay, true, 0);
+            dl.startDownload();
+        } else {
+            // old
+            final String cid1 = br.getRegex("flashvars\\.cid=\"(\\d+)\";").getMatch(0);
+            final String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
+            String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
+            if (fKey == null) {
+                fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
             }
-            if (dl.getConnection().getContentType().contains("html")) {
-                br2.followConnection();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            if (fKey == null && br.containsHTML("w,i,s,e")) {
+                String result = unWise();
+                fKey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
             }
-        }
-        // old
-        final String cid1 = br.getRegex("flashvars\\.cid=\"(\\d+)\";").getMatch(0);
-        final String cid2 = br.getRegex("flashvars\\.cid2=\"(\\d+)\";").getMatch(0);
-        String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
-        if (fKey == null) {
-            fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
-        }
-        if (fKey == null && br.containsHTML("w,i,s,e")) {
-            String result = unWise();
-            fKey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
-        }
-        if (fKey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=" + cid1 + "&cid2=" + (cid2 == null ? "undefined" : cid2) + "&cid3=" + br.getHost() + "&numOfErrors=";
-        final String host = new Regex(br.getURL(), "https?://[^/]+").getMatch(-1);
-        int errCount = 0;
-        br.getPage(player + errCount);
-        if (br.containsHTML("The video is being transfered")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
-        }
-        if (br.containsHTML("error=1&error_msg=The video is converting")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster Issue: Video still Converting", 30 * 60 * 1000);
-        }
-        if (br.containsHTML("error_msg=The video has failed to convert")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'The video has failed to convert'", 60 * 60 * 1000l);
-        }
-        String dllink = br.getRegex("url=(https?://[^<>\"]*?\\.(?:flv|avi))\\&title").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // set correct file extension, flv != avi!
-        if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".mp4"));
-        }
-        // end of final filename correction
-        while (true) {
-            if (errCount >= 1) {
-                br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
-                br.getPage(host + player + errCount + "&errorCode=404&errorUrl=" + Encoding.urlEncode(dllink));
-                dllink = br.getRegex("url=(https?://[^<>\"]+\\.(?:flv|avi))\\&title").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 500 || dl.getConnection().getResponseCode() == 404 || dl.getConnection().getResponseCode() == 403) {
-                    if (errCount > 4) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not connect to streaming link!", 10 * 60 * 1000l);
-                    }
-                    errCount++;
-                    continue;
-                }
-                br.followConnection();
+            if (fKey == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
-            break;
+            final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=" + cid1 + "&cid2=" + (cid2 == null ? "undefined" : cid2) + "&cid3=" + br.getHost() + "&numOfErrors=";
+            final String host = new Regex(br.getURL(), "https?://[^/]+").getMatch(-1);
+            int errCount = 0;
+            br.getPage(player + errCount);
+            if (br.containsHTML("The video is being transfered")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
+            }
+            if (br.containsHTML("error=1&error_msg=The video is converting")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster Issue: Video still Converting", 30 * 60 * 1000);
+            }
+            if (br.containsHTML("error_msg=The video has failed to convert")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'The video has failed to convert'", 60 * 60 * 1000l);
+            }
+            String dllink = br.getRegex("url=(https?://[^<>\"]*?\\.(?:flv|avi))\\&title").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // set correct file extension, flv != avi!
+            if (downloadLink.getFinalFileName() == null) {
+                downloadLink.setFinalFileName(filename + getFileNameExtensionFromString(dllink, ".mp4"));
+            }
+            // end of final filename correction
+            while (true) {
+                if (errCount >= 1) {
+                    br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
+                    br.getPage(host + player + errCount + "&errorCode=404&errorUrl=" + Encoding.urlEncode(dllink));
+                    dllink = br.getRegex("url=(https?://[^<>\"]+\\.(?:flv|avi))\\&title").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    if (dl.getConnection().getResponseCode() == 500 || dl.getConnection().getResponseCode() == 404 || dl.getConnection().getResponseCode() == 403) {
+                        if (errCount > 4) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not connect to streaming link!", 10 * 60 * 1000l);
+                        }
+                        errCount++;
+                        continue;
+                    }
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.startDownload();
+                break;
+            }
         }
     }
 

@@ -26,12 +26,11 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" }) 
-public class XxxBunkerCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" })
+public class XxxBunkerCom extends PornEmbedParser {
 
     public XxxBunkerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -112,11 +111,13 @@ public class XxxBunkerCom extends PluginForDecrypt {
         String remoteembedcode = br.getRegex("remoteembedcode=\\'([^<>\"]*?)\\'").getMatch(0);
         if (remoteembedcode != null) {
             remoteembedcode = Encoding.htmlDecode(remoteembedcode);
-            externID = new Regex(remoteembedcode, "\"(http://(www\\.)?hardsextube\\.com/[^<>\"]*?)\"").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID));
+            final String html_before = this.br.toString();
+            br.getRequest().setHtmlCode(remoteembedcode);
+            decryptedLinks.addAll(findEmbedUrls(filename));
+            if (decryptedLinks.size() > 0) {
                 return decryptedLinks;
             }
+            br.getRequest().setHtmlCode(html_before);
         }
         externID3 = br.getRegex("lvid=(\\d+)").getMatch(0);
         if (externID3 != null) {

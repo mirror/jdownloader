@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -102,6 +103,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(date_user_input_underscore);
         LinkedHashMap<String, Object> entries = null;
+        HashMap<String, Object> entries2 = null;
         final String channel_name = "Rai" + chnumber_str;
         final String channel_name_with_space = "Rai " + chnumber_str;
 
@@ -113,31 +115,50 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         /* Fix sometimes invalid json - very strange way of sending errors! */
         this.br.getRequest().setHtmlCode(this.br.toString().replaceAll("\\[an error occurred\\s*?while processing this directive\\s*?\\]", ""));
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        final ArrayList<Object> daysList = (ArrayList<Object>) entries.get(channel_name_with_space);
+        Object parsedJson = JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        final ArrayList<Object> daysList;
+        if (parsedJson instanceof HashMap) {
+            entries2 = (HashMap<String, Object>) parsedJson;
+            daysList = (ArrayList<Object>) entries2.get(channel_name_with_space);
+        } else {
+            entries = (LinkedHashMap<String, Object>) parsedJson;
+            daysList = (ArrayList<Object>) entries.get(channel_name_with_space);
+        }
 
         /* Walk through all days. */
         for (final Object dayO : daysList) {
-            entries = (LinkedHashMap<String, Object>) dayO;
-            final String date_of_this_item = (String) entries.get("giorno");
+            if (dayO instanceof HashMap) {
+                entries2 = (HashMap<String, Object>) dayO;
+            } else {
+                entries = (LinkedHashMap<String, Object>) dayO;
+            }
+            final String date_of_this_item = (String) getObjectFromMap(entries, entries2, "giorno");
             if (date_of_this_item == null || !date_of_this_item.equals(date_user_input_in_json_format)) {
                 /* Date is missing or not the date we want? Skip item! */
                 continue;
             }
             /* Get all items of the day. */
-            final ArrayList<Object> itemsOfThatDayList = (ArrayList<Object>) entries.get("palinsesto");
+            final ArrayList<Object> itemsOfThatDayList = (ArrayList<Object>) getObjectFromMap(entries, entries2, "palinsesto");
             for (final Object itemsOfThatDayListO : itemsOfThatDayList) {
-                entries = (LinkedHashMap<String, Object>) itemsOfThatDayListO;
+                if (itemsOfThatDayListO instanceof HashMap) {
+                    entries2 = (HashMap<String, Object>) itemsOfThatDayListO;
+                } else {
+                    entries = (LinkedHashMap<String, Object>) itemsOfThatDayListO;
+                }
                 /* Get all programms of that day. */
-                final ArrayList<Object> programmsList = (ArrayList<Object>) entries.get("programmi");
+                final ArrayList<Object> programmsList = (ArrayList<Object>) getObjectFromMap(entries, entries2, "programmi");
                 /* Finally decrypt the programms. */
                 for (final Object programmO : programmsList) {
-                    entries = (LinkedHashMap<String, Object>) programmO;
-                    if (entries.isEmpty()) {
+                    if (programmO instanceof HashMap) {
+                        entries2 = (HashMap<String, Object>) programmO;
+                    } else {
+                        entries = (LinkedHashMap<String, Object>) programmO;
+                    }
+                    if ((entries == null || entries.isEmpty()) && (entries2 == null || entries2.isEmpty())) {
                         continue;
                     }
-                    final boolean hasVideo = ((Boolean) entries.get("hasVideo")).booleanValue();
-                    final String webLink = (String) entries.get("webLink");
+                    final boolean hasVideo = ((Boolean) getObjectFromMap(entries, entries2, "hasVideo")).booleanValue();
+                    final String webLink = (String) getObjectFromMap(entries, entries2, "webLink");
                     if (!hasVideo || webLink == null || !webLink.startsWith("/")) {
                         continue;
                     }
@@ -153,6 +174,19 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 }
             }
         }
+    }
+
+    /* Get value from parsed json if we sometimes have LinkedHashMap and sometimes HashMap. */
+    final Object getObjectFromMap(final LinkedHashMap<String, Object> entries, final HashMap<String, Object> entries2, final String key) {
+        final Object jsono;
+        if (entries2 != null) {
+            jsono = entries2.get(key);
+        } else if (entries != null) {
+            jsono = entries.get(key);
+        } else {
+            jsono = null;
+        }
+        return jsono;
     }
 
     private void decryptSingleVideo() throws DecrypterException, Exception {
