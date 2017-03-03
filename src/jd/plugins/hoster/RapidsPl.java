@@ -216,7 +216,8 @@ public class RapidsPl extends PluginForHost {
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (link != null && account != null) {
             synchronized (SUPPORTED_HOST_SETTINGS) {
-                // only available after first fetchAccountInfo, TODO: save/restore map
+                // only available after first fetchAccountInfo
+                // TODO: save/restore map
                 final Map<String, Object> settings = SUPPORTED_HOST_SETTINGS.get(account);
                 if (settings != null) {
                     final Map<String, Object> host = (Map<String, Object>) settings.get(link.getHost());
