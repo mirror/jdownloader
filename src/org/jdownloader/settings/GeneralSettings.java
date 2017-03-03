@@ -51,6 +51,16 @@ public interface GeneralSettings extends ConfigInterface {
                     return oldDownloadDirectory;
                 }
             }
+            if (CrossSystem.isLinux()) {
+                // special handling for 3rd party nas packages
+                if (new File("/var/packages/JDownloader/scripts/start-stop-status").exists()) {
+                    // Synology 3rd Party Package
+                    final String defaultDownloadFolder = "/volume1/public";
+                    if (new File(defaultDownloadFolder).exists()) {
+                        return defaultDownloadFolder;
+                    }
+                }
+            }
             return CrossSystem.getDefaultDownloadDirectory();
         }
     }
