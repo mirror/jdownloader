@@ -68,30 +68,54 @@ public class MofosCom extends PluginForDecrypt {
                 title = fid;
             }
             final String base_url = new Regex(this.br.getURL(), "(https?://[^/]+)/").getMatch(0);
-            final String htmldownload = this.br.getRegex("<div class=\"[^\"]*?download\\-frame[^\"]*?\">(.*?</a>)[\t\n\r ]*?</div>").getMatch(0);
-            final String[] dlinfo = htmldownload.split("</a>");
-            for (final String video : dlinfo) {
-                final String dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
-                String quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
-                if (quality == null) {
-                    quality = new Regex(video, ">([^>]+)$").getMatch(0);
+            boolean streamDownload = false;
+            String[] dlinfo = null;
+            String htmldownload = this.br.getRegex("<div class=\"[^\"]*?download\\-frame[^\"]*?\">(.*?</a>)[\t\n\r ]*?</div>").getMatch(0);
+            if (htmldownload != null) {
+                dlinfo = htmldownload.split("</a>");
+            } else {
+                streamDownload = true;
+                htmldownload = this.br.getRegex("(data\\-video.*?)>").getMatch(0);
+                dlinfo = htmldownload.split("\n");
+            }
+            if (dlinfo != null) {
+                for (final String video : dlinfo) {
+                    String dlurl;
+                    String quality;
+                    String filesize = null;
+                    if (streamDownload) {
+                        /* No official downloadlinks available --> Download streams */
+                        final Regex streamInfo = new Regex(video, "data\\-video\\-mp4_(\\d+)_\\d+=\"(http[^<>\"]+)");
+                        quality = streamInfo.getMatch(0);
+                        dlurl = streamInfo.getMatch(1);
+                    } else {
+                        quality = new Regex(video, "<span>([^<>\"]+)</span>").getMatch(0);
+                        if (quality == null) {
+                            quality = new Regex(video, ">([^>]+)$").getMatch(0);
+                        }
+                        filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
+                        if (filesize == null) {
+                            filesize = new Regex(video, "title=\"([0-9\\.]+ (?:MiB|GiB))\"").getMatch(0);
+                        }
+                        dlurl = new Regex(video, "\"(/[^<>\"]*?download/[^<>\"]+/)\"").getMatch(0);
+                    }
+                    if (dlurl == null || quality == null) {
+                        continue;
+                    }
+                    if (!dlurl.startsWith("http")) {
+                        dlurl = base_url + dlurl;
+                    }
+                    final DownloadLink dl = this.createDownloadlink(dlurl);
+                    if (filesize != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                        dl.setAvailable(true);
+                    }
+                    dl.setName(title + "_" + quality + ".mp4");
+                    dl.setLinkID(dl.getName());
+                    dl.setProperty("fid", fid);
+                    dl.setProperty("quality", quality);
+                    decryptedLinks.add(dl);
                 }
-                String filesize = new Regex(video, "<var>([^<>\"]+)</var>").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(video, "title=\"([0-9\\.]+ (?:MiB|GiB))\"").getMatch(0);
-                }
-                if (dlurl == null || quality == null) {
-                    continue;
-                }
-                final DownloadLink dl = this.createDownloadlink(base_url + dlurl);
-                if (filesize != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    dl.setAvailable(true);
-                }
-                dl.setName(title + "_" + quality + ".mp4");
-                dl.setProperty("fid", fid);
-                dl.setProperty("quality", quality);
-                decryptedLinks.add(dl);
             }
         } else {
             if (title == null) {

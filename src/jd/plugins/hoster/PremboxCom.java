@@ -422,13 +422,19 @@ public class PremboxCom extends PluginForHost {
         cloudOnlyHosts.clear();
         for (final Object domaininfo_o : ressourcelist) {
             final LinkedHashMap<String, Object> domaininfo = (LinkedHashMap<String, Object>) domaininfo_o;
+            /*
+             * 2017-03-03: Admin asked why we do not show all hosts so we told them that we skip offline hosts. This is a possibility for
+             * them to easily force JD to display certain hosts. So far it has not been used (not present in json).
+             */
+            final Object force_display_o = domaininfo.get("force_display");
+            final boolean force_display = force_display_o != null ? ((Boolean) force_display_o).booleanValue() : false;
             final boolean canResume = ((Boolean) domaininfo.get("resumable")).booleanValue();
             final long isoffline = JavaScriptEngineFactory.toLong(domaininfo.get("tmpTurnedOff"), 0);
             final long cloudonly = JavaScriptEngineFactory.toLong(domaininfo.get("serverOnly"), 0);
             final int maxChunks = (int) JavaScriptEngineFactory.toLong(domaininfo.get("maxChunks"), 1);
             final int maxDownloads = (int) JavaScriptEngineFactory.toLong(domaininfo.get("maxDownloads"), 1);
             final String host = correctHost((String) domaininfo.get("host"));
-            if (isoffline == 1) {
+            if (isoffline == 1 && !force_display) {
                 /* Do not add hosts that do not work at the moment. */
                 continue;
             }
