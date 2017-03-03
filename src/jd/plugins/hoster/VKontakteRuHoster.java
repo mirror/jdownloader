@@ -26,6 +26,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,20 +61,14 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|rar.+)" })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                                          = "vk.com";
     private static final String TYPE_AUDIOLINK                                  = "http://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                  = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
-    private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp[34]";
+    private static final String TYPE_DIRECT                                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.(?:mp[34]|rar.+)";
     private static final String TYPE_PICTURELINK                                = "http://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                                    = "https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                                       = 1;
@@ -144,7 +144,7 @@ public class VKontakteRuHoster extends PluginForHost {
         final CrawledLink ret = super.convert(link);
         final String url = link.getDownloadURL();
         if (url != null && url.matches(TYPE_DIRECT)) {
-            final String filename = audioGetFilenameFromDirecturl(url);
+            final String filename = extractFileNameFromURL(url);
             if (filename != null) {
                 try {
                     final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
@@ -183,7 +183,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_DIRECT)) {
             finalUrl = link.getDownloadURL();
             /* Prefer filename inside url */
-            filename = audioGetFilenameFromDirecturl(finalUrl);
+            filename = extractFileNameFromURL(finalUrl);
             checkstatus = linkOk(link, filename, isDownload);
             if (checkstatus != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -194,8 +194,25 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             MAXCHUNKS = 1;
             br.getPage(link.getDownloadURL());
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
-                br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+                    logger.info("Doc Link type redirect");
+                    br.getPage(br.getRedirectLocation());
+                } else if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DIRECT)) {
+                    logger.info("Direct Link type redirect");
+                    finalUrl = br.getRedirectLocation();
+                    /* Prefer filename inside url */
+                    filename = extractFileNameFromURL(finalUrl);
+                    checkstatus = linkOk(link, filename, isDownload);
+                    if (checkstatus != 1) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    return AvailableStatus.TRUE;
+                } else {
+                    // ??
+                    logger.info("Other redirect");
+                    br.followConnection();
+                }
             }
             if (br.containsHTML("File deleted")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -282,7 +299,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -522,10 +539,6 @@ public class VKontakteRuHoster extends PluginForHost {
         ai.setUnlimitedTraffic();
         ai.setStatus("Free Account");
         return ai;
-    }
-
-    private String audioGetFilenameFromDirecturl(final String directurl) {
-        return new Regex(directurl, "/([^<>\"/]+\\.mp[34])$").getMatch(0);
     }
 
     /* Same function in hoster and decrypterplugin, sync it!! */
