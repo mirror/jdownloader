@@ -51,8 +51,8 @@ public class JhebergNet extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
 
-    private static final String                            DOMAIN                       = "http://jheberg.net/";
-    private static final String                            HOST                         = "http://WWW.jheberg.net/";
+    private static final String                            DOMAIN                       = "https://jheberg.net/";
+    private static final String                            HOST                         = "https://www.jheberg.net/";
     private static final String                            NICE_HOST                    = "jheberg.net";
     private int                                            STATUSCODE                   = 0;
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -64,12 +64,12 @@ public class JhebergNet extends PluginForHost {
 
     public JhebergNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://jheberg.net/");
+        this.enablePremium("https://jheberg.net/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://jheberg.net/cgv/";
+        return "https://jheberg.net/cgv/";
     }
 
     private Browser newBrowser() {
@@ -166,7 +166,7 @@ public class JhebergNet extends PluginForHost {
         if (dllink == null) {
             /* request Download */
             this.br.setFollowRedirects(true);
-            this.accessAPISafe("http://www.jheberg.net/profile/debrid/link/");
+            this.accessAPISafe("https://www.jheberg.net/profile/debrid/link/");
             final String token = getToken();
             if (token == null) {
                 handleErrorRetries("tokennull", 5, 60 * 60 * 1000l);
