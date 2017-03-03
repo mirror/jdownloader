@@ -720,6 +720,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             if (input == null) {
                 return null;
             }
+            /* No need to parse the date as the format we want is already available in the input date String :) */
             String output = new Regex(input, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
             if (output == null) {
                 output = input;
