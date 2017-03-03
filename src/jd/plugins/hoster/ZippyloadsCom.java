@@ -70,14 +70,14 @@ public class ZippyloadsCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                     = "http://zippyloads.com";
+    private final String                   mainpage                                     = "https://zippyloads.com";
     private final String                   domains                                      = "(zippyloads\\.com)";
     private final String                   type                                         = "html";
     private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int               additional_WAIT_SECONDS                      = 3;
     private static final int               directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean           supportshttps                                = false;
-    private static final boolean           supportshttps_FORCED                         = false;
+    private static final boolean           supportshttps                                = true;
+    private static final boolean           supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
     private static final boolean           available_CHECK_OVER_INFO_PAGE               = true;
     private static final boolean           useOldLoginMethod                            = false;
@@ -527,11 +527,11 @@ public class ZippyloadsCom extends PluginForHost {
                     }
                 } else {
                     br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
-                    final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                    final String loginpostpage = loginstart + this.getHost();
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (!br.containsHTML("\"login_status\":\"success\"")) {
+                    br.postPage(loginpostpage, "op=login&token=&rand=&redirect=&" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (!br.containsHTML("/\\?op=logout\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
@@ -565,7 +565,7 @@ public class ZippyloadsCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            br.getPage("https://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
