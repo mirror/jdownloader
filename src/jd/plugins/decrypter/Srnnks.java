@@ -24,6 +24,12 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -38,17 +44,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/([a-z]{1,2}[_-][a-f0-9]{16}.*|go\\-[a-f0-9]{128}/)", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" })
-public class Srnnks extends PluginForDecrypt {
+public class Srnnks extends antiDDoSForDecrypt {
     class DecryptRunnable implements Runnable {
 
         private final String                  action;
@@ -66,32 +66,24 @@ public class Srnnks extends PluginForDecrypt {
             // sj heuristic detection. this makes the jobber useless... but we have to use the 300 ms to work around sj's firewall
             try {
                 Thread.sleep(FW_WAIT);
-                try {
-                    if (isAbort()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                    /* not available in old 09581 stable */
+                if (isAbort()) {
+                    return;
                 }
-                this.br.getPage(this.action);
-                if (this.br.getRedirectLocation() != null) {
+                getPage(this.action);
+                if (br.getRedirectLocation() != null) {
                     this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
                 } else {
                     // not sure if there are still pages that use this old system
 
-                    final String link = this.br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
+                    final String link = br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
 
                     if (link != null) {
                         Thread.sleep(FW_WAIT);
-                        try {
-                            if (isAbort()) {
-                                return;
-                            }
-                        } catch (final Throwable e) {
-                            /* not available in old 09581 stable */
+                        if (isAbort()) {
+                            return;
                         }
-                        this.br.getPage(link);
-                        final String loc = this.br.getRedirectLocation();
+                        getPage(link);
+                        final String loc = br.getRedirectLocation();
                         if (loc != null) {
                             this.results.add(Srnnks.this.createDownloadlink(loc));
                             return;
@@ -212,7 +204,7 @@ public class Srnnks extends PluginForDecrypt {
             String parm = parameter.toString();
             br.setFollowRedirects(false);
             br.setCookiesExclusive(true);
-            br.getPage(parm);
+            getPage(parm);
             if (br.containsHTML("<h2>Error 404 \\- Page not found\\!</h2>")) {
                 logger.warning("Invalid URL: " + parameter);
                 return decryptedLinks;
@@ -231,7 +223,7 @@ public class Srnnks extends PluginForDecrypt {
                 ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 // redirect support if the user adds copies these temp hash
                 br.setFollowRedirects(false);
-                br.getPage(parameter.getCryptedUrl());
+                getPage(parameter.getCryptedUrl());
                 String link = br.getRedirectLocation();
                 if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
@@ -250,43 +242,31 @@ public class Srnnks extends PluginForDecrypt {
 
                     for (int i = 0; i < CAPTCHA_MAXRETRIES; i++) {
                         progress.setRange(100);
-                        try {
-                            if (isAbort()) {
-                                return new ArrayList<DownloadLink>(ret);
-                            }
-                        } catch (final Throwable e) {
-                            /* not available in old 09581 stable */
+                        if (isAbort()) {
+                            return new ArrayList<DownloadLink>(ret);
                         }
                         try {
                             RUNNING.incrementAndGet();
                             synchronized (LOCK) {
                                 synchronized (Srnnks.GLOBAL_LOCK) {
                                     Thread.sleep(FW_WAIT);
-                                    try {
-                                        if (isAbort()) {
-                                            return new ArrayList<DownloadLink>(ret);
-                                        }
-                                    } catch (final Throwable e) {
-                                        /* not available in old 09581 stable */
+                                    if (isAbort()) {
+                                        return new ArrayList<DownloadLink>(ret);
                                     }
-                                    this.br.getPage(parameter.getCryptedUrl());
+                                    getPage(parameter.getCryptedUrl());
                                 }
-                                if (Srnnks.limitsReached(this.br)) {
+                                if (Srnnks.limitsReached(br)) {
                                     return new ArrayList<DownloadLink>(ret);
                                 }
 
-                                if (this.br.containsHTML("<FRAME SRC")) {
+                                if (br.containsHTML("<FRAME SRC")) {
                                     // progress.setStatusText("Lade Downloadseitenframe");
                                     synchronized (Srnnks.GLOBAL_LOCK) {
                                         Thread.sleep(FW_WAIT);
-                                        try {
-                                            if (isAbort()) {
-                                                return new ArrayList<DownloadLink>(ret);
-                                            }
-                                        } catch (final Throwable e) {
-                                            /* not available in old 09581 stable */
+                                        if (isAbort()) {
+                                            return new ArrayList<DownloadLink>(ret);
                                         }
-                                        this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
+                                        getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
                                     }
                                 }
                                 if (Srnnks.limitsReached(this.br)) {
@@ -305,7 +285,7 @@ public class Srnnks extends PluginForDecrypt {
                                 // suche wahrscheinlichste form
                                 // progress.setStatusText("Suche Captcha Form");
                                 Form form = null;
-                                forms = this.br.getForms();
+                                forms = br.getForms();
                                 int bestdist = Integer.MAX_VALUE;
                                 if (forms != null) {
                                     for (final Form form1 : forms) {
@@ -361,26 +341,18 @@ public class Srnnks extends PluginForDecrypt {
                                         // captcha laden
                                         synchronized (Srnnks.GLOBAL_LOCK) {
                                             Thread.sleep(FW_WAIT);
-                                            try {
-                                                if (isAbort()) {
-                                                    return new ArrayList<DownloadLink>(ret);
-                                                }
-                                            } catch (final Throwable e) {
-                                                /* not available in old 09581 stable */
+                                            if (isAbort()) {
+                                                return new ArrayList<DownloadLink>(ret);
                                             }
-                                            final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
+                                            final URLConnectionAdapter urlc = openAntiDDoSRequestConnection(br.cloneBrowser(), br.createGetRequest(captchaLink));
                                             Browser.download(captcha, urlc);
                                         }
                                         if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
                                             // dummy captcha without content.. wait before reloading
                                             logger.warning("Dummy Captcha. wait 3 seconds");
                                             Thread.sleep(3000);
-                                            try {
-                                                if (isAbort()) {
-                                                    return new ArrayList<DownloadLink>(ret);
-                                                }
-                                            } catch (final Throwable e) {
-                                                /* not available in old 09581 stable */
+                                            if (isAbort()) {
+                                                return new ArrayList<DownloadLink>(ret);
                                             }
                                             continue;
                                         }
@@ -414,7 +386,7 @@ public class Srnnks extends PluginForDecrypt {
                                     // System.out.println(code);
                                     synchronized (Srnnks.GLOBAL_LOCK) {
                                         Thread.sleep(FW_WAIT);
-                                        this.br.submitForm(form);
+                                        submitForm(form);
                                     }
 
                                 } else if (form.containsHTML("=\"g-recaptcha\"")) {
@@ -424,7 +396,7 @@ public class Srnnks extends PluginForDecrypt {
                                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                                         synchronized (Srnnks.GLOBAL_LOCK) {
                                             Thread.sleep(FW_WAIT);
-                                            this.br.submitForm(form);
+                                            submitForm(form);
                                             if (br.containsHTML("class=\"g-recaptcha\"")) {
                                                 // it took too long to solve. try again
                                                 continue;
@@ -451,13 +423,13 @@ public class Srnnks extends PluginForDecrypt {
                         if (Srnnks.limitsReached(this.br)) {
                             return new ArrayList<DownloadLink>(ret);
                         }
-                        if (this.br.getRedirectLocation() != null) {
-                            ret.add(this.createDownloadlink(this.br.getRedirectLocation()));
+                        if (br.getRedirectLocation() != null) {
+                            ret.add(this.createDownloadlink(br.getRedirectLocation()));
                             progress.doFinalize();
                             return new ArrayList<DownloadLink>(ret);
                         } else {
                             progress.setStatus(0);
-                            forms = this.br.getForms();
+                            forms = br.getForms();
                             // suche die downloadlinks
                             final ArrayList<String> actions = new ArrayList<String>();
                             Form cnlForm = null;
@@ -487,28 +459,18 @@ public class Srnnks extends PluginForDecrypt {
                                 if (actions.size() == 0) {
                                     progress.setStatus(10);
                                     // progress.setStatusText("Captcha code falsch");
-                                    try {
-                                        invalidateLastChallengeResponse();
-                                    } catch (final Throwable e) {
-                                    }
+                                    invalidateLastChallengeResponse();
                                     continue;
                                 } else {
-                                    try {
-                                        validateLastChallengeResponse();
-                                    } catch (final Throwable e) {
-                                    }
+                                    validateLastChallengeResponse();
                                 }
                                 // we need the 300 ms gap between two requests..
                                 progress.setRange(10 + actions.size());
                                 progress.setStatus(10);
                                 synchronized (Srnnks.GLOBAL_LOCK) {
                                     for (int d = 0; d < actions.size(); d++) {
-                                        try {
-                                            if (isAbort()) {
-                                                return new ArrayList<DownloadLink>(ret);
-                                            }
-                                        } catch (final Throwable e) {
-                                            /* not available in old 09581 stable */
+                                        if (isAbort()) {
+                                            return new ArrayList<DownloadLink>(ret);
                                         }
                                         this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
                                         progress.increase(1);

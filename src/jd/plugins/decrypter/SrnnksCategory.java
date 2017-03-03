@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -38,11 +40,10 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe|toplist).*?/.+" })
-public class SrnnksCategory extends PluginForDecrypt {
+public class SrnnksCategory extends antiDDoSForDecrypt {
 
     public SrnnksCategory(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,10 +105,10 @@ public class SrnnksCategory extends PluginForDecrypt {
             return new ArrayList<DownloadLink>();
         }
         br.setFollowRedirects(true);
-        br.getPage(parameter.getCryptedUrl());
+        getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
             // progress.setStatusText("Lade Downloadseitenframe");
-            br.getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
+            getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
         }
         if (br.containsHTML("Error 503")) {
             UserIO.getInstance().requestMessageDialog(JDL.L("plugins.decrypter.srnks.overloaded", lng_overLoadedMessage));
@@ -118,8 +119,8 @@ public class SrnnksCategory extends PluginForDecrypt {
         if (selectedCategory == null) {
             return new ArrayList<DownloadLink>();
         }
-
-        String page = br.getPage("http://serienjunkies.org/" + selectedCategory.getId() + "/");
+        getPage("http://serienjunkies.org/" + selectedCategory.getId() + "/");
+        String page = br.toString();
 
         Format selectedFormat = letTheUserSelectFormat(page);
         if (selectedFormat == null) {
