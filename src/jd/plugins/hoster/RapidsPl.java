@@ -16,16 +16,21 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -35,24 +40,25 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UnavailableHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids.pl" }, urls = { "" })
 public class RapidsPl extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
-    private static final String                                       NOCHUNKS           = "NOCHUNKS";
+    private static WeakHashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap      = new WeakHashMap<Account, HashMap<String, UnavailableHost>>();
+    private static final String                                           NOCHUNKS                = "NOCHUNKS";
 
-    private static final String                                       NICE_HOST          = "rapids.pl";
-    private static final String                                       NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                                       COOKIE_HOST        = "http://" + NICE_HOST;
+    private static final String                                           NICE_HOST               = "rapids.pl";
+    private static final String                                           NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                                           COOKIE_HOST             = "http://" + NICE_HOST;
 
-    private static Object                                             LOCK               = new Object();
-    private static boolean                                            pluginloaded       = false;
+    private static WeakHashMap<Account, Map<String, Object>>              SUPPORTED_HOST_SETTINGS = new WeakHashMap<Account, Map<String, Object>>();
 
     public RapidsPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -82,52 +88,156 @@ public class RapidsPl extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();
         final AccountInfo ac = new AccountInfo();
-        try {
-            login(account, true);
-            String apikey = account.getStringProperty("apikey", null);
-            if (apikey == null) {
-                br.getPage("/profil/api");
-                // 64-bit key (changed 08.08.2016)
-                apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{64})\\s*<").getMatch(0);
-                if (apikey == null) {
-                    // 32 bit key (old)
-                    apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{32})\\s*<").getMatch(0);
-                }
-                if (apikey == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    account.setProperty("apikey", apikey);
-                }
-            }
-            // check if account is valid
-            account.setMaxSimultanDownloads(-1);
-            account.setConcurrentUsePossible(true);
-            ac.setStatus("Premium Account");
-            br.getPage("/");
-            final String availableTraffic = br.getRegex("Pozostały transfer: <strong>([^<>\"]*?)</strong>").getMatch(0);
-            if (availableTraffic == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        login(account, true);
+        // check if account is valid
+        account.setMaxSimultanDownloads(-1);
+        account.setConcurrentUsePossible(true);
+        final Map<String, Object> transfer = callAPI(account, null, "jd_transfer");
+        if (transfer != null) {
+            final Number trafficAvailable = (Number) transfer.get("transfer");
+            if (trafficAvailable != null) {
+                ac.setStatus("Premium Account");
+                ac.setTrafficLeft(trafficAvailable.longValue());
             } else {
-                ac.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replaceAll("\\s*", "")));
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            // now let's get a list of all supported hosts:
-            final ArrayList<String> supportedHosts = new ArrayList<String>();
-            final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "wrzuta", "wrzuta.pl" }, { "rapidgator", "rapidgator.net" }, { "crocko", "crocko.com" }, { "hitfile", "hitfile.net" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" },
-                    { "keep2share", "keep2share.cc" }, { "datafile", "datafile.com" }, { "nitroflare", "nitroflare.com" } };
-            for (final String hostSet[] : hostList) {
-                if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
-                    for (int i = 1; i <= hostSet.length - 1; i++) {
-                        final String originalDomain = hostSet[i];
-                        supportedHosts.add(originalDomain);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> services = callAPI(account, null, "jd_services");
+        final HashSet<String> supportedServices = new HashSet<String>();
+        final HashSet<String> brokenServices = new HashSet<String>();
+        for (final Entry<String, Object> service : services.entrySet()) {
+            if (service.getValue() instanceof Map) {
+                final Map<String, Object> settings = (Map<String, Object>) service.getValue();
+                if (Boolean.TRUE.equals(settings.get("direct")) || Boolean.TRUE.equals(settings.get("server"))) {
+                    supportedServices.add(service.getKey());
+                } else {
+                    brokenServices.add(service.getKey());
+                }
+            }
+        }
+        final List<String> support = new ArrayList<String>(supportedServices);
+        final List<String> mapping = ac.setMultiHostSupport(this, support);
+        if (mapping != null) {
+            for (int index = 0; index < support.size(); index++) {
+                final String search = support.get(index);
+                final String replace = mapping.get(index);
+                if (replace != null && !StringUtils.equals(search, replace)) {
+                    services.put(replace, services.remove(search));
+                }
+            }
+            synchronized (SUPPORTED_HOST_SETTINGS) {
+                SUPPORTED_HOST_SETTINGS.put(account, services);
+            }
+        }
+        return ac;
+    }
+
+    public Map<String, Object> callAPI(final Account account, final DownloadLink downloadLink, final String methodName, Object[]... parameters) throws PluginException, IOException {
+        final String apiKey;
+        if (account != null) {
+            apiKey = account.getStringProperty("apikey", null);
+        } else {
+            apiKey = null;
+        }
+        PostRequest postRequest = new PostRequest("https://rapids.pl/api/" + methodName);
+        postRequest.setContentType("application/json; charset=UTF-8");
+        final Map<String, Object> requestJson = new HashMap<String, Object>();
+        requestJson.put("api_key", apiKey);
+        if (parameters != null) {
+            for (Object[] parameter : parameters) {
+                if (parameter != null && parameter.length == 2) {
+                    requestJson.put(parameter[0].toString(), parameter[1].toString());
+                }
+            }
+        }
+        postRequest.setPostBytes(JSonStorage.getMapper().objectToByteArray(requestJson));
+        br.getPage(postRequest);
+        final Map<String, Object> response = JSonStorage.restoreFromString(postRequest.getHtmlCode(), TypeRef.HASHMAP, null);
+        if (Boolean.TRUE.equals(response.get("success"))) {
+            return (Map<String, Object>) response.get("data");
+        } else {
+            try {
+                final String code = (String) response.get("code");
+                final String message = (String) response.get("message");
+                if ("jx1001".equals(code)) {
+                    if (apiKey == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message == null ? "No api key" : message);
+                    }
+                } else if ("jx1002".equals(code)) {
+                    if (account != null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, message == null ? "No access for API" : message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if ("jx1003".equals(code)) {
+                    // Missing required parameters
+                } else if ("jx1004".equals(code)) {
+                    // Invalid download type
+                } else if ("jx1005".equals(code)) {
+                    // Link was not found
+                } else if ("jx1006".equals(code)) {
+                    // Service is not supported
+                    if (account != null && downloadLink != null) {
+                        final AccountInfo ai = account.getAccountInfo();
+                        if (ai != null) {
+                            ai.removeMultiHostSupport(downloadLink.getHost());
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                    }
+                } else if ("jx1007".equals(code)) {
+                    // At the moment the service is not supported
+                    if (account != null && downloadLink != null) {
+                        tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l, message == null ? "At the moment the service is not supported" : message);
+                    }
+                } else if ("jx1008".equals(code)) {
+                    // Link was not recognized
+                } else if ("jx1009".equals(code)) {
+                    // Insufficient amount transfer
+                } else if ("jx1010".equals(code)) {
+                    // Download available after account recharging
+                } else if ("jx1011".equals(code)) {
+                    // Server error
+                }
+                if (code != null) {
+                    // catch all errors
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Code:" + code + "|Message:" + message);
+                }
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    dumpAccountInfos(account);
+                }
+                throw e;
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (link != null && account != null) {
+            synchronized (SUPPORTED_HOST_SETTINGS) {
+                // only available after first fetchAccountInfo, TODO: save/restore map
+                final Map<String, Object> settings = SUPPORTED_HOST_SETTINGS.get(account);
+                if (settings != null) {
+                    final Map<String, Object> host = (Map<String, Object>) settings.get(link.getHost());
+                    if (host != null) {
+                        final Number max = (Number) host.get("max");
+                        if (max != null) {
+                            return max.intValue();
+                        }
                     }
                 }
             }
-            ac.setMultiHostSupport(this, supportedHosts);
-        } catch (PluginException e) {
-            account.removeProperty("apikey");
-            throw e;
         }
-        return ac;
+        return super.getMaxSimultanDownload(link, account);
+    }
+
+    private void dumpAccountInfos(Account account) {
+        synchronized (SUPPORTED_HOST_SETTINGS) {
+            SUPPORTED_HOST_SETTINGS.remove(account);
+        }
+        account.removeProperty("apikey");
+        account.setProperty("cookies", Property.NULL);
     }
 
     @Override
@@ -135,9 +245,8 @@ public class RapidsPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    /** no override to keep plugin compatible to old stable */
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
             UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
@@ -170,32 +279,89 @@ public class RapidsPl extends PluginForHost {
                 }
             }
         }
-
+        login(account, false);
         this.br = newBrowser();
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
-        if (dllink == null) {
-            br.postPage("https://rapids.pl/api/check", "key=" + account.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            handleAPIErrors(account, link);
-            dllink = PluginJSonUtils.getJsonValue(br, "dlUrl");
-            showMessage(link, "Phase 1/2: Generating final downloadlink");
-            if (dllink == null) {
-                handleErrorRetries(account, link, "dllink null", 5, 10 * 60 * 1000l);
-                // logger.info(NICE_HOST + ": Final link is null -> Plugin is broken");
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Map<String, Object> checkLink = callAPI(account, link, "jd_check_link", new Object[] { "link", link.getDefaultPlugin().buildExternalDownloadURL(link, this) });
+        boolean resumeFlag = true;
+        if (Boolean.FALSE.equals(checkLink.get("resume"))) {
+            resumeFlag = false;
+        }
+        int maxConnections = 0;
+        if (resumeFlag == false) {
+            maxConnections = 1;
+        } else {
+            final Number max = (Number) checkLink.get("max");
+            if (max != null) {
+                maxConnections = -(Math.abs(max.intValue()));
             }
         }
-        showMessage(link, "Phase 2/2: Download begins!");
-        int maxChunks = 0;
-        if (link.getBooleanProperty(RapidsPl.NOCHUNKS, false)) {
-            maxChunks = 1;
+        final String downloadURL = (String) checkLink.get("download_url");
+        if (downloadURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (Boolean.TRUE.equals(checkLink.get("server"))) {
+            final String hash = (String) checkLink.get("hash");
+            if (hash == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            waitLoop: while (true) {
+                final Map<String, Object> statusLink = callAPI(account, null, "jd_status_link", new Object[] { "hash", hash });
+                final Number statusCode = (Number) statusLink.get("status_code");
+                final String status = (String) statusLink.get("status");
+                if (statusCode != null) {
+                    switch (statusCode.intValue()) {
+                    case 1:// ready;
+                        break waitLoop;
+                    case 2:// pending
+                        sleep(30 * 1000, link, status == null ? "Pending" : status);
+                        break;
+                    case 3:// initialization
+                        sleep(30 * 1000, link, status == null ? "Initialization" : status);
+                        break;
+                    case 4:// downloading
+                        sleep(30 * 1000, link, status == null ? "Downloading" : status);
+                        break;
+                    case 5:// error
+                    default:
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, status);
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        } else if (!Boolean.TRUE.equals(checkLink.get("direct"))) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, resumeFlag, maxConnections);
+        if (dl.getConnection().getContentType().contains("text")) {
             br.followConnection();
-            handleErrorRetries(account, link, "unknown error", 5, 20 * 60 * 1000l);
+            final String errorCode = new Regex(br.getURL(), "/download/error/(\\d+)").getMatch(0);
+            if (errorCode != null) {
+                switch (Integer.parseInt(errorCode)) {
+                case 1: // No access
+                    break;
+                case 2: // File not Found
+                    break;
+                case 3: // You do not have enough transfer to download this file
+                    break;
+                case 4: // Not found an available host
+                    break;
+                case 5: // Can't download the selected file
+                    break;
+                case 6: // Temporarily unable to download the selected file. Please try again later
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unable to download the selected file. Please try again later", 60 * 60 * 1000l);
+                case 7: // At the moment from your IP is downloaded file
+                    break;
+                case 8:// Your session has expired. Before you download a file, please AGAIN log in to your account
+                    dumpAccountInfos(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                case 9:// Unknown issue
+                default:
+                    break;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(NICE_HOSTproperty + "finallink", dllink);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -221,38 +387,6 @@ public class RapidsPl extends PluginForHost {
         }
     }
 
-    private void handleAPIErrors(final Account acc, final DownloadLink dl) throws PluginException {
-        if ("Link nie został rozpoznany!".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l, "Link nie został rozpoznany");
-        } else if ("Brak dostępu do API".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
-            // Maybe wrong API key
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
-
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
@@ -265,7 +399,7 @@ public class RapidsPl extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
@@ -277,7 +411,7 @@ public class RapidsPl extends PluginForHost {
                 }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
+                    if (account.isValid() && account.getStringProperty("apikey", null) != null) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
@@ -305,34 +439,23 @@ public class RapidsPl extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+
+                br.getPage("/profil/api");
+                // 64-bit key (changed 08.08.2016)
+                String apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{64})\\s*<").getMatch(0);
+                if (apikey == null) {
+                    // 32 bit key (old)
+                    apikey = br.getRegex("<strong>Klucz:\\s*([a-z0-9]{32})\\s*<").getMatch(0);
+                }
+                if (apikey == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    account.setProperty("apikey", apikey);
+                }
             } catch (final PluginException e) {
-                account.removeProperty("apikey");
-                account.setProperty("cookies", Property.NULL);
+                dumpAccountInfos(account);
                 throw e;
             }
-        }
-    }
-
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrorRetries(final Account account, final DownloadLink downloadlink, final String error, final int maxRetries, final long disableTime) throws PluginException {
-        int timesFailed = downloadlink.getIntegerProperty(NICE_HOSTproperty + "-failedtimes_" + error, 0);
-        if (timesFailed <= maxRetries) {
-            logger.info("Retrying -> " + error);
-            timesFailed++;
-            downloadlink.setProperty(NICE_HOSTproperty + "-failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            downloadlink.setProperty(NICE_HOSTproperty + "-failedtimes_" + error, Property.NULL);
-            logger.info("Disabling current host -> " + error);
-            tempUnavailableHoster(account, downloadlink, disableTime, error);
         }
     }
 
@@ -340,9 +463,7 @@ public class RapidsPl extends PluginForHost {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
-
         final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -361,6 +482,9 @@ public class RapidsPl extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(RapidsPl.NOCHUNKS);
+        }
     }
 
 }

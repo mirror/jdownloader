@@ -109,18 +109,6 @@ public class OracleCom extends PluginForHost {
             }
         } else if (StringUtils.contains(con.getContentType(), "text")) {
             br.followConnection();
-            // Form form = br.getForm(0);
-            // if (form != null) {
-            // form.put("username", Encoding.urlEncode(account.getUser()));
-            // form.put("password", Encoding.urlEncode(account.getPass()));
-            // br.submitForm(form);
-            // form = br.getForm(0);
-            // if (form != null) {
-            // form.put("ssousername", Encoding.urlEncode(account.getUser()));
-            // form.put("password", Encoding.urlEncode(account.getPass()));
-            // br.submitForm(form);
-            // }
-            // }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

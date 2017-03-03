@@ -322,7 +322,7 @@ public class WickedcloudIo extends PluginForHost {
                     if (inValidate(fileInfo[1])) {
                         // generic failover#1
                         if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = new Regex(correctedBR, ">\\s?\\((\\d+(?:\\.\\d+)? ?(KB|MB|GB)\\s*)\\)").getMatch(0);
+                            fileInfo[1] = new Regex(correctedBR, ">\\s?\\((\\d+(?:\\.\\d+)? ?(KB|MB|GB|B)\\s*)\\)").getMatch(0);
                         }
                     }
                 }
@@ -404,6 +404,9 @@ public class WickedcloudIo extends PluginForHost {
 
     @SuppressWarnings({ "unused", "deprecation" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         /* 1, bring up saved final links */
