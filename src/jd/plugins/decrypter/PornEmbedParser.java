@@ -142,7 +142,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
         }
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
+            decryptedLinks.add(createDownloadlink("http://pornrabbitdecrypted.com/video/" + externID + "/"));
             return decryptedLinks;
         }
         /* tnaflix.com handling #1 */
