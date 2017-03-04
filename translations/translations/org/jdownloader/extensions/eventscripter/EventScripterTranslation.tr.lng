@@ -59,5 +59,6 @@ securityLoading_title=Güvenlik Uyarısı!
 showMessageDialog_title=%s1@%s2 olayından alarm iletisi
 sure_delete_entries=%s1 betiği silmek istediğinize emin misiniz?
 synchronous=Betiğin eşzamanlı yürütülmesi
+synchronous_desc=Bu betiğin ilk benzeri çalışırken ikinci bir kez yürütülmesini istemiyorsanız eşzamanlı yürütmeyi etkinleştirin. Eğer kaynağa göre parametreleri değiştirmek istiyorsanız lütfen bu seçeneği etkinleştirdiğinizden emin olun.
 syntax_error=JavaScript Sözdizimi Hatası
 title=Olay Betiği Yazar
