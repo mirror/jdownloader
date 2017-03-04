@@ -93,6 +93,7 @@ TIMERDIALOG_TOOLTIP_TIMERLABEL=Bu iletide geri sayım var ve birkaç saniye sonr
 active=Etkinleştirildi
 connecting=Bağlanıyor...
 crossSystem_open_url_failed_msg=Lütfen bu bağlantıyı tarayıcınızda açın:
+debug_menu=Hata Ayıklama- ve Geliştirici Menüsü
 download_msg=Dosya indiriliyor
 download_title=İndir
 extdatecolumn_dateandtimeformat=dd.MM.yyyy HH:mm
