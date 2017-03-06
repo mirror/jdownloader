@@ -784,6 +784,7 @@ MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_=Minha Conta
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_=Ir para My.JDownloader.org
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_=Senha
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_=Salvar Alterações
+MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_tab_=Abrir aba My.JDownloader.org
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_=My.JDownloader
 MyJDownloaderSettingsPanel_runInEDT_account_badlogins=Sua conta foi desativada pois o usuário/senha fornecido está incorreto.
 MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_=Sua conta foi desativada pois seu e-mail ainda não foi confirmado. Nós enviamos um e-mail para confirmar seu endereço. Por favor, clique no link do e-mail.
