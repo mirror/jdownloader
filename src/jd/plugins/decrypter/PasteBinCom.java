@@ -42,7 +42,9 @@ public class PasteBinCom extends PluginForDecrypt {
         if (parameter.matches(type_invalid)) {
             return decryptedLinks;
         } else if (parameter.contains("/download.php?i=") || parameter.contains(".com/dl/")) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
+            final DownloadLink link = createDownloadlink("directhttp://" + parameter);
+            link.setProperty("Referer", parameter.replaceFirst("(/download\\.php\\?i=|/dl/)", "/"));
+            decryptedLinks.add(link);
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
