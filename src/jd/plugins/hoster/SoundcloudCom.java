@@ -173,6 +173,9 @@ public class SoundcloudCom extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (this.br.getHttpConnection().getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             response = getStartJsonMap(this.br.toString());
             final AvailableStatus status = checkStatusJson(this, parameter, response, true);
             if (status.equals(AvailableStatus.FALSE)) {

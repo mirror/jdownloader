@@ -361,7 +361,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                return PackagizerController.getInstance().replaceVariables(REPLACEVARIABLE.DIRECTORY, rule.getRule().getComment(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getComment() + ")";
+                return PackagizerController.getInstance().replaceVariables(REPLACEVARIABLE.COMMENT, rule.getRule().getComment(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getComment() + ")";
                 // return rule.getFilenameFilter().getRegex()
             }
         });

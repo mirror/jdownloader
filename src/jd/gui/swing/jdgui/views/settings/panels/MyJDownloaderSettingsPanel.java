@@ -25,6 +25,9 @@ import javax.swing.JButton;
 import javax.swing.JTextArea;
 
 import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
+import jd.gui.swing.jdgui.views.myjd.panels.MyJDownloaderSettingsPanelForTab;
 import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
@@ -53,19 +56,20 @@ import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements GenericConfigEventListener<Enum>, MyJDownloaderListener {
 
-    private static final long serialVersionUID = 1L;
-    private SettingsButton    openMyJDownloader;
-    private TextInput         email;
-    private PasswordInput     passWord;
+    private static final long    serialVersionUID = 1L;
+    private final SettingsButton openMyJDownloader;
+    private final TextInput      email;
+    private final PasswordInput  passWord;
 
-    private JTextArea         error;
-    private JTextArea         status;
-    private JButton           connectButton;
-    private AppAction         connectAction;
-    private AppAction         disconnectAction;
-    private AppAction         reconnectAction;
-    private ExtButton         disconnectButton;
-    private TextInput         deviceName;
+    private final JTextArea      error;
+    private final JTextArea      status;
+    private final JButton        connectButton;
+    private final AppAction      connectAction;
+    private final AppAction      disconnectAction;
+    private final AppAction      reconnectAction;
+    private final ExtButton      disconnectButton;
+    private final TextInput      deviceName;
+    private final SettingsButton openMyJDownloaderTab;
 
     public String getTitle() {
         return _GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_();
@@ -87,6 +91,17 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                 } catch (StorageException e1) {
                     e1.printStackTrace();
                 }
+            }
+        });
+        openMyJDownloaderTab = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_tab_());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JDGui.getInstance().setContent(MyJDownloaderView.getInstance(), true);
             }
         });
         deviceName = new TextInput(CFG_MYJD.DEVICE_NAME);
@@ -184,6 +199,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         this.addHeader(getTitle(), getIcon());
         this.addDescription(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
         add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
+        if (!(this instanceof MyJDownloaderSettingsPanelForTab)) {
+            add(openMyJDownloaderTab, "gapleft 37,spanx,pushx,growx");
+        }
         this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
         // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
         this.addDescriptionPlain(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins());
