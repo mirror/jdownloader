@@ -1,5 +1,14 @@
 package jd.plugins.hoster;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -15,18 +24,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.parser.UrlQuery;
-
-//"https?://put\\.io/(?:file|v2/files)/\\d+" website link
-//actuall downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://api\\.put\\.io/v2/files/\\d+/download\\?oauth_token=[A-Z0-9]+" })
+// "https?://put\\.io/(?:file|v2/files)/\\d+" website link
+// actual downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://[a-z0-9\\-]+\\.put\\.io/(?:v2/files/\\d+/download|zipstream/\\d+)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
 
     private static final String REQUIRES_ACCOUNT    = "requiresAccount";
@@ -163,7 +163,7 @@ public class PutIO extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ai.setStatus("Premium user");
+        ai.setStatus("Premium Account");
         ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
