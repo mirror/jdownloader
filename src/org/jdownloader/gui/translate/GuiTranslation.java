@@ -2532,6 +2532,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Go to My.JDownloader.org" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_();
 
+    @Default(lngs = { "en" }, values = { "Open My.JDownloader.org tab" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_tab_();
+
     @Default(lngs = { "en" }, values = { "My Account" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_();
 

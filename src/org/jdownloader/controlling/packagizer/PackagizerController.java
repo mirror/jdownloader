@@ -400,7 +400,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (StringUtils.isEmpty(packagename)) {
                     packagename = "";
                 }
-                packagename = CrossSystem.alleviatePathParts(packagename);
                 if (StringUtils.isNotEmpty(modifiers)) {
                     final Pattern patt = lgr.getPackageNameRule().getPattern();
                     final String[] matches = new Regex(packagename, patt).getRow(0);
@@ -435,7 +434,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                             if (sb.length() > 0) {
                                 sb.append("/");
                             }
-                            pathPart = CrossSystem.alleviatePathParts(pathPart);
+                            pathPart = preprocessReplacement(replaceVariable, pathPart);
                             if (StringUtils.isNotEmpty(pathPart)) {
                                 sb.append(pathPart);
                             }

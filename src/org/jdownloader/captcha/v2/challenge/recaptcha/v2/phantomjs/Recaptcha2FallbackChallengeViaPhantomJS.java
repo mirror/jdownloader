@@ -18,6 +18,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 
+import jd.captcha.gui.BasicWindow;
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.Request;
+import jd.plugins.Account;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -61,15 +70,6 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
-
-import jd.captcha.gui.BasicWindow;
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.plugins.Account;
 
 public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2FallbackChallenge {
     private static LogSource LOGGER;
@@ -418,6 +418,9 @@ public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2F
                 // reloadChallenge |= "ImageSelectStoreFront".equals(initData.get("contentType"));
                 reloadChallenge |= "multicaptcha".equals(initData.get("challengeType"));
                 if (reloadChallenge) {
+                    if (i > 1) {
+                        Thread.sleep(250);
+                    }
                     reloadResponse = null;
                     createNewSubChallenge();
                     phantom.evalInPageContext("console.log(clickReload)");
