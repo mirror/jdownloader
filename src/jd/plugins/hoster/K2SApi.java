@@ -23,13 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -53,6 +46,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -1392,11 +1392,12 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /* Reconnect workaround methods */
-    private String getIP() throws PluginException {
+    private String getIP() throws Exception {
         Browser ip = new Browser();
         String currentIP = null;
         ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
         Collections.shuffle(checkIP);
+        Exception exception = null;
         for (String ipServer : checkIP) {
             if (currentIP == null) {
                 try {
@@ -1405,11 +1406,17 @@ public abstract class K2SApi extends PluginForHost {
                     if (currentIP != null) {
                         break;
                     }
-                } catch (Throwable e) {
+                } catch (Exception e) {
+                    if (exception == null) {
+                        exception = e;
+                    }
                 }
             }
         }
         if (currentIP == null) {
+            if (exception != null) {
+                throw exception;
+            }
             logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1417,7 +1424,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
+    private boolean setIP(final DownloadLink link, final Account account) throws Exception {
         synchronized (IPCHECK) {
             if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1437,7 +1444,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private boolean ipChanged(final DownloadLink link) throws PluginException {
+    private boolean ipChanged(final DownloadLink link) throws Exception {
         String currIP = null;
         if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
             currIP = currentIP.get();

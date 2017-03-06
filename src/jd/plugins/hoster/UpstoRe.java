@@ -308,7 +308,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws PluginException {
+    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws Exception {
         synchronized (CTRLLOCK) {
             final long timestamp_download_started;
             if (remaining_reconnect_wait > 0) {
@@ -669,7 +669,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
+    private boolean setIP(final DownloadLink link, final Account account) throws Exception {
         synchronized (IPCHECK) {
             if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -709,7 +709,7 @@ public class UpstoRe extends antiDDoSForHost {
         return lastdownload;
     }
 
-    private boolean ipChanged(final DownloadLink link) throws PluginException {
+    private boolean ipChanged(final DownloadLink link) throws Exception {
         String currIP = null;
         if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
             currIP = currentIP.get();
@@ -729,11 +729,12 @@ public class UpstoRe extends antiDDoSForHost {
         return !currIP.equals(lastIP);
     }
 
-    private String getIP() throws PluginException {
+    private String getIP() throws Exception {
         Browser ip = new Browser();
         String currentIP = null;
         ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
         Collections.shuffle(checkIP);
+        Exception exception = null;
         for (String ipServer : checkIP) {
             if (currentIP == null) {
                 try {
@@ -742,11 +743,17 @@ public class UpstoRe extends antiDDoSForHost {
                     if (currentIP != null) {
                         break;
                     }
-                } catch (Throwable e) {
+                } catch (Exception e) {
+                    if (exception == null) {
+                        exception = e;
+                    }
                 }
             }
         }
         if (currentIP == null) {
+            if (exception != null) {
+                throw exception;
+            }
             logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

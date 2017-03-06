@@ -544,7 +544,8 @@ public class Video2brainCom extends PluginForHost {
         }
         ai.setStatus(statustext);
         if (validUntil > 0) {
-            ai.setValidUntil(validUntil);
+            // add 24 hours as the day seems to be valid on last day
+            ai.setValidUntil(validUntil + (24 * 60 * 60 * 1000l));
         }
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
