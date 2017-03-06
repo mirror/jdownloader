@@ -412,7 +412,7 @@ public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2F
 
     protected void handleInitData(Map<String, Object> initData) throws InterruptedException, IOException, TimeoutException {
         try {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 25; i++) {
                 boolean reloadChallenge = "unknown".equals(initData.get("challengeType"));
                 // reloadChallenge |= "dynamic".equals(initData.get("challengeType"));
                 // reloadChallenge |= "ImageSelectStoreFront".equals(initData.get("contentType"));
@@ -729,8 +729,8 @@ public class Recaptcha2FallbackChallengeViaPhantomJS extends AbstractRecaptcha2F
                 // if (sc.getChallengeType() != ChallengeType.DYNAMIC && getReloadCounter() > 0) {
                 // response.setValidation(ValidationResult.INVALID);
                 // }
-                phantom.execute(" _global['verificationResponse']=" + verificationResponse + ";");
-                Map<String, Object> initData = (Map<String, Object>) phantom.get(read("extractInitDataFromVerificationResponse.js"));
+                phantom.execute(" _global['verificationResponse']=" + verificationResponse + ";_global['verificationResponse']=_global['verificationResponse'][7];");
+                Map<String, Object> initData = (Map<String, Object>) phantom.get(read("extractInitDataFromReloadResponse.js"));
                 handleInitData(initData);
             }
             return true;
