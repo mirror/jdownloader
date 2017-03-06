@@ -1,13 +1,13 @@
 (function() {
 	var initData = verificationResponse;
-
+logger(initData);
 	ret= {};
 	ret.contentType=initData[7][4][1][0];
 	ret.x=initData[7][4][1][4];
 	ret.y=initData[7][4][1][3];
 	ret.challengeType=initData[7][5];
 	if(	typeof(initData[7][4][1][1]) !== 'undefined' ){
-		ret.explainUrl=[7][4][1][1];
+		ret.explainUrl=initData[7][4][1][1];
 	}
 
 

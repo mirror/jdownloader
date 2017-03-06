@@ -25,11 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 
-import jd.http.Browser;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.plugins.components.UserAgents;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -62,6 +57,11 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.webcache.CachedHeader;
 import org.jdownloader.webcache.CachedRequest;
 import org.jdownloader.webcache.WebCache;
+
+import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.plugins.components.UserAgents;
 
 public class PhantomJS implements HttpRequestHandler {
     private static final boolean  DEBUGGER = false;
@@ -159,9 +159,7 @@ public class PhantomJS implements HttpRequestHandler {
             if ("/webproxy".equalsIgnoreCase(path)) {
                 String url = request.getParameterbyKey("url");
                 String requestID = request.getParameterbyKey("rid");
-
                 onWebProxy(request, response, url, requestID, false);
-
             } else {
                 System.out.println("UNKNOWN");
             }
@@ -174,7 +172,6 @@ public class PhantomJS implements HttpRequestHandler {
 
     protected void onWebProxy(org.appwork.utils.net.httpserver.requests.HttpRequest request, HttpResponse response, String url, String requestID, boolean b) throws IOException {
         try {
-
             logger.info((b ? "GET" : "POST") + " " + url);
             Request newRequest = null;
             if (url.startsWith("data:")) {
@@ -186,7 +183,6 @@ public class PhantomJS implements HttpRequestHandler {
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
                 response.getOutputStream(true).write(bao.toByteArray());
                 return;
-
             }
             if (b) {
                 CachedRequest cache = webCache.get(url);
@@ -194,7 +190,6 @@ public class PhantomJS implements HttpRequestHandler {
                     // logger.info(newRequest + "");
                     for (CachedHeader s : cache.getHeaders()) {
                         for (String v : s.getValues()) {
-
                             if (StringUtils.equalsIgnoreCase(s.getKey(), "Content-Encoding")) {
                                 continue;
                             }
@@ -207,10 +202,8 @@ public class PhantomJS implements HttpRequestHandler {
                             response.getResponseHeaders().add(new HTTPHeader(s.getKey(), v));
                         }
                     }
-
                     response.getResponseHeaders().remove("Content-Encoding");
                     response.getResponseHeaders().remove("Transfer-Encoding");
-
                     response.getResponseHeaders().add(new HTTPHeader("Content-Length", cache._getBytes().length + ""));
                     response.setResponseCode(ResponseCode.get(cache.getResponseCode()));
                     logger.info("-->Cached");
@@ -218,13 +211,11 @@ public class PhantomJS implements HttpRequestHandler {
                     return;
                 }
                 newRequest = new jd.http.requests.GetRequest(url);
-
             } else {
                 newRequest = new jd.http.requests.PostRequest(url);
                 byte[] bytes = IO.readStream(-1, ((PostRequest) request).getInputStream());
                 ((jd.http.requests.PostRequest) newRequest).setPostBytes(bytes);
             }
-
             for (HTTPHeader header : request.getRequestHeaders()) {
                 if (StringUtils.equalsIgnoreCase(header.getKey(), "Host")) {
                     continue;
@@ -232,14 +223,11 @@ public class PhantomJS implements HttpRequestHandler {
                 if (StringUtils.equalsIgnoreCase(header.getKey(), "Connection")) {
                     continue;
                 }
-
                 newRequest.getHeaders().put(header.getKey(), header.getValue());
-
             }
             br.setDebug(false);
             br.setVerbose(false);
             synchronized (br) {
-
                 boolean keepBytes = br.isKeepResponseContentBytes();
                 try {
                     br.setKeepResponseContentBytes(true);
@@ -251,7 +239,6 @@ public class PhantomJS implements HttpRequestHandler {
             // logger.info(newRequest + "");
             for (Entry<String, List<String>> s : newRequest.getResponseHeaders().entrySet()) {
                 for (String v : s.getValue()) {
-
                     if (StringUtils.equalsIgnoreCase(s.getKey(), "Content-Encoding")) {
                         continue;
                     }
@@ -264,7 +251,6 @@ public class PhantomJS implements HttpRequestHandler {
                     response.getResponseHeaders().add(new HTTPHeader(s.getKey(), v));
                 }
             }
-
             // logger.info(newRequest.getHttpConnection() + "");
             byte[] data = newRequest.getResponseBytes();
             if (data == null) {
@@ -277,7 +263,6 @@ public class PhantomJS implements HttpRequestHandler {
                 cacheRequest(url, newRequest, bytes);
             }
             bytes = onRequestDone(url, b, newRequest, bytes);
-
             response.getResponseHeaders().add(new HTTPHeader("Content-Length", bytes.length + ""));
             response.setResponseCode(ResponseCode.get(newRequest.getHttpConnection().getResponseCode()));
             response.getOutputStream(true).write(bytes);
@@ -287,7 +272,6 @@ public class PhantomJS implements HttpRequestHandler {
     }
 
     protected void cacheRequest(String url, Request newRequest, byte[] bytes) {
-
         ArrayList<CachedHeader> headers = new ArrayList<CachedHeader>();
         for (Entry<String, List<String>> s : newRequest.getResponseHeaders().entrySet()) {
             if (StringUtils.equalsIgnoreCase(s.getKey(), "Content-Encoding")) {
@@ -299,18 +283,14 @@ public class PhantomJS implements HttpRequestHandler {
             if (StringUtils.equalsIgnoreCase(s.getKey(), "Content-Length")) {
                 continue;
             }
-
             headers.add(new CachedHeader(s.getKey(), s.getValue()));
-
         }
-
         webCache.put(new CachedRequest(RequestMethod.GET, url, url, newRequest.getHttpConnection().getResponseCode(), newRequest.getHttpConnection().getResponseMessage(), bytes, headers));
     }
 
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) {
         boolean requestOkay = false;
-
         try {
             String id = request.getParameterbyKey("id");
             try {
@@ -327,7 +307,6 @@ public class PhantomJS implements HttpRequestHandler {
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/json; charset=utf-8"));
                 response.getOutputStream(true).write("ok".getBytes("UTF-8"));
             } else if ("/exit".equalsIgnoreCase(path)) {
-
                 kill();
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/json; charset=utf-8"));
@@ -335,9 +314,7 @@ public class PhantomJS implements HttpRequestHandler {
             } else if ("/webproxy".equalsIgnoreCase(path)) {
                 String url = request.getParameterbyKey("url");
                 String requestID = request.getParameterbyKey("rid");
-
                 onWebProxy(request, response, url, requestID, true);
-
             } else {
                 System.out.println("UNKNOWN");
             }
@@ -345,7 +322,6 @@ public class PhantomJS implements HttpRequestHandler {
         } catch (Exception e) {
             logger.log(e);
         } finally {
-
         }
         return false;
     }
@@ -375,7 +351,6 @@ public class PhantomJS implements HttpRequestHandler {
     private boolean                       ignoreSslErrors      = false;
     private final AtomicReference<Thread> phantomProcessThread = new AtomicReference<Thread>(null);
     protected long                        id;
-
     private HashMap<Long, String>         results;
     private int                           phantomJSPort;
     private File                          scriptFile           = null;
@@ -436,7 +411,6 @@ public class PhantomJS implements HttpRequestHandler {
         webCache = initWebCache();
         ipcBrowser.setProxySelector(new ProxySelectorInterface() {
             private ArrayList<HTTPProxy> lst = new ArrayList<HTTPProxy>();
-
             {
                 lst.add(HTTPProxy.NONE);
             }
@@ -453,19 +427,15 @@ public class PhantomJS implements HttpRequestHandler {
 
             @Override
             public List<HTTPProxy> getProxiesByURL(URL uri) {
-
                 return lst;
             }
         });
         initBinaries();
-
         results = new HashMap<Long, String>();
         id = new UniqueAlltimeID().getID();
-
         initPipe();
         final OutputStream stream = new LoggerStream();
         // find free port for phantomjs
-
         final SocketAddress socketAddress = new InetSocketAddress(this.getLocalHost(), 0);
         final ServerSocket controlSocket = new ServerSocket();
         controlSocket.setReuseAddress(true);
@@ -474,7 +444,6 @@ public class PhantomJS implements HttpRequestHandler {
         controlSocket.close();
         scriptFile = Application.getTempResource("phantom_" + id + ".js");
         IO.writeStringToFile(scriptFile, replace(IO.readURLToString(PhantomJS.class.getResource("phantom.js"))));
-
         List<String> lst = createCmd();
         final ProcessBuilder pb = ProcessBuilderFactory.create(lst);
         pb.directory(exe.getParentFile());
@@ -487,12 +456,10 @@ public class PhantomJS implements HttpRequestHandler {
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
-
                 byte[] stringBytes = new byte[len];
                 System.arraycopy(b, off, stringBytes, 0, len);
                 String str = new String(stringBytes, "UTF-8");
                 sb += str;
-
                 // logger.info(str);
                 String[][] resultMatches = new Regex(sb, ">>>RESULT\\:(\\-?\\d+)\\:([^\r\n]*?)<<<\\s*[\r\n]{1,2}").getMatches();
                 if (resultMatches != null && resultMatches.length > 0) {
@@ -504,10 +471,8 @@ public class PhantomJS implements HttpRequestHandler {
                             } else {
                                 results.put(jobID, result[1]);
                             }
-
                         }
                         results.notifyAll();
-
                     }
                 }
                 String[] logs = new Regex(sb, ">>>LOG\\:([^\r\n]*?)<<<\\s*[\r\n]{1,2}").getColumn(0);
@@ -521,7 +486,6 @@ public class PhantomJS implements HttpRequestHandler {
                                 logger.info("PJS: " + JSonStorage.serializeToJson(logged));
                             }
                         }
-
                     }
                 }
                 int lastIndex = sb.lastIndexOf("<<<");
@@ -530,7 +494,6 @@ public class PhantomJS implements HttpRequestHandler {
                 }
             }
         };
-
         phantomProcessThread.set(new Thread("Phantom.JS") {
             public void run() {
                 try {
@@ -816,5 +779,4 @@ public class PhantomJS implements HttpRequestHandler {
         final HttpServer server = this.server;
         return server != null && server.isRunning() && processServerRunning.get() && phantomProcessThread != null && phantomProcessThread.isAlive();
     }
-
 }
