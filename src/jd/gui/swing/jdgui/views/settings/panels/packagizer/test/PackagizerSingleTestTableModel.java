@@ -274,19 +274,17 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                StringBuilder sb = new StringBuilder();
-
-                CrawledLink p = value;
-                String last = p.getURL();
-                while ((p = p.getSourceLink()) != null) {
-                    if (last != null && last.equals(p.getURL())) {
-                        continue;
+                final StringBuilder sb = new StringBuilder();
+                String lastURL = null;
+                while (value != null) {
+                    if (lastURL == null || !lastURL.equals(value.getURL())) {
+                        lastURL = value.getURL();
+                        sb.append("∟");
+                        sb.append(lastURL);
                     }
-                    sb.append("∟");
-                    sb.append(p.getURL());
-                    sb.append("\r\n");
+                    value = value.getSourceLink();
                 }
-                return sb.toString().trim();
+                return sb.toString();
             }
         });
 
