@@ -29,11 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -58,6 +53,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyuploads.net" }, urls = { "https?://(www\\.)?dailyuploads\\.net/(embed\\-)?[a-z0-9]{12}" })
 public class DailyuploadsNet extends PluginForHost {
@@ -96,10 +96,10 @@ public class DailyuploadsNet extends PluginForHost {
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXCHUNKS               = -1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -1;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
