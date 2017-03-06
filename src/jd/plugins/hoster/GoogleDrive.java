@@ -324,7 +324,8 @@ public class GoogleDrive extends PluginForHost {
                 }
                 br.followConnection();
                 if (br.containsHTML("<p class=\"uc-warning-caption\">Google Drive can't scan this file for viruses\\.</p>")) {
-                    dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
+                    // dllink = br.getRegex("href=\"(/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0);
+                    dllink = br.getRegex("href=\"((/a/.*?/)?/uc\\?export=download.*?)\">Download anyway</a>").getMatch(0); // w/ account
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
