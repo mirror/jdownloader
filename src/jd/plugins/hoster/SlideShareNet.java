@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "http://(www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "https?://(www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" })
 public class SlideShareNet extends PluginForHost {
 
     public SlideShareNet(PluginWrapper wrapper) {
@@ -60,7 +60,7 @@ public class SlideShareNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("slidesharedecrypted.net/", "slideshare.net/"));
     }
 
-    private static final String PICTURELINK     = "http://slidesharepicturedecrypted\\.net/\\d+";
+    private static final String PICTURELINK     = "https?://slidesharepicturedecrypted\\.net/\\d+";
     private static final String NOTDOWNLOADABLE = "class=\"sprite iconNoDownload j\\-tooltip\"";
 
     private String              dllink          = null;
@@ -113,6 +113,7 @@ public class SlideShareNet extends PluginForHost {
             }
         } else {
             br.getPage(link.getDownloadURL());
+            br.followConnection();
             if (br.getHttpConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
@@ -341,6 +342,7 @@ public class SlideShareNet extends PluginForHost {
                     // in
                     // order to get this stupid slideshow_id
                     br.getPage(link.getDownloadURL());
+                    br.followRedirect();
                     final String slideshareID = br.getRegex("\"slideshow_id\":(\\d+)").getMatch(0);
                     if (slideshareID == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -352,6 +354,7 @@ public class SlideShareNet extends PluginForHost {
                     dllink = getXML("DownloadUrl");
                 } else {
                     br.getPage(link.getDownloadURL());
+                    br.followRedirect();
                     if (br.containsHTML(NOTDOWNLOADABLE)) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
                     }

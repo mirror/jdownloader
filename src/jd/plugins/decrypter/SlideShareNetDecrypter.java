@@ -50,7 +50,7 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         jd.plugins.hoster.SlideShareNet.prepBR(this.br);
-        final String parameter = param.toString().replaceAll("https?://(?:[a-z0-9]+\\.)?slideshare\\.net/", "http://www.slideshare.net/");
+        final String parameter = param.toString().replaceAll("https?://(?:[a-z0-9]+\\.)?slideshare\\.net/", "https://www.slideshare.net/");
         if (parameter.matches(TYPE_INVALID)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -59,6 +59,7 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
         String filename = null;
         getUserLogin(false);
         br.getPage(parameter);
+        br.followRedirect();
         if (jd.plugins.hoster.SlideShareNet.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -82,7 +83,7 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
                 }
 
                 for (String url : entries) {
-                    url = "http://www.slideshare.net" + url;
+                    url = "https://www.slideshare.net" + url;
                     decryptedLinks.add(this.createDownloadlink(url));
                 }
                 next = this.br.getRegex("href=\"(/[^<>\"]*?\\d+)\" rel=\"next\"").getMatch(0);

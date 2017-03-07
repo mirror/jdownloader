@@ -1274,7 +1274,7 @@ public class FileFactory extends PluginForHost {
                 // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
                 // 706 ERR_API_LOGIN_FAILED Login details were incorrect
                 // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (isPendingDeletion(nbr)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1350,8 +1350,10 @@ public class FileFactory extends PluginForHost {
         final String message = PluginJSonUtils.getJsonValue(ibr, "message");
         if (message != null) {
             logger.warning(message);
+            return message;
+        } else {
+            return null;
         }
-        return message;
     }
 
     private boolean sessionKeyInValid(final Account account, final Browser ibr) {
