@@ -784,6 +784,7 @@ MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_=Moj nalog
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_=Idi na My.JDownloader.org
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_=Šifra
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_=Sačuvaj postavke
+MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_tab_=Otvori tab My.JDownloader.org
 MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_=Moj.JDownloader
 MyJDownloaderSettingsPanel_runInEDT_account_badlogins=Vaš Nalog je daktiviran jer ste unijeli pogrešno Korisničko ime/email.
 MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_=Vaš Nalog je daktiviran jer vaš email još nije potvrđen. Poslali smo vam email za potvrdu vaše adrese. Molimo kliknite na Link u email-u.
