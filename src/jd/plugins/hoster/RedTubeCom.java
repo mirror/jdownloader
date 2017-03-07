@@ -111,9 +111,9 @@ public class RedTubeCom extends PluginForHost {
                                 if (!con.getContentType().contains("html")) {
                                     link.setDownloadSize(br.getHttpConnection().getLongContentLength());
                                     break;
-                                } else {
-                                    server_issues = true;
-                                }
+                                } else if (quality == "240") {
+                                        server_issues = true;
+                                    }
                             } finally {
                                 try {
                                     con.disconnect();
