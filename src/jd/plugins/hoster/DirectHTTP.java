@@ -339,7 +339,6 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
         } catch (Exception e) {
-            logger.log(e);
             if (e instanceof PluginException) {
                 if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_ALREADYEXISTS) {
                     throw e;
@@ -350,7 +349,9 @@ public class DirectHTTP extends antiDDoSForHost {
             }
             if (e instanceof InterruptedException) {
                 throw e;
-            } else if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || this.dl.getConnection().getResponseCode() == 400 && this.br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+")) {
+            }
+            logger.log(e);
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || this.dl.getConnection().getResponseCode() == 400 && this.br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+")) {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
                     /* clear chunkProgress and disable resume(ranges) and retry */
                     downloadLink.setChunksProgress(null);
