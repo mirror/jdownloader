@@ -25,6 +25,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,10 +55,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
 public class SoundcloudCom extends PluginForHost {
 
@@ -64,8 +64,10 @@ public class SoundcloudCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    /* Last clientid: b45b1aa10f1ac2941910a7f0d10f8e28 */
-    public final static String   CLIENTID                                    = "fDoItMDbsbZz8dY16ZzARCZmzgHBPotA";
+    /*
+     * Last clientid: b45b1aa10f1ac2941910a7f0d10f8e28 fDoItMDbsbZz8dY16ZzARCZmzgHBPotA
+     */
+    public final static String   CLIENTID                                    = "2t9loNQH90kzJcsFCODdigxfp325aq4z ";
     public final static String   CLIENTID_8TRACKS                            = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
     public final static String   CONSUMER_KEY_MYCLOUDPLAYERS_COM             = "PtMyqifCQMKLqwP0A6YQ";
@@ -147,10 +149,6 @@ public class SoundcloudCom extends PluginForHost {
         serverissue = false;
         is_geo_blocked = false;
         String secrettoken = parameter.getStringProperty("secret_token", null);
-        if (secrettoken == null) {
-            // remove when fixed
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         prepBR(this.br);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
