@@ -63,13 +63,12 @@ public class PerfectGirlsNet extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("").getMatch(0);
         }
-        dllink = br.getRegex("get\\(\"(/get/\\d+\\.mp4)\"").getMatch(0);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = br.getRegex("<source src=\"([^<>\"]+)\" res=\"480\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source src=\"([^<>\"]+)\"").getMatch(0);
         }
-        br.getPage(dllink);
-        dllink = br.toString();
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
+        if (filename == null || dllink == null) {
+            logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
