@@ -16,12 +16,9 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -34,6 +31,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/areader\\?id=[a-z0-9]+\\&p=\\d+" })
 public class BatoTo extends antiDDoSForHost {
@@ -109,19 +108,17 @@ public class BatoTo extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
+            con = br2.openHeadConnection(dllink);
+            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } finally {
             try {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             } catch (final Throwable e) {
             }
         }

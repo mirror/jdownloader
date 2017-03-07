@@ -38,6 +38,7 @@ import jd.controlling.AccountControllerListener;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Label;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
@@ -52,6 +53,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.LongKeyHandler;
@@ -655,9 +657,19 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
             addPair(label, null, new Spinner(new ConfigIntSpinnerModel((IntegerKeyHandler) m)));
         } else if (m instanceof LongKeyHandler) {
             addPair(label, null, new Spinner(new ConfigLongSpinnerModel((LongKeyHandler) m)));
+        } else if (m instanceof EnumKeyHandler) {
+            addPair(label, null, null, new ComboBox<Enum>(m, enumValues(m.getRawClass()), null));
         } else {
             UIOManager.I().showException("Unsupported Type: " + m, new Exception());
         }
+    }
+
+    private Enum[] enumValues(Class<? extends Enum> enumType) {
+        final List<Enum> ret = new ArrayList<Enum>();
+        for (Object e : enumType.getEnumConstants()) {
+            ret.add((Enum) e);
+        }
+        return ret.toArray(new Enum[0]);
     }
 
     private String getTranslation(KeyHandler m, String ext) {
