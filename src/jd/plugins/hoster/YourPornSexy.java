@@ -1,8 +1,5 @@
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -11,6 +8,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy" }, urls = { "https?://(www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html" })
 public class YourPornSexy extends PluginForHost {
@@ -40,7 +40,7 @@ public class YourPornSexy extends PluginForHost {
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')(https?://.*?\\.mp4)(\"|')").getMatch(1);
+        final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')((?:https?:)?//.*?\\.mp4)(\"|')").getMatch(1);
         if (mp4 == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -63,7 +63,7 @@ public class YourPornSexy extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')(https?://.*?\\.mp4)(\"|')").getMatch(1);
+        final String mp4 = br.getRegex("<video id='.*?'\\s*src=(\"|')((?:https?:)?//.*?\\.mp4)(\"|')").getMatch(1);
         if (mp4 == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
