@@ -277,6 +277,7 @@ gui_config_reconnect_showcase_reconnect2=Pokreni Test
 gui_config_reconnect_showcase_time=Trajanje ponovne konekcije:
 gui_download_filesize_unknown=Nepoznata veličina dokumenta
 gui_download_waittime_notenoughtraffic=Nema dovoljno dostupnog prometa (%s1 potrebno)
+gui_download_waittime_notenoughtraffic2=Nema dovoljno preostalog prometa
 gui_download_waittime_status2=Čekaj %s1
 gui_downloadview_statustext_jac=Captcha prepoznavanje
 gui_javacheck_newerjavaavailable_msg=Iako JDownloader može funkcionisati na vašoj trenutnoj Java verziji, ozbiljno preporučujemo da instalirate najnoviju verziju.\r JDownloader i sve aplikacije koje koriste Java sa manje grešaka, brže i radiće bolje.\r   Posjetite http://jdownloader.org/download.

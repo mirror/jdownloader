@@ -90,6 +90,7 @@ AdvancedValueColumn_onSingleClick_colorchooser_title_=Izaberite novu boju:
 AlwaysOnTopGuiToogleAction_disabled=Uvijek na Vrhu
 AlwaysOnTopGuiToogleAction_enabled=Uvijek na Vrhu
 AlwaysOnTopGuiToogleAction_tooltip=Glavni prozor je uvijek na iznad ostalih prozora
+AntiCaptchaCom_getName_=Potpuno automatizovano Captcha rješavanje na daljinu
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_countdown_download=Download Captcha se automastki zatvori nakon isteka vremena
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset=Resetuj Tajming Rješavača
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset_lit_are_you_sure=Da li ste sigurni da želite da resetujete sva tajming podešenja. Ovo će resetovati redoslijed pokretanja vaših captcha rješavača.
