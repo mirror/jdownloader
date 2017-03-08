@@ -1257,7 +1257,8 @@ public class YoutubeHelper {
         this.br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
         this.br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
-        this.br.setCookie("youtube.com", "VISITOR_INFO1_LIVE", "Qa1hUZu3gtk");
+        // cookie for new Style(Polymer?)
+        // this.br.setCookie("youtube.com", "VISITOR_INFO1_LIVE", "Qa1hUZu3gtk");
         this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/44.0 (Chrome)");
         br.getPage(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999");
         vid.approxThreedLayout = br.getRegex("\"approx_threed_layout\"\\s*\\:\\s*\"([^\"]*)").getMatch(0);
