@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.AccountController;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -32,6 +34,16 @@ public class JD2AccountsImport extends PluginsC {
 
     public JD2AccountsImport newPluginInstance() {
         return new JD2AccountsImport();
+    }
+
+    @Override
+    public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
+        final LinkOriginDetails origin = source.getOrigin();
+        if (origin != null && LinkOrigin.CLIPBOARD.equals(origin.getOrigin())) {
+            return null;
+        } else {
+            return super.decryptContainer(source);
+        }
     }
 
     @Override
