@@ -15,6 +15,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.config.DatabaseConnector;
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.UserIO;
@@ -44,6 +46,16 @@ public class JD1Import extends PluginsC {
 
     public JD1Import newPluginInstance() {
         return new JD1Import();
+    }
+
+    @Override
+    public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
+        final LinkOriginDetails origin = source.getOrigin();
+        if (origin != null && LinkOrigin.CLIPBOARD.equals(origin.getOrigin())) {
+            return null;
+        } else {
+            return super.decryptContainer(source);
+        }
     }
 
     @SuppressWarnings("unchecked")

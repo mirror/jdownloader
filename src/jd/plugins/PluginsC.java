@@ -222,12 +222,13 @@ public abstract class PluginsC {
                     break;
                 }
             }
+            return true;
         } else {
             final CrawledLink origin = link.getOriginLink();
             logger.fine("Do not ask - just delete: " + origin.getURL());
             askFileDeletion = false;
+            return true;
         }
-        return true;
     }
 
     private CrawledLink currentLink = null;

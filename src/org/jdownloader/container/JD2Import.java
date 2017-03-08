@@ -20,6 +20,7 @@ import jd.plugins.PluginsC;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.IconKey;
@@ -46,6 +47,15 @@ public class JD2Import extends PluginsC {
         }
     }
 
+    protected boolean showConfimDialog() {
+        final CrawledLink link = getCurrentLink();
+        if (link != null) {
+            final LinkOriginDetails origin = link.getOrigin();
+            return !(origin != null && LinkOrigin.EXTENSION.equals(origin.getOrigin()));
+        }
+        return true;
+    }
+
     public ContainerStatus callDecryption(File importFile) {
         final ContainerStatus cs = new ContainerStatus(importFile);
         cls = new ArrayList<CrawledLink>();
@@ -60,14 +70,23 @@ public class JD2Import extends PluginsC {
                     }
                     links += p.size();
                 }
-                final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd2_import_title(), _GUI.T.jd2_import_message(packages.size(), links, _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title()), new AbstractIcon(IconKey.ICON_QUESTION, 16), null, null) {
+                if (showConfimDialog()) {
+                    final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd2_import_title(), _GUI.T.jd2_import_message(packages.size(), links, _GUI.T.jd_gui_swing_jdgui_views_downloadview_tab_title()), new AbstractIcon(IconKey.ICON_QUESTION, 16), null, null) {
+                        @Override
+                        public ModalityType getModalityType() {
+                            return ModalityType.MODELESS;
+                        }
+                    };
+                    UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                }
+                DownloadController.getInstance().getQueue().add(new QueueAction<Void, Throwable>() {
+
                     @Override
-                    public ModalityType getModalityType() {
-                        return ModalityType.MODELESS;
+                    protected Void run() throws Throwable {
+                        DownloadController.getInstance().importList(packages);
+                        return null;
                     }
-                };
-                UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-                DownloadController.getInstance().importList(packages);
+                });
                 cs.setStatus(ContainerStatus.STATUS_FINISHED);
                 return cs;
             } else if (importFile.getName().matches("linkcollector(\\d+)?\\.zip")) {
@@ -81,14 +100,23 @@ public class JD2Import extends PluginsC {
                     }
                     links += p.getChildren().size();
                 }
-                final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd2_import_title(), _GUI.T.jd2_import_message(packages.size(), links, _GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()), new AbstractIcon(IconKey.ICON_QUESTION, 16), null, null) {
+                if (showConfimDialog()) {
+                    final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI.T.jd2_import_title(), _GUI.T.jd2_import_message(packages.size(), links, _GUI.T.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()), new AbstractIcon(IconKey.ICON_QUESTION, 16), null, null) {
+                        @Override
+                        public ModalityType getModalityType() {
+                            return ModalityType.MODELESS;
+                        }
+                    };
+                    UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                }
+                LinkCollector.getInstance().getQueue().addWait(new QueueAction<Void, Throwable>() {
+
                     @Override
-                    public ModalityType getModalityType() {
-                        return ModalityType.MODELESS;
+                    protected Void run() throws Throwable {
+                        LinkCollector.getInstance().importList(packages, restoreMap);
+                        return null;
                     }
-                };
-                UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
-                LinkCollector.getInstance().importList(packages, restoreMap);
+                });
                 cs.setStatus(ContainerStatus.STATUS_FINISHED);
                 return cs;
             } else {
