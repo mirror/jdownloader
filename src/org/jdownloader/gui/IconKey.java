@@ -309,4 +309,5 @@ public class IconKey {
     public static final String ICON_EXTRACT_RUN                 = "extract_run";
     public static final String ICON_PLAY_BREAKUP_FORCED_ONLY    = "play_breakup_forced_only";
     public static final String ICON_LOGO_2CAPTCHA               = "logo/2captcha";
+    public static final String ICON_LOGO_ANTICAPTCHA            = "logo/anticaptchaCom";
 }

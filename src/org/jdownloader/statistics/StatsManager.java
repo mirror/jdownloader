@@ -1546,32 +1546,35 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
-        String refURL = null;
+        final String domain;
+        if (plugin != null) {
+            domain = plugin.getHost();
+        } else {
+            if (StringUtils.contains(customRefURL, "RedirectInterface/ul")) {
+                domain = "uploaded.to";
+            } else {
+                final String host = Browser.getHost(customRefURL, false);
+                if (host != null && (host.equalsIgnoreCase("uploaded.to") || host.equalsIgnoreCase("ul.to") || host.equalsIgnoreCase("ul.net") || host.equalsIgnoreCase("uploaded.net"))) {
+                    domain = "uploaded.to";
+                } else {
+                    domain = host;
+                }
+            }
+        }
+        String refURL = customRefURL;
+        if (StringUtils.isEmpty(refURL) && plugin != null) {
+            String buyPremium = plugin.getBuyPremiumUrl();
+            if (StringUtils.isEmpty(buyPremium)) {
+                buyPremium = "http://" + plugin.getHost();
+            }
+            refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
+        }
+        openAfflink(domain, refURL, source);
+    }
+
+    public void openAfflink(final String domain, final String refURL, final String source) {
         try {
             synchronized (this) {
-                final String domain;
-                if (plugin != null) {
-                    domain = plugin.getHost();
-                } else {
-                    if (StringUtils.contains(customRefURL, "RedirectInterface/ul")) {
-                        domain = "uploaded.to";
-                    } else {
-                        final String host = Browser.getHost(customRefURL, false);
-                        if (host != null && (host.equalsIgnoreCase("uploaded.to") || host.equalsIgnoreCase("ul.to") || host.equalsIgnoreCase("ul.net") || host.equalsIgnoreCase("uploaded.net"))) {
-                            domain = "uploaded.to";
-                        } else {
-                            domain = host;
-                        }
-                    }
-                }
-                refURL = customRefURL;
-                if (StringUtils.isEmpty(refURL) && plugin != null) {
-                    String buyPremium = plugin.getBuyPremiumUrl();
-                    if (StringUtils.isEmpty(buyPremium)) {
-                        buyPremium = "http://" + plugin.getHost();
-                    }
-                    refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
-                }
                 if (refURL.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
                     StatsManager.I().track("buypremium/" + source + "/https://www.oboom.com/ref/C0ACB0?ref_token=...");
                 } else if (refURL.startsWith("http://update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
