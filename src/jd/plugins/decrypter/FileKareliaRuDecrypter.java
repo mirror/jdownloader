@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "http://(www\\.)?file\\.karelia\\.ru/[a-z0-9]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "https?://(?:www\\.)?file\\.(?:karelia|sampo)\\.ru/[a-z0-9]+/" })
 public class FileKareliaRuDecrypter extends PluginForDecrypt {
 
     public FileKareliaRuDecrypter(PluginWrapper wrapper) {
@@ -40,17 +40,16 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final String fid = new Regex(parameter, "([a-z0-9]+)/$").getMatch(0);
+        final String fid = new Regex(param.toString(), "([a-z0-9]+)/$").getMatch(0);
+        final String parameter = String.format("http://file.karelia.ru/%s/", fid);
         br.getPage(parameter);
         if (br.containsHTML(">Файла не существует или он был удалён с сервера")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
+            final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName(fid + ".zip");
-            dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+
         final String[][] fileInfo = br.getRegex("<a  href=\"http://[a-z0-9]+\\.file\\.karelia\\.ru/" + fid + "/[a-z0-9]+/[a-z0-9]+/([^<>\"/]*?)\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>").getMatches();
         // Decrypter could also be broken but we can't know it so no exception!
         if (fileInfo != null && fileInfo.length != 0) {
@@ -64,10 +63,13 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
+
         final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
         dl.setFinalFileName(fid + ".zip");
         final String filesize = br.getRegex("общим размером <strong id=\"totalSize\">([^<>\"]*?)</strong>").getMatch(0);
-        if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize).replace("Гбайта", "GB").replace("Мбайт", "MB").replace("Кбайта", "kb")));
+        if (filesize != null) {
+            dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize).replace("Гбайта", "GB").replace("Мбайт", "MB").replace("Кбайта", "kb")));
+        }
         dl.setAvailable(true);
         decryptedLinks.add(dl);
         FilePackage fp = FilePackage.getInstance();

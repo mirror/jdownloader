@@ -63,9 +63,10 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
-        if (title != null) {
-            title = Encoding.htmlDecode(title).trim();
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
+        if (title == null) {
+            /* Fallback 1 - title with date --> Grab title without date */
+            title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\- \\d{2}/\\d{2}/\\d{4}").getMatch(0);
         }
         /* 2017-03-01: Removed subtitle for now as we got faulty names before. Title should actually contain everything we need! */
         final String subtitle = null;
@@ -97,9 +98,11 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (title == null) {
             title = PluginJSonUtils.getJsonValue(video_json, "title");
         }
-        if (title == null) {
-            return null;
+        if (title == null || title.equalsIgnoreCase("")) {
+            /* Fallback */
+            title = fid;
         }
+        title = Encoding.htmlDecode(title).trim();
         title = "rtbf_" + title;
         if (date_formatted != null) {
             title = date_formatted + "_" + title;
@@ -122,7 +125,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 filename += ".mp4";
 
                 dl.setContentUrl(parameter);
-                dl.setLinkID(fid + filename);
+                dl.setLinkID(fid + getFormatString(vidinfo));
                 dl._setFilePackage(fp);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("directlink", qualityDllink);
