@@ -24,8 +24,16 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,98 +53,85 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecyber.com" }, urls = { "https?://(?:www\\.)?filecyber\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class FilecyberCom extends PluginForHost {
+public class FilecyberCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
+    private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  HTML_MAINTENANCE_MODE              = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://filecyber.com";
-    private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                        = "https://filecyber.com";
+    private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(filecyber\\.com)";
+    private static final String  DOMAINS                            = "(filecyber\\.com)";
 
     /* Errormessages inside URLs */
-    private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
+    private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
 
     /* All kinds of XFS-plugin-configuration settings - be sure to configure this correctly when developing new XFS plugins! */
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private final boolean                  AUDIOHOSTER                        = false;
+    private final boolean        AUDIOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private final boolean                  VIDEOHOSTER                        = false;
+    private final boolean        VIDEOHOSTER                        = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private final boolean                  VIDEOHOSTER_2                      = false;
-    private final boolean                  VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
+    private final boolean        VIDEOHOSTER_2                      = false;
+    private final boolean        VIDEOHOSTER_ENFORCE_VIDEO_FILENAME = false;
     /*
      * Enable this for imagehosts --> fuid will be used as filename if none is available, doFree will check for correct filename and doFree
      * will check for videohoster "next" Download/Ad- Form.
      */
-    private final boolean                  IMAGEHOSTER                        = false;
+    private final boolean        IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
-    private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
-    private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
-    /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
-    private final boolean                  ENABLE_RANDOM_UA                   = false;
+    private final boolean        SUPPORTS_HTTPS                     = true;
+    private final boolean        SUPPORTS_HTTPS_FORCED              = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
+    private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /*
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean                  ENABLE_HTML_FILESIZE_CHECK         = true;
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = true;
 
     /* Pre-Download waittime stuff */
-    private final boolean                  WAITFORCED                         = false;
-    private final int                      WAITSECONDSMIN                     = 3;
-    private final int                      WAITSECONDSMAX                     = 100;
-    private final int                      WAITSECONDSFORCED                  = 5;
+    private final boolean        WAITFORCED                         = false;
+    private final int            WAITSECONDSMIN                     = 3;
+    private final int            WAITSECONDSMAX                     = 100;
+    private final int            WAITSECONDSFORCED                  = 5;
 
     /* Supported linktypes */
-    private final String                   TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private final String                   TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private final String         TYPE_EMBED                         = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private final String         TYPE_NORMAL                        = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
 
     /* Texts displayed to the user in some errorcases */
-    private final String                   USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
-    private final String                   USERTEXT_MAINTENANCE               = "This server is under maintenance";
-    private final String                   USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
+    private final String         USERTEXT_ALLWAIT_SHORT             = "Waiting till new downloads can be started";
+    private final String         USERTEXT_MAINTENANCE               = "This server is under maintenance";
+    private final String         USERTEXT_PREMIUMONLY_LINKCHECK     = "Only downloadable via premium or registered";
 
     /* Properties */
-    private final String                   PROPERTY_DLLINK_FREE               = "freelink";
-    private final String                   PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
-    private final String                   PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
-    private final String                   PROPERTY_PASS                      = "pass";
+    private final String         PROPERTY_DLLINK_FREE               = "freelink";
+    private final String         PROPERTY_DLLINK_ACCOUNT_FREE       = "freelink2";
+    private final String         PROPERTY_DLLINK_ACCOUNT_PREMIUM    = "premlink";
+    private final String         PROPERTY_PASS                      = "pass";
 
     /* Used variables */
-    private String                         correctedBR                        = "";
-    private String                         fuid                               = null;
-    private String                         passCode                           = null;
+    private String               correctedBR                        = "";
+    private String               fuid                               = null;
+    private String               passCode                           = null;
 
-    private static AtomicReference<String> agent                              = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload       = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                            = new AtomicInteger(1);
-    private static Object                  LOCK                               = new Object();
+    private static AtomicInteger maxFree                            = new AtomicInteger(1);
+    private static Object        LOCK                               = new Object();
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
@@ -165,6 +160,16 @@ public class FilecyberCom extends PluginForHost {
     }
 
     @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* define custom browser headers and language settings */
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
@@ -181,7 +186,6 @@ public class FilecyberCom extends PluginForHost {
         final String[] fileInfo = new String[3];
         Browser altbr = null;
         correctDownloadLink(link);
-        prepBrowser(this.br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
@@ -749,19 +753,6 @@ public class FilecyberCom extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
-        /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setFollowRedirects(true);
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
-    }
-
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -906,27 +897,29 @@ public class FilecyberCom extends PluginForHost {
         return finallink;
     }
 
-    private void getPage(String page) throws Exception {
+    @Override
+    protected void getPage(String page) throws Exception {
         page = correctProtocol(page);
         getPage(br, page, true);
     }
 
     private void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        br.getPage(page);
+        getPage(br, page);
         if (correctBr) {
             correctBR();
         }
     }
 
-    private void postPage(String page, final String postdata) throws Exception {
+    @Override
+    protected void postPage(String page, final String postdata) throws Exception {
         page = correctProtocol(page);
         postPage(br, page, postdata, true);
     }
 
     private void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
         page = correctProtocol(page);
-        br.postPage(page, postdata);
+        postPage(br, page, postdata);
         if (correctBr) {
             correctBR();
         }
@@ -953,12 +946,13 @@ public class FilecyberCom extends PluginForHost {
         return url;
     }
 
-    private void submitForm(final Form form) throws Exception {
+    @Override
+    protected void submitForm(final Form form) throws Exception {
         submitForm(br, form, true);
     }
 
     private void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        br.submitForm(form);
+        submitForm(br, form);
         if (correctBr) {
             correctBR();
         }
@@ -1011,22 +1005,6 @@ public class FilecyberCom extends PluginForHost {
             sleep(wait * 1000l, downloadLink);
         } else {
             logger.info("Found no waittime");
-        }
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -1321,7 +1299,6 @@ public class FilecyberCom extends PluginForHost {
             try {
                 /* Load cookies */
                 this.br.setCookiesExclusive(true);
-                prepBrowser(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
@@ -1382,6 +1359,9 @@ public class FilecyberCom extends PluginForHost {
             if (dllink == null) {
                 this.br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
+                while (br.getRedirectLocation() != null && new Regex(br.getRedirectLocation(), this.getSupportedLinks()).matches()) {
+                    getPage(br.getRedirectLocation());
+                }
                 dllink = getDllink();
                 if (dllink == null) {
                     final Form dlform = this.br.getFormbyProperty("name", "F1");
