@@ -29,12 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "xkcd.com" }, urls = { "http://(?:www\\.)?xkcd\\.com/(\\d+)/" }) 
+@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "xkcd.com" }, urls = { "https?://(?:www\\.)?xkcd\\.com/(\\d+)/" })
 public class XkcdCom extends PluginForHost {
 
     public XkcdCom(PluginWrapper wrapper) {
@@ -79,6 +81,10 @@ public class XkcdCom extends PluginForHost {
         dllink = br.getRegex("or hotlinking/embedding\\): (http.*?)[\t\n\r ]+").getMatch(0);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.endsWithCaseInsensitive(dllink, "/comics/")) {
+            downloadLink.setName("Javascript entries are not supported");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Javascript entries are not supported");
         }
         // set filename
         filename = filename.trim();
