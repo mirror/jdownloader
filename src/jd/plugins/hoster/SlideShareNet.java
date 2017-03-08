@@ -221,7 +221,7 @@ public class SlideShareNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, this.dllink, true, getMaxChunks());
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
-            handleServerErrors();
+            handleServerErrors(null);
         }
         /* Set correct ending - 2016-11-23: Only pictures- and videos are downloadable without account. */
         if (!this.isVideo) {
@@ -377,7 +377,7 @@ public class SlideShareNet extends PluginForHost {
                     }
                 }
                 if (this.dllink != null) {
-                    this.dllink = Encoding.htmlDecode(dllink);
+                    this.dllink = Encoding.htmlOnlyDecode(dllink);
                 }
             }
         }
@@ -388,7 +388,7 @@ public class SlideShareNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, true, getMaxChunks());
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
-            handleServerErrors();
+            handleServerErrors(account);
         }
         // Set correct ending
         if (!this.isVideo) {
@@ -405,7 +405,7 @@ public class SlideShareNet extends PluginForHost {
         }
     }
 
-    private void handleServerErrors() throws Exception {
+    private void handleServerErrors(Account account) throws Exception {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
