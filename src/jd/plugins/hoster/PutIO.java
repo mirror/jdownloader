@@ -26,7 +26,7 @@ import jd.plugins.download.HashInfo.TYPE;
 
 // "https?://put\\.io/(?:file|v2/files)/\\d+" website link
 // actual downloadlink "https?://put\\.io/v2/files/\\d+/download\\?token=[a-fA-F0-9]+"
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://[a-z0-9\\-]+\\.put\\.io/(?:v2/files/\\d+/download|zipstream/\\d+)\\?oauth_token=[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/(files/\\d+|v2/files/\\d+/download\\?token=[a-fA-F0-9]+)|https?://[a-z0-9\\-]+\\.put\\.io/(?:v2/files/\\d+/download|zipstream/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
 
     private static final String REQUIRES_ACCOUNT    = "requiresAccount";
