@@ -87,6 +87,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                 task.put("minLength", 0);
                 task.put("maxLength", 0);
                 dataMap.put("task", task);
+                dataMap.put("softId", 832);
                 String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
                 HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 if (!new Integer(0).equals(response.get("errorId"))) {
@@ -143,6 +144,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             }
             task.put("type", "NoCaptchaTaskProxyless");
             dataMap.put("task", task);
+            dataMap.put("softId", 832);
             String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
             HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             if (!new Integer(0).equals(response.get("errorId"))) {
