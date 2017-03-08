@@ -38,6 +38,7 @@ public class SlexyOrg extends PluginForDecrypt {
         if (!SlexyOrgPluginConfig.MODE.DOWNLOAD.equals(mode)) {
             br.setFollowRedirects(true);
             br.setCurrentURL(parameter.replaceAll("/raw/", "/view"));
+            br.setLoadLimit(16 * 1024 * 1024);
             br.getPage(parameter.replaceAll("/view/", "/raw/"));
             if (br.getURL().contains("/msg/")) {
                 return decryptedLinks;
