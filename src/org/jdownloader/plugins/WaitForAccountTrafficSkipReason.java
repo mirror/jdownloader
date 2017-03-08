@@ -58,7 +58,7 @@ public class WaitForAccountTrafficSkipReason implements ConditionalSkipReason, I
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
         if (trafficRequired < 0) {
-            return _JDT.T.gui_download_waittime_notenoughtraffic();
+            return _JDT.T.gui_download_waittime_notenoughtraffic2();
         } else {
             return _JDT.T.gui_download_waittime_notenoughtraffic(SIZEUNIT.formatValue(MAXSIZEUNIT, trafficRequired));
         }

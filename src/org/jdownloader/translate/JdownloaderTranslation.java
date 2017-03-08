@@ -144,7 +144,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String gui_download_waittime_notenoughtraffic(String trafficRequired);
 
     @Default(lngs = { "en" }, values = { "Not enough traffic available" })
-    String gui_download_waittime_notenoughtraffic();
+    String gui_download_waittime_notenoughtraffic2();
 
     @Default(lngs = { "en" }, values = { "Wrong captcha code" })
     String decrypter_wrongcaptcha();
