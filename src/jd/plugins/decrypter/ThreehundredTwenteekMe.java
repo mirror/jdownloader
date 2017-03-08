@@ -28,22 +28,23 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=(viewupload(&groupid=\\d*)?&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+(?:&uploadid=\\d+)?)" })
-public class ThreehundredTwenteekIn extends PluginForDecrypt {
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-    public ThreehundredTwenteekIn(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "320k.me" }, urls = { "https?://(?:www\\.)?320k\\.(?:in|me)/index\\.php\\?surf=(viewupload(\\&groupid=\\d*)?\\&uploadid=\\d+|redirect\\&url=[A-Za-z0-9 %=]+(?:\\&uploadid=\\d+)?)" })
+public class ThreehundredTwenteekMe extends antiDDoSForDecrypt {
+
+    public ThreehundredTwenteekMe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SINGLE = "http://(www\\.)?320k\\.in/index\\.php\\?surf=redirect&url=[A-Za-z0-9 %=]+(?:&uploadid=\\d+)?";
+    private static final String TYPE_SINGLE = ".+/index\\.php\\?surf=redirect&url=[A-Za-z0-9 %=]+(?:&uploadid=\\d+)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("320k.in/", "320k.me/");
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        getPage(parameter);
         if (parameter.matches(TYPE_SINGLE)) {
             final String finallink = decryptSingle(param);
             if (finallink == null) {
@@ -57,18 +58,18 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            if (br.containsHTML(">Dieser Upload ist nicht mehr")) {
+            if (br.containsHTML(">Dieser Upload ist nicht mehr") || this.br.getHttpConnection().getResponseCode() == 404) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-            final String fpName = br.getRegex("<title>320k\\.in \\|([^<>\"]*?)</title>").getMatch(0);
+            final String fpName = br.getRegex("<title>320k\\.me \\|([^<>\"]*?)</title>").getMatch(0);
             FilePackage fp = null;
             if (fpName != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
             }
-            final String[] links = br.getRegex("&(?:amp;)?url=([A-Za-z0-9 %=]+)(\"|&)").getColumn(0);
+            final String[] links = br.getRegex("\\&(?:amp;)?url=([A-Za-z0-9 %=]+)(\"|\\&)").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -100,7 +101,7 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
             /* Website only accepts uppercase! */
             code = code.toUpperCase();
             final String crypt = new Regex(captcha, "c=([a-z0-9]+)$").getMatch(0);
-            br.postPage(br.getURL(), "code=" + Encoding.urlEncode(code) + "&crypt=" + crypt + "&send=Download%21");
+            postPage(br.getURL(), "code=" + Encoding.urlEncode(code) + "&crypt=" + crypt + "&send=Download%21");
             finallink = br.getRedirectLocation();
             if (finallink != null) {
                 break;
