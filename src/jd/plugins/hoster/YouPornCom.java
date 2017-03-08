@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/?.+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?|https?://(?:www\\.)?youpornru\\.com/watch/\\d+/?.+/?" })
 public class YouPornCom extends PluginForHost {
 
     /* DEV NOTES */
@@ -59,7 +59,6 @@ public class YouPornCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
             return true;
@@ -77,8 +76,10 @@ public class YouPornCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "/watch/(\\d+)").getMatch(0) + "/" + System.currentTimeMillis() + "/");
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = getFID(link.getDownloadURL());
+        link.setLinkID(fid);
+        link.setUrlDownload("http://www.youporn.com/watch/" + fid + "/" + System.currentTimeMillis() + "/");
     }
 
     private static final String defaultEXT = ".mp4";
@@ -181,6 +182,10 @@ public class YouPornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFID(final String downloadurl) {
+        return new Regex(downloadurl, "/watch/(\\d+)").getMatch(0);
     }
 
     public void reset() {

@@ -209,6 +209,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final boolean grabHls270 = cfg.isGrabHLS270pVideoEnabled();
         final boolean grabHls360 = cfg.isGrabHLS360pVideoEnabled();
         final boolean grabHls480 = cfg.isGrabHLS480pVideoEnabled();
+        final boolean grabHls570 = cfg.isGrabHLS570pVideoEnabled();
         final boolean grabHls720 = cfg.isGrabHLS720pVideoEnabled();
 
         if (grabHls170) {
@@ -222,6 +223,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         if (grabHls480) {
             all_selected_qualities.add("hls_mp4_480");
+        }
+        if (grabHls570) {
+            all_selected_qualities.add("hls_mp4_570");
         }
         if (grabHls720) {
             all_selected_qualities.add("hls_mp4_720");
@@ -263,12 +267,15 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             all_selected_qualities.add("http_webm_hd");
         }
 
-        if (all_selected_qualities.size() == 0) {
+        final boolean user_selected_nothing = all_selected_qualities.size() == 0;
+
+        if (user_selected_nothing) {
             logger.info("User selected no quality at all --> Adding ALL qualities instead");
             all_selected_qualities = all_known_qualities;
         }
 
-        final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls720;
+        /* Grabbing hls means we make an extra http request --> Only do this if wished by the user or if the user set bad plugin settings! */
+        final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720 || user_selected_nothing;
         /*
          * 2017-02-08: The only thing download has and http stream has not == http veryhigh --> Only grab this if user has selected it
          * explicitly!
@@ -482,7 +489,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 this.br.getPage(uri);
                                 final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
                                 for (final HlsContainer hlscontainer : allHlsContainers) {
-                                    final String width = Integer.toString(hlscontainer.getWidth());
+                                    final String width_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
                                     final String resolution = hlscontainer.getResolution();
                                     final_download_url = hlscontainer.getDownloadurl();
                                     ext = hlscontainer.getFileExtension().replace(".", "");
@@ -498,7 +505,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                         highestHlsDownload = dl;
                                     }
                                     setDownloadlinkProperties(dl, date_formatted, final_filename, type, linkid);
-                                    all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, width), dl);
+                                    all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, width_for_quality_selection), dl);
                                 }
                                 /* Set this so we do not crawl this particular hls master again next round. */
                                 highestHlsMasterValue = hlsMasterValueTemp;
@@ -566,16 +573,15 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(dl_entry.getValue());
                 }
             } else {
+                if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
+                    all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+                }
                 /* Finally add selected URLs */
                 final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
                 while (it.hasNext()) {
                     final Entry<String, DownloadLink> entry = it.next();
                     final DownloadLink dl = entry.getValue();
                     addDownloadLink(dl);
-                }
-
-                if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
-                    all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
                 }
             }
         }
@@ -589,6 +595,31 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             fp.setName(filename_packagename_base_title);
             fp.addLinks(decryptedLinks);
         }
+    }
+
+    /**
+     * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
+     * work properly!
+     */
+    private String getHeightForQualitySelection(final int height) {
+        final String widthselect;
+        if (height > 0 && height <= 200) {
+            widthselect = "170";
+        } else if (height > 200 && height <= 300) {
+            widthselect = "270";
+        } else if (height > 300 && height <= 400) {
+            widthselect = "360";
+        } else if (height > 400 && height <= 500) {
+            widthselect = "480";
+        } else if (height > 500 && height <= 600) {
+            widthselect = "570";
+        } else if (height > 600 && height <= 800) {
+            widthselect = "720";
+        } else {
+            /* Either unknown quality or audio (0x0) */
+            widthselect = Integer.toString(height);
+        }
+        return widthselect;
     }
 
     private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {

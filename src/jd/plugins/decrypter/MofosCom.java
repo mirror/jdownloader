@@ -84,8 +84,8 @@ public class MofosCom extends PluginForDecrypt {
                     String quality;
                     String filesize = null;
                     if (streamDownload) {
-                        /* No official downloadlinks available --> Download streams */
-                        final Regex streamInfo = new Regex(video, "data\\-video\\-mp4_(\\d+)_\\d+=\"(http[^<>\"]+)");
+                        /* No official downloadlinks available --> Download streams --> Quality selection is not designed for that */
+                        final Regex streamInfo = new Regex(video, "data\\-video\\-mp4_(\\d+_\\d+)=\"(http[^<>\"]+)");
                         quality = streamInfo.getMatch(0);
                         dlurl = streamInfo.getMatch(1);
                     } else {
@@ -104,6 +104,10 @@ public class MofosCom extends PluginForDecrypt {
                     }
                     if (!dlurl.startsWith("http")) {
                         dlurl = base_url + dlurl;
+                    }
+                    if (streamDownload) {
+                        /* 2017-03-08: Change server - according to a user, this speeds up the downloads */
+                        dlurl = dlurl.replace("http.movies.mf.contentdef.com", "downloads.mf.contentdef.com");
                     }
                     final DownloadLink dl = this.createDownloadlink(dlurl);
                     if (filesize != null) {

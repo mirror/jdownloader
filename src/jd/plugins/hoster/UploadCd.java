@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -40,12 +41,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "http://(www\\.)?upload\\.cd/(files/)?[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "http://(www\\.)?upload\\.cd/(files/)?[a-z0-9]+" })
 public class UploadCd extends PluginForHost {
 
     public UploadCd(PluginWrapper wrapper) {
@@ -81,6 +83,8 @@ public class UploadCd extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        /* 2017-03-08: Old UA got blocked - try this for now, blocking an up-to-date-User-Agent is not a good idea. */
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">The requested file does not exist|The requested page does not exist\\.") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"container download\\-page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -130,6 +134,10 @@ public class UploadCd extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        /*
+         * 2017-03-08: Usually we'll get 403 on free resume attempt --> Does not matter, we can try it anyways and continue below on failure
+         * :)
+         */
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             /* Not needed, can still be skipped */
@@ -172,25 +180,37 @@ public class UploadCd extends PluginForHost {
             }
             final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://upload.cd/download/startTimer", "fid=" + fid);
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.postPage("http://" + this.getHost() + "/download/startTimer", "fid=" + fid);
 
             final String seconds = getJson("seconds");
             final String sid = getJson("sid");
             if (seconds == null || sid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.sleep(Integer.parseInt(seconds) * 1001l, downloadLink);
 
-            br.postPage("http://upload.cd/download/checkTimer", "sid=" + sid);
+            this.sleep((Integer.parseInt(seconds) + 5) * 1001l, downloadLink);
 
-            br.postPage("http://upload.cd/download/url", "fileid=" + fid + "&usid=" + sid + "&referer=&premium_dl=0");
+            /* 2017-03-08: Added 5 extra seconds to avoid failures! */
+            br.postPage("/download/checkTimer", "sid=" + sid);
+            /* E.g. positive response: {"status":"success","state":"ended"} */
+            if (!PluginJSonUtils.getJsonValue(this.br, "status").equalsIgnoreCase("success")) {
+                /* E.g. bad response: {"status":"error","msg":"There are some errors. Please try again later"} */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+
+            /* 2017-03-08: On failure/when we get blocked: "Hello downloaders! ;)" */
+            /* 2017-03-08: 'rand' parameter has been addd and is required! */
+            final String uuid = UUID.randomUUID().toString().split("-")[0];
+            br.postPage("/download/url", "fileid=" + fid + "&usid=" + sid + "&rand=" + uuid + "&referer=&premium_dl=0");
             final Recaptcha rc = new Recaptcha(br, this);
             rc.findID();
             rc.load();
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                br.postPage("http://upload.cd/download/url", "fileid=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&CaptchaForm%5Bvalidacion%5D=");
+                br.postPage("http://" + this.getHost() + "/download/url", "fileid=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&CaptchaForm%5Bvalidacion%5D=");
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     rc.reload();
                     continue;

@@ -79,22 +79,22 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                {
-                                                                                    /*
-                                                                                     * Format - name : videoCodec, videoBitrate,
-                                                                                     * videoResolution, audioCodec, audioBitrate
-                                                                                     */
-                                                                                    /*
-                                                                                     * Video - bitrates and resultions here are not exact as
-                                                                                     * they vary.
-                                                                                     */
-                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+        {
+            /*
+             * Format - name : videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
+             */
+            /*
+             * Video - bitrates and resultions here are not exact as
+             * they vary.
+             */
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-                                                                                }
-                                                                            });
+        }
+    });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -313,7 +313,10 @@ public class PornHubCom extends PluginForHost {
                 var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(http[^\"]+)\"").getMatches();
                 matchPlaces = new int[] { 0, 1 };
             } else if (isLoggedInHtml(br) && use_download_workarounds) {
-                /* 2017-02-10: Grab official downloadlinks via free/premium account */
+                /*
+                 * 2017-02-10: Grab official downloadlinks via free/premium account. Keep in mind: Not all videos have official
+                 * downloadlinks available for account mode - example: ph58072cd969005
+                 */
                 matchPlaces = new int[] { 1, 0 };
                 var_player_quality_dp = br.getRegex("href=\"(http[^<>\"]+)\"><i></i><span>[^<]*?</span>\\s*?(\\d+)p\\s*?</a").getMatches();
             } else {

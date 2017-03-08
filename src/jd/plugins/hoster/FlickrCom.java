@@ -563,7 +563,7 @@ public class FlickrCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFilename(final DownloadLink dl) {
-        final String linkid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String photo_id = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
         String filename = dl.getStringProperty("decryptedfilename", null);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -575,6 +575,13 @@ public class FlickrCom extends PluginForHost {
             }
             if (filename == null) {
                 filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>]+)\\| Flickr</title").getMatch(0);
+            }
+            if (filename == null) {
+                /* Ultimate fallback */
+                filename = photo_id;
             }
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
@@ -590,7 +597,7 @@ public class FlickrCom extends PluginForHost {
                 }
                 final ExtensionsFilterInterface ext = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(filename));
                 if (ext == null) {
-                    filename = linkid + "_" + filename;
+                    filename = photo_id + "_" + filename;
                 } else {
                     if (!StringUtils.equalsIgnoreCase(dl.getStringProperty("ext", defaultPhotoExt), "." + ext.name())) {
                         dl.setProperty("ext", "." + ext.name().toLowerCase(Locale.ENGLISH));
@@ -598,7 +605,7 @@ public class FlickrCom extends PluginForHost {
                     filename = Files.getFileNameWithoutExtension(filename);
                 }
             }
-            /* Needed for custom filenames! */
+            /* Required for custom filenames! */
             if (dl.getStringProperty("title", null) == null) {
                 dl.setProperty("title", filename);
             }
