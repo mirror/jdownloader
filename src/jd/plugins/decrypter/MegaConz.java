@@ -77,10 +77,7 @@ public class MegaConz extends PluginForDecrypt {
         } else {
             containerURL = parameter.getCryptedUrl();
         }
-        try {
-            br.setLoadLimit(32 * 1024 * 1024);
-        } catch (final Throwable e) {
-        }
+        br.setLoadLimit(32 * 1024 * 1024);
         br.getHeaders().put("APPID", "JDownloader");
         br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\"}]");
         final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
