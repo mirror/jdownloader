@@ -658,18 +658,10 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         } else if (m instanceof LongKeyHandler) {
             addPair(label, null, new Spinner(new ConfigLongSpinnerModel((LongKeyHandler) m)));
         } else if (m instanceof EnumKeyHandler) {
-            addPair(label, null, null, new ComboBox<Enum>(m, enumValues(m.getRawClass()), null));
+            addPair(label, null, null, new ComboBox<Enum>(m, ((EnumKeyHandler) m).values(), null));
         } else {
             UIOManager.I().showException("Unsupported Type: " + m, new Exception());
         }
-    }
-
-    private Enum[] enumValues(Class<? extends Enum> enumType) {
-        final List<Enum> ret = new ArrayList<Enum>();
-        for (Object e : enumType.getEnumConstants()) {
-            ret.add((Enum) e);
-        }
-        return ret.toArray(new Enum[0]);
     }
 
     private String getTranslation(KeyHandler m, String ext) {

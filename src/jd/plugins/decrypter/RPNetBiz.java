@@ -6,6 +6,7 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -16,7 +17,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@DecrypterPlugin(revision = "$Revision: 28474 $", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "https?://tor-.*?rpnet\\.biz/files/.*?/.*?\\$" }) public class RPNetBiz extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 28474 $", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "https?://tor-.*?rpnet\\.biz/files/.*?/.+" })
+public class RPNetBiz extends PluginForDecrypt {
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -25,8 +27,26 @@ import org.appwork.utils.os.CrossSystem;
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage(parameter.getCryptedUrl() + "/");
-        ret.addAll(getAllNodes(br, null));
+        br.setFollowRedirects(true);
+        final URLConnectionAdapter con = br.openGetConnection(parameter.getCryptedUrl());
+        try {
+            if (con.getResponseCode() == 200 && con.isContentDisposition()) {
+                final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + parameter.getCryptedUrl(), true);
+                if (con.getLongContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getLongContentLength());
+                }
+                ret.add(link);
+            } else {
+                br.followConnection();
+                if (con.getResponseCode() == 403 || br.containsHTML("Access denied")) {
+                    return ret;
+                }
+                ret.addAll(getAllNodes(br, null));
+            }
+        } finally {
+            con.disconnect();
+        }
+
         return ret;
     }
 
