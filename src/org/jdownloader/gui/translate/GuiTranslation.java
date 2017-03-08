@@ -2573,7 +2573,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Disconnect" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_disconnect_();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Auto connect" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_();
@@ -3213,7 +3212,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "ms" })
     String NinekwService_createPanel_ms();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Useragent" })
     // String NinekwService_createPanel_useragent();
@@ -3995,7 +3993,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Ok, but what now?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Step %s1:" })
     // String lit_step_x(int i);
@@ -4026,7 +4023,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to download and install the required official (http://phantomjs.org) PhantomJS Package, please click [Install PhantomJS now].</html>" })
     String Phantom_JS_Explain_download();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Searching for the FFmpeg™ Binary" })
     // String FFMpegInstallTypeChooserDialog_run_searching_();
@@ -4105,7 +4101,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Information overwrites packagizer rules" })
     String AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer();
-
     //
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "New Survey available!" })
@@ -4884,7 +4879,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Best Video Resolution available (e.g. 360p, if there is no better video quality)" })
     String YoutubeHelper_getDescription_resolution_best();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Direct Feedback: " })
     // String vote_label();
@@ -4903,7 +4897,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Click here to report a problem with the Download." })
     String DownloadsTable_layoutDirectFeedback_direct_feedback_line1_negative();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "<html>Click here if the <br>'%s1'-Button<br> does NOT work as intended.</html>" })
     // String VoteFinderWindow_VoteFinderWindow_action_negative(String name);
@@ -4943,7 +4936,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Autoproxy(PAC)" })
     String gui_column_proxytype_pac();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Status" })
     // String gui_column_status();
@@ -4965,7 +4957,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter a list (Newline seperated) of domains to use this proxy either only for these domains (whitelist), or never for these domains (blacklist)" })
     String proxyDetailsDialog_white_blacklist_explain();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Domain Problems" })
     // String proxyDetailsDialog_white_bans();
@@ -4987,7 +4978,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Proxy.pac url" })
     String jd_gui_swing_dialog_ProxyDialog_pac_url();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "%s1 is disabled until %s2" })
     // String proxyDetailsDialog_ban_time_global_proxySpecific(String proxy, String string);
@@ -5015,7 +5005,6 @@ public interface GuiTranslation extends TranslateInterface {
     // String proxyDetailsDialog_ban_endless_domain(String domain);
     @Default(lngs = { "en" }, values = { "There is no known problem right now." })
     String proxyDetailsDialog_ban_noban();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Use for Account Connections (Premium Downloads)" })
     // String gui_column_use_premium();
@@ -6556,4 +6545,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "API Key" })
     String lit_api_key();
+
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
+    String AntiCaptchaCom_getName_();
 }

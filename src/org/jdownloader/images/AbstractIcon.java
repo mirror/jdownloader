@@ -12,7 +12,6 @@ import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 
 public class AbstractIcon implements Icon, IDIcon {
-
     private final String key;
 
     public String getKey() {
@@ -119,5 +118,4 @@ public class AbstractIcon implements Icon, IDIcon {
     public void setAlpha(float f) {
         setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, f));
     }
-
 }
