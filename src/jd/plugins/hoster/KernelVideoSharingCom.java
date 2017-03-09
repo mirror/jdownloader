@@ -161,8 +161,8 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 filename = br.getRegex("<h\\d+ class=\"[^<>]+>([^<>]*?)<").getMatch(0);
             }
             if (downloadLink.getDownloadURL().contains("faplust.com")) {
-                /* 2016-12-21 */
-                filename = br.getRegex("<div class=\"info\">\\s+<span>([^<>]*?)<").getMatch(0);
+                /* 2017-03-09 */
+                filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
             }
             if (inValidate(filename)) {
                 /* Newer KVS e.g. tubecup.com */
