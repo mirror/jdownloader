@@ -85,6 +85,7 @@ public class SternDe extends PluginForHost {
         if (dllink != null && dllink.contains(".m3u8")) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
         } else {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
