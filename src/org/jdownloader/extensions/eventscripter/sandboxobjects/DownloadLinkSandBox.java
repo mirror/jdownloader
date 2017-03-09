@@ -237,6 +237,14 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public void resume() {
+        if (downloadLink != null) {
+            final ArrayList<DownloadLink> l = new ArrayList<DownloadLink>();
+            l.add(downloadLink);
+            DownloadWatchDog.getInstance().resume(l);
+        }
+    }
+
     public long getEta() {
         if (downloadLink == null) {
             return -1l;
