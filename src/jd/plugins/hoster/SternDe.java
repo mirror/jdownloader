@@ -30,18 +30,18 @@ import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "about.com" }, urls = { "https?://[A-Za-z0-9\\-]+\\.about\\.com/video/[\\w\\-]+\\.htm" })
-public class AboutCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stern.de" }, urls = { "https?://(?:www\\.)?stern\\.de/.*?\\.html|https?://(?:www\\.)?stern\\.de/action/\\d+/videoembed\\?video=\\d+" })
+public class SternDe extends PluginForHost {
 
     private String dllink = null;
 
-    public AboutCom(final PluginWrapper wrapper) {
+    public SternDe(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.about.com/legal.htm";
+        return "http://www.stern.de/agb-4541846.html";
     }
 
     @Override
@@ -62,7 +62,8 @@ public class AboutCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        final BrightcoveEdgeContainer bestQuality = jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainerAuto(this.br, Arrays.asList(new Protocol[] { Protocol.HLS, Protocol.HTTP }));
+        /* 2017-03-09: http- and hls available --> Grab only http as hls seems to be always lower quality (for mobile devices). */
+        final BrightcoveEdgeContainer bestQuality = jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainerAuto(this.br, Arrays.asList(new Protocol[] { Protocol.HTTP }));
         if (bestQuality == null) {
             /* We assume that the page does not contain any video-content --> Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

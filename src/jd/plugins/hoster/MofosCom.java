@@ -34,7 +34,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofos.com" }, urls = { "https?://members2\\.mofos\\.com/download/\\d+/[A-Za-z0-9\\-_]+/|http://mofosdecrypted.+" })
 public class MofosCom extends PluginForHost {
@@ -254,6 +257,94 @@ public class MofosCom extends PluginForHost {
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public String getDescription() {
+        return "Lade Video- und Audioinhalte aus der ZDFMediathek herunter";
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return MofosConfigInterface.class;
+    }
+
+    public static interface MofosConfigInterface extends PluginConfigInterface {
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isGrabBESTEnabled();
+
+        void setGrabBESTEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(21)
+        boolean isAddUnknownQualitiesEnabled();
+
+        void setAddUnknownQualitiesEnabled(boolean b);
+
+        /* Download-only */
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrab1080_12000Enabled();
+
+        void setGrab1080_12000Enabled(boolean b);
+
+        /* Download-only */
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrab720_8000Enabled();
+
+        void setGrab720_8000Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrab720_3800Enabled();
+
+        void setGrab720_3800Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isGrab720_2600Enabled();
+
+        void setGrab720_2600Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(45)
+        boolean isGrab720_2000Enabled();
+
+        void setGrab720_2000Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(50)
+        boolean isGrab480_2000Enabled();
+
+        void setGrab480_2000Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(60)
+        boolean isGrab480_1500Enabled();
+
+        void setGrab480_1500Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(70)
+        boolean isGrab480_1000Enabled();
+
+        void setGrab480_1000Enabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(80)
+        boolean isGrab272_650Enabled();
+
+        void setGrab272_650Enabled(boolean b);
+
     }
 
     @Override

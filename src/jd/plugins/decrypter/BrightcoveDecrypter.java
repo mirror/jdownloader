@@ -21,8 +21,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,8 +39,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -369,25 +374,32 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     }
 
+    /* TODO general: Add more errorhandling for setters, improve BEST selection, add a lot of documentation, TEST THIS! */
     public static String brightcoveEdgeRegexIDAccount(final Browser br) {
         return br.getRegex("data\\-account\\s*=\\s*(\"|')(\\d+)\\1").getMatch(1);
     }
 
-    public static String brightcoveEdgeRegexIDVideo(final Browser br) {
-        return br.getRegex("data\\-video\\-id\\s*=\\s*(\"|')(\\d+)\\1").getMatch(1);
+    public static String brightcoveEdgeRegexIDReference(final Browser br) {
+        return br.getRegex("data\\-video\\-id\\s*=\\s*(\"|')([^<>\"\\']+)\\1").getMatch(1);
     }
 
-    public static String getPolicyKey(final Browser br, final String accountID) throws DecrypterException, Exception {
+    public static String getPolicyKey(final Browser br, final String accountID) throws IOException {
         if (br == null || StringUtils.isEmpty(accountID)) {
             return null;
         }
-        final String bcJS = br.getRegex("<script src=(\"|')(//players\\.brightcove\\.net/" + accountID + "/.*?)\\1></script>").getMatch(1);
-        if (StringUtils.isEmpty(bcJS)) {
-            throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
-        }
         final Browser js = br.cloneBrowser();
         js.getHeaders().put("Accept", "*/*");
-        js.getPage(bcJS);
+        /* E.g. working fine for stern.de */
+        String bcJSURL = br.getRegex("<script src=(\"|')(//players\\.brightcove\\.net/" + accountID + "/.*?)\\1></script>").getMatch(1);
+        if (StringUtils.isEmpty(bcJSURL)) {
+            /* E.g. required for about.com */
+            final String dataPlayer = br.getRegex("data\\-player=\"([^<>\"]+)\"").getMatch(0);
+            if (dataPlayer == null) {
+                return null;
+            }
+            bcJSURL = String.format("http://players.brightcove.net/%s/%s_default/index.min.js", accountID, dataPlayer);
+        }
+        js.getPage(bcJSURL);
         final String policyKey = PluginJSonUtils.getJson(js, "policyKey");
         return policyKey;
     }
@@ -411,28 +423,38 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     }
 
     public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br) throws DecrypterException, Exception {
-        final String accountID = brightcoveEdgeRegexIDAccount(br);
-        final String videoID = brightcoveEdgeRegexIDAccount(br);
-        final String policyKey = getPolicyKey(br, accountID);
-        return findAllQualities(br, accountID, videoID, policyKey, true);
+        return findAllQualities(br, null);
     }
 
-    public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br, final boolean crawlHLS) throws DecrypterException, Exception {
-        final String accountID = brightcoveEdgeRegexIDAccount(br);
-        final String videoID = brightcoveEdgeRegexIDAccount(br);
-        final String policyKey = getPolicyKey(br, accountID);
-        return findAllQualities(br, accountID, videoID, policyKey, crawlHLS);
+    public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br, final List<Protocol> allowedProtocolsList) throws DecrypterException, Exception {
+        return findAllQualities(br, allowedProtocolsList);
     }
 
+    public static BrightcoveEdgeContainer findBESTBrightcoveEdgeContainerAuto(final Browser br) throws DecrypterException, Exception {
+        return findBESTBrightcoveEdgeContainerAuto(br, null);
+    }
+
+    public static BrightcoveEdgeContainer findBESTBrightcoveEdgeContainerAuto(final Browser br, final List<Protocol> allowedProtocolsList) throws DecrypterException, Exception {
+        final HashMap<String, BrightcoveEdgeContainer> allQualities = findAllQualitiesAuto(br, allowedProtocolsList);
+        return findBESTBrightcoveEdgeContainer(allQualities);
+    }
+
+    /**
+     * TODO: Add documentation, improve publishername inside filename, improve quality selection and add documentation, add support for
+     * thumbnails via quality selection, make sure to only grab hls one time if it is available multiple times (via https and without)!, Add
+     * parameter for encrypted stuff and/or block encrypted hls- and RTMPE by default.
+     */
     @SuppressWarnings("unchecked")
-    public static HashMap<String, BrightcoveEdgeContainer> findAllQualities(final Browser br, final String accountID, final String referenceID, final String policyKey, final boolean crawlHLS) throws IOException {
+    public static HashMap<String, BrightcoveEdgeContainer> findAllQualities(final Browser br, final List<Protocol> allowedProtocolsList) throws IOException {
+        final String accountID = brightcoveEdgeRegexIDAccount(br);
+        final String referenceID = brightcoveEdgeRegexIDReference(br);
+        final String policyKey = getPolicyKey(br, accountID);
         if (br == null || StringUtils.isEmpty(accountID) || StringUtils.isEmpty(referenceID) || StringUtils.isEmpty(policyKey)) {
             return null;
         }
         final String source_host = br.getHost();
 
         final HashMap<String, BrightcoveEdgeContainer> all_found_qualities = new HashMap<String, BrightcoveEdgeContainer>();
-        /* TODO: Brightcove edge parser goes here */
         setAPIHeaders(br, policyKey);
         br.getPage(getAPIPlaybackUrl(accountID, referenceID));
         try {
@@ -443,7 +465,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             final String created_at = (String) entries.get("created_at");
             String description = null;
             String description_long = null;
-            /* The videoID which can be used to build hls-master-urls. */
+            /* The videoID which can be used to build hls-master-urls --> This is NOT == referenceID! */
             String videoID = null;
             String publisherInfo = null;
             try {
@@ -456,10 +478,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             }
             final long duration_general = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
 
-            if (publisherInfo == null || publisherInfo.equals("")) {
+            if (StringUtils.isEmpty(publisherInfo)) {
                 publisherInfo = source_host;
             }
-            final String publisher_name = new Regex(publisherInfo, "https?://(?:www\\.)?([^/]+)").getMatch(0).replace(".", "_");
+            final String publisher_name = new Regex(publisherInfo, "(?:https?://(?:www\\.)?)?([^/]+)").getMatch(0).replace(".", "_");
 
             for (final Object sourceo : sources) {
                 entries = (LinkedHashMap<String, Object>) sourceo;
@@ -472,7 +494,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                 final String app_name = (String) entries.get("app_name");
                 final String type = (String) entries.get("type");
 
-                if (src == null || codec == null || width == 0 || height == 0) {
+                if (src == null || codec == null) {
                     /* Skip invalid items */
                     continue;
                 }
@@ -480,8 +502,8 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                 BrightcoveEdgeContainer bcont = null;
                 if (type != null && type.equalsIgnoreCase("application/x-mpegURL") || src.contains(".m3u8")) {
                     /* HLS */
-                    if (!crawlHLS) {
-                        /* Skip HLS if it's not required. */
+                    if (allowedProtocolsList != null && !allowedProtocolsList.contains(Protocol.HLS)) {
+                        /* Skip HLS if it's not wanted. */
                         continue;
                     }
                     final Browser brc = br.cloneBrowser();
@@ -492,6 +514,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                         for (final HlsContainer hlsCont : hlsContainers) {
                             bcont = new BrightcoveEdgeContainer(accountID, referenceID, name, hlsCont.getHeight(), hlsCont.getWidth());
                             bcont.setDuration(duration_general);
+                            bcont.setBandwidth(hlsCont.getBandwidth());
                             bcont.setVideoCodec(codec);
                             bcont.setDownloadURL(hlsCont.getDownloadurl());
                             bcont.setPublishedAT(published_at);
@@ -499,12 +522,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                             bcont.setCreatedAT(created_at);
                             bcont.setDescription(description);
                             bcont.setDescriptionLong(description_long);
-                            /* TODO: Set protocol!, What to do with multiple same widths but different/higher "BANDWIDTH" values?? */
-                            all_found_qualities.put(Integer.toString(hlsCont.getWidth()), bcont);
+                            bcont.setProtocol(BrightcoveEdgeContainer.Protocol.HLS);
+                            all_found_qualities.put(bcont.getQualityKey(), bcont);
                         }
                     }
 
                 } else if (src.startsWith("rtmp") || src.startsWith("http")) {
+                    if (width == 0 || height == 0) {
+                        continue;
+                    }
                     bcont = new BrightcoveEdgeContainer(accountID, referenceID, name, (int) height, (int) width);
                     bcont.setFilesize(size);
                     bcont.setDuration(duration);
@@ -515,12 +541,20 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                     bcont.setCreatedAT(created_at);
                     bcont.setDescription(description);
                     bcont.setDescriptionLong(description_long);
-                    /* TODO: Set protocol! */
-                    if (src.startsWith("rtmp")) {
+                    if (src.startsWith("rtmpe")) {
                         bcont.setAppName(app_name);
+                        bcont.setProtocol(BrightcoveEdgeContainer.Protocol.RTMPE);
+                    } else if (src.startsWith("rtmp")) {
+                        bcont.setAppName(app_name);
+                        bcont.setProtocol(BrightcoveEdgeContainer.Protocol.RTMP);
                     } else {
+                        bcont.setProtocol(BrightcoveEdgeContainer.Protocol.HTTP);
                     }
-                    all_found_qualities.put(Long.toString(width), bcont);
+                    if (allowedProtocolsList != null && !allowedProtocolsList.contains(bcont.getProtocol())) {
+                        /* Skip unwanted protocols. */
+                        continue;
+                    }
+                    all_found_qualities.put(bcont.getQualityKey(), bcont);
                 } else {
                     /* Skip unknown formats/protocols */
                     continue;
@@ -532,27 +566,143 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return all_found_qualities;
     }
 
+    public static BrightcoveEdgeContainer findBESTBrightcoveEdgeContainer(final HashMap<String, BrightcoveEdgeContainer> inputmap) {
+        long bandwidth_max = 0;
+        long filesize_max = 0;
+
+        /* Usually HTTP */
+        BrightcoveEdgeContainer bestByFilesize = null;
+        /* Usually HDS/HLS */
+        BrightcoveEdgeContainer bestByBandwidth = null;
+        BrightcoveEdgeContainer best = null;
+
+        final Iterator<Entry<String, BrightcoveEdgeContainer>> inputmap_iterator = inputmap.entrySet().iterator();
+        while (inputmap_iterator.hasNext()) {
+            final Entry<String, BrightcoveEdgeContainer> brightcoveEdgeContainerEntryTemp = inputmap_iterator.next();
+            final BrightcoveEdgeContainer brightcoveEdgeContainerTemp = brightcoveEdgeContainerEntryTemp.getValue();
+            if (brightcoveEdgeContainerTemp.getFilesize() > filesize_max) {
+                bestByFilesize = brightcoveEdgeContainerTemp;
+                filesize_max = brightcoveEdgeContainerTemp.getFilesize();
+            } else if (brightcoveEdgeContainerTemp.getBandwidth() > bandwidth_max) {
+                bestByBandwidth = brightcoveEdgeContainerTemp;
+                bandwidth_max = brightcoveEdgeContainerTemp.getBandwidth();
+            }
+
+        }
+
+        if (bestByFilesize != null && bestByBandwidth != null && bestByFilesize.getProtocol() == Protocol.HTTP && bestByBandwidth.getProtocol() == Protocol.HLS && bestByBandwidth.getFilesize() == 0) {
+            /* Find out if hls has higher quality than http. */
+            try {
+                final Browser br = new Browser();
+                final DownloadLink dummyLink = new DownloadLink(null, "Dummy", "brightcove.com", "http://brightcove.com/", true);
+                final HLSDownloader downloader = new HLSDownloader(dummyLink, br, bestByBandwidth.getDownloadURL());
+                final StreamInfo streamInfo = downloader.getProbe();
+                if (streamInfo != null) {
+                    final long estimatedSize = downloader.getEstimatedSize();
+                    if (estimatedSize > 0) {
+                        bestByBandwidth.setFilesize(estimatedSize);
+                    }
+                }
+            } catch (final Throwable e) {
+            }
+            if (bestByBandwidth.getFilesize() > bestByFilesize.getFilesize()) {
+                best = bestByBandwidth;
+            } else {
+                best = bestByFilesize;
+            }
+        }
+        if (best == null && bestByFilesize != null) {
+            /* Usually http */
+            best = bestByFilesize;
+        } else if (best == null && bestByBandwidth != null) {
+            /* Usually hls */
+            best = bestByBandwidth;
+        }
+
+        return best;
+    }
+
+    /* Handles quality selection of found HashMap "inputmap" with errorhandling for bad user selection! */
+    public static HashMap<String, BrightcoveEdgeContainer> handleQualitySelection(final HashMap<String, BrightcoveEdgeContainer> inputmap, final boolean grabBEST, final boolean grabBESTWithinUserSelection, final boolean grabUnknownQualities, final List<String> allPossibleQualities, final List<String> allSelectedQualities) {
+        /* TODO: Add functionality */
+        /* If BEST, grab BEST */
+        HashMap<String, BrightcoveEdgeContainer> final_selected_qualities_map = new HashMap<String, BrightcoveEdgeContainer>();
+        if (grabBEST) {
+            final BrightcoveEdgeContainer bestQuality = findBESTBrightcoveEdgeContainer(inputmap);
+            if (bestQuality != null) {
+                final_selected_qualities_map.put(bestQuality.getQualityKey(), bestQuality);
+            }
+        }
+
+        /* Either BEST setting not active or it failed --> Proceed here */
+        if (final_selected_qualities_map.isEmpty()) {
+            boolean atLeastOneSelectedQualityExists = false;
+            if (allSelectedQualities != null) {
+                for (final String selectedQuality : allSelectedQualities) {
+                    if (inputmap.containsKey(selectedQuality)) {
+                        atLeastOneSelectedQualityExists = true;
+                        break;
+                    }
+                }
+            }
+
+            /* Return selected qualities */
+            final Iterator<Entry<String, BrightcoveEdgeContainer>> inputmap_iterator = inputmap.entrySet().iterator();
+            while (inputmap_iterator.hasNext()) {
+                final Entry<String, BrightcoveEdgeContainer> brightcoveEdgeContainerEntryTemp = inputmap_iterator.next();
+                final String qualityKey = brightcoveEdgeContainerEntryTemp.getKey();
+                final BrightcoveEdgeContainer brightcoveEdgeContainerTemp = brightcoveEdgeContainerEntryTemp.getValue();
+                final boolean isUnknownQuality = allPossibleQualities != null && !allPossibleQualities.contains(qualityKey);
+                if (allSelectedQualities.contains(qualityKey)) {
+                    /* Grab quality because user selected it */
+                    final_selected_qualities_map.put(qualityKey, brightcoveEdgeContainerTemp);
+                } else if (!atLeastOneSelectedQualityExists || (grabUnknownQualities && isUnknownQuality)) {
+                    /*
+                     * Grab quality because of bad user plugin settings OR because is not known to the format selection AND user wants to
+                     * have unknown qualities!
+                     */
+                    final_selected_qualities_map.put(qualityKey, brightcoveEdgeContainerTemp);
+                } else {
+                    /* Skip unselected qualities */
+                }
+            }
+        }
+
+        return final_selected_qualities_map;
+    }
+
     public static class BrightcoveEdgeContainer {
 
-        private String ext;
-        private String account_id;
-        private String reference_id;
+        public static enum Protocol {
+            DASH,
+            HTTP,
+            HDS,
+            HLS,
+            RTMP,
+            RTMPE
+        }
 
-        private String name;
-        private String description;
-        private String descriptionLong;
-        private String published_at;
-        private String created_at;
+        private Protocol protocol;
+        private String   ext;
+        private String   account_id;
+        private String   reference_id;
 
-        private String publisherName;
-        private String videoCodec;
-        private String downloadurl;
-        private String app_name;
+        private String   name;
+        private String   description;
+        private String   descriptionLong;
+        private String   published_at;
+        private String   created_at;
 
-        private long   width;
-        private long   height;
-        private long   length;
-        private long   size;
+        private String   publisherName;
+        private String   videoCodec;
+        private String   downloadurl;
+        private String   app_name;
+
+        private long     bandwidth;
+        private long     width;
+        private long     height;
+        private long     length;
+        private long     size;
 
         public void init() {
             ext = ".mp4";
@@ -570,8 +720,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
         public BrightcoveEdgeContainer(final String accountID, final String referenceID, final String name, final int height, final int width) {
             init();
+            this.setAccountID(accountID);
+            this.setReferenceID(referenceID);
+            this.setName(name);
             this.setHeight(height);
             this.setWidth(width);
+        }
+
+        public Protocol getProtocol() {
+            return this.protocol;
         }
 
         public String getFileExtension() {
@@ -622,6 +779,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             return this.app_name;
         }
 
+        public long getBandwidth() {
+            return this.bandwidth;
+        }
+
         public long getWidth() {
             return this.width;
         }
@@ -636,6 +797,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
         public long getFilesize() {
             return this.size;
+        }
+
+        public void setProtocol(final Protocol protocol) {
+            this.protocol = protocol;
         }
 
         public void setFileExtension(final String fileExtension) {
@@ -655,11 +820,15 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public void setDescription(final String description) {
-            this.description = description;
+            if (!StringUtils.isEmpty(description)) {
+                this.description = description;
+            }
         }
 
         public void setDescriptionLong(final String descriptionLong) {
-            this.descriptionLong = descriptionLong;
+            if (!StringUtils.isEmpty(descriptionLong)) {
+                this.descriptionLong = descriptionLong;
+            }
         }
 
         public void setPublishedAT(final String publishedAT) {
@@ -700,15 +869,36 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             }
         }
 
+        public void setBandwidth(final long bandwidth) {
+            this.bandwidth = bandwidth;
+        }
+
         public void setFilesize(final long filesize) {
             if (filesize > 0) {
                 this.size = filesize;
             }
         }
 
+        public String getResolution() {
+            return this.getHeight() + "x" + this.getWidth();
+        }
+
+        /* TODO: Maybe improve this */
         @Override
         public String toString() {
-            return name + "_" + width + "x" + height;
+            return this.getName() + "_" + this.getResolution();
+        }
+
+        public boolean equals(final BrightcoveEdgeContainer compare) {
+            return this.getLinkID().equals(compare.getLinkID());
+        }
+
+        public String getLinkID() {
+            return this.getName() + "_" + this.getBandwidth() + "_" + this.getHeight() + "_" + this.getWidth();
+        }
+
+        public String getQualityKey() {
+            return this.getProtocol() + "_" + this.getBandwidth() + "_" + this.getWidth();
         }
 
         public String getStandardFilename() {
@@ -726,6 +916,19 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                 output = input;
             }
             return output;
+        }
+
+        public DownloadLink setInformationOnDownloadLink(final DownloadLink dl) {
+            dl.setFinalFileName(this.getStandardFilename());
+            if (this.getFilesize() > 0) {
+                dl.setDownloadSize(this.getFilesize());
+            }
+            dl.setLinkID(this.getLinkID());
+            if (dl.getComment() == null && this.getDescriptionLong() != null) {
+                dl.setComment(this.getDescriptionLong());
+            }
+            dl.setAvailable(true);
+            return dl;
         }
 
     }
