@@ -86,11 +86,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             fname_url = Encoding.htmlDecode(fname_url);
         } else if (parameter.matches(type_yadi_sk_mail)) {
-            mainhashID = new Regex(parameter, "hash=(.+)").getMatch(0);
+            mainhashID = regexHashFromURL(parameter);
             parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
         } else {
             parameter = parameter.replace("#", "?hash=");
-            mainhashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
+            mainhashID = regexHashFromURL(parameter);
         }
         boolean parameter_correct = false;
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
@@ -267,6 +267,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private String regexHashFromURL(final String url) {
+        return new Regex(url, "hash=([A-Za-z0-9=%\\+]+)").getMatch(0);
     }
 
     private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {

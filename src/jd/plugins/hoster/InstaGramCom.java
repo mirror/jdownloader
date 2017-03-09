@@ -48,7 +48,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -58,16 +58,12 @@ public class InstaGramCom extends PluginForHost {
         this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
-    private String dllink = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/about/legal/terms/#";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/").replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in"));
     }
 
     /* Connection stuff */
@@ -94,13 +90,16 @@ public class InstaGramCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        dllink = null;
+        server_issues = false;
+        is_private_url = downloadLink.getBooleanProperty("private_url", false);
+
         this.setBrowserExclusive();
         /*
-         * Decrypter can set this status - basically to be able to handfle private urls correctly in host plugin in case users' account gets
+         * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
          * disabled for whatever reason.
          */
         prepBR(this.br);
-        is_private_url = downloadLink.getBooleanProperty("private_url", false);
         boolean is_logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -114,68 +113,71 @@ public class InstaGramCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Login required to download this content");
             return AvailableStatus.UNCHECKABLE;
         }
-        String getlink = downloadLink.getDownloadURL();
-        if (!getlink.endsWith("/")) {
-            /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
-            getlink += "/";
-        }
-        br.getPage(getlink);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
-            /* This will also happen if a user tries to access private urls without being logged in! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
-        /* Set releasedate as property */
-        final String date = PluginJSonUtils.getJson(this.br, "date");
-        if (date != null && date.matches("\\d+")) {
-            setReleaseDate(downloadLink, Long.parseLong(date));
-        }
-
-        String ext = ".mp4";
-        dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
-        // Maybe we have a picture
+        dllink = downloadLink.getStringProperty("directurl", null);
         if (dllink == null) {
-            ext = null;
-            dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-            String remove = new Regex(dllink, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
-            if (remove != null) {
-                dllink = dllink.replace(remove, "/");
+            String getlink = downloadLink.getDownloadURL();
+            if (!getlink.endsWith("/")) {
+                /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
+                getlink += "/";
             }
-            downloadLink.setContentUrl(dllink);
+            br.getPage(getlink);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
+                /*
+                 * This will also happen if a user tries to access private urls without being logged in --> Which is why we need to know the
+                 * private_url status from the crawler!
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+
+            /* Set releasedate as property */
+            final String date = PluginJSonUtils.getJson(this.br, "date");
+            if (date != null && date.matches("\\d+")) {
+                setReleaseDate(downloadLink, Long.parseLong(date));
+            }
+
+            String ext = ".mp4";
+            dllink = PluginJSonUtils.getJsonValue(this.br, "video_url");
+            // Maybe we have a picture
+            if (dllink == null) {
+                ext = null;
+                dllink = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+                String remove = new Regex(dllink, "(/[a-z0-9]+?x[0-9]+/)").getMatch(0); // Size
+                if (remove != null) {
+                    dllink = dllink.replace(remove, "/");
+                }
+                downloadLink.setContentUrl(dllink);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
+            final String username = br.getRegex("\"owner\".*?\"username\": ?\"([^<>\"]*?)\"").getMatch(0);
+            final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_-]+)$").getMatch(0);
+            String filename = null;
+            if (StringUtils.isNotEmpty(username)) {
+                filename = username + " - " + linkid;
+            } else {
+                filename = linkid;
+            }
+            filename = filename.trim();
+            if (ext == null) {
+                ext = getFileNameExtensionFromString(dllink, ".jpg");
+            }
+            String server_filename = getFileNameFromURL(new URL(dllink));
+            if (this.getPluginConfig().getBooleanProperty(PREFER_SERVER_FILENAMES, defaultPREFER_SERVER_FILENAMES) && server_filename != null) {
+                server_filename = fixServerFilename(server_filename, ext);
+                downloadLink.setFinalFileName(server_filename);
+            } else {
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+            }
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
-        final String username = br.getRegex("\"owner\".*?\"username\": ?\"([^<>\"]*?)\"").getMatch(0);
-        final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_-]+)$").getMatch(0);
-        String filename = null;
-        if (StringUtils.isNotEmpty(username)) {
-            filename = username + " - " + linkid;
-        } else {
-            filename = linkid;
-        }
-        filename = filename.trim();
-        if (ext == null) {
-            ext = getFileNameExtensionFromString(dllink, ".jpg");
-        }
-        String server_filename = getFileNameFromURL(new URL(dllink));
-        if (this.getPluginConfig().getBooleanProperty(PREFER_SERVER_FILENAMES, defaultPREFER_SERVER_FILENAMES) && server_filename != null) {
-            server_filename = fixServerFilename(server_filename, ext);
-            downloadLink.setFinalFileName(server_filename);
-        } else {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        }
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             }
         } finally {
             try {
@@ -209,13 +211,17 @@ public class InstaGramCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (this.is_private_url) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDownload(downloadLink);
     }
 
     public void handleDownload(final DownloadLink downloadLink) throws Exception {
         int maxchunks = MAXCHUNKS_pictures;
-        if (downloadLink.getFinalFileName().contains(".mp4")) {
+        if (downloadLink.getFinalFileName() != null && downloadLink.getFinalFileName().contains(".mp4") || downloadLink.getName() != null && downloadLink.getName().contains(".mp4")) {
             maxchunks = MAXCHUNKS_videos;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, maxchunks);
