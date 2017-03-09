@@ -1,5 +1,6 @@
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -29,9 +29,10 @@ public class RPNetBiz extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        final String fileName = getFileNameFromURL(new URL(parameter.getCryptedUrl()));
         final URLConnectionAdapter con = br.openGetConnection(parameter.getCryptedUrl());
         try {
-            if (con.getResponseCode() == 200 && (con.isContentDisposition() || (con.getLongContentLength() > 0 && Files.getExtension(con.getURL().getFile()) != null))) {
+            if (con.getResponseCode() == 200 && (con.isContentDisposition() || (con.getLongContentLength() > 0 && StringUtils.isNotEmpty(fileName)))) {
                 final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + parameter.getCryptedUrl(), true);
                 if (con.getLongContentLength() > 0) {
                     link.setVerifiedFileSize(con.getLongContentLength());
