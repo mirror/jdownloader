@@ -51,17 +51,12 @@ public class FileKareliaRu extends PluginForHost {
         br.setFollowRedirects(true);
         /* Access fixed link */
         br.getPage(link.getDownloadURL().replace("file.kareliadecrypted.ru/", "file.karelia.ru/").replaceAll("(\\d+)$", ""));
-        if (br.containsHTML(">Файла не существует или он был удалён с сервера")) {
+        if (jd.plugins.decrypter.FileKareliaRuDecrypter.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         FID = new Regex(link.getDownloadURL(), "([a-z0-9]+)/\\d+$").getMatch(0);
         if (link.getBooleanProperty("partlink")) {
-            final Regex fInfo = br.getRegex("<a  href=\"(http://[a-z0-9]+\\.file\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + link.getStringProperty("plainfilename") + ")\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>");
-            if (fInfo.getMatches().length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             link.setFinalFileName(link.getStringProperty("plainfilename"));
-            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fInfo.getMatch(1).replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
         } else {
             String filesize = br.getRegex("общим размером <strong id=\"totalSize\">([^<>\"]*?)</strong>").getMatch(0);
             if (filesize == null) {
@@ -71,8 +66,7 @@ public class FileKareliaRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setFinalFileName(FID + ".zip");
-            filesize = Encoding.htmlDecode(filesize);
-            filesize = filesize.replace("Гбайта", "GB").replaceAll("Мбайта?", "MB").replace("Кбайта", "kb");
+            setFilesize(link, filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -83,13 +77,19 @@ public class FileKareliaRu extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = null;
         if (downloadLink.getBooleanProperty("partlink")) {
-            final Regex fInfo = br.getRegex("<a  href=\"(http://[a-z0-9]+\\.file\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + downloadLink.getStringProperty("plainfilename") + ")\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>");
+            final boolean singlefile = downloadLink.getBooleanProperty("singlefile", false);
+            final String filename_urlencoded = Encoding.urlEncode_light(downloadLink.getStringProperty("plainfilename"));
+            final Regex fInfo = br.getRegex("\"(https?://[a-z0-9\\-]+\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + filename_urlencoded + ")\"");
             dllink = fInfo.getMatch(0);
+            if (dllink == null && singlefile) {
+                /* Fallback for single files --> We do not necessarily have to grab the 'correct' directurl based on our filename! */
+                dllink = br.getRegex("data\\-href=\"(https?://[^<>\"]+)").getMatch(0);
+            }
         } else {
-            dllink = br.getRegex("<span>Скачать архивом:</span>[\t\n\r ]+<a class=\"zip_button sel\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("<span>Скачать архивом:</span>[\t\n\r ]+<a class=\"zip_button sel\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             /* Probably a single file */
             if (dllink == null) {
-                dllink = br.getRegex("<a title=\"Скачать файл\"[^<>]*?href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("<a title=\"Скачать файл\"[^<>]*?href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
         }
         if (dllink == null) {
@@ -101,6 +101,11 @@ public class FileKareliaRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public static void setFilesize(final DownloadLink dl, String filesize) {
+        filesize = filesize.replace("Гбайта", "GB").replaceAll("Мбайта?", "MB").replace("Кбайта", "kb");
+        dl.setDownloadSize(SizeFormatter.getSize(filesize));
     }
 
     @Override

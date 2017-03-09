@@ -82,6 +82,75 @@ public class RGhostRu extends PluginForHost {
         link.setUrlDownload(newlink);
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 409, 503 });
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 409) {
+            /* Cloudflare DNS issue --> In this case definitly offline! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
+            link.getLinkStatus().setStatusText("Server maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        String filename = br.getRegex("class=\"filename\" title=\"([^<>\"]+)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]+)— RGhost — файлообменник</title>").getMatch(0);
+        }
+        String filesize = br.getRegex("<i class=\"nowrap\">\\(([^<>\"]+)\\)<").getMatch(0);
+        // will pick up the first filesize mentioned.. as last resort fail over.
+        if (filesize == null) {
+            filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+        }
+        String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (md5 == null) {
+            md5 = br.getRegex("(?i)MD5((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{32})").getMatch(3);
+        }
+        if (md5 == null) {
+            md5 = br.getRegex("(?i)MD5.*?([a-z0-9]{32})").getMatch(0);
+        }
+        if (md5 != null) {
+            link.setMD5Hash(md5.trim());
+        }
+        String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (sha1 == null) {
+            sha1 = br.getRegex("(?i)SHA1((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{40})").getMatch(3);
+        }
+        if (sha1 == null) {
+            sha1 = br.getRegex("(?i)SHA1.*?([a-z0-9]{32})").getMatch(0);
+        }
+        if (sha1 != null) {
+            link.setSha1Hash(sha1.trim());
+        }
+        if (filename != null) {
+            link.setName(filename);
+        }
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+
+        /* Leave this here - filename- and filesize can be present although the url is offline! */
+        if (this.br.containsHTML(">File is deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Final errorhandling for missing filename */
+        if (filename == null) {
+            if (!this.br.containsHTML("class=\"file\\-info\\-title\"")) {
+                /* Not a file url */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        if (br.containsHTML(PWTEXT)) {
+            link.getLinkStatus().setStatusText("This file is password protected");
+        }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -143,60 +212,6 @@ public class RGhostRu extends PluginForHost {
     private String getDownloadlink() {
         String dllink = br.getRegex("\"(http://[^/]+/download/[^<>\"]*?)\"").getMatch(0);
         return dllink;
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(new int[] { 409, 503 });
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 409) {
-            /* Cloudflare DNS issue --> In this case definitly offline! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 503) {
-            link.getLinkStatus().setStatusText("Server maintenance");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        String filename = br.getRegex("class=\"filename\" title=\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]+)— RGhost — файлообменник</title>").getMatch(0);
-        }
-        String filesize = br.getRegex("<i class=\"nowrap\">\\(([^<>\"]+)\\)<").getMatch(0);
-        // will pick up the first filesize mentioned.. as last resort fail over.
-        if (filesize == null) {
-            filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-        }
-        if (filename == null) {
-            if (!this.br.containsHTML("class=\"file\\-info\\-title\"")) {
-                /* Not a file url */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (md5 == null) {
-            md5 = br.getRegex("(?i)MD5((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{32})").getMatch(3);
-        }
-        if (md5 != null) {
-            link.setMD5Hash(md5.trim());
-        }
-        String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (sha1 == null) {
-            sha1 = br.getRegex("(?i)SHA1((<[^>]+>)+?([\r\n\t ]+)?)+?([a-z0-9]{40})").getMatch(3);
-        }
-        if (sha1 != null) {
-            link.setSha1Hash(sha1.trim());
-        }
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PWTEXT)) {
-            link.getLinkStatus().setStatusText("This file is password protected");
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
