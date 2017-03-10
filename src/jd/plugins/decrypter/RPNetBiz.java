@@ -8,6 +8,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,10 +30,12 @@ public class RPNetBiz extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String fileName = getFileNameFromURL(new URL(parameter.getCryptedUrl()));
+        final URL url = new URL(parameter.getCryptedUrl());
+        final String fileName = getFileNameFromURL(url);
+        final boolean isFolder = url.getPath().endsWith("$/");
         final URLConnectionAdapter con = br.openGetConnection(parameter.getCryptedUrl());
         try {
-            if (con.getResponseCode() == 200 && (con.isContentDisposition() || (con.getLongContentLength() > 0 && StringUtils.isNotEmpty(fileName)))) {
+            if (con.getResponseCode() == 200 && (con.isContentDisposition() || (!isFolder && con.getLongContentLength() > 0 && StringUtils.isNotEmpty(fileName)))) {
                 final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + parameter.getCryptedUrl(), true);
                 if (con.getLongContentLength() > 0) {
                     link.setVerifiedFileSize(con.getLongContentLength());
@@ -43,7 +46,7 @@ public class RPNetBiz extends PluginForDecrypt {
                 if (con.getResponseCode() == 403 || br.containsHTML("Access denied")) {
                     return ret;
                 }
-                ret.addAll(getAllNodes(br, null));
+                ret.addAll(getAllNodes(br, null, null));
             }
         } finally {
             con.disconnect();
@@ -52,20 +55,20 @@ public class RPNetBiz extends PluginForDecrypt {
         return ret;
     }
 
-    public static List<DownloadLink> getAllNodes(Browser br, String currentPath) throws Exception {
+    public static List<DownloadLink> getAllNodes(Browser br, final String filePackageName, String currentPath) throws Exception {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (currentPath == null) {
             currentPath = "";
         }
         final boolean addPath = StringUtils.isNotEmpty(currentPath);
         final FilePackage filePackage;
-        if (addPath) {
+        if (addPath && filePackageName != null) {
             filePackage = FilePackage.getInstance();
-            filePackage.setName(currentPath);
+            filePackage.setName(filePackageName);
         } else {
             filePackage = null;
         }
-        final String nodes[][] = br.getRegex("href=\"([^\"]*?)\">([^<]*?)</a>\\s*</td>\\s*<td>([^<]*?)</td>").getMatches();
+        final String nodes[][] = br.getRegex("href=\"([^\"]*?)\"(?:\\s*title=.*?)?>([^<]*?)</a>\\s*</td>\\s*<td>([^<]*?)</td>").getMatches();
         for (final String node[] : nodes) {
             final String path = node[0];
             final String name = node[1];
@@ -75,16 +78,25 @@ public class RPNetBiz extends PluginForDecrypt {
             }
             if (StringUtils.equals(size, "-")) {
                 // folder
+                final URL url = br.getURL(path);
+                final String pathParts[] = url.getPath().split("/");
+                final String pathName;
+                if (pathParts.length > 0) {
+                    pathName = Encoding.htmlDecode(pathParts[pathParts.length - 1]);
+                } else {
+                    pathName = name;
+                }
                 final Browser br2 = br.cloneBrowser();
                 br2.getPage(path);
-                ret.addAll(getAllNodes(br2, currentPath + "/" + CrossSystem.alleviatePathParts(name)));
+                ret.addAll(getAllNodes(br2, pathName, currentPath + "/" + CrossSystem.alleviatePathParts(pathName)));
             } else {
                 // file
-                final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + br.getURL(path).toString(), true);
+                final URL url = br.getURL(path);
+                final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + url.toString(), true);
                 if (size != null) {
                     link.setDownloadSize(SizeFormatter.getSize(size + "b"));
                 }
-                link.setFinalFileName(name);
+                link.setFinalFileName(getFileNameFromURL(url));
                 if (filePackage != null) {
                     filePackage.add(link);
                 }
