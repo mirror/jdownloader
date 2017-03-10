@@ -52,8 +52,10 @@ public class XfastLink extends PluginForDecrypt {
         if (dlform == null) {
             return null;
         }
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        if (br.containsHTML("g-recaptcha")) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        }
         br.setFollowRedirects(false);
         this.br.submitForm(dlform);
         final String finallink = this.br.getRedirectLocation();
