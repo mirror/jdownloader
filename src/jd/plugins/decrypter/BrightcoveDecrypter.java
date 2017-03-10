@@ -374,15 +374,37 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     }
 
-    /* TODO general: Add more errorhandling for setters, improve BEST selection, add a lot of documentation, TEST THIS! */
+    /**
+     * Find the Brightcove accountID - relevant to access the js- and json later on. <br />
+     *
+     * @param br
+     *            :Browser containing the html code of the source page- and the required Brightcove parameters.
+     *
+     * */
     public static String brightcoveEdgeRegexIDAccount(final Browser br) {
         return br.getRegex("data\\-account\\s*=\\s*(\"|')(\\d+)\\1").getMatch(1);
     }
 
+    /**
+     * Find the Brightcove referenceID - relevant to access the json later on. <br />
+     *
+     * @param br
+     *            :Browser containing the html code of the source page- and the required Brightcove parameters.
+     *
+     * */
     public static String brightcoveEdgeRegexIDReference(final Browser br) {
         return br.getRegex("data\\-video\\-id\\s*=\\s*(\"|')([^<>\"\\']+)\\1").getMatch(1);
     }
 
+    /**
+     * Find the Brightcove policyKey - relevant to access the json later on as this key is required in the 'Access' header. <br />
+     *
+     * @param br
+     *            :Browser containing the html code of the source page- and the required Brightcove parameters.
+     * @param accountID
+     *            : Brightcove accountID
+     *
+     * */
     public static String getPolicyKey(final Browser br, final String accountID) throws IOException {
         if (br == null || StringUtils.isEmpty(accountID)) {
             return null;
@@ -404,52 +426,142 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return policyKey;
     }
 
+    /**
+     * Sets the previously parsed policyKey as 'Accept' header. <br />
+     * Without this header we'll get a 403!
+     *
+     * @param br
+     *            :Browser containing the html code of the source page- and the required Brightcove parameters.
+     * @param policyKey
+     *            : policyKey obtained via getPolicyKey
+     *
+     * */
     public static void setAPIHeaders(final Browser br, final String policyKey) {
         br.getHeaders().put("Accept", "application/json;pk=" + policyKey);
     }
 
-    public static String getAPIPlaybackUrl(final String accountID, final String videoID) {
-        return String.format("https://edge.api.brightcove.com/playback/v1/accounts/%s/videos/%s", accountID, videoID);
+    /**
+     * Returns the Brightcove API URL which finally leads to the json data of our video. <br />
+     *
+     * @param accountID
+     *            :Brightcove accountID
+     * @param referenceID
+     *            : Brightcove referenceID
+     *
+     * */
+    public static String getAPIPlaybackUrl(final String accountID, final String referenceID) {
+        if (accountID == null || referenceID == null) {
+            return null;
+        }
+        return String.format("https://edge.api.brightcove.com/playback/v1/accounts/%s/videos/%s", accountID, referenceID);
     }
 
+    /**
+     * Returns the Brightcove HLS master (mobile) URL via unencrypted http url. <br />
+     *
+     * @param videoID
+     *            :Brightcove videoID (usually [but not always]) this can be found inside the json of the playbackUrl.
+     *
+     * */
     public static String getHlsMasterHttp(final String videoID) {
+        if (videoID == null) {
+            return null;
+        }
         /* Possible additional (not required) parameter: 'pubId' e.g. '&pubId=4013' */
         return String.format("http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=%s", videoID);
     }
 
+    /**
+     * Returns the Brightcove HLS master (mobile) URL via encrypted https url. <br />
+     *
+     * @param videoID
+     *            :Brightcove videoID (usually [but not always]) this can be found inside the json of the playbackUrl.
+     *
+     * */
     public static String getHlsMasterHttps(final String videoID) {
+        if (videoID == null) {
+            return null;
+        }
         /* Possible additional (not required) parameter: 'pubId' e.g. '&pubId=4013' */
         return String.format("https://secure.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=%s&secure=true", videoID);
     }
 
+    /**
+     * Finds ALL BrightcoveEdgeContainer Objects. <br />
+     *
+     * @param br
+     *            : Browser containing the html code of the source page- and the required Brightcove parameters.
+     */
     public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br) throws DecrypterException, Exception {
         return findAllQualities(br, null);
     }
 
+    /**
+     * Finds all BrightcoveEdgeContainer Objects that have the allowed Protocol type. <br />
+     *
+     * @param br
+     *            : Browser containing the html code of the source page- and the required Brightcove parameters.
+     * @param allowedProtocolsList
+     *            : List containing all allowed protocols - usually (2017-03-10) we only want HTTP and HLS which ensures that we avoid
+     *            complicated download procedures and/or issues with crypted streams. <br />
+     *            null = Allow ALL protocols!
+     */
     public static HashMap<String, BrightcoveEdgeContainer> findAllQualitiesAuto(final Browser br, final List<Protocol> allowedProtocolsList) throws DecrypterException, Exception {
         return findAllQualities(br, allowedProtocolsList);
     }
 
+    /**
+     * Finds the best BrightcoveEdgeContainer of all the qualities it finds before. <br />
+     * Calls findBESTBrightcoveEdgeContainerAuto(br, null). <br />
+     *
+     * @param br
+     *            : Browser containing the html code of the source page- and the required Brightcove parameters.
+     */
     public static BrightcoveEdgeContainer findBESTBrightcoveEdgeContainerAuto(final Browser br) throws DecrypterException, Exception {
         return findBESTBrightcoveEdgeContainerAuto(br, null);
     }
 
+    /**
+     * Finds the best BrightcoveEdgeContainer of all the qualities it finds before. <br />
+     *
+     * @param br
+     *            : Browser containing the html code of the source page- and the required Brightcove parameters.
+     * @param allowedProtocolsList
+     *            : List containing all allowed protocols - usually (2017-03-10) we only want HTTP and HLS which ensures that we avoid
+     *            complicated download procedures and/or issues with crypted streams. <br />
+     *            null = Allow ALL protocols!
+     */
     public static BrightcoveEdgeContainer findBESTBrightcoveEdgeContainerAuto(final Browser br, final List<Protocol> allowedProtocolsList) throws DecrypterException, Exception {
         final HashMap<String, BrightcoveEdgeContainer> allQualities = findAllQualitiesAuto(br, allowedProtocolsList);
         return findBESTBrightcoveEdgeContainer(allQualities);
     }
 
     /**
-     * TODO: Add documentation, improve publishername inside filename, improve quality selection and add documentation, add support for
-     * thumbnails via quality selection, make sure to only grab hls one time if it is available multiple times (via https and without)!, Add
-     * parameter for encrypted stuff and/or block encrypted hls- and RTMPE by default.
+     * TODO: add support for thumbnails via quality selection, make sure to only grab hls one time if it is available multiple times (via
+     * https and without)!, Add parameter for encrypted stuff and/or block encrypted hls- and RTMPE by default.
+     */
+    /**
+     * Finds all (video) qualities via all allowed protocols. <br />
+     *
+     * @param br
+     *            : Browser containing the html code of the source page- and the required Brightcove parameters.
+     * @param allowedProtocolsList
+     *            : List containing all allowed protocols - usually (2017-03-10) we only want HTTP and HLS which ensures that we avoid
+     *            complicated download procedures and/or issues with crypted streams.
      */
     @SuppressWarnings("unchecked")
     public static HashMap<String, BrightcoveEdgeContainer> findAllQualities(final Browser br, final List<Protocol> allowedProtocolsList) throws IOException {
         final String accountID = brightcoveEdgeRegexIDAccount(br);
         final String referenceID = brightcoveEdgeRegexIDReference(br);
+        /*
+         * Check this here already because the next step requires a http request - if one of these values is missing we cannot continue
+         * anyways!
+         */
+        if (StringUtils.isEmpty(accountID) || StringUtils.isEmpty(referenceID)) {
+            return null;
+        }
         final String policyKey = getPolicyKey(br, accountID);
-        if (br == null || StringUtils.isEmpty(accountID) || StringUtils.isEmpty(referenceID) || StringUtils.isEmpty(policyKey)) {
+        if (br == null || StringUtils.isEmpty(policyKey)) {
             return null;
         }
         final String source_host = br.getHost();
@@ -476,12 +588,19 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                 publisherInfo = (String) JavaScriptEngineFactory.walkJson(entries, "link/url");
             } catch (final Throwable e) {
             }
+            /*
+             * Actually there is only one single clip in different formats so every format should have the same duration but some of them do
+             * have their own 'duration' data which is why we call this 'duration_general'.
+             */
             final long duration_general = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
 
             if (StringUtils.isEmpty(publisherInfo)) {
                 publisherInfo = source_host;
             }
-            final String publisher_name = new Regex(publisherInfo, "(?:https?://(?:www\\.)?)?([^/]+)").getMatch(0).replace(".", "_");
+
+            /* We're gonna use this in our filenames later so let's remove the TLD and the dots. */
+            String publisher_name = new Regex(publisherInfo, "(?:https?://(?:www\\.)?)?([^/]+)").getMatch(0);
+            publisher_name = publisher_name.substring(0, publisher_name.lastIndexOf(".")).replace(".", "_");
 
             for (final Object sourceo : sources) {
                 entries = (LinkedHashMap<String, Object>) sourceo;
@@ -566,7 +685,17 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return all_found_qualities;
     }
 
+    /**
+     * Finds the best BrightcoveEdgeContainer Object within the previously found Objects. <br />
+     * 'Best' = Object with the highest filesize (for HLS, highest bandwidth)<br />
+     *
+     * @param inputmap
+     *            : HashMap with previously found BrightcoveEdgeContainer objects
+     */
     public static BrightcoveEdgeContainer findBESTBrightcoveEdgeContainer(final HashMap<String, BrightcoveEdgeContainer> inputmap) {
+        if (inputmap == null) {
+            return null;
+        }
         long bandwidth_max = 0;
         long filesize_max = 0;
 
@@ -622,9 +751,35 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return best;
     }
 
-    /* Handles quality selection of found HashMap "inputmap" with errorhandling for bad user selection! */
+    /* Handles quality selection of given HashMap 'inputmap' with errorhandling for bad user selection! */
+    /**
+     * Handles quality selection of given HashMap 'inputmap' with errorhandling for bad user selection! <br />
+     * No matter what the user does - if his selection is bad, this function will simply return all the contents of the inputmap as result.<br />
+     *
+     * @param inputmap
+     *            : HashMap with previously found BrightcoveEdgeContainer objects
+     * @param grabBEST
+     *            : true = return only the best BrightcoveEdgeContainer object
+     * @param grabBESTWithinUserSelection
+     *            : true = Find the selected qualities, then grab the BEST object within these results - this way the user can define his
+     *            own BEST quality.
+     * @param grabUnknownQualities
+     *            : true = grab qualities which are not present in the allPossibleQualities List.<br />
+     *            This is good to keep the mechanism working if the content provider introduces new formats which are not yet built into the
+     *            plugin settings.
+     * @param allPossibleQualities
+     *            : List of all possible/known quality strings. <br />
+     *            Important to identify unknown qualities! <br />
+     *            Although BEST selection is based on filesize/bandwidth, this list should usually be in order highest quality --> lowest
+     *            quality!
+     * @param allSelectedQualities
+     *            : List of all user-selected quality strings.<br />
+     *            Format of quality strings: 'Protocol_Bandwidth_Height'<br />
+     *            Example of an http quality string: 'http_0_720' (Bandwidth is usually not given for http Protocol qualities) <br />
+     *            Example of an hls quality string: 'hls_314000_720' (Bandwidth is usually given for hls Protocol qualities - also the same
+     *            height can exist with multiple Bandwidth values --> Important for quality selection and filenames!)
+     */
     public static HashMap<String, BrightcoveEdgeContainer> handleQualitySelection(final HashMap<String, BrightcoveEdgeContainer> inputmap, final boolean grabBEST, final boolean grabBESTWithinUserSelection, final boolean grabUnknownQualities, final List<String> allPossibleQualities, final List<String> allSelectedQualities) {
-        /* TODO: Add functionality */
         /* If BEST, grab BEST */
         HashMap<String, BrightcoveEdgeContainer> final_selected_qualities_map = new HashMap<String, BrightcoveEdgeContainer>();
         if (grabBEST) {
@@ -880,7 +1035,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public String getResolution() {
-            return this.getHeight() + "x" + this.getWidth();
+            return this.getWidth() + "x" + this.getHeight();
         }
 
         /* TODO: Maybe improve this */
@@ -894,18 +1049,37 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         public String getLinkID() {
-            return this.getName() + "_" + this.getBandwidth() + "_" + this.getHeight() + "_" + this.getWidth();
+            return this.getName() + "_" + this.getBandwidth() + "_" + this.getWidth() + "_" + this.getHeight();
         }
 
         public String getQualityKey() {
-            return this.getProtocol() + "_" + this.getBandwidth() + "_" + this.getWidth();
+            return this.getProtocol() + "_" + this.getBandwidth() + "_" + this.getHeight();
         }
 
+        /**
+         * Returns a basic filename for current object.<br />
+         * It contains the date of release, name of the source (publisher), title and information about the format (dimensions, videoCodec).
+         */
         public String getStandardFilename() {
-            return formatDate(this.getPublishedAT()) + "_" + this.getPublisherName() + "_" + this.getName() + "_" + this.getWidth() + "x" + this.getHeight() + "_" + this.getVideoCodec() + this.getFileExtension();
+            final String filename;
+            if (this.getProtocol() == Protocol.HLS) {
+                /*
+                 * For hls, we have the bandwidth which is relevant for quality selection and required in the filenames for the user to
+                 * differ between formats later on.
+                 */
+                filename = formatDate(this.getPublishedAT()) + "_" + this.getPublisherName() + "_" + this.getName() + "_" + this.getBandwidth() + "_" + this.getResolution() + "_" + this.getVideoCodec() + this.getFileExtension();
+            } else {
+                filename = formatDate(this.getPublishedAT()) + "_" + this.getPublisherName() + "_" + this.getName() + "_" + this.getResolution() + "_" + this.getVideoCodec() + this.getFileExtension();
+            }
+            return filename;
         }
 
-        /** Formats input to yyyy-MM-dd */
+        /**
+         * Formats input to yyyy-MM-dd.
+         *
+         * @param input
+         *            : Date in the format of yyyy-MM-ddBLABLA_DONT_CARE
+         */
         private static String formatDate(final String input) {
             if (input == null) {
                 return null;
@@ -918,6 +1092,12 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             return output;
         }
 
+        /**
+         * Sets filename, filesize (if available), linkid, comment (if available) and availibility (=true) on given DownloadLink object.
+         *
+         * @param dl
+         *            : Given DownloadLink on which the information will be set.
+         */
         public DownloadLink setInformationOnDownloadLink(final DownloadLink dl) {
             dl.setFinalFileName(this.getStandardFilename());
             if (this.getFilesize() > 0) {

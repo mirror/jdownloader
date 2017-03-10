@@ -49,7 +49,6 @@ public class SternDe extends PluginForHost {
         return -1;
     }
 
-    /** Last revision containing the old AMF handling: 29950 */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -103,19 +102,6 @@ public class SternDe extends PluginForHost {
             dl.startDownload();
         }
     }
-
-    // private void setupRTMPConnection(DownloadInterface dl) {
-    // jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-    // String[] tmpRtmpUrl = dllink.split("@");
-    // rtmp.setUrl(tmpRtmpUrl[0] + tmpRtmpUrl[1]);
-    // rtmp.setApp(tmpRtmpUrl[1] + tmpRtmpUrl[3] + tmpRtmpUrl[4]);
-    // rtmp.setPlayPath(tmpRtmpUrl[2] + tmpRtmpUrl[3] + tmpRtmpUrl[4]);
-    // // rtmp.setConn("B:0");
-    // // rtmp.setConn("S:" + tmpRtmpUrl[2] + tmpRtmpUrl[3]);
-    // rtmp.setSwfVfy("http://admin.brightcove.com/viewer/us20121102.1044/federatedVideo/BrightcovePlayer.swf");
-    // rtmp.setResume(true);
-    // rtmp.setRealTime();
-    // }
 
     @Override
     public void reset() {

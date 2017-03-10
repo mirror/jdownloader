@@ -28,6 +28,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,9 +38,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "https?://(www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "https?://(?:www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" })
 public class SlideShareNet extends PluginForHost {
 
     public SlideShareNet(PluginWrapper wrapper) {
@@ -126,11 +132,13 @@ public class SlideShareNet extends PluginForHost {
             final String json = this.br.getRegex("slideshare_object,\\s*?(\\{.*?)\\);").getMatch(0);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
             entries = (LinkedHashMap<String, Object>) entries.get("slideshow");
+            final String url_filename = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9\\-_]+/[a-z0-9\\-_]+)").getMatch(0).replace("/", " - ");
             String filename = (String) entries.get("title");
             final String type = (String) entries.get("type");
             final String ext;
-            if (filename == null || filename.equals("")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (StringUtils.isEmpty(filename)) {
+                /* Fallback */
+                filename = url_filename;
             }
             filename = Encoding.htmlDecode(filename).trim();
             if ("video".equalsIgnoreCase(type)) {
@@ -187,8 +195,15 @@ public class SlideShareNet extends PluginForHost {
             } else {
                 /* Document: pptx, ppt or pdf usually. */
                 /* 2016-11-23: We'll simply assume that most content is .pdf. */
+                final SlideshareNetConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.SlideShareNet.SlideshareNetConfigInterface.class);
                 ext = ".pdf";
-                link.setName(filename + ext);
+                if (cfg.getPreferServerFilenames()) {
+                    /* Final filename will be set on downloadstart. */
+                    link.setName(filename + ext);
+                } else {
+                    /* Set final filename here because user wants it this way. */
+                    link.setFinalFileName(url_filename + ext);
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -441,6 +456,21 @@ public class SlideShareNet extends PluginForHost {
 
     private String getXML(final String parameter) {
         return br.getRegex("<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return SlideshareNetConfigInterface.class;
+    }
+
+    public static interface SlideshareNetConfigInterface extends PluginConfigInterface {
+
+        @DefaultBooleanValue(true)
+        @Order(10)
+        boolean getPreferServerFilenames();
+
+        void setPreferServerFilenames(boolean b);
+
     }
 
     @Override

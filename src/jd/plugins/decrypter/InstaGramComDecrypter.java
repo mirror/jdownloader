@@ -247,14 +247,19 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         String server_filename = null;
         final String shortcode = (String) entries.get("shortcode");
         final boolean isVideo = ((Boolean) entries.get("is_video")).booleanValue();
-        String dllink = (String) entries.get("display_src");
-        if (dllink == null || !dllink.startsWith("http")) {
-            dllink = (String) entries.get("display_url");
+        String dllink;
+        if (isVideo) {
+            dllink = (String) entries.get("video_url");
+        } else {
+            dllink = (String) entries.get("display_src");
+            if (dllink == null || !dllink.startsWith("http")) {
+                dllink = (String) entries.get("display_url");
+            }
+            if (dllink == null || !dllink.startsWith("http")) {
+                dllink = (String) entries.get("thumbnail_src");
+            }
         }
-        if (dllink == null || !dllink.startsWith("http")) {
-            dllink = (String) entries.get("thumbnail_src");
-        }
-        if (dllink != null) {
+        if (!StringUtils.isEmpty(dllink)) {
             try {
                 server_filename = getFileNameFromURL(new URL(dllink));
             } catch (final Throwable e) {

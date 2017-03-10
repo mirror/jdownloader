@@ -42,7 +42,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "http://it\\.dplay\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/[a-z0-9\\-_]+/[a-z0-9\\-_]+/|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it.dplay.com", "dplay.se", "dplay.dk" }, urls = { "https?://it\\.dplay\\.com/.+|https?://it\\.dplay\\.com/\\?p=\\d+", "http://(?:www\\.)?dplay\\.se/.+|https?://(?:www\\.)?dplay\\.se/\\?p=\\d+", "http://(?:www\\.)?dplay\\.dk/.+|https?://(?:www\\.)?dplay\\.dk/\\?p=\\d+" })
 public class DplayCom extends PluginForHost {
 
     public DplayCom(PluginWrapper wrapper) {
@@ -85,6 +85,13 @@ public class DplayCom extends PluginForHost {
             videoid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL());
+            // final BrightcoveEdgeContainer bestQuality =
+            // jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainerAuto(this.br, Arrays.asList(new Protocol[] {
+            // Protocol.HLS, Protocol.HTTP }));
+            // if (bestQuality == null) {
+            // /* We assume that the page does not contain any video-content --> Offline */
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
