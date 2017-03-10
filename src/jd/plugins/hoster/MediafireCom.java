@@ -589,8 +589,8 @@ public class MediafireCom extends PluginForHost {
                 // error handling
                 final String error = PluginJSonUtils.getJsonValue(api, "error");
                 switch (Integer.parseInt(error)) {
-                // invalid uid
-                case 111:
+                case 111:// invalid uid
+                case 110:// Unknown or Invalid QuickKey
                     return true;
                 default:
                     return false;
