@@ -32,6 +32,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -176,37 +177,36 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     /* If the user wants to download the thumbnail as well it's a bit more complicated */
-                    if (decrypt500Thumb || decryptOriginalThumb || decryptPurchaseURL) {
-                        try {
-                            resolve(parameter);
-                            /* Add soundcloud link */
-                            DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                            final Map<String, Object> entry = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                            final String title = (String) entry.get("title");
-                            if (username == null) {
-                                username = title;
-                            }
-                            if (playlistname == null) {
-                                playlistname = "";
-                            }
-                            setFilePackage(username, playlistname);
-                            dl = setDlDataJson(dl, entry);
-                            addLink(dl);
-
-                            getPurchaseURL(entry);
-                            get500Thumbnail(dl, entry);
-                            getOriginalThumbnail(dl, entry);
-                        } catch (final Exception e) {
-                            if (br.containsHTML("\"404 - Not Found\"")) {
-                                return decryptedLinks;
-                            }
-                            logger.info("Failed to get thumbnail/purchase_url, adding song link only");
-                            addLink(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
+                    try {
+                        resolve(parameter);
+                        /* Add soundcloud link */
+                        DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
+                        final Map<String, Object> entry = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                        final String title = (String) entry.get("title");
+                        if (username == null) {
+                            username = title;
                         }
-                    } else {
-                        final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                        dl.setProperty("plain_url_username", url_username);
+                        if (playlistname == null) {
+                            playlistname = "";
+                        }
+                        setFilePackage(username, playlistname);
+                        dl = setDlDataJson(dl, entry);
                         addLink(dl);
+                        if (decryptPurchaseURL) {
+                            getPurchaseURL(entry);
+                        }
+                        if (decrypt500Thumb) {
+                            get500Thumbnail(dl, entry);
+                        }
+                        if (decryptOriginalThumb) {
+                            getOriginalThumbnail(dl, entry);
+                        }
+                    } catch (final Exception e) {
+                        if (br.containsHTML("\"404 - Not Found\"")) {
+                            return decryptedLinks;
+                        }
+                        logger.info("Failed to get thumbnail/purchase_url, adding song link only");
+                        addLink(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
                     }
                 }
             } catch (final DecrypterException e) {
@@ -369,6 +369,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         final String fpName = getFormattedPackagename(usernName, playListName, date);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
+        fp.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, true);
         this.fp = fp;
     }
 
