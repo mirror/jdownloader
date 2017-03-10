@@ -113,14 +113,14 @@ public class PornHubCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
             }
-            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-f0-9]+)</link_url>").getMatch(0);
+            final String newLink = br.getRegex("<link_url>(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+)</link_url>").getMatch(0);
             if (newLink == null) {
                 throw new DecrypterException("Decrypter broken");
             }
             parameter = newLink;
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
-        final String viewkey = new Regex(parameter, "viewkey=([a-z0-9]+)").getMatch(0);
+        final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, this.br);
         if (isOffline(this.br)) {
@@ -141,7 +141,6 @@ public class PornHubCom extends PluginForDecrypt {
             return;
         }
 
-        jd.plugins.hoster.PornHubCom.accessViewkeyBeforeGrabbingDirecturls(this.br, aa, viewkey);
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this.br);
 
         if (foundLinks_all == null) {

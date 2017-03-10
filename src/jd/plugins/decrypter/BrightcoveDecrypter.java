@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,6 +44,8 @@ import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -148,10 +151,6 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             media.add(clip);
         }
         return media;
-    }
-
-    public static String getBrightcoveMobileHLSUrl() {
-        return "http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=";
     }
 
     /** Finds the highest video quality based on the max filesize. */
@@ -537,8 +536,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * TODO: add support for thumbnails via quality selection, make sure to only grab hls one time if it is available multiple times (via
-     * https and without)!, Add parameter for encrypted stuff and/or block encrypted hls- and RTMPE by default.
+     * TODO: Add parameter(s) for encrypted stuff and/or block encrypted hls- and RTMPE by default.
      */
     /**
      * Finds all (video) qualities via all allowed protocols. <br />
@@ -580,12 +578,16 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             /* The videoID which can be used to build hls-master-urls --> This is NOT == referenceID! */
             String videoID = null;
             String publisherInfo = null;
+            String url_thumbnail = null;
+            String url_poster = null;
             try {
                 /* Rather unimportant things */
                 description = (String) entries.get("description");
                 description_long = (String) entries.get("long_description");
                 videoID = (String) entries.get("id");
                 publisherInfo = (String) JavaScriptEngineFactory.walkJson(entries, "link/url");
+                url_thumbnail = (String) entries.get("thumbnail");
+                url_poster = (String) entries.get("poster");
             } catch (final Throwable e) {
             }
             /*
@@ -597,6 +599,10 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             if (StringUtils.isEmpty(publisherInfo)) {
                 publisherInfo = source_host;
             }
+
+            /* HLS can be available via https and http but it goes to the same video content --> Make sure not to grab it twice! */
+            boolean hls_parsed = false;
+            BrightcoveEdgeContainer bcont = null;
 
             /* We're gonna use this in our filenames later so let's remove the TLD and the dots. */
             String publisher_name = new Regex(publisherInfo, "(?:https?://(?:www\\.)?)?([^/]+)").getMatch(0);
@@ -618,10 +624,9 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                     continue;
                 }
 
-                BrightcoveEdgeContainer bcont = null;
                 if (type != null && type.equalsIgnoreCase("application/x-mpegURL") || src.contains(".m3u8")) {
                     /* HLS */
-                    if (allowedProtocolsList != null && !allowedProtocolsList.contains(Protocol.HLS)) {
+                    if (allowedProtocolsList != null && !allowedProtocolsList.contains(Protocol.HLS) || hls_parsed) {
                         /* Skip HLS if it's not wanted. */
                         continue;
                     }
@@ -645,6 +650,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                             all_found_qualities.put(bcont.getQualityKey(), bcont);
                         }
                     }
+                    hls_parsed = true;
 
                 } else if (src.startsWith("rtmp") || src.startsWith("http")) {
                     if (width == 0 || height == 0) {
@@ -678,6 +684,39 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
                     /* Skip unknown formats/protocols */
                     continue;
                 }
+            }
+
+            if (!StringUtils.isEmpty(url_thumbnail)) {
+                String ext = jd.plugins.PluginForDecrypt.getFileNameExtensionFromURL(url_thumbnail);
+                if (ext == null) {
+                    /* Fallback */
+                    ext = ".jpg";
+                }
+                bcont = new BrightcoveEdgeContainer(accountID, referenceID, name);
+                bcont.setFileExtension(ext);
+                bcont.setDownloadURL(url_thumbnail);
+                bcont.setPublishedAT(published_at);
+                bcont.setPublisherName(publisher_name);
+                bcont.setCreatedAT(created_at);
+                bcont.setDescription(description);
+                bcont.setDescriptionLong(description_long);
+                all_found_qualities.put(BrightcoveEdgeContainer.QUALITY_KEY_THUMBNAIL, bcont);
+            }
+            if (!StringUtils.isEmpty(url_poster)) {
+                String ext = jd.plugins.PluginForDecrypt.getFileNameExtensionFromURL(url_thumbnail);
+                if (ext == null) {
+                    /* Fallback */
+                    ext = ".jpg";
+                }
+                bcont = new BrightcoveEdgeContainer(accountID, referenceID, name);
+                bcont.setFileExtension(ext);
+                bcont.setDownloadURL(url_thumbnail);
+                bcont.setPublishedAT(published_at);
+                bcont.setPublisherName(publisher_name);
+                bcont.setCreatedAT(created_at);
+                bcont.setDescription(description);
+                bcont.setDescriptionLong(description_long);
+                all_found_qualities.put(BrightcoveEdgeContainer.QUALITY_KEY_THUMBNAIL_BIGGER, bcont);
             }
 
         } catch (final Throwable e) {
@@ -751,7 +790,6 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         return best;
     }
 
-    /* Handles quality selection of given HashMap 'inputmap' with errorhandling for bad user selection! */
     /**
      * Handles quality selection of given HashMap 'inputmap' with errorhandling for bad user selection! <br />
      * No matter what the user does - if his selection is bad, this function will simply return all the contents of the inputmap as result.<br />
@@ -774,10 +812,11 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
      *            quality!
      * @param allSelectedQualities
      *            : List of all user-selected quality strings.<br />
-     *            Format of quality strings: 'Protocol_Bandwidth_Height'<br />
+     *            Format of quality strings: 'Protocol_Bandwidth_Height' <br />
      *            Example of an http quality string: 'http_0_720' (Bandwidth is usually not given for http Protocol qualities) <br />
      *            Example of an hls quality string: 'hls_314000_720' (Bandwidth is usually given for hls Protocol qualities - also the same
-     *            height can exist with multiple Bandwidth values --> Important for quality selection and filenames!)
+     *            height can exist with multiple Bandwidth values --> Important for quality selection and filenames!) <br />
+     *            Example of thumbnail quality string: QUALITY_KEY_THUMBNAIL AND/OR QUALITY_KEY_THUMBNAIL_BIGGER <br />
      */
     public static HashMap<String, BrightcoveEdgeContainer> handleQualitySelection(final HashMap<String, BrightcoveEdgeContainer> inputmap, final boolean grabBEST, final boolean grabBESTWithinUserSelection, final boolean grabUnknownQualities, final List<String> allPossibleQualities, final List<String> allSelectedQualities) {
         /* If BEST, grab BEST */
@@ -828,6 +867,9 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     public static class BrightcoveEdgeContainer {
 
+        public static final String QUALITY_KEY_THUMBNAIL        = "QUALITY_KEY_THUMBNAIL";
+        public static final String QUALITY_KEY_THUMBNAIL_BIGGER = "QUALITY_KEY_THUMBNAIL_BIGGER";
+
         public static enum Protocol {
             DASH,
             HTTP,
@@ -867,10 +909,11 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             init();
         }
 
-        public BrightcoveEdgeContainer(final String accountID, final String referenceID) {
+        public BrightcoveEdgeContainer(final String accountID, final String referenceID, final String name) {
             init();
             this.setAccountID(accountID);
             this.setReferenceID(referenceID);
+            this.setName(name);
         }
 
         public BrightcoveEdgeContainer(final String accountID, final String referenceID, final String name, final int height, final int width) {
@@ -1048,12 +1091,32 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
             return this.getLinkID().equals(compare.getLinkID());
         }
 
+        /** TODO: Add difference between thumbnail and poster (thumbnail_bigger). */
         public String getLinkID() {
-            return this.getName() + "_" + this.getBandwidth() + "_" + this.getWidth() + "_" + this.getHeight();
+            if (!isVideo()) {
+                return this.getName() + "_" + "THUMBNAIL";
+            } else {
+                return this.getName() + "_" + this.getBandwidth() + "_" + this.getWidth() + "_" + this.getHeight();
+            }
         }
 
         public String getQualityKey() {
             return this.getProtocol() + "_" + this.getBandwidth() + "_" + this.getHeight();
+        }
+
+        public boolean isVideo() {
+            final String exten = this.getFileExtension();
+            boolean isPicture = false;
+            if (exten != null) {
+                for (final ExtensionsFilterInterface extension : ImageExtensions.values()) {
+                    final Pattern pattern = extension.getPattern();
+                    if (pattern != null && pattern.matcher(exten).matches()) {
+                        isPicture = true;
+                        break;
+                    }
+                }
+            }
+            return !isPicture;
         }
 
         /**
@@ -1062,7 +1125,9 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
          */
         public String getStandardFilename() {
             final String filename;
-            if (this.getProtocol() == Protocol.HLS) {
+            if (!isVideo()) {
+                filename = formatDate(this.getPublishedAT()) + "_" + this.getPublisherName() + "_" + this.getName() + "_" + this.getLinkID() + this.getFileExtension();
+            } else if (this.getProtocol() == Protocol.HLS) {
                 /*
                  * For hls, we have the bandwidth which is relevant for quality selection and required in the filenames for the user to
                  * differ between formats later on.
