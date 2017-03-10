@@ -79,22 +79,22 @@ public class PornHubCom extends PluginForHost {
     private String                                dlUrl                     = null;
 
     public static LinkedHashMap<String, String[]> formats                   = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format - name : videoCodec, videoBitrate,
-             * videoResolution, audioCodec, audioBitrate
-             */
-            /*
-             * Video - bitrates and resultions here are not exact as
-             * they vary.
-             */
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                {
+                                                                                    /*
+                                                                                     * Format - name : videoCodec, videoBitrate,
+                                                                                     * videoResolution, audioCodec, audioBitrate
+                                                                                     */
+                                                                                    /*
+                                                                                     * Video - bitrates and resultions here are not exact as
+                                                                                     * they vary.
+                                                                                     */
+                                                                                    put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                    put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                    put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                    put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
 
-        }
-    });
+                                                                                }
+                                                                            });
     public static final String                    BEST_ONLY                 = "BEST_ONLY";
     public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
@@ -163,21 +163,22 @@ public class PornHubCom extends PluginForHost {
             }
             downloadLink.setFinalFileName(viewkey + dlUrl.substring(dlUrl.lastIndexOf(".")));
         } else {
+            viewkey = getViewkeyFromURL(source_url);
+            /* Offline links should also have nice filenames */
+            downloadLink.setName(viewkey + ".mp4");
+
             String filename = downloadLink.getStringProperty("decryptedfilename", null);
             dlUrl = downloadLink.getStringProperty("directlink", null);
             if (dlUrl == null || filename == null) {
-                /* This should never happen! */
+                /* This should never happen as every url goes into the decrypter first! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+
             prepBr(this.br);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
                 this.login(this.br, aa, false);
             }
-
-            viewkey = new Regex(source_url, "([A-Za-z0-9\\-_]+)$").getMatch(0);
-            /* Offline links should also have nice filenames */
-            downloadLink.setName(viewkey + ".mp4");
             getPage(br, createPornhubVideolink(viewkey, aa));
             if (br.containsHTML(html_privatevideo)) {
                 downloadLink.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
@@ -187,19 +188,18 @@ public class PornHubCom extends PluginForHost {
             if (br.containsHTML(html_premium_only)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium only File", PluginException.VALUE_ID_PREMIUM_ONLY);
             }
-            if (source_url == null || filename == null || this.dlUrl == null) {
+            if (source_url == null || filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
-            accessViewkeyBeforeGrabbingDirecturls(this.br, aa, viewkey);
-            fresh_directurls = getVideoLinksFree(this.br);
             downloadLink.setFinalFileName(filename);
         }
-        br.setFollowRedirects(true);
+        final Browser brCheck = this.br.cloneBrowser();
+        brCheck.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = this.br.openHeadConnection(dlUrl);
+            con = brCheck.openHeadConnection(dlUrl);
             if (con.getResponseCode() != 200) {
+                fresh_directurls = getVideoLinksFree(this.br);
                 if (fresh_directurls == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -229,7 +229,7 @@ public class PornHubCom extends PluginForHost {
                 /* Undefined case but probably that url is offline! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
+            downloadLink.setDownloadSize(con.getLongContentLength());
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -239,16 +239,6 @@ public class PornHubCom extends PluginForHost {
             } catch (final Throwable e) {
                 logger.info("e: " + e);
             }
-        }
-    }
-
-    public static void accessViewkeyBeforeGrabbingDirecturls(final Browser br, final Account aa, final String viewkey) throws Exception {
-        if (aa == null && use_download_workarounds) {
-            /*
-             * 2017-02-09: Last chance handling/workaround via embed player for non-account & free-account users --> This will only return
-             * 480p quality --> An attempt to get around their measures against automated downloadtools.
-             */
-            jd.plugins.hoster.PornHubCom.getPage(br, createPornhubVideoLinkEmbed(viewkey));
         }
     }
 
@@ -307,28 +297,38 @@ public class PornHubCom extends PluginForHost {
         if (!success) {
             String[][] var_player_quality_dp;
             /* 0 = match for quality, 1 = match for url */
-            final int[] matchPlaces;
-            if (br.getURL().contains("/embed/")) {
-                /* 2017-02-09: For embed player - usually only 480p will be available. */
-                var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(http[^\"]+)\"").getMatches();
-                matchPlaces = new int[] { 0, 1 };
-            } else if (isLoggedInHtml(br) && use_download_workarounds) {
+            int[] matchPlaces;
+            if (isLoggedInHtml(br) && use_download_workarounds) {
                 /*
-                 * 2017-02-10: Grab official downloadlinks via free/premium account. Keep in mind: Not all videos have official
-                 * downloadlinks available for account mode - example: ph58072cd969005
+                 * 2017-02-10: Workaround - download via official downloadlinks if the user has an account. Grab official downloadlinks via
+                 * free/premium account. Keep in mind: Not all videos have official downloadlinks available for account mode - example:
+                 * ph58072cd969005
                  */
-                matchPlaces = new int[] { 1, 0 };
                 var_player_quality_dp = br.getRegex("href=\"(http[^<>\"]+)\"><i></i><span>[^<]*?</span>\\s*?(\\d+)p\\s*?</a").getMatches();
+                matchPlaces = new int[] { 1, 0 };
             } else {
+                /* Normal stream download handling. */
                 /* 2017-02-07: seems they have seperated into multiple vars to block automated download tools. */
                 var_player_quality_dp = br.getRegex("var player_quality_(1080|720|480|360|240)p[^=]*?=\\s*('|\")(https?://.*?)\\2\\s*;").getMatches();
                 matchPlaces = new int[] { 0, 2 };
             }
-            final String[] quals = new String[] { "1080", "720", "480", "360", "240" };
-            if (var_player_quality_dp.length == 0) {
+            /*
+             * Check if we have links - if not, the video might not have any official downloadlinks available or our previous code failed
+             * for whatever reason.
+             */
+            if (var_player_quality_dp == null || var_player_quality_dp.length == 0) {
+                /* Last chance fallback to embedded video. */
                 /* 2017-02-09: For embed player - usually only 480p will be available. */
-                var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:(\\s*?)\"(http[^\"]+)\"").getMatches();
+                /* Access embed video URL. */
+                /* viewkey should never be null! */
+                final String viewkey = getViewkeyFromURL(br.getURL());
+                if (viewkey != null) {
+                    br.getPage(createPornhubVideoLinkEmbedFree(br, viewkey));
+                    var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(http[^\"]+)\"").getMatches();
+                    matchPlaces = new int[] { 0, 1 };
+                }
             }
+            final String[] quals = new String[] { "1080", "720", "480", "360", "240" };
             final int matchQuality = matchPlaces[0];
             final int matchUrl = matchPlaces[1];
             for (final String q : quals) {
@@ -504,15 +504,15 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isLoggedInHtml(final Browser br) {
-        return br.containsHTML("class=\"signOut\"");
+        return br != null && br.containsHTML("class=\"signOut\"");
     }
 
     public static boolean isLoggedInHtmlPremium(final Browser br) {
-        return br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInHtml(br);
+        return br != null && br.getURL() != null && br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInHtml(br);
     }
 
     public static boolean isLoggedInHtmlFree(final Browser br) {
-        return !br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInHtml(br);
+        return br != null && br.getURL() != null && !br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInHtml(br);
     }
 
     public static boolean isLoggedInCookie(final Browser br) {
@@ -695,7 +695,25 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static String createPornhubVideoLinkEmbed(final String viewkey) {
+    public static String createPornhubVideoLinkEmbedFree(final Browser br, final String viewkey) {
+        if (isLoggedInHtmlPremium(br)) {
+            return createPornhubVideoLinkEmbedPremium(viewkey);
+        } else {
+            return createPornhubVideoLinkEmbedFree(viewkey);
+        }
+    }
+
+    public static String getViewkeyFromURL(final String url) {
+        return new Regex(url, "viewkey=([a-z0-9]+)").getMatch(0);
+    }
+
+    /** Returns embed url for free- and free account mode. */
+    public static String createPornhubVideoLinkEmbedFree(final String viewkey) {
+        return String.format("https://www.pornhub.com/embed/%s", viewkey);
+    }
+
+    /** Returns embed url for premium account mode. */
+    public static String createPornhubVideoLinkEmbedPremium(final String viewkey) {
         return String.format("https://www.pornhub.com/embed/%s", viewkey);
     }
 

@@ -125,7 +125,7 @@ public class ServustvCom extends PluginForHost {
         }
         if (videoid != null) {
             /* Prefer hls as we might get a better videoquality. */
-            br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getBrightcoveMobileHLSUrl() + videoid);
+            br.getPage(jd.plugins.decrypter.BrightcoveDecrypter.getHlsMasterHttp(videoid));
             /* E.g. here, (mobile) HLS download is not possible: http://www.servustv.com/at/Medien/Spielberg-Musikfestival-20162 */
             hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         }
