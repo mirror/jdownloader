@@ -25,15 +25,14 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,6 +46,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist|embed|grup|[^<>\"/]+/(fisiere|profil).+)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
 public class TriLuLiLuRo extends antiDDoSForHost {
@@ -114,6 +116,12 @@ public class TriLuLiLuRo extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = br.getRegex("<div class=\"img_player\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<img id=\"player_img\" src=\"(http://[^<>\"]*?\\.jpg)").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (dllink != null) {
                 dllink += "?size=original";
             }
@@ -123,6 +131,10 @@ public class TriLuLiLuRo extends antiDDoSForHost {
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?)\\s*-\\s*Muzică\\s*-\\s*Trilulilu</title>").getMatch(0);
+            }
+            filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -434,8 +446,32 @@ public class TriLuLiLuRo extends antiDDoSForHost {
         } else {
             getDownloadUrl(downloadLink);
         }
+        if (isTypeMusic(downloadLink)) {
+            String embed = br.getRegex("og:audio\" content=\"(http://[^<>\"]*?/audio-diverse/[^<>\"]*?)\"").getMatch(0);
+            getPage(embed);
+            dllink = br.getRegex("file: \"([^<>\"]+)\"").getMatch(0);
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser br2 = br.cloneBrowser();
+        URLConnectionAdapter con = null;
+        try {
+            try {
+                con = openConnection(br2, dllink);
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         int maxchunks = -2;
         // Videos have chunk-limits!
@@ -446,7 +482,7 @@ public class TriLuLiLuRo extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
         try {
@@ -481,6 +517,10 @@ public class TriLuLiLuRo extends antiDDoSForHost {
             }
         }
         br.setProxy(br.getThreadProxy());
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        return br.openHeadConnection(directlink);
     }
 
     private boolean isEmpty(String ip) {
