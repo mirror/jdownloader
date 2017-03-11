@@ -97,7 +97,8 @@ public class JhebergNet extends PluginForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
         }
 
-        br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/") + (!parameter.endsWith("/") ? "/" : ""));
+        // br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/") + (!parameter.endsWith("/") ? "/" : ""));
+        br.getPage("http://www.jheberg.net/mirrors/" + linkID + "/");
         String[] results = br.getRegex("\"(/redirect/[^<>\"]*?)\"").getColumn(0);
         if (results == null || results.length == 0) {
             if (br.containsHTML("Débrider maintenant \\!<|>Hébergeur indisponible</")) {
