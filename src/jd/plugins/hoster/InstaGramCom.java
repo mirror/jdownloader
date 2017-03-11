@@ -115,7 +115,7 @@ public class InstaGramCom extends PluginForHost {
         }
         dllink = downloadLink.getStringProperty("directurl", null);
         if (dllink == null) {
-            String getlink = downloadLink.getDownloadURL();
+            String getlink = downloadLink.getDownloadURL().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
             if (!getlink.endsWith("/")) {
                 /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
                 getlink += "/";
