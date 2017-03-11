@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +35,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/[A-Za-z0-9]+(/.+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -132,16 +132,8 @@ public class UploadgigCom extends antiDDoSForHost {
                 /* Usually only happpens with wrong POST values */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             }
-            dllink = PluginJSonUtils.getJsonValue(br, "url");
-            if (dllink == null) {
-                dllink = PluginJSonUtils.getJsonValue(br, "urlt");
-                if (dllink == null) {
-                    dllink = PluginJSonUtils.getJsonValue(br, "urltar");
-                }
-                if (dllink == null) {
-                    dllink = PluginJSonUtils.getJsonValue(br, "urltarbl");
-                }
-            }
+            String urlj = br.getRegex("\"(url[^\"]*)\"").getMatch(0);
+            dllink = PluginJSonUtils.getJsonValue(br, urlj);
             int wait = 60;
             final String waittime_str = PluginJSonUtils.getJsonValue(br, "cd");
             if (waittime_str != null) {
