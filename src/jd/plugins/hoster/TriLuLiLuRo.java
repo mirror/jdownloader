@@ -134,7 +134,7 @@ public class TriLuLiLuRo extends antiDDoSForHost {
             }
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+                filename = br.getRegex("<h1[^<>]*>\\s*(.*?)\\s*</h1>").getMatch(0);
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
