@@ -75,7 +75,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?tusfil(es\\.(net|com|co\\.nz)|\\.es)/((vid)?embed-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?tusfil(es\\.(net|com|co\\.nz)|\\.es)/((vid)?embed-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class TusFilesNet extends PluginForHost {
     // Site Setters
@@ -909,7 +909,7 @@ public class TusFilesNet extends PluginForHost {
                 loginform = captchaForm(dummyLink, loginform);
                 // end of check form for login captcha crap.
                 loginform.remove(null);
-                loginform.setAction("https://www.tusfiles.net/");
+                loginform.setAction("https://tusfiles.net/");
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {
