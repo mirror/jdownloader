@@ -90,6 +90,7 @@ AdvancedValueColumn_onSingleClick_colorchooser_title_=Escolha a nova cor:
 AlwaysOnTopGuiToogleAction_disabled=Sempre no Topo
 AlwaysOnTopGuiToogleAction_enabled=Sempre no Topo
 AlwaysOnTopGuiToogleAction_tooltip=A janela principal está sempre no topo de outras janelas
+AntiCaptchaCom_getName_=Solucionador de Captchas remoto totalmente automatizado
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_countdown_download=Fechar janela de captcha após tempo limite
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset=Redefinir Tempo do Solucionador
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_reset_lit_are_you_sure=Tem certeza que deseja redefinir todos os ajustes de temporização.\r\nIsto irá redefinir a ordem de execução dos solucionadores de captchas.

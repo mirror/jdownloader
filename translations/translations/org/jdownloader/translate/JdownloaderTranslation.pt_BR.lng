@@ -277,6 +277,7 @@ gui_config_reconnect_showcase_reconnect2=Iniciar Teste
 gui_config_reconnect_showcase_time=Duração da reconexão
 gui_download_filesize_unknown=(Tamanho do arquivo desconhecido)
 gui_download_waittime_notenoughtraffic=Não há tráfego suficiente disponível (%s1 necessário)
+gui_download_waittime_notenoughtraffic2=Não há tráfego suficiente disponível
 gui_download_waittime_status2=Espere %s1
 gui_downloadview_statustext_jac=Reconhecimento Captcha
 gui_javacheck_newerjavaavailable_msg=Embora o JDownloader é executado na sua versão de Java, aconselhamos instalar a última atualização.\r\nJDownloader irá rodar mais estável, mais rápido, e irá ficar mais bonito.\r\n\n\nVisite http://jdownloader.org/download.
