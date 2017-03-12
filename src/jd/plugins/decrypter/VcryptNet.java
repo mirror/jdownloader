@@ -18,31 +18,32 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vcrypt.net" }, urls = { "https?://(?:www\\.)?vcrypt\\.(?:net|pw)/([a-z0-9]{6}|[^/]+/[a-z0-9]+)" })
-public class VcryptNet extends PluginForDecrypt {
+public class VcryptNet extends antiDDoSForDecrypt {
 
     public VcryptNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://").replace("vcrypt.pw/", "vcrypt.net/");
-        this.br.setFollowRedirects(false);
-
-        br.getPage(parameter);
+        br.setFollowRedirects(false);
+        getPage(parameter);
         if (br.containsHTML(">Error folder unavailable<") || this.br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
@@ -50,21 +51,31 @@ public class VcryptNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches("https?://[^/]+/[^/]+/[a-z0-9]+")) {
-            Form continueForm = this.br.getFormByInputFieldKeyValue("submit", "Continue");
+            Form continueForm = br.getFormByInputFieldKeyValue("submit", "Continue");
             if (continueForm == null) {
-                continueForm = this.br.getFormBySubmitvalue("Continue");
+                continueForm = br.getFormBySubmitvalue("Continue");
             }
             if (continueForm != null) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                br.submitForm(continueForm);
+                submitForm(continueForm);
             }
             /* Single redirect url */
-            final String redirect = this.br.getRedirectLocation();
+            final String redirect = br.getRedirectLocation();
             if (redirect != null && !redirect.contains(this.getHost() + "/")) {
                 decryptedLinks.add(createDownloadlink(redirect));
             } else if (redirect != null && redirect.contains("/banned")) {
                 logger.info("Reconnect required to continue decryption");
+            } else {
+                // can be a list of links
+                final String button = br.getRegex("<button id=\"tt\" class=\"clickme\" value=\"(.*?)\"").getMatch(0);
+                if (button == null) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                final String[] links = HTMLParser.getHttpLinks(button, null);
+                for (final String link : links) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
             }
         } else {
             final String[] links = br.getRegex("href=\\'(http[^<>\"]*?)\\' target=_blank>").getColumn(0);
