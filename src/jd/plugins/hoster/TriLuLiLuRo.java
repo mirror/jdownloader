@@ -447,7 +447,7 @@ public class TriLuLiLuRo extends antiDDoSForHost {
             getDownloadUrl(downloadLink);
         }
         if (isTypeMusic(downloadLink)) {
-            String embed = br.getRegex("og:audio\" content=\"(http://[^<>\"]*?/audio-diverse/[^<>\"]*?)\"").getMatch(0);
+            String embed = br.getRegex("og:audio\" content=\"(http://[^<>\"]*?/audio-[^<>\"]*?)\"").getMatch(0);
             getPage(embed);
             dllink = br.getRegex("file: \"([^<>\"]+)\"").getMatch(0);
         }
