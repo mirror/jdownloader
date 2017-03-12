@@ -359,8 +359,15 @@ public class PutIO extends PluginForHost {
         return new Regex(url, "token=([a-fA-f0-9]+)").getMatch(0);
     }
 
-    private String getID(String url) {
-        return new Regex(url, "files/(\\d+)").getMatch(0);
+    private String getID(String url) throws PluginException {
+        String id = new Regex(url, "files/(\\d+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(url, "zipstream/(\\d+)").getMatch(0);
+        }
+        if (id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return id;
     }
 
     @Override
