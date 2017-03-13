@@ -59,10 +59,10 @@ public class DatoidCz extends PluginForHost {
         br = new Browser();
         this.setBrowserExclusive();
         String downloadURL = link.getDownloadURL();
-        br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
+        br.getPage("http://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
         if (br.containsHTML("\"error\":\"File not found\"") && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
             downloadURL = downloadURL.replace("https://", "http://");
-            br.getPage("https://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
+            br.getPage("http://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(downloadURL));
         }
         if (br.containsHTML("\"error\":\"(File not found|File was blocked|File was deleted)\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,7 +117,7 @@ public class DatoidCz extends PluginForHost {
     @SuppressWarnings("unchecked")
     private String login(final Account account) throws Exception {
         br.setFollowRedirects(false);
-        br.getPage("https://api.datoid.cz/v1/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("http://api.datoid.cz/v1/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         try {
             if (br.containsHTML("\\{\"success\":false\\}")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -145,7 +145,7 @@ public class DatoidCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("https://api.datoid.cz/v1/get-user-details?token=" + TOKEN);
+        br.getPage("http://api.datoid.cz/v1/get-user-details?token=" + TOKEN);
         /** 1 Credit = 1 MB */
         final String credits = PluginJSonUtils.getJsonValue(br, "credits");
         ai.setTrafficLeft(SizeFormatter.getSize(credits + " MB"));
@@ -163,10 +163,10 @@ public class DatoidCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         String downloadURL = link.getDownloadURL();
-        br.getPage("https://api.datoid.cz/v1/get-download-link?token=" + TOKEN + "&url=" + Encoding.urlEncode(downloadURL));
+        br.getPage("http://api.datoid.cz/v1/get-download-link?token=" + TOKEN + "&url=" + Encoding.urlEncode(downloadURL));
         if (br.containsHTML("\"error\":\"File not found\"") && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
             downloadURL = downloadURL.replace("https://", "http://");
-            br.getPage("https://api.datoid.cz/v1/get-download-link?token=" + TOKEN + "&url=" + Encoding.urlEncode(downloadURL));
+            br.getPage("http://api.datoid.cz/v1/get-download-link?token=" + TOKEN + "&url=" + Encoding.urlEncode(downloadURL));
         }
         if (br.containsHTML("\"error\":\"Lack of credits\"")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
