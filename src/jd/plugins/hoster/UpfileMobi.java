@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
@@ -31,9 +33,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file&f=\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(?:www\\.)?upfile\\.mobi/(\\d+(\\.[a-f0-9]{32})?|index\\.php\\?page=file&f=\\d+|[a-zA-Z0-9]{6,12})" })
 public class UpfileMobi extends PluginForHost {
 
     private final String password_required = "Enter password:<br/>";
@@ -104,7 +104,6 @@ public class UpfileMobi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
         br.cloneBrowser().openGetConnection("http://upfile.mobi/index.php?page=screen&id=" + fid + "&p=");
         final String ad_sht = br.getRegex("\"(ga\\.php[^<>\"]*?)\"").getMatch(0);
         if (ad_sht != null) {
@@ -114,7 +113,6 @@ public class UpfileMobi extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -136,6 +134,9 @@ public class UpfileMobi extends PluginForHost {
         String s = new Regex(downloadLink.getDownloadURL(), "http://(?:www\\.)?upfile\\.mobi/(\\d+)").getMatch(0);
         if (s == null) {
             s = new Regex(downloadLink.getDownloadURL(), "http://(?:www\\.)?upfile\\.mobi/index\\.php\\?page=file&f=(\\d+)").getMatch(0);
+            if (s == null) {
+                s = new Regex(downloadLink.getDownloadURL(), "upfile\\.mobi/([a-zA-Z0-9]{6,12})").getMatch(0);
+            }
         }
         return s;
     }
