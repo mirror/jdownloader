@@ -337,11 +337,11 @@ public class SonifilesCom extends PluginForHost {
                             fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
                             // generic failover#1
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                             }
                             // generic failover#2
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                                // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
                             }
                         }
                     }
@@ -960,7 +960,7 @@ public class SonifilesCom extends PluginForHost {
             ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)<").getMatch(0);
+            ttt = new Regex(correctedBR, "class=\"seconds\"[^<>]*>\\s*(\\d+)\\s*<").getMatch(0);
         }
         if (ttt != null) {
             logger.info("Found waittime: " + ttt);
