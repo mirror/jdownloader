@@ -56,7 +56,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xeupload.com" }, urls = { "https?://(?:www\\.)?xeupload\\.com/(?:embed\\-)?[a-z0-9]{12}" })
 public class XeuploadCom extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -65,11 +65,11 @@ public class XeuploadCom extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://ForDevsToPlayWith.com";
+    private static final String  COOKIE_HOST                        = "http://xeupload.com";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(ForDevsToPlayWith\\.com)";
+    private static final String  DOMAINS                            = "(xeupload\\.com)";
 
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -346,7 +346,7 @@ public class XeuploadCom extends antiDDoSForHost {
                             }
                             // generic failover#2
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                                // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
                             }
                         }
                     }
