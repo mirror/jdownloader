@@ -454,13 +454,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         setBrowserExclusive();
-        HashMap<String, String> infos = null;
-        try {
-            infos = loginAPI(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        final HashMap<String, String> infos = loginAPI(account, true);
         if (isFree(account)) {
             maxPrem.set(free_maxdownloads);
             try {
@@ -556,6 +550,9 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 /* English language is needed for free download! */
                 getPage("http://www.share-online.biz/lang/set/english");
                 if (br.getCookie(COOKIE_HOST, "storage") == null) {
+                    if (br.containsHTML(">Share-Online - Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -1085,11 +1082,15 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     try {
                         /* Login via site is needed for free account download. */
                         this.loginSite(account, forceLogin);
-                    } catch (final Throwable e) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLoginversuch per Sammler Account schlug fehl - bitte dem JDownloader Support melden!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } catch (final PluginException e) {
+                        if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+                            if ("de".equalsIgnoreCase(lang)) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLoginversuch per Sammler Account schlug fehl - bitte dem JDownloader Support melden!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFailed to login via free account - please contact the JDownloader support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFailed to login via free account - please contact the JDownloader support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw e;
                         }
                     }
                     // throw new PluginException(LinkStatus.ERROR_PREMIUM,

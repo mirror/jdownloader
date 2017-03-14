@@ -8,6 +8,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
+import org.jdownloader.extensions.eventscripter.EnvironmentException;
 import org.jdownloader.extensions.eventscripter.ScriptThread;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -94,12 +95,26 @@ public class ArchiveSandbox {
 
     public String[] getExtractedFiles() {
         if (archive != null && archive.getExtractedFiles() != null && archive.getExtractedFiles().size() > 0) {
-            final ArrayList<String> lst = new ArrayList<String>();
-            for (final File s : archive.getExtractedFiles()) {
-                lst.add(s.getAbsolutePath());
+            final ArrayList<String> ret = new ArrayList<String>(archive.getExtractedFiles().size());
+            for (final File file : archive.getExtractedFiles()) {
+                ret.add(file.getAbsolutePath());
             }
-            if (lst.size() > 0) {
-                return lst.toArray(new String[] {});
+            if (ret.size() > 0) {
+                return ret.toArray(new String[] {});
+            }
+        }
+        return null;
+    }
+
+    public FilePathSandbox[] getExtractedFilePaths() throws EnvironmentException {
+        final String[] files = getExtractedFiles();
+        if (files != null && files.length > 0) {
+            final ArrayList<FilePathSandbox> ret = new ArrayList<FilePathSandbox>(files.length);
+            for (final String file : files) {
+                ret.add(ScriptEnvironment.getPath(file));
+            }
+            if (ret.size() > 0) {
+                return ret.toArray(new FilePathSandbox[] {});
             }
         }
         return null;
