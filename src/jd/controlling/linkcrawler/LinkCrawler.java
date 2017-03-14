@@ -81,6 +81,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -1204,19 +1205,27 @@ public class LinkCrawler {
      * @return
      */
     protected boolean breakPluginForDecryptLoop(final LazyCrawlerPlugin pDecrypt, final CrawledLink link) {
-        CrawledLink source = link.getSourceLink();
-        final HashSet<String> dontRetry = new HashSet<String>();
-        while (source != null) {
-            if (source.getCryptedLink() != null) {
-                if (StringUtils.equals(link.getURL(), source.getURL())) {
-                    final LazyCrawlerPlugin lazyC = source.getCryptedLink().getLazyC();
-                    dontRetry.add(lazyC.getDisplayName() + lazyC.getClassName());
-                }
+        final boolean canHandle = canHandle(pDecrypt, link.getURL(), link.getSourceLink());
+        if (canHandle) {
+            if (!AvailableLinkState.UNKNOWN.equals(link.getLinkState())) {
+                //
+                return true;
             }
-            source = source.getSourceLink();
+            CrawledLink source = link.getSourceLink();
+            final HashSet<String> dontRetry = new HashSet<String>();
+            while (source != null) {
+                if (source.getCryptedLink() != null) {
+                    if (StringUtils.equals(link.getURL(), source.getURL())) {
+                        final LazyCrawlerPlugin lazyC = source.getCryptedLink().getLazyC();
+                        dontRetry.add(lazyC.getDisplayName() + lazyC.getClassName());
+                    }
+                }
+                source = source.getSourceLink();
+            }
+            return dontRetry.contains(pDecrypt.getDisplayName() + pDecrypt.getClassName());
+        } else {
+            return false;
         }
-        final boolean ret = dontRetry.contains(pDecrypt.getDisplayName() + pDecrypt.getClassName()) && canHandle(pDecrypt, link.getURL(), source);
-        return ret;
     }
 
     protected DISTRIBUTE distributePluginForDecrypt(final LazyCrawlerPlugin pDecrypt, final LinkCrawlerGeneration generation, final String url, final CrawledLink link) {
