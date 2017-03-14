@@ -26,6 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,14 +53,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.net" }, urls = { "https?://(?:www\\.)?suprafiles\\.net/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suprafiles.net" }, urls = { "https?://(?:www\\.)?suprafiles\\.(?:net|co)/(?:embed\\-)?[a-z0-9]{12}" })
 public class SuprafilesNet extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -62,11 +62,11 @@ public class SuprafilesNet extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://suprafiles.net";
+    private static final String            COOKIE_HOST                        = "http://suprafiles.co";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                            = "(suprafiles\\.net)";
+    private static final String            DOMAINS                            = "suprafiles\\.(?:net|co)";
 
     /* Errormessages inside URLs */
     private static final String            URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -143,6 +143,11 @@ public class SuprafilesNet extends PluginForHost {
      * captchatype: unknown<br />
      * other:<br />
      */
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "suprafiles.net", "suprafiles.co" };
+    }
 
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
@@ -1337,15 +1342,21 @@ public class SuprafilesNet extends PluginForHost {
     // if (this.br.getCookie(COOKIE_HOST, "login") == null || this.br.getCookie(COOKIE_HOST, "xfss") == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort
+    // stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es
+    // erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
+    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę
+    // użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i
+    // nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some
+    // hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your
+    // username/password by hand without copy & paste.",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
