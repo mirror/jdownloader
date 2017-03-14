@@ -1,20 +1,46 @@
 package org.jdownloader.controlling.ffmpeg;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.ValidatorFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 
 public interface FFmpegSetup extends ConfigInterface {
+
+    class BinayPathValidator extends AbstractValidator<String> {
+
+        @Override
+        public void validate(String binaryPath) throws ValidationException {
+            if (StringUtils.isNotEmpty(binaryPath)) {
+                final File file = new File(binaryPath);
+                if (!file.exists()) {
+                    throw new ValidationException("Binary '" + binaryPath + "' does not exist!");
+                } else if (file.isDirectory()) {
+                    throw new ValidationException("Binary '" + binaryPath + "' must be a file!");
+                } else if (CrossSystem.isUnix() && !file.canExecute()) {
+                    throw new ValidationException("Binary '" + binaryPath + "' is not executable!");
+                }
+            }
+        }
+    }
+
     @AboutConfig
+    @ValidatorFactory(BinayPathValidator.class)
     @DescriptionForConfigEntry("full path (including binary filename) to ffmpeg")
     String getBinaryPath();
 
     void setBinaryPath(String path);
 
     @AboutConfig
+    @ValidatorFactory(BinayPathValidator.class)
     @DescriptionForConfigEntry("full path (including binary filename) to ffprobe")
     String getBinaryPathProbe();
 

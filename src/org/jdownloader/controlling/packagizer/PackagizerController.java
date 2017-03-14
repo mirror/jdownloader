@@ -324,7 +324,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 // the i counter allows us to write regular expressions that address a certain line only.
                 final String pattern = lgr.getSourceRule().getPattern().pattern();
                 final boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
-                final boolean inverted = pattern.startsWith("-");
+                final boolean inverted = indexed && pattern.startsWith("-");
 
                 final String[] sources;
                 if (link.getSourceUrls() != null) {
