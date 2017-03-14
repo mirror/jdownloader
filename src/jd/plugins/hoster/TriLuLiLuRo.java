@@ -113,6 +113,9 @@ public class TriLuLiLuRo extends antiDDoSForHost {
         if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) || br.getURL().matches(TYPE_IMAGE)) {
             filename = br.getRegex("<title>([^<>\"]*?)\\- [\\w\\s-]+</title>").getMatch(0);
             if (filename == null) {
+                filename = br.getRegex("<h1[^<>]*>\\s*(.*?)\\s*</h1>").getMatch(0);
+            }
+            if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = br.getRegex("<div class=\"img_player\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
