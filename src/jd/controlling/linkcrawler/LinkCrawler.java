@@ -1208,7 +1208,6 @@ public class LinkCrawler {
         final boolean canHandle = canHandle(pDecrypt, link.getURL(), link.getSourceLink());
         if (canHandle) {
             if (!AvailableLinkState.UNKNOWN.equals(link.getLinkState())) {
-                //
                 return true;
             }
             CrawledLink source = link.getSourceLink();
