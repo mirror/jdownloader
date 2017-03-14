@@ -158,11 +158,16 @@ public class CamwhoresTv extends PluginForHost {
         String hash = videoUrlPart.get(7).substring(0, 2 * Integer.parseInt(hashRange));
         String nonConvertHash = videoUrlPart.get(7).substring(2 * Integer.parseInt(hashRange));
         String seed = calcSeed(licenseCode, hashRange);
-        String[] seedArray = seed.split("");
-
+        String[] seedArray = new String[seed.length()];
+        for (int i = 0; i < seed.length(); i++) {
+            seedArray[i] = seed.substring(i, i + 1);
+        }
         if (seed != null && hash != null) {
             for (int k = hash.length() - 1; k >= 0; k--) {
-                String[] hashArray = hash.split("");
+                String[] hashArray = new String[hash.length()];
+                for (int i = 0; i < hash.length(); i++) {
+                    hashArray[i] = hash.substring(i, i + 1);
+                }
                 int l = k;
                 for (int m = k; m < seedArray.length; m++) {
                     l += Integer.parseInt(seedArray[m]);
@@ -190,7 +195,10 @@ public class CamwhoresTv extends PluginForHost {
 
     public static String calcSeed(final String licenseCode, final String hashRange) {
         StringBuffer fb = new StringBuffer();
-        String[] licenseCodeArray = licenseCode.split("");
+        String[] licenseCodeArray = new String[licenseCode.length()];
+        for (int i = 0; i < licenseCode.length(); i++) {
+            licenseCodeArray[i] = licenseCode.substring(i, i + 1);
+        }
         for (String c : licenseCodeArray) {
             if (c.equals("$")) {
                 continue;
@@ -209,7 +217,11 @@ public class CamwhoresTv extends PluginForHost {
         g = Math.abs(g);
         fi += g;
         fi *= 2;
-        String[] fArray = String.valueOf(fi).split("");
+        String s = String.valueOf(fi);
+        String[] fArray = new String[s.length()];
+        for (int i = 0; i < s.length(); i++) {
+            fArray[i] = s.substring(i, i + 1);
+        }
         // f = "" + f;
         int i = Integer.parseInt(hashRange) / 2 + 2;
         StringBuffer m = new StringBuffer();
