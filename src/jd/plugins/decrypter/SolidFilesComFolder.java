@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -43,6 +44,11 @@ public class SolidFilesComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        // from folder url > we return file and other folders. we don't want todo this again for files, as availablestatus is set to TRUE
+        if (this.getCurrentLink().getSourceLink().getDownloadLink() != null && this.getCurrentLink().getSourceLink().getDownloadLink().getAvailableStatus() == AvailableStatus.TRUE) {
+            decryptedLinks.add(this.createDownloadlink(parameter));
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Not found<|>We couldn't find the file you requested|>This folder is empty\\.<")) {
@@ -72,9 +78,9 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         }
         if (finfos != null && finfos.length != 0) {
             for (final String finfo : finfos) {
-                final Regex urlfilename = new Regex(finfo, "<a href=\"?(/d/[^/]+?/)\"?.*?>([^<>]+?)</a>");
-                String url = urlfilename.getMatch(0);
-                String filename = urlfilename.getMatch(1);
+                final Regex urlfilename = new Regex(finfo, "<a href=(\"|')(/(?:d|v)/.*?)\\1.*?>([^<>]+)</a>");
+                String url = urlfilename.getMatch(1);
+                String filename = urlfilename.getMatch(2);
                 // final String filesize = new Regex(finfo, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
                 if (url == null || filename == null) {
                     logger.info("finfo: " + finfo);
