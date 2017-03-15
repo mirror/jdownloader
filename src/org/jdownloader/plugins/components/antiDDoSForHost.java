@@ -124,13 +124,20 @@ public abstract class antiDDoSForHost extends PluginForHost {
         if (ibr == null || page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        getPage(ibr, ibr.createGetRequest(page));
+    }
+
+    protected void getPage(final Browser ibr, Request request) throws Exception {
+        if (ibr == null || request == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // virgin browser will have no protocol, we will be able to get from page. existing page request might be with relative paths, we
         // use existing browser session to determine host
-        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
+        final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(request.getUrl());
         prepBrowser(ibr, host);
         URLConnectionAdapter con = null;
         try {
-            con = ibr.openGetConnection(page);
+            con = ibr.openRequestConnection(request);
             readConnection(con, ibr);
         } finally {
             try {
@@ -150,6 +157,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
      */
     protected void getPage(final String page) throws Exception {
         getPage(br, page);
+    }
+
+    protected void getPage(final Request request) throws Exception {
+        getPage(br, request);
     }
 
     protected void postPage(final Browser ibr, String page, final String postData) throws Exception {
