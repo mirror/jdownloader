@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.io" }, urls = { "https?://(?:www\\.)?volafile\\.io/get/[A-Za-z0-9\\-_]+/[^/]+|https?://dl\\d+\\.volafile\\.io/(?:redir/)?get/[A-Za-z0-9\\-_]+/[^/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.io" }, urls = { "https?://(?:www\\.)?volafile\\.io/(?:get|download)/[A-Za-z0-9\\-_]+/[^/]+|https?://dl\\d+\\.volafile\\.io/(?:redir/)?get/[A-Za-z0-9\\-_]+/[^/]+" })
 public class VolafileIo extends PluginForHost {
 
     public VolafileIo(PluginWrapper wrapper) {

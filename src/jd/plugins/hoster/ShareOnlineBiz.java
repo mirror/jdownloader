@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -549,6 +550,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
                 /* English language is needed for free download! */
                 getPage("http://www.share-online.biz/lang/set/english");
+                final URLConnectionAdapter con = br.getRequest().getHttpConnection();
+                if (con.getResponseCode() == 502 || con.getResponseCode() == 504) {
+                    throw new IOException(con.getResponseCode() + " " + con.getResponseMessage());
+                }
                 if (br.getCookie(COOKIE_HOST, "storage") == null) {
                     if (br.containsHTML(">Share-Online - Server Maintenance<|>MAINTENANCE</h1>") || br.containsHTML("<title>Share-Online - Not available</title>")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

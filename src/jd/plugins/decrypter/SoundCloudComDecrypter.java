@@ -184,7 +184,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         final Map<String, Object> entry = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                         final String title = (String) entry.get("title");
                         if (username == null) {
-                            username = title;
+                            username = getString(entry, "user.username");
+                            if (username == null) {
+                                username = title;
+                            }
                         }
                         if (playlistname == null) {
                             playlistname = "";

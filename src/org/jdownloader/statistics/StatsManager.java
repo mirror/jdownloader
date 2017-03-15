@@ -129,7 +129,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     private HashMap<String, Integer>                    reducerRandomMap;
     private final boolean                               alwaysDebug   = false;
     private final boolean                               isJared       = Application.isJared(null) || alwaysDebug;
-    private final org.appwork.scheduler.DelayedRunnable delayedNotify = new DelayedRunnable(1000, 5000) {
+    private final int                                   minDelay      = 1000 + (new Random().nextInt(30) * 1000);
+    private final int                                   maxDelay      = minDelay * 2 + (new Random().nextInt(15) * 1000);
+    private final org.appwork.scheduler.DelayedRunnable delayedNotify = new DelayedRunnable(minDelay, maxDelay) {
         @Override
         public void delayedrun() {
             synchronized (list) {
@@ -140,11 +142,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         }
     };
     private final int                                   maxSendSize   = 20;
-    private final int                                   maxListSize   = maxSendSize * 5;
+    private final int                                   maxListSize   = maxSendSize * 25;
 
     private boolean log(final StatsLogInterface dl) {
         if (isEnabled()) {
-            if ((!alwaysDebug && Math.random() >= 0) && !(dl instanceof AbstractTrackEntry) && isJared) {
+            if ((!alwaysDebug && Math.random() > 0.25d) && !(dl instanceof AbstractTrackEntry) && isJared) {
                 return false;
             }
             synchronized (list) {
@@ -152,7 +154,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     list.pollFirst();
                 }
                 list.add(dl);
-                if (list.size() >= maxSendSize) {
+                if (list.size() >= maxListSize / 2) {
                     // instant notification
                     list.notifyAll();
                 } else {
@@ -386,7 +388,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
          }.start();
      }
 
-    private boolean checkReducer(String path, int reducer) {
+     private boolean checkReducer(String path, int reducer) {
          synchronized (reducerRandomMap) {
              path += "_" + reducer;
              Integer randomValue = reducerRandomMap.get(path);
