@@ -192,7 +192,7 @@ public class RenameDialog extends AbstractDialog<Object> {
                 }
             }
         }
-        boolean regex = CFG_GUI.CFG.isRenameActionRegexEnabled();
+        final boolean regex = CFG_GUI.CFG.isRenameActionRegexEnabled();
         if (StringUtils.isEmpty(allRegex)) {
             allRegex = regex ? "(.*)" : "*";
             allReplace = "$1";
@@ -245,7 +245,9 @@ public class RenameDialog extends AbstractDialog<Object> {
                 case '.':
                 case '[':
                 case '{':
+                case '}':
                 case '(':
+                case ')':
                 case '*':
                 case '+':
                 case '?':
@@ -266,8 +268,9 @@ public class RenameDialog extends AbstractDialog<Object> {
     private String merge(String name, String allRegex) {
         if (allRegex == null) {
             return name;
+        } else {
+            return StringUtils.getCommonalities(name, allRegex);
         }
-        return StringUtils.getCommonalities(name, allRegex);
     }
 
 }

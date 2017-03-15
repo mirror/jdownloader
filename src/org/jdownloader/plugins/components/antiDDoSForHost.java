@@ -16,17 +16,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -45,6 +34,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -365,6 +365,19 @@ public abstract class antiDDoSForHost extends PluginForHost {
     protected void runPostRequestTask(final Browser ibr) throws Exception {
     }
 
+    protected InputStream getInputStream(final URLConnectionAdapter con, final Browser br) throws IOException {
+        final int responseCode = con.getResponseCode();
+        switch (responseCode) {
+        case 502:
+            // Bad Gateway
+            break;
+        default:
+            con.setAllowedResponseCodes(new int[] { responseCode });
+            break;
+        }
+        return con.getInputStream();
+    }
+
     /**
      * @author razotki
      * @author jiaz
@@ -374,8 +387,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @throws PluginException
      */
     public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
-        con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
-        final InputStream is = con.getInputStream();
+        final InputStream is = getInputStream(con, ibr);
         final byte[] responseBytes = IO.readStream(-1, is);
         ibr.getRequest().setResponseBytes(responseBytes);
         logger.fine("\r\n" + ibr.getRequest().getHtmlCode());
