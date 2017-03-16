@@ -95,7 +95,11 @@ public class ToMvzUs extends antiDDoSForDecrypt {
 
     private void decryptIframe(ArrayList<DownloadLink> decryptedLinks) throws Exception {
         // they are always held in iframe src. page seems to only have one.
-        final String toshash = this.br.getRegex("document\\.getElementById\\(\"toshash2\"\\)\\.value = \"([^<>\"]+)\"").getMatch(0);
+        String toshash = this.br.getRegex("document\\.getElementById\\(\"toshash2\"\\)\\.value = \"([^<>\"]+)\"").getMatch(0);
+        if (toshash == null) {
+            /* 2017-03-16 */
+            toshash = this.br.getRegex("var\\s*?hash\\s*?=\\s*?\\'([a-f0-9]+)\\'; ").getMatch(0);
+        }
         final Form tosform = this.br.getFormbyKey("confirm_continue");
         if (tosform != null) {
             if (toshash != null) {

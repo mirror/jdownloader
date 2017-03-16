@@ -326,6 +326,10 @@ public class EstreamTo extends PluginForHost {
             /* Special */
             fileInfo[0] = new Regex(correctedBR, "displaytitle\\|([^<>\"\\|]+)\\|").getMatch(0);
         }
+        if (inValidate(fileInfo[0])) {
+            /* 2017-03-16 */
+            fileInfo[0] = new Regex(correctedBR, "<title>Watch ([^<>\"]+)</title>").getMatch(0);
+        }
         if (ENABLE_HTML_FILESIZE_CHECK) {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -854,6 +858,10 @@ public class EstreamTo extends PluginForHost {
             }
             if (inValidate(dllink)) {
                 dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+            }
+            if (inValidate(dllink)) {
+                /* 2017-03-16 */
+                dllink = new Regex(correctedBR, "<source src=\"(http[^<>\"\\']+)\" type=\\'video/mp4\\'").getMatch(0);
             }
         }
         if (dllink == null && IMAGEHOSTER) {

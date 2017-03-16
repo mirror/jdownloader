@@ -266,10 +266,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 try {
                     con = br.openHeadConnection(dllink);
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
-                        final String redirect_url = br.getHttpConnection().getRequest().getUrl();
-                        con = br.openHeadConnection(redirect_url);
+                    final String workaroundURL = getHttpServerErrorWorkaroundURL(br.getHttpConnection());
+                    if (workaroundURL != null) {
+                        con = br.openHeadConnection(workaroundURL);
                     }
                 } catch (final BrowserException e) {
                     server_issues = true;
@@ -327,6 +326,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else {
             /* http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
+            if (workaroundURL != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, workaroundURL, free_resume, free_maxchunks);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -344,6 +347,18 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
     }
 
+    private String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
+        String workaroundURL = null;
+        if (con.getResponseCode() == 403 || con.getResponseCode() == 404) {
+            /*
+             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com (404), txxx.com
+             * (403)
+             */
+            workaroundURL = br.getHttpConnection().getRequest().getUrl();
+        }
+        return workaroundURL;
+    }
+
     public static String getDllink(final DownloadLink dl, final Browser br) throws PluginException {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
@@ -352,8 +367,17 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
          * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
+        String dllink = null;
+        final String json_playlist_source = br.getRegex("sources\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         String httpurl_temp = null;
-        String dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
+        if (json_playlist_source != null) {
+            /* 2017-03-16: E.g. txxx.com */
+            /* TODO: Eventually improve this */
+            dllink = new Regex(json_playlist_source, "\\'file\\'\\s*?:\\s*?\\'(http[^<>\"\\']*?(m3u8|mp4|flv)[^<>\"\\']*?)\\'").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
+        }
         if (dllink == null) {
             /* E.g. yourlust.com */
             dllink = br.getRegex("flashvars\\.video_html5_url = \"(http[^<>\"]*?)\"").getMatch(0);
@@ -372,10 +396,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|'|\")").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|video)\\s*?:\\s*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("(?:file|video)\\s*?:\\s*?\\'(http[^<>\"\\']*?(?:m3u8|mp4|flv)[^<>\"]*?)\\'").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"]*?)\\1").getMatch(1);
+            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"\\']*?(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
         }
         if (dllink == null) {
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(\"|')video/(?:mp4|flv)\\2").getMatch(0);

@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me" }, urls = { "https?://(www\\.)?vidto\\.me/((vid)?embed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vidto.me" }, urls = { "https?://(www\\.)?vidto\\.me/((vid)?embed\\-)?[a-z0-9]{12}" })
 @SuppressWarnings("deprecation")
 public class VidToMe extends PluginForHost {
     // Site Setters
@@ -556,6 +556,49 @@ public class VidToMe extends PluginForHost {
                         }
                     }
                 }
+            }
+        }
+        if (inValidate(dllink)) {
+            /* RegExes sometimes used for streaming */
+            final String jssource = cbr.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+            if (inValidate(dllink) && jssource != null) {
+                try {
+                    HashMap<String, Object> entries = null;
+                    Object quality_temp_o = null;
+                    long quality_temp = 0;
+                    long quality_best = 0;
+                    String dllink_temp = null;
+                    final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                    for (final Object videoo : ressourcelist) {
+                        entries = (HashMap<String, Object>) videoo;
+                        dllink_temp = (String) entries.get("file");
+                        quality_temp_o = entries.get("label");
+                        if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                            quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                        } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                            /* E.g. '360p' */
+                            quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p").getMatch(0));
+                        }
+                        if (inValidate(dllink_temp) || quality_temp == 0) {
+                            continue;
+                        } else if (dllink_temp.contains(".m3u8")) {
+                            /* Skip hls */
+                            continue;
+                        }
+                        if (quality_temp > quality_best) {
+                            quality_best = quality_temp;
+                            dllink = dllink_temp;
+                        }
+                    }
+                    if (!inValidate(dllink)) {
+                        logger.info("BEST handling for multiple video source succeeded");
+                    }
+                } catch (final Throwable e) {
+                    logger.info("BEST handling for multiple video source failed");
+                }
+            }
+            if (inValidate(dllink)) {
+                dllink = cbr.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
             }
         }
     }

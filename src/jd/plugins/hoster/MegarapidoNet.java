@@ -213,6 +213,7 @@ public class MegarapidoNet extends PluginForHost {
             }
         } catch (final Throwable e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            throw e;
         }
     }
 

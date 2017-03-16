@@ -16,10 +16,8 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,10 +26,14 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -40,7 +42,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us", "paylinks.xyz", "akorto.eu" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?paylinks\\.xyz/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us", "paylinks.xyz", "akorto.eu", "u2s.io" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?paylinks\\.xyz/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
 
     public CatlyUs(PluginWrapper wrapper) {
@@ -71,11 +73,45 @@ public class CatlyUs extends antiDDoSForDecrypt {
         // form
         Form form = br.getForm(0);
         if (form != null) {
-            if (form.containsHTML("g-recaptcha")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            boolean requiresCaptchaWhichCanFail = false;
+            boolean captcha_failed = true;
+            for (int i = 0; i <= 2; i++) {
+                if (form.containsHTML("adcopy_response")) {
+                    requiresCaptchaWhichCanFail = true;
+                    final String solvemediaChallengeKey = br.getRegex("app_vars\\[\\'solvemedia_challenge_key\\'\\]\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    if (solvemediaChallengeKey != null) {
+                        sm.setChallengeKey(solvemediaChallengeKey);
+                    }
+                    File cf = null;
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode("solvemedia", cf, param);
+                    final String chid = sm.getChallenge(code);
+                    form.put("adcopy_challenge", chid);
+                    form.put("adcopy_response", "manual_challenge");
+                } else if (form.containsHTML("g\\-recaptcha")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    captcha_failed = false;
+                } else {
+                    captcha_failed = false;
+                }
+                br.submitForm(form);
+                /**
+                 * TODO: Check if we need this for other language or check if this is language independant and only exists if the captcha
+                 * failed: class="banner banner-captcha" OR
+                 */
+                if (requiresCaptchaWhichCanFail && !this.br.containsHTML("The CAPTCHA was incorrect")) {
+                    captcha_failed = false;
+                }
+                if (!captcha_failed) {
+                    /* Captcha success or we did not have to enter any captcha! */
+                    break;
+                }
             }
-            br.submitForm(form);
+            if (requiresCaptchaWhichCanFail && captcha_failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
         form = this.br.getForm(0);
         if (form != null) {
