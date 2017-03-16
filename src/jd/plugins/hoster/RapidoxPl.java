@@ -223,7 +223,7 @@ public class RapidoxPl extends PluginForHost {
                 handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
             }
             this.dl.startDownload();
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
         }
