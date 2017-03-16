@@ -91,12 +91,9 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
         } else {
             ShutdownController.getInstance().removeShutdownVetoListener(this);
         }
-        final Thread old = currentThread.getAndSet(thread);
+        currentThread.getAndSet(thread);
         if (thread != null) {
             thread.start();
-        }
-        if (old != null) {
-            old.interrupt();
         }
     }
 
