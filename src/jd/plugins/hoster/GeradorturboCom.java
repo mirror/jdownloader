@@ -40,7 +40,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "geradorturbo.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "geradorturbo.com" }, urls = { "" })
 public class GeradorturboCom extends PluginForHost {
 
     private final String                                   DOMAIN                       = "http://geradorturbo.com/";
@@ -169,7 +169,7 @@ public class GeradorturboCom extends PluginForHost {
                 handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
             }
             this.dl.startDownload();
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
         }
