@@ -5,8 +5,6 @@ import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -30,21 +28,7 @@ public class MacAntiStandBy extends Thread {
     public void run() {
         try {
             while (jdAntiStandby.isAntiStandbyThread()) {
-                switch (jdAntiStandby.getMode()) {
-                case DOWNLOADING:
-                    if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
-                        enableAntiStandby(true);
-                    } else {
-                        enableAntiStandby(false);
-                    }
-                    break;
-                case RUNNING:
-                    enableAntiStandby(true);
-                    break;
-                default:
-                    logger.finest("JDAntiStandby: Config error (unknown mode: " + jdAntiStandby.getMode() + ")");
-                    break;
-                }
+                enableAntiStandby(jdAntiStandby.requiresAntiStandby());
                 sleep(sleep);
             }
         } catch (Throwable e) {

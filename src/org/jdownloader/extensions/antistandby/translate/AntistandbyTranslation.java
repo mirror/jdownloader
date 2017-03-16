@@ -19,6 +19,15 @@ public interface AntistandbyTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download is in progress" })
     String gui_config_antistandby_whiledl2();
 
+    @Default(lngs = { "en" }, values = { "Crawler is in progress" })
+    String gui_config_antistandby_whilecrawl();
+
+    @Default(lngs = { "en" }, values = { "Download or Crawler is in progress" })
+    String gui_config_antistandby_whiledl2orcrawl();
+
     @Default(lngs = { "en" }, values = { "Prevent standby/sleep when" })
     String mode();
+
+    @Default(lngs = { "en" }, values = { "Prevent screensaver" })
+    String prevent_screensaver();
 }
