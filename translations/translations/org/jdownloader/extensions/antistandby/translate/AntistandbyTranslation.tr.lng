@@ -1,5 +1,8 @@
+gui_config_antistandby_whilecrawl=Gezici işlemi sürüyor
 gui_config_antistandby_whiledl2=İndirme devam ediyorken önle
+gui_config_antistandby_whiledl2orcrawl=İndirme ye da Gezici işlemi sürüyor
 gui_config_antistandby_whilejd2=JDownloader çalışıyorken önle
 jd_plugins_optional_antistandby_jdantistandby=Bekleme Önleyici
 jd_plugins_optional_antistandby_jdantistandby_description=İndirmelerinizi aktif tutmak için basitçe bilgisayarınızın Bekleme veya Uyku Kipine geçmesini önler.
 mode=Bekleme/uyku kipini
+prevent_screensaver=Ekran koruyucuyu önle
