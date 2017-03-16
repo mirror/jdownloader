@@ -1,5 +1,8 @@
+gui_config_antistandby_whilecrawl=Captura em andamento
 gui_config_antistandby_whiledl2=Downloads estiverem em progresso
+gui_config_antistandby_whiledl2orcrawl=Download ou captura em andamento
 gui_config_antistandby_whilejd2=O JDownloader estiver sendo executado
 jd_plugins_optional_antistandby_jdantistandby=JDAntiStandby
 jd_plugins_optional_antistandby_jdantistandby_description=Simplesmente previne seu computador de entrar no modo de espera ou hibernação para manter os downloads ativos.
 mode=Prevenir Suspender/Hibernar quando
+prevent_screensaver=Prevenir proteção de tela
