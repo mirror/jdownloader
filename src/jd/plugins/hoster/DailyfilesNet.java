@@ -42,7 +42,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyfiles.net" }, urls = { "https?://dailyfiles\\.net/([A-Za-z0-9]+)/?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyfiles.net" }, urls = { "https?://dailyfiles\\.net/([A-Za-z0-9]+)/?" })
 public class DailyfilesNet extends antiDDoSForHost {
 
     private String  MAINPAGE = "http://dailyfiles.net/";
@@ -80,9 +80,10 @@ public class DailyfilesNet extends antiDDoSForHost {
 
                 // output: output: filename, filesize
                 String response = br.toString();
+                final String status = PluginJSonUtils.getJsonValue(response, "status");
                 final String error = checkForErrors(response, "error");
                 // {"error":"File doesn't exists"}
-                if (error == null) {
+                if (error == null && !"offline".equals(status)) {
                     String fileName = PluginJSonUtils.getJsonValue(response, "fileName");
                     String fileSize = PluginJSonUtils.getJsonValue(response, "fileSize");
                     if (fileName != null) {
