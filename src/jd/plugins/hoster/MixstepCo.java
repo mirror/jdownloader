@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -56,14 +56,8 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class XFileSharingProBasic extends antiDDoSForHost {
-
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixstep.co" }, urls = { "https?://(?:www\\.)?mixstep\\.co/(?:embed\\-)?[a-z0-9]{12}" })
+public class MixstepCo extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -71,11 +65,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://ForDevsToPlayWith.com";
+    private static final String  COOKIE_HOST                        = "http://mixstep.co";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(ForDevsToPlayWith\\.com)";
+    private static final String  DOMAINS                            = "(mixstep\\.co)";
 
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -97,7 +91,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     private final boolean        IMAGEHOSTER                        = false;
 
-    private final boolean        SUPPORTS_HTTPS                     = false;
+    private final boolean        SUPPORTS_HTTPS                     = true;
     private final boolean        SUPPORTS_HTTPS_FORCED              = false;
     private final boolean        SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean        SUPPORTS_AVAILABLECHECK_ABUSE      = true;
@@ -140,13 +134,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.5<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.4<br />
      * mods:<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: null<br />
      * other:<br />
      */
 
@@ -180,7 +174,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public MixstepCo(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -823,7 +817,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (inValidate(dllink) && jssource != null) {
                 try {
                     HashMap<String, Object> entries = null;
-                    Object quality_temp_o = null;
                     long quality_temp = 0;
                     long quality_best = 0;
                     String dllink_temp = null;
@@ -831,13 +824,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     for (final Object videoo : ressourcelist) {
                         entries = (HashMap<String, Object>) videoo;
                         dllink_temp = (String) entries.get("file");
-                        quality_temp_o = entries.get("label");
-                        if (quality_temp_o != null && quality_temp_o instanceof Long) {
-                            quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
-                        } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                            /* E.g. '360p' */
-                            quality_temp = Long.parseLong(new Regex((String) quality_temp_o, "(\\d+)p").getMatch(0));
-                        }
+                        quality_temp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
                         if (inValidate(dllink_temp) || quality_temp == 0) {
                             continue;
                         } else if (dllink_temp.contains(".m3u8")) {

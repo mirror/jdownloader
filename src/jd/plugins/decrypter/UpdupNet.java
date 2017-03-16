@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "updup.net" }, urls = { "https?://updup\\.net/reDirect/[A-Za-z0-9]+/\\d+|https?://(?:www\\.)?updup.net/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "updup.net" }, urls = { "https?://updup\\.net/reDirect/[A-Za-z0-9]+/\\d+|https?://(?:www\\.)?updup\\.net/[A-Za-z0-9]+" })
 public class UpdupNet extends PluginForDecrypt {
 
     public UpdupNet(PluginWrapper wrapper) {
@@ -45,7 +46,7 @@ public class UpdupNet extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final DownloadLink dl = decryptSingle();
+            final DownloadLink dl = decryptSingle(this.br);
             if (dl == null) {
                 return null;
             }
@@ -54,11 +55,11 @@ public class UpdupNet extends PluginForDecrypt {
             /* Multiple reedirect urls */
             this.br.setFollowRedirects(true);
             br.getPage(parameter);
-            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=notfound") || !this.br.containsHTML("class=mirrorlink")) {
+            if (isOffline(this.br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            String fpName = br.getRegex("id=filename><h1>([^<>\"]+)<").getMatch(0);
+            String fpName = getFilename(this.br);
             FilePackage fp = null;
             if (fpName != null) {
                 fp = FilePackage.getInstance();
@@ -71,13 +72,14 @@ public class UpdupNet extends PluginForDecrypt {
                 return null;
             }
 
-            this.br.setFollowRedirects(false);
+            final Browser brc = this.br.cloneBrowser();
+            brc.setFollowRedirects(false);
             for (final String singleLink : links) {
                 if (this.isAbort()) {
                     return decryptedLinks;
                 }
-                br.getPage(singleLink);
-                final DownloadLink dl = decryptSingle();
+                brc.getPage(singleLink);
+                final DownloadLink dl = decryptSingle(brc);
                 if (dl == null) {
                     return null;
                 }
@@ -91,13 +93,31 @@ public class UpdupNet extends PluginForDecrypt {
             if (fp != null) {
                 fp.addLinks(decryptedLinks);
             }
+            /* Check if a directlink is available --> Add it to hosterplugin! */
+            if (this.br.containsHTML("class=mainDirectLink")) {
+                final DownloadLink main = this.createDownloadlink(parameter.replace("updup.net/", "updupdecrypted.net/"));
+                main.setAvailableStatus(jd.plugins.hoster.UpdupNet.requestFileInformationStatic(main, br));
+                decryptedLinks.add(main);
+            }
         }
 
         return decryptedLinks;
     }
 
-    private DownloadLink decryptSingle() {
-        final String finallink = this.br.getRedirectLocation();
+    public static boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=notfound") || !br.containsHTML("class=mirrorlink");
+    }
+
+    public static String getFilename(final Browser br) {
+        String filename = br.getRegex("id=filename><h1>([^<>\"]+)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property=og:description content=\"Download file ([^<>\"\\']+)\"").getMatch(0);
+        }
+        return filename;
+    }
+
+    private DownloadLink decryptSingle(final Browser br) {
+        final String finallink = br.getRedirectLocation();
         if (finallink == null || finallink.contains(this.getHost())) {
             return null;
         }

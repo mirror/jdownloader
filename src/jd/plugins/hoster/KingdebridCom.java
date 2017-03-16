@@ -16,8 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,53 +37,52 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "conexaomega.com.br" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
-public class ConexaomegaComBr extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+public class KingdebridCom extends PluginForHost {
 
-    /* Tags: conexaomega.com.br, megarapido.net, superdown.com.br */
-
-    private static final String                            DOMAIN                       = "http://conexaomega.com.br/";
-    private static final String                            NICE_HOST                    = "conexaomega.com.br";
+    private static final String                            DOMAIN                       = "https://kingdebrid.com/";
+    private static final String                            NICE_HOST                    = "kingdebrid.com";
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
     /* Connection limits */
     private static final boolean                           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int                               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private final String                                   default_UA                   = "JDownloader";
-    private final String                                   html_loggedin                = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
+    private final String                                   html_loggedin                = "id=\"dropdown\\-user\"";
 
+    private static AtomicReference<String>                 agent                        = new AtomicReference<String>(null);
     private static Object                                  LOCK                         = new Object();
     private int                                            statuscode                   = 0;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                      = null;
     private DownloadLink                                   currDownloadLink             = null;
 
-    public ConexaomegaComBr(PluginWrapper wrapper) {
+    public KingdebridCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://conexaomega.com.br/");
+        this.enablePremium("https://kingdebrid.com/signup");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://conexaomega.com.br/";
+        return "https://kingdebrid.com/";
     }
 
-    @Override
-    protected Browser prepBrowser(final Browser prepBr, final String host) {
-        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            super.prepBrowser(prepBr, host);
-            /* define custom browser headers and language settings */
-            prepBr.getHeaders().put("User-Agent", default_UA);
-            prepBr.setFollowRedirects(true);
-        }
-        return prepBr;
+    private Browser prepBR(final Browser br) {
+        br.setCookiesExclusive(true);
+        br.getHeaders().put("User-Agent", default_UA);
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -121,7 +123,7 @@ public class ConexaomegaComBr extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = new Browser();
+        this.br = prepBR(this.br);
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
@@ -143,13 +145,16 @@ public class ConexaomegaComBr extends antiDDoSForHost {
         login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            this.getAPISafe("https://www." + this.getHost() + "/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=1." + System.currentTimeMillis());
-            dllink = this.br.getRegex("(http[^<>\"\\|\\']+)").getMatch(0);
-            if (dllink == null || dllink.length() > 500) {
+            getAPISafe("https://" + this.getHost());
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("Valid-request", "true");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            this.postAPISafe("https://" + this.getHost() + "/index.php?id=generator", "generator[url]=" + Encoding.urlEncode(link.getDownloadURL()) + "&generator[pass]=");
+            dllink = PluginJSonUtils.getJsonValue(this.br, "link");
+            if (StringUtils.isEmpty(dllink)) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 5, 2 * 60 * 1000l);
             }
-            dllink = dllink.replace("\\", "");
         }
         handleDL(account, link, dllink);
     }
@@ -212,40 +217,56 @@ public class ConexaomegaComBr extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         setConstants(account, null);
-        this.br = new Browser();
+        this.br = prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!this.br.getURL().contains("/minha_conta.php")) {
-            super.getPage(br, "/minha_conta.php");
+        if (br.getURL() != null && !br.getURL().matches(".+" + this.getHost() + "/?$")) {
+            br.getPage("//" + this.getHost());
         }
-        final String premium_days_left = this.br.getRegex("<span>(\\d+) dias?</span>.+<small[^>]*?>[^<>]*?de conta premium").getMatch(0);
-        if (premium_days_left == null || premium_days_left.equals("0")) {
+        String supportedhosts_source = null;
+
+        final String expire = this.br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))").getMatch(0);
+        long trafficleft = 0;
+        String trafficleft_str = this.br.getRegex("<br>Total: <div class=\\'badge badge\\-warning\\'>([^<>\"]+)<").getMatch(0);
+        if (trafficleft_str != null) {
+            trafficleft = SizeFormatter.getSize(trafficleft_str);
+        }
+        if (expire != null) {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Account");
+            if (trafficleft_str == null) {
+                /* Set unlimited traffic in case our RegEx fails! */
+                ai.setUnlimitedTraffic();
+            } else {
+                ai.setTrafficLeft(trafficleft);
+            }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss a", Locale.US), br);
+        } else {
+            /* TODO: Check if free accounts have traffic. */
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
-            ai.setTrafficLeft(0);
-        } else {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setStatus("Premium account");
-            ai.setUnlimitedTraffic();
-            ai.setValidUntil(System.currentTimeMillis() + 24 * Long.parseLong(premium_days_left) * 60 * 60 * 1000l);
+            /* Try to only grab all hosts which are supported for free accounts. */
+            supportedhosts_source = this.br.getRegex("Free hosts <(.*?)</div>").getMatch(0);
+            if (trafficleft > 0) {
+                ai.setTrafficLeft(trafficleft);
+            }
         }
+
+        if (supportedhosts_source == null) {
+            /* Fallback to all supported hosts (or for premium, we need ALL). */
+            supportedhosts_source = this.br.toString();
+        }
+
         account.setValid(true);
-        this.getAPISafe("/planos");
-        final String supportedhosttable = this.br.getRegex("<div class=\"lista\\-geradores\">(.*?<br/>)<br/>[\t\n\r ]*?</div>").getMatch(0);
-        if (supportedhosttable != null) {
-            final ArrayList<String> supportedHosts = new ArrayList<String>();
-            final String hosts_crippled[] = new Regex(supportedhosttable, "([A-Za-z0-9\\.\\-]+)[\t\n\r ]*?<br").getColumn(0);
-            for (String host_crippled : hosts_crippled) {
-                supportedHosts.add(host_crippled.trim());
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String hosttexts[] = new Regex(supportedhosts_source, "cdn/img/hosters/([^<>\"]+)\\.png\"").getColumn(0);
+        for (String hosttext : hosttexts) {
+            hosttext = hosttext.toLowerCase();
+            final String[] domains = hosttext.toLowerCase().split(",");
+            for (String domain : domains) {
+                domain = domain.trim();
+                supportedHosts.add(domain);
             }
             ai.setMultiHostSupport(this, supportedHosts);
         }
@@ -258,44 +279,47 @@ public class ConexaomegaComBr extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                br = new Browser();
+                this.br = prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    /* Re-use cookies whenever possible to avoid login captcha prompts. */
-                    br.setCookies(getHost(), cookies);
-                    super.getPage(br, "https://www." + getHost() + "/planos");
-                    if (br.containsHTML(html_loggedin)) {
-                        account.saveCookies(br.getCookies(getHost()), "");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (force) {
+                        /*
+                         * Even though login is forced first check if our cookies are still valid (prevent login captcha!) --> If not, force
+                         * login!
+                         */
+                        br.getPage("https://" + this.getHost());
+                        if (br.containsHTML(html_loggedin)) {
+                            return;
+                        }
+                        /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
+                        this.br = prepBR(new Browser());
+                    } else {
                         return;
                     }
-                    /* Clear cookies/headers to prevent unknown errors as we'll perform a full login below now. */
-                    br = new Browser();
                 }
-                super.getPage(br, "https://www." + getHost() + "/login");
-                String postData = "lembrar=on&email=" + Encoding.urlEncode(currAcc.getUser()) + "&senha=" + Encoding.urlEncode(currAcc.getPass());
 
+                /* 2017-03-16: Needs to be accessed twice! */
+                br.getPage("https://" + this.getHost() + "/login");
+                br.getPage("https://" + this.getHost() + "/login");
+
+                String postData = "&login%5Bremember%5D=1&login%5Busername%5D=" + Encoding.urlEncode(currAcc.getUser()) + "&login%5Bpassword%5D=" + Encoding.urlEncode(currAcc.getPass());
                 if (this.br.containsHTML("g\\-recaptcha")) {
-                    /* Handle login captcha */
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                     }
-                    final String siteKey = this.br.getRegex("var key\\s*?=\\s*?\"([^<>\"]+)\";").getMatch(0);
-                    final String recaptchaV2Response;
-                    if (siteKey != null) {
-                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
-                    } else {
-                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    }
-
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     if (dlinkbefore != null) {
                         this.setDownloadLink(dlinkbefore);
                     }
                     postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
                 }
-
-                this.postAPISafe("/login", postData);
-                if (!this.br.containsHTML(html_loggedin)) {
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("Valid-request", "true");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                this.postAPISafe("https://" + this.getHost() + "/index.php?id=login", postData);
+                if (this.br.getCookie(this.br.getHost(), "authority") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -325,23 +349,23 @@ public class ConexaomegaComBr extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void getAPISafe(final String accesslink) throws Exception {
-        super.getPage(br, accesslink);
+    private void getAPISafe(final String accesslink) throws IOException, PluginException {
+        br.getPage(accesslink);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws Exception {
-        super.postPage(br, accesslink, postdata);
+    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+        br.postPage(accesslink, postdata);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
 
-    /** For future changes */
+    /** Keep this for possible future API implementation */
     private void updatestatuscode() {
     }
 
-    /** For future changes */
+    /** Keep this for possible future API implementation */
     private void handleAPIErrors(final Browser br) throws PluginException {
         // String statusMessage = null;
         // try {

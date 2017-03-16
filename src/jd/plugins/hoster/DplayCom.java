@@ -192,8 +192,17 @@ public class DplayCom extends PluginForHost {
                 /* Probably not a video */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.br.getHeaders().put("Accept", "Bearer " + policyKey);
-            this.br.getHeaders().put("Authorization", "Bearer " + policyKey);
+            final String authorizationValue;
+            /* 2017-03-16: Try hardcoded header ... */
+            final boolean useStaticAuthorizationValue = true;
+            if (useStaticAuthorizationValue) {
+                authorizationValue = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU0VSSUQ6ZHBsYXlpdDo2ZTRhOTIyNS1iNzk2LTQ3ZjItYTg5Zi1mZmFhYjBiNmMxZjUiLCJhbm9ueW1vdXMiOnRydWUsImlhdCI6MTQ4OTYxNzgzNCwianRpIjoidG9rZW4tYTcyYWJiZmEtNjRkZC00MzQxLTg5MTUtMGU0MGZmYjM3Zjk3In0=.7YxUHBznpIYHTe2V5cGu_5uw0vsJjDv3Qs0vKIwUk2w=";
+            } else {
+                authorizationValue = "Bearer " + policyKey;
+            }
+            // this.br.getHeaders().put("Accept", "Bearer " + policyKey);
+            this.br.getHeaders().put("Accept", "*/*");
+            this.br.getHeaders().put("Authorization", authorizationValue);
             final String api_url = this.br.getRegex("(https?://[^/]+/playback/videoPlaybackInfo/\\d+)").getMatch(0);
             if (api_url == null) {
                 /* Probably not a video */

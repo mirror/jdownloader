@@ -177,6 +177,7 @@ public class TransloadMe extends PluginForHost {
             this.dl.startDownload();
         } catch (final Throwable e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            throw e;
         }
     }
 

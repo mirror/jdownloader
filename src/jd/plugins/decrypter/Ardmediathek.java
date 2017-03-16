@@ -415,6 +415,10 @@ public class Ardmediathek extends PluginForDecrypt {
             final String server = null;
             final String network = "default";
             final int quality = this.convertASSETTYPEtoQuality(assettype);
+            if (quality == -1) {
+                /* Skip unknown qualities */
+                continue;
+            }
             // rtmp --> hds or rtmp
             String directlink = getXML(stream, "fileName");
             final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
@@ -616,7 +620,8 @@ public class Ardmediathek extends PluginForDecrypt {
         int quality;
         if (assettype.equals("1.65 Web S VOD adaptive streaming") || assettype.contains("Prog 320x180")) {
             quality = 0;
-        } else if (assettype.equals("1.63 Web M VOD adaptive streaming") || assettype.equals("1.24 Web M VOD") || assettype.equals("1.2.3.11.1 Web L")) {
+        } else if (assettype.matches("[0-9\\.]+ Web M.*?") || assettype.equals("1.2.3.11.1 Web L")) {
+            /* E.g. 1.63 Web M VOD adaptive streaming */
             quality = 1;
         } else if (assettype.equals("1.71 ADS 4 VOD adaptive streaming") || assettype.equals("1.2.3.12.1 HbbTV 720x576")) {
             quality = 2;

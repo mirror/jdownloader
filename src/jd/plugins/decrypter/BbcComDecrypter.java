@@ -123,6 +123,18 @@ public class BbcComDecrypter extends PluginForDecrypt {
         }
 
         if (decryptedLinks.size() == 0) {
+            /* Final fallback */
+            final String[] videoIDs = this.br.getRegex("episode_id=([pb][a-z0-9]{7})").getColumn(0);
+            for (final String vpid : videoIDs) {
+                final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
+                dl.setLinkID(vpid);
+                dl.setName(vpid + ".mp4");
+                dl.setContentUrl(parameter);
+                decryptedLinks.add(dl);
+            }
+        }
+
+        if (decryptedLinks.size() == 0) {
             logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
             decryptedLinks.add(this.createOfflinelink(parameter));
         }

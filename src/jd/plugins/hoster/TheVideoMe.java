@@ -586,7 +586,7 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     private String getSpecialJsBullshit() {
-        return new Regex(correctedBR, "var mpri_Key=\\'([^<>\"\\']+)\\';").getMatch(0);
+        return new Regex(correctedBR, "var try_again\\s*?=\\s*?\\'([^<>\"\\']+)\\';").getMatch(0);
     }
 
     private boolean isFakeDllink(final URLConnectionAdapter con) {

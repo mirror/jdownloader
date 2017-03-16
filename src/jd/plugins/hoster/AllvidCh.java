@@ -26,10 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,6 +45,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allvid.ch" }, urls = { "https?://(www\\.)?allvid\\.ch/(embed\\-)?[a-z0-9]{12}" })
 public class AllvidCh extends PluginForHost {
@@ -335,9 +335,10 @@ public class AllvidCh extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings({ "unused", "deprecation", "static-access" })
+    @SuppressWarnings({ "unused", "deprecation" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        br.setFollowRedirects(false);
+        /* 2017-03-16: Enable redirects */
+        br.setFollowRedirects(true);
         passCode = downloadLink.getStringProperty("pass");
         /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -710,7 +711,7 @@ public class AllvidCh extends PluginForHost {
     @SuppressWarnings("unused")
     private String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
+        if (dllink == null || dllink.matches(".+/(embed\\-)?[a-z0-9]{12}.*?")) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);

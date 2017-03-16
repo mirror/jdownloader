@@ -36,8 +36,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.net" }, urls = { "https?://otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" }) 
-public class OtrDatenkellerAt extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.net" }, urls = { "https?://otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" })
+public class OtrDatenkellerNet extends PluginForHost {
 
     public static String        agent             = RandomUserAgent.generate();
     private final String        DOWNLOADAVAILABLE = "onclick=\"startCount";
@@ -47,7 +47,7 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     private String              api_waitaws_url   = null;
 
-    public OtrDatenkellerAt(PluginWrapper wrapper) {
+    public OtrDatenkellerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
         this.setStartIntervall(60 * 1000l);
