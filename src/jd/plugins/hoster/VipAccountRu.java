@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip-account.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vip-account.ru" }, urls = { "" })
 public class VipAccountRu extends PluginForHost {
 
     private static final String                            DOMAIN                       = "http://vip-account.ru/";
@@ -175,7 +175,7 @@ public class VipAccountRu extends PluginForHost {
                 handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
             }
             this.dl.startDownload();
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
         }
