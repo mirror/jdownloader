@@ -22,15 +22,13 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.jna.windows.Kernel32;
 import org.jdownloader.logging.LogController;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-
 public class WindowsAntiStandby extends Thread implements Runnable {
 
     private final AtomicBoolean        lastState = new AtomicBoolean(false);
     private static final int           sleep     = 5000;
     private final AntiStandbyExtension jdAntiStandby;
 
-    private final LogSource logger;
+    private final LogSource            logger;
 
     public WindowsAntiStandby(final AntiStandbyExtension jdAntiStandby) {
         super();
@@ -45,21 +43,7 @@ public class WindowsAntiStandby extends Thread implements Runnable {
     public void run() {
         try {
             while (jdAntiStandby.isAntiStandbyThread()) {
-                switch (jdAntiStandby.getMode()) {
-                case DOWNLOADING:
-                    if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
-                        enableAntiStandby(true);
-                    } else {
-                        enableAntiStandby(false);
-                    }
-                    break;
-                case RUNNING:
-                    enableAntiStandby(true);
-                    break;
-                default:
-                    logger.finest("JDAntiStandby: Config error (unknown mode: " + jdAntiStandby.getMode() + ")");
-                    break;
-                }
+                enableAntiStandby(jdAntiStandby.requiresAntiStandby());
                 sleep(sleep);
             }
         } catch (Throwable e) {

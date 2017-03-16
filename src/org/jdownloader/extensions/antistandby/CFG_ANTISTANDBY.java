@@ -14,14 +14,17 @@ public class CFG_ANTISTANDBY {
 
     // Static Mappings for interface
     // org.jdownloader.extensions.shutdown.AntiStandbyConfig
-    public static final AntiStandbyConfig                 CFG           = JsonConfig.create(Application.getResource("cfg/" + AntiStandbyExtension.class.getName()), AntiStandbyConfig.class);
-    public static final StorageHandler<AntiStandbyConfig> SH            = (StorageHandler<AntiStandbyConfig>) CFG._getStorageHandler();
+    public static final AntiStandbyConfig                 CFG              = JsonConfig.create(Application.getResource("cfg/" + AntiStandbyExtension.class.getName()), AntiStandbyConfig.class);
+    public static final StorageHandler<AntiStandbyConfig> SH               = (StorageHandler<AntiStandbyConfig>) CFG._getStorageHandler();
     // true
-    public static final BooleanKeyHandler                 FRESH_INSTALL = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                 FRESH_INSTALL    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
     // false
-    public static final BooleanKeyHandler                 GUI_ENABLED   = SH.getKeyHandler("GuiEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                 GUI_ENABLED      = SH.getKeyHandler("GuiEnabled", BooleanKeyHandler.class);
     // false
-    public static final BooleanKeyHandler                 ENABLED       = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                 ENABLED          = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
     // DOWNLOADING
-    public static final EnumKeyHandler                    MODE          = SH.getKeyHandler("Mode", EnumKeyHandler.class);
+    public static final EnumKeyHandler                    MODE             = SH.getKeyHandler("Mode", EnumKeyHandler.class);
+    // DisplayRequired
+    public static final BooleanKeyHandler                 DISPLAY_REQUIRED = SH.getKeyHandler("DisplayRequired", BooleanKeyHandler.class);
+
 }

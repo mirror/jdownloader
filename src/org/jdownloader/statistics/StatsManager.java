@@ -45,6 +45,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.StorageException;
@@ -129,8 +132,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     private HashMap<String, Integer>                    reducerRandomMap;
     private final boolean                               alwaysDebug   = false;
     private final boolean                               isJared       = Application.isJared(null) || alwaysDebug;
-    private final int                                   minDelay      = 1000 + (new Random().nextInt(30) * 1000);
-    private final int                                   maxDelay      = minDelay * 2 + (new Random().nextInt(15) * 1000);
+    private final int                                   minDelay      = 30;
+    private final int                                   maxDelay      = 90;
     private final org.appwork.scheduler.DelayedRunnable delayedNotify = new DelayedRunnable(minDelay, maxDelay) {
         @Override
         public void delayedrun() {
@@ -355,6 +358,30 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                          return modifiedHash.substring(0, ((2 * modifiedHash.length()) / 3));
                      }
                  });
+             }
+         });
+         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+             @Override
+             public long getMaxDuration() {
+                 return 5000;
+             }
+
+             @Override
+             public void onShutdown(ShutdownRequest shutdownRequest) {
+                 delayedNotify.delayedrun();
+                 try {
+                     boolean waitFlag = true;
+                     while (waitFlag) {
+                         synchronized (list) {
+                             if (list.size() == 0) {
+                                 waitFlag = false;
+                             }
+                         }
+                         Thread.sleep(250);
+                     }
+                 } catch (InterruptedException e) {
+                 }
              }
          });
      }
