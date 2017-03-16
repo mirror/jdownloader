@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kingdebrid.com" }, urls = { "" })
 public class KingdebridCom extends PluginForHost {
 
     private static final String                            DOMAIN                       = "https://kingdebrid.com/";
@@ -183,7 +183,7 @@ public class KingdebridCom extends PluginForHost {
                 handleErrorRetries("unknowndlerror", 5, 2 * 60 * 1000l);
             }
             this.dl.startDownload();
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             throw e;
         }
