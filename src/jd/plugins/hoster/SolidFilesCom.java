@@ -80,7 +80,7 @@ public class SolidFilesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error/") || br.containsHTML(">404<|>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled|The file you are trying to download has|>File not available") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("/error/") || br.containsHTML(">404<|>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled|The file you are trying to download has|>File not available|This file/folder has been disabled") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJsonValue(br, "name");
