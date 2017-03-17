@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?breakdecrypted\\.com/(index|usercontent|skittles|video)/[A-Za-z0-9\\-_/]+\\-\\d+$" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?breakdecrypted\\.com/(index|usercontent|skittles|video)/[A-Za-z0-9\\-_/]+\\-\\d+$" })
 public class BreakCom extends PluginForHost {
 
     private String dlink = null;
@@ -56,12 +56,16 @@ public class BreakCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.break.com/embed/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-        if (br.getURL().contains("break.com/content/missing/") || br.containsHTML("\"videoUri\": \"\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("break.com/content/missing/") || br.containsHTML("\"videoUri\": \"\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\"contentName\": \"([^<>\"]*?)\"").getMatch(0);
 
         String token = br.getRegex("\"AuthToken\": \"([^<>\"]*?)\"").getMatch(0);
-        dlink = br.getRegex("\"videoUri\": \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || dlink == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlink = br.getRegex("\"videoUri\": \"(https?://[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || dlink == null || token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dlink = dlink.replace(".wmv", ".flv") + "?" + token;
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
@@ -73,7 +77,9 @@ public class BreakCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } finally {
-            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+            if (br.getHttpConnection() != null) {
+                br.getHttpConnection().disconnect();
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
@@ -81,7 +87,9 @@ public class BreakCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
