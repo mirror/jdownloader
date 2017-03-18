@@ -1138,6 +1138,7 @@ public class VidToMe extends PluginForHost {
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
+        downloadLink.setContentUrl(downloadLink.getDownloadURL());
     }
 
     @SuppressWarnings("unused")
