@@ -124,7 +124,7 @@ public class DownloadLogEntry extends AbstractLogEntry {
     private int     counter = 1;
     private long    linkID  = -1;
 
-    private String  host;
+    private String host;
 
     public long getLinkID() {
         return linkID;
@@ -157,4 +157,5 @@ public class DownloadLogEntry extends AbstractLogEntry {
     public String getHost() {
         return host;
     }
+
 }
