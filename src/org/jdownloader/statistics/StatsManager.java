@@ -122,16 +122,16 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         return StatsManager.INSTANCE;
     }
 
-    private final StatsManagerConfigV2                  config;
-    private final LogSource                             logger;
-    private final LinkedList<StatsLogInterface>         list          = new LinkedList<StatsLogInterface>();
-    private final Thread                                thread;
-    private final HashMap<String, AtomicInteger>        counterMap    = new HashMap<String, AtomicInteger>();
-    private final long                                  sessionStart;
-    private final File                                  reducerFile;
-    private HashMap<String, Integer>                    reducerRandomMap;
-    private final boolean                               alwaysDebug   = false;
-    private final boolean                               isJared       = Application.isJared(null) || alwaysDebug;
+    private final StatsManagerConfigV2           config;
+    private final LogSource                      logger;
+    private final LinkedList<StatsLogInterface>  list       = new LinkedList<StatsLogInterface>();
+    private final Thread                         thread;
+    private final HashMap<String, AtomicInteger> counterMap = new HashMap<String, AtomicInteger>();
+    private final long                           sessionStart;
+    private final File                           reducerFile;
+    private HashMap<String, Integer>             reducerRandomMap;
+
+    private final boolean                               isJared       = Application.isJared(null);
     private final int                                   minDelay      = 30;
     private final int                                   maxDelay      = 90;
     private final org.appwork.scheduler.DelayedRunnable delayedNotify = new DelayedRunnable(minDelay, maxDelay) {
@@ -149,9 +149,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private boolean log(final StatsLogInterface dl) {
         if (isEnabled()) {
-            if ((!alwaysDebug && Math.random() > 1d) && !(dl instanceof AbstractTrackEntry) && isJared) {
+            if (!isJared) {
                 return false;
             }
+
             synchronized (list) {
                 if (list.size() == maxListSize) {
                     list.pollFirst();
@@ -447,9 +448,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        if (alwaysDebug) {
-            return true;
-        }
+
         final String dev = System.getProperty("statsmanager");
         if (dev != null && dev.equalsIgnoreCase("true")) {
             return true;
@@ -816,6 +815,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
                 // return;
             }
+            dl.setScaler(2d);
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);
         } catch (Throwable e) {
@@ -923,8 +923,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                     nextSendSize++;
                                     if (next instanceof AbstractLogEntry) {
                                         final AbstractLogEntry logEntry = (AbstractLogEntry) next;
-                                        sendRequests.add(logEntry);
-                                        logRequests.add(new LogEntryWrapper(logEntry, LogEntryWrapper.VERSION));
+                                        if (Math.random() < logEntry.getScaler()) {
+                                            sendRequests.add(logEntry);
+                                            logRequests.add(new LogEntryWrapper(logEntry, LogEntryWrapper.VERSION));
+                                        }
                                     } else if (next instanceof AbstractTrackEntry) {
                                         trackRequests.add((AbstractTrackEntry) next);
                                     }

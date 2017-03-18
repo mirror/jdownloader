@@ -3,7 +3,16 @@ package org.jdownloader.statistics;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
 public abstract class AbstractLogEntry extends AbstractJsonData implements StatsLogInterface {
-    private String isp = null;
+    private String isp    = null;
+    private double scaler = 0.25;
+
+    public double getScaler() {
+        return scaler;
+    }
+
+    public void setScaler(double scaler) {
+        this.scaler = scaler;
+    }
 
     public String getIsp() {
         return isp;
