@@ -93,7 +93,7 @@ public class EroProfileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = getFilename();
-            dllink = br.getRegex("<div class=\"viewPhotoContainer\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("<\\s*div\\s+class=\"viewPhotoContainer\">\\s*<\\s*a\\s+href=\"((?:https?:)?//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
