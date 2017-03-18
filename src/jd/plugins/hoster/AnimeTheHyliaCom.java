@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "http://anime\\.thehyliadecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "https?://anime\\.thehyliadecrypted\\.com/\\d+" })
 public class AnimeTheHyliaCom extends PluginForHost {
 
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
@@ -153,7 +153,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://anime.thehylia.com/forums/index.php");
+                br.getPage("https://anime.thehylia.com/forums/index.php");
                 final String pwhash = JDHash.getMD5(account.getPass());
                 final Form loginform = this.br.getFormbyKey("cookieuser");
                 if (loginform == null) {
