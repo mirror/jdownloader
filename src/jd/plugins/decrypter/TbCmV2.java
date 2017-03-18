@@ -819,12 +819,7 @@ public class TbCmV2 extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
             br.getHeaders().put("Accept-Charset", null);
             br.getPage(getBase() + "/playlist?list=" + playlistID);
-            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, extractWebsiteTitle().replace(" - YouTube", "")); // Quick
-                                                                                                                                   // and
-                                                                                                                                   // dirty
-                                                                                                                                   // removing
-                                                                                                                                   // of
-                                                                                                                                   // namefragment
+            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, extractWebsiteTitle());
             final String PAGE_CL = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
             final String PAGE_BUILD_LABEL = br.getRegex("'PAGE_BUILD_LABEL': \"(.*?)\"").getMatch(0);
             final String VARIANTS_CHECKSUM = br.getRegex("'VARIANTS_CHECKSUM': \"(.*?)\"").getMatch(0);
@@ -892,7 +887,7 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     protected String extractWebsiteTitle() {
-        return br.getRegex("<meta name=\"title\"\\s+[^<>]*content=\"([^\"]*)").getMatch(0);
+        return br.getRegex("<meta name=\"title\"\\s+[^<>]*content=\"(.*?)(?:\\s*-\\s*Youtube\\s*)?\"").getMatch(0);
     }
 
     /**
