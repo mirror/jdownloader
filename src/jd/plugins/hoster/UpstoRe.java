@@ -29,6 +29,11 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,11 +53,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -196,7 +196,7 @@ public class UpstoRe extends antiDDoSForHost {
             final Form captcha = br.getFormBySubmitvalue("Get+download+link");
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
-            final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
+            final String rcID = br.getRegex("Recaptcha\\.create\\('([^<>\"]*?)'").getMatch(0);
             if (rcID != null && captcha != null) {
                 final Recaptcha rc = new Recaptcha(br, this);
                 rc.setId(rcID);
@@ -231,9 +231,9 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
                 }
             }
-            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
                 final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
@@ -242,7 +242,7 @@ public class UpstoRe extends antiDDoSForHost {
                     setDownloadStarted(downloadLink, waitmillis);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitmillis + FREE_RECONNECTWAIT_ADDITIONAL);
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                if (br.containsHTML("Recaptcha\\.create\\('([^<>\"]*?)'")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 handleErrorsJson();
