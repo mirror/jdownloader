@@ -7,4 +7,4 @@ LogModel_initColumns_x_=Zkontrolovat
 LogTable_onContextMenu_disable_=Zrušit výběr
 LogTable_onContextMenu_enable_=Vybrat
 SendLogDialog_SendLogDialog_title_=Odeslat chybové hlášení
-SendLogDialog_layoutDialogContent_desc_=Kdy se problém vyskytnul? Zkontrolujte všechny položky, které můžou stát za zvážení!
+SendLogDialog_layoutDialogContent_desc_=Kdy se problém vyskytnul? Zkontrolujte všechny položky, které mohou stát za zvážení!

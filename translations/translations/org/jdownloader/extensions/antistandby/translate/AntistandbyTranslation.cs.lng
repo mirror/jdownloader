@@ -1,5 +1,8 @@
+gui_config_antistandby_whilecrawl=Probíhá procházení
 gui_config_antistandby_whiledl2=Stahování probíhá
+gui_config_antistandby_whiledl2orcrawl=Probíhá stahování nebo procházení
 gui_config_antistandby_whilejd2=JDownloader běží
 jd_plugins_optional_antistandby_jdantistandby=JD AntiStandby
 jd_plugins_optional_antistandby_jdantistandby_description=Jednoduše zabraňuje vašemu počítači v přechodu do Úsporného režimu nebo Režimu spánku, aby stahování zůstala aktivní.
 mode=Zabránit úspornému režimu nebo spánku, když
+prevent_screensaver=Zabránit ve spuštění spořiče obrazovky
