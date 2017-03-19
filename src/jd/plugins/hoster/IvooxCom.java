@@ -69,10 +69,10 @@ public class IvooxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>\"([^<>]+) description</h2>").getMatch(0);
+        String filename = br.getRegex("<h2>Descripción de ([^<>]+)</h2>").getMatch(0);
         if (filename == null) {
             /* 2016-10-14: They messed up escaping in this html. */
-            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
+            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"\\s*/\\s*>").getMatch(0);
         }
         if (filename == null) {
             filename = fid;
