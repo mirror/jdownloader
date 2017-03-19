@@ -46,7 +46,7 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" })
 public class KeezMoviesCom extends antiDDoSForHost {
 
-    private String DLLINK         = null;
+    private String dllink         = null;
     private String FLASHVARS      = null;
     private String FLASHVARS_JSON = null;
 
@@ -79,7 +79,9 @@ public class KeezMoviesCom extends antiDDoSForHost {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         /* Offline links should also get nice filenames. */
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([\\w\\-]+)$").getMatch(0));
+        if (!downloadLink.isNameSet()) {
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([\\w\\-]+)$").getMatch(0));
+        }
         String filename = null;
         // embed corrections
         if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {
@@ -93,8 +95,8 @@ public class KeezMoviesCom extends antiDDoSForHost {
                 br2.getPage(realurl);
                 downloadLink.setUrlDownload(br2.getURL());
             } else {
-                DLLINK = br2.getRegex("<flv_url>(http://[^<>\"]*?)</flv_url>").getMatch(0);
-                if (DLLINK == null) {
+                dllink = br2.getRegex("<flv_url>(http://[^<>\"]*?)</flv_url>").getMatch(0);
+                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 filename = downloadLink.getFinalFileName();
@@ -103,7 +105,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
                 }
             }
         }
-        if (downloadLink.getDownloadURL().matches("http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
+        if (downloadLink.getDownloadURL().matches("(?i-)http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
             // Set cookie so we can watch all videos ;)
             br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
             getPage(downloadLink.getDownloadURL());
@@ -144,39 +146,39 @@ public class KeezMoviesCom extends antiDDoSForHost {
                     key = getValue("video_title");
                 }
                 try {
-                    DLLINK = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);
+                    dllink = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);
                 } catch (Throwable e) {
                     /* Fallback for stable version */
-                    DLLINK = AESCounterModeDecrypt(decrypted, key, 256);
+                    dllink = AESCounterModeDecrypt(decrypted, key, 256);
                 }
-                if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) {
-                    DLLINK = null;
+                if (dllink != null && (dllink.startsWith("Error:") || !dllink.startsWith("http"))) {
+                    dllink = null;
                 }
             } else {
-                DLLINK = getValue("video_url");
+                dllink = getValue("video_url");
             }
 
             /* All failed? Try to get html5 videourl. */
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("src=\"(http[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("src=\"(http[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
             }
 
-            if (filename == null || DLLINK == null) {
+            if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         String ext;
-        if (DLLINK.contains(".flv")) {
+        if (dllink.contains(".flv")) {
             ext = ".flv";
         } else {
             ext = default_extension;
         }
         filename = Encoding.htmlDecode(filename).trim();
         downloadLink.setFinalFileName(filename + ext);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        URLConnectionAdapter con = br.openGetConnection(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
+        URLConnectionAdapter con = br.openGetConnection(dllink);
         try {
-            con = br.openGetConnection(DLLINK);
+            con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -329,7 +331,7 @@ public class KeezMoviesCom extends antiDDoSForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
