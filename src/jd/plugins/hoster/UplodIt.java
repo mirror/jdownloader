@@ -26,13 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,6 +46,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploads.to", "ourupload.com" }, urls = { "https?://(?:www\\.)?(?:uplod\\.it|uploads\\.to)/(?:embed\\-)?[a-z0-9]{12}", "https?://(?:www\\.)?(?:uploadex\\.com|ourupload\\.com)/(?:embed\\-)?[a-z0-9]{12}" })
 public class UplodIt extends antiDDoSForHost {
@@ -127,7 +127,7 @@ public class UplodIt extends antiDDoSForHost {
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.1.7<br />
      * Tags: Script, template<br />
-     * mods:<br />
+     * mods:dllink<br />
      * limit-info: premium untested, set FREE ACCOUNT limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -338,7 +338,7 @@ public class UplodIt extends antiDDoSForHost {
                             }
                             // generic failover#2
                             if (fileInfo[1] == null) {
-                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                                // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
                             }
                         }
                     }
@@ -492,13 +492,14 @@ public class UplodIt extends antiDDoSForHost {
                     }
                 }
                 /* end of backward compatibility */
-                submitForm(download1);
-                checkErrors(downloadLink, false);
-                dllink = getDllink();
+                // submitForm(download1);
+                // checkErrors(downloadLink, false);
+                // dllink = getDllink();
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            // Form dlForm = br.getFormbyProperty("name", "F1");
+            Form dlForm = this.br.getFormByInputFieldKeyValue("op", "download1");
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(downloadLink, false);
