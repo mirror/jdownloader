@@ -20,11 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "http://(www\\.)?badjojo\\.com/\\d+/.{1}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "http://(www\\.)?badjojo\\.com/\\d+/.{1}" })
 public class BadJoJoComDecrypter extends PornEmbedParser {
 
     public BadJoJoComDecrypter(PluginWrapper wrapper) {
@@ -47,6 +48,16 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
+        }
+        // <a href="/out.php?siteid=89&amp;id=14064863&amp;url=http%3A%2F%2Fnudez.com%2Fvideo%2F...-221490.html"
+        if (br.containsHTML("<h4>Source</h4>")) {
+            String externID = br.getRegex("<h4>Source</h4>\\s*<a href=\"[^\"]+?url=([^\"]+)\"").getMatch(0);
+            if (externID != null) {
+                externID = Encoding.urlDecode(externID, true);
+                logger.info("externID: " + externID);
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
         }
 
         decryptedLinks = new ArrayList<DownloadLink>();
