@@ -498,8 +498,11 @@ public class UplodIt extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            // Form dlForm = br.getFormbyProperty("name", "F1");
             Form dlForm = this.br.getFormByInputFieldKeyValue("op", "download1");
+            if (dlForm == null) {
+                /* 2017-03-21: New, special */
+                dlForm = br.getFormbyProperty("name", "F1");
+            }
             if (dlForm == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
                 checkErrors(downloadLink, false);

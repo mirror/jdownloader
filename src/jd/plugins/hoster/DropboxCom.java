@@ -166,7 +166,7 @@ public class DropboxCom extends PluginForHost {
 
             final String json_source = jd.plugins.decrypter.DropBoxCom.getJsonSource(this.br);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/files/{0}");
+            entries = (LinkedHashMap<String, Object>) jd.plugins.decrypter.DropBoxCom.getFilesList(entries).get(0);
             final String filename = (String) entries.get("filename");
 
             if (filename == null) {

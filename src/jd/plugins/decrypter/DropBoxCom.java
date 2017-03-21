@@ -202,13 +202,10 @@ public class DropBoxCom extends PluginForDecrypt {
         boolean decryptSubfolders = crawl_subfolder_string != null && crawl_subfolder_string.contains("crawl_subfolders=true");
 
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-        final ArrayList<Object> ressourcelist_folders = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/contents/folders");
-        ArrayList<Object> ressourcelist_files = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/contents/files");
-        if (ressourcelist_files == null) {
-            /* Null? Then we probably have a single file */
-            ressourcelist_files = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}/props/files");
-            isSingleFile = true;
-        } else if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders) {
+        final ArrayList<Object> ressourcelist_folders = getFoldersList(entries);
+        ArrayList<Object> ressourcelist_files = getFilesList(entries);
+        isSingleFile = ressourcelist_files != null && ressourcelist_files.size() == 1;
+        if (ressourcelist_folders != null && ressourcelist_folders.size() > 0 && !decryptSubfolders) {
             /* Only ask user if we actually have subfolders that can be decrypted! */
             final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, link, "For this URL JDownloader can crawl the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
                 @Override
@@ -252,11 +249,6 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setAvailable(true);
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
             decryptedLinks.add(dl);
-
-            if (isSingleFile) {
-                /* Array should only contain 1 element in this case but let's make sure we don't get issues by serverside bugs. */
-                break;
-            }
         }
 
         if (decryptSubfolders) {
@@ -277,6 +269,27 @@ public class DropBoxCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public static ArrayList<Object> getFoldersList(LinkedHashMap<String, Object> entries) {
+        if (!entries.containsKey("props")) {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}");
+        }
+        final ArrayList<Object> foldersList = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/contents/folders");
+        return foldersList;
+    }
+
+    public static ArrayList<Object> getFilesList(LinkedHashMap<String, Object> entries) {
+        ArrayList<Object> filesList;
+        if (!entries.containsKey("props")) {
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "components/{0}");
+        }
+        filesList = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/contents/files");
+        /* Null? Then we probably have a single file */
+        if (filesList == null) {
+            filesList = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/files");
+        }
+        return filesList;
+    }
+
     @Override
     protected DownloadLink createDownloadlink(final String link) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -284,7 +297,10 @@ public class DropBoxCom extends PluginForDecrypt {
     }
 
     public static String getJsonSource(final Browser br) {
-        String json_source = br.getRegex("mod\\.initialize_module\\((\\{\"components\".*?)\\);\\s+").getMatch(0);
+        String json_source = br.getRegex("InitReact\\.mountComponent\\(mod,\\s*?(\\{.*?\\})\\)").getMatch(0);
+        if (json_source == null) {
+            json_source = br.getRegex("mod\\.initialize_module\\((\\{\"components\".*?)\\);\\s+").getMatch(0);
+        }
         if (json_source == null) {
             json_source = br.getRegex("mod\\.initialize_module\\((\\{.*?)\\);\\s+").getMatch(0);
         }

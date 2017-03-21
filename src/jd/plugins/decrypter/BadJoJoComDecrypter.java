@@ -49,8 +49,9 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
-        // <a href="/out.php?siteid=89&amp;id=14064863&amp;url=http%3A%2F%2Fnudez.com%2Fvideo%2F...-221490.html"
         if (br.containsHTML("<h4>Source</h4>")) {
+            /* 2017-03-21: New */
+            // <a href="/out.php?siteid=89&amp;id=14064863&amp;url=http%3A%2F%2Fnudez.com%2Fvideo%2F...-221490.html"
             String externID = br.getRegex("<h4>Source</h4>\\s*<a href=\"[^\"]+?url=([^\"]+)\"").getMatch(0);
             if (externID != null) {
                 externID = Encoding.urlDecode(externID, true);
