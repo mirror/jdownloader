@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|com|com\\.au|co\\.uk|fr|ca)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amazon.com" }, urls = { "https?://(?:www\\.)?amazon\\.(?:de|es|au|com|com\\.au|co\\.uk|fr|ca)/(gp/|cloud)drive/share(/|\\?).+|https?://(?:www\\.)?amazon\\.com/clouddrive/share.+" })
 public class AmazonCloudDecrypter extends PluginForDecrypt {
 
     public AmazonCloudDecrypter(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
         parameter = param.toString();
 
         plain_folder_id = new Regex(parameter, "[\\?\\&]s=([A-Za-z0-9\\-_^&]+)").getMatch(0);
-        plain_domain = new Regex(parameter, "(amazon\\.(de|es|com|com\\.au|co\\.uk|fr|ca))").getMatch(0);
+        plain_domain = new Regex(parameter, "(amazon\\.(de|es|au|com|com\\.au|co\\.uk|fr|ca))").getMatch(0);
         if (plain_folder_id == null) {
 
             // there are dummy ?md5=..&name=... links. see below

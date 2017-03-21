@@ -139,14 +139,10 @@ public class YounowCom extends PluginForHost {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
 
             final HLSDownloader downloader = new HLSDownloader(downloadLink, br, url_hls);
-
             final StreamInfo streamInfo = downloader.getProbe();
-            if (downloader.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS Server error 403 - stream might be offline", 60 * 60 * 1000l);
-            } else if (streamInfo == null) {
+            if (streamInfo == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS Server error - stream might be offline", 60 * 60 * 1000l);
             }
-
             dl = downloader;
             dl.startDownload();
         } else {

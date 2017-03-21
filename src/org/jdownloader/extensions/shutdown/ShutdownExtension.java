@@ -21,11 +21,18 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.plugins.AddonPanel;
+import jd.utils.JDUtilities;
+
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.BasicShutdownRequest;
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.uio.UIOManager;
@@ -57,11 +64,6 @@ import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
-
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
     private Thread              shutdown = null;
@@ -83,14 +85,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     public ShutdownExtension() throws StartException {
         setTitle(T.jd_plugins_optional_jdshutdown());
-
     }
 
     private void shutdown() {
         logger.info("shutdown");
         DownloadWatchDog.getInstance().stopDownloads();
         LinkCollector.getInstance().abort();
-
         switch (CrossSystem.OS) {
         case WINDOWS_2003:
         case WINDOWS_VISTA:
@@ -181,33 +181,48 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             }
             break;
         default:
-            /* linux and others */
-            try {
-                dbusPowerState("Shutdown");
-            } catch (Throwable e) {
-                logger.log(e);
-            }
-            try {
-                JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
-            } catch (Throwable e) {
-                logger.log(e);
-            }
-            try {
-                JDUtilities.runCommand("poweroff", new String[] {}, null, 0);
-            } catch (Throwable e) {
-                logger.log(e);
-            }
-            try {
-                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-P", "now" }, null, 0);
-            } catch (Throwable e) {
-                logger.log(e);
-            }
-            try {
-                // shutdown: -H and -P flags can only be used along with -h flag.
-                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-Ph", "now" }, null, 0);
-            } catch (Throwable e) {
-                logger.log(e);
-            }
+            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+                @Override
+                public int getHookPriority() {
+                    return Integer.MIN_VALUE;
+                }
+
+                @Override
+                public void onShutdown(ShutdownRequest shutdownRequest) {
+                    final File file = SecondLevelLaunch.FILE;
+                    if (file != null) {
+                        file.delete();
+                    }
+                    /* linux and others */
+                    try {
+                        dbusPowerState("Shutdown");
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                    try {
+                        JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                    try {
+                        JDUtilities.runCommand("poweroff", new String[] {}, null, 0);
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                    try {
+                        JDUtilities.runCommand("sudo", new String[] { "shutdown", "-P", "now" }, null, 0);
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                    try {
+                        // shutdown: -H and -P flags can only be used along with -h flag.
+                        JDUtilities.runCommand("sudo", new String[] { "shutdown", "-Ph", "now" }, null, 0);
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                }
+            });
+            break;
         }
         RestartController.getInstance().exitAsynch(new ForcedShutdown());
     }
@@ -460,15 +475,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         return "logout";
     }
 
-    // @Override
-    // public Object interact(String command, Object parameter) {
-    // if (command == null) return null;
-    // if (command.equals("shutdown")) this.shutdown();
-    // if (command.equals("hibernate")) this.hibernate();
-    // if (command.equals("standby")) this.standby();
-    // return null;
-    // }
-
     @Override
     protected void stop() throws StopException {
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
@@ -602,7 +608,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     LogController.CL().log(e);
                 }
                 break;
-
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -632,7 +637,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             if (std.contains("Hibernation")) {
                 return false;
             }
-
         }
         return true;
     }
@@ -666,7 +670,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             }
             // no toggle action found. append action at the end.
             mr.add(ShutdownToggleAction.class);
-
         }
         return null;
     }
