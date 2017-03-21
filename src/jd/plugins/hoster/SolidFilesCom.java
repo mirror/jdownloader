@@ -94,9 +94,13 @@ public class SolidFilesCom extends PluginForHost {
         String filesize = PluginJSonUtils.getJsonValue(br, "size");
         if (filesize == null) {
             filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
-            }
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
+        }
+        if (filesize == null) {
+            /* 2017-03-21 */
+            filesize = br.getRegex("</copy\\-button>([^<>\"]*?) \\-").getMatch(0);
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));

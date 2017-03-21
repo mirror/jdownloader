@@ -27,6 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -136,7 +137,17 @@ public class YounowCom extends PluginForHost {
                 url_hls = hlsbest.getDownloadurl();
             }
             checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+
+            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, url_hls);
+
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (downloader.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS Server error 403 - stream might be offline", 60 * 60 * 1000l);
+            } else if (streamInfo == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS Server error - stream might be offline", 60 * 60 * 1000l);
+            }
+
+            dl = downloader;
             dl.startDownload();
         } else {
             try {

@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +37,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
@@ -78,7 +82,7 @@ public class DepfileCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         // Set English language
@@ -86,8 +90,10 @@ public class DepfileCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        handleErrors();
-        if (isOffline()) {
+        final DepfileConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.DepfileCom.DepfileConfigInterface.class);
+        if (isOfflineHTML() && this.br.containsHTML("RESTORE ACCESS TO THE FILE") && cfg.isEnableDMCADownload()) {
+            return AvailableStatus.UNCHECKABLE;
+        } else if (isOfflineURL()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = new Regex(link.getDownloadURL(), "depfile\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
@@ -402,24 +408,31 @@ public class DepfileCom extends PluginForHost {
         return verifyCode;
     }
 
-    private boolean isOffline() {
+    private boolean isOfflineURL() {
         if (this.br.getURL().contains("depfile.com/premium")) {
             return true;
         }
         return false;
     }
 
+    private boolean isOfflineHTML() {
+        final boolean offline;
+        if (br.containsHTML("(>File was not found in the depFile database\\.|It is possible that you provided wrong link\\.<|>Файл не найден в базе depfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
+            offline = true;
+        } else if (br.containsHTML(">403 Forbidden</")) {
+            /* Invalid links */
+            offline = true;
+        } else if (br.containsHTML(">The file was deleted by the owner\\.</")) {
+            offline = true;
+        } else {
+            offline = false;
+        }
+        return offline;
+    }
+
     public void handleErrors() throws PluginException {
-        if (br.containsHTML("(>File was not found in the depFile database\\.|It is possible that you provided wrong link.<|>Файл не найден в базе depfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
+        if (isOfflineHTML()) {
             logger.warning("File not found OR file removed from provider");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // Invalid links
-        if (br.containsHTML(">403 Forbidden</")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        //
-        if (br.containsHTML(">The file was deleted by the owner\\.</")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
@@ -443,5 +456,30 @@ public class DepfileCom extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return DepfileConfigInterface.class;
+    }
+
+    public static interface DepfileConfigInterface extends PluginConfigInterface {
+
+        public static class TRANSLATION {
+
+            public String getEnableDMCADownload_label() {
+                return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart";
+            }
+
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(8)
+        boolean isEnableDMCADownload();
+
+        void setEnableDMCADownload(boolean b);
+
     }
 }

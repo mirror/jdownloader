@@ -769,9 +769,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (formattedpackagename == null || formattedpackagename.equals("")) {
             formattedpackagename = defaultCustomPackagename;
         }
-        if (!formattedpackagename.contains("*channelname*") && !formattedpackagename.contains("*playlistname*")) {
-            formattedpackagename = defaultCustomPackagename;
-        }
 
         /* Check for missing data */
         if (playlistname == null) {

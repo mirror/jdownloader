@@ -215,7 +215,8 @@ public class BigfileTo extends PluginForHost {
                     wait = Integer.parseInt(waittime);
                 }
 
-                sleep(wait * 1001l, downloadLink);
+                /* 2017-03-21: Added 5 seconds extra waittime to prevent possible issues due to too short waittime. */
+                sleep((wait + 5) * 1001l, downloadLink);
             }
             {
                 final Browser json = br.cloneBrowser();
