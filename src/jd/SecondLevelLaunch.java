@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
@@ -43,6 +42,22 @@ import java.util.TreeSet;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
+
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.MacOSApplicationAdapter;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+import jd.utils.JDUtilities;
 
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
@@ -129,22 +144,6 @@ import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
 
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
-
 public class SecondLevelLaunch {
     static {
         statics();
@@ -155,7 +154,7 @@ public class SecondLevelLaunch {
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
-    private static File                      FILE;
+    public static File                       FILE;
     public final static long                 startup               = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
@@ -1116,7 +1115,7 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.INIT_COMPLETE.setReached();
         // init statsmanager
         StatsManager.I();
-   
+
         new Thread("Print Sec Infos") {
             public void run() {
                 if (CrossSystem.isWindows()) {
