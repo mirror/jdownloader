@@ -32,6 +32,14 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,14 +68,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" })
 public class DepositFiles extends antiDDoSForHost {
@@ -160,11 +160,6 @@ public class DepositFiles extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         setMainpage();
         String url = link.getDownloadURL();
-        if (url.matches("^https?://https?://.+")) {
-            // fixes regression because of buggy domain restoration code
-            url = url.replaceFirst("^(https?://https?://)", "http://");
-            link.setUrlDownload(url);
-        }
         final String currentDomain = Browser.getHost(link.getDownloadURL(), true);
         if (!currentDomain.matches(DOMAINS)) {
             // this is needed to fix old users bad domain name corrections (say hotpspots/gateways)
@@ -629,9 +624,9 @@ public class DepositFiles extends antiDDoSForHost {
         if (ajax.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String finallink = ajax.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
+        String finallink = ajax.getRegex("\"((?:https?:)?//fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
         if (finallink == null) {
-            finallink = ajax.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
+            finallink = ajax.getRegex("<form [^>]*action=\"((?:https?:)?//.*?)\"").getMatch(0);
         }
         return finallink;
     }
@@ -1294,7 +1289,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private boolean checkSsl() {
-        return getPluginConfig().getBooleanProperty(SETTING_SSL_CONNECTION, false);
+        return true;// getPluginConfig().getBooleanProperty(SETTING_SSL_CONNECTION, false);
     }
 
     private String fixLinkSSL(String link) {
