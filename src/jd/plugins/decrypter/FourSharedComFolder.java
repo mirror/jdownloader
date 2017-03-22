@@ -152,26 +152,22 @@ public class FourSharedComFolder extends PluginForDecrypt {
             parseNextPage();
         } else {
             int pagemax = 1;
-            final String folderText = br.getRegex("<div id=\"folderToolbar\" class=\"simplePagerAndUpload\">(.*?)<div id=\"footer\">").getMatch(0);
-            if (folderText != null) {
-                final String[] pageLinks = new Regex(folderText, "<a href=\"(/folder/[^<>\"]*?)\"").getColumn(0);
-                if (pageLinks != null && pageLinks.length > 0) {
-                    for (String aPage : pageLinks) {
-                        final String page_str_temp = new Regex(aPage, "/folder/[^/]+/(\\d+)/[^/]+\\.html").getMatch(0);
-                        if (page_str_temp == null) {
-                            continue;
-                        }
-                        final int pagetmp = Integer.parseInt(page_str_temp);
-                        if (pagetmp > pagemax) {
-                            pagemax = pagetmp;
-                        }
+            final String[] pageLinks = this.br.getRegex("<a href=\"(/folder/[^<>\"]*?)\"").getColumn(0);
+            if (pageLinks != null && pageLinks.length > 0) {
+                for (String aPage : pageLinks) {
+                    final String page_str_temp = new Regex(aPage, "/folder/[^/]+/(\\d+)/[^/]+\\.html").getMatch(0);
+                    if (page_str_temp == null) {
+                        continue;
+                    }
+                    final int pagetmp = Integer.parseInt(page_str_temp);
+                    if (pagetmp > pagemax) {
+                        pagemax = pagetmp;
                     }
                 }
             }
 
             for (int pagecounter = 1; pagecounter <= pagemax; pagecounter++) {
                 if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
                     return decryptedLinks;
                 }
                 if (pagecounter > 1) {
@@ -185,8 +181,11 @@ public class FourSharedComFolder extends PluginForDecrypt {
                     linkInfo = br.getRegex("<div class=\"jsThumbPreview simpleTumbPreviewWrapper\\s*\">(.*?)</div>[\t\n\r ]*?</div>").getColumn(0);
                 }
                 if ((linkInfo == null || linkInfo.length == 0) && subfolder_html == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    /*
+                     * Do NOT return null here -- errorhandling is in the code below. This place right here might as well be reached when
+                     * the "pagemax" parser fails and returns bad values --> We try to access a folder page which does not exist.
+                     */
+                    break;
                 }
                 if (linkInfo != null && linkInfo.length > 0) {
                     for (final String singleInfo : linkInfo) {
@@ -207,7 +206,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
                         if (filesize != null) {
                             fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
                         }
-                        /* Do NOT set available true because status is not known! */
+                        /* 2017-03-22: Do NOT set available true because status is not known! */
                         // fina.setAvailable(true);
                         decryptedLinks.add(fina);
                         distribute(fina);
@@ -235,6 +234,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
 
         if (decryptedLinks.size() == 0) {
             logger.warning("Possible empty folder, or plugin out of date for link: " + parameter);
+            return null;
         }
 
         FilePackage fp = FilePackage.getInstance();

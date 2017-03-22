@@ -27,11 +27,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -44,7 +39,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.RuTubeVariant;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+(?:\\?p=[A-Za-z0-9]+)?|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "https?://((?:www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+(.*?p=[A-Za-z0-9\\-_]+)?|video/[a-f0-9]{32})|video\\.rutube.ru/([a-f0-9]{32}|\\d+))" })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public RuTubeRuDecrypter(PluginWrapper wrapper) {
@@ -64,7 +64,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
         uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
         vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d+)").getMatch(0);
-        privatevalue = new Regex(parameter, "p=([A-Za-z0-9]+)").getMatch(0);
+        privatevalue = new Regex(parameter, "p=([A-Za-z0-9\\-_]+)").getMatch(0);
         if (vid == null) {
             vid = new Regex(parameter, "video\\.rutube\\.ru/(\\d+)").getMatch(0);
         }
@@ -173,15 +173,14 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                     return createOfflinelink(parameter, vid + " - " + msg, msg);
                 }
             }
-            // swf requests over json
-            Browser ajax = cloneBrowser(br);
+            Browser ajax = getAjaxBR(br);
             getPage(ajax, "/api/play/options/" + vid + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(br.getURL()) + "&_t=" + System.currentTimeMillis());
             final HashMap<String, Object> entries = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             final String videoBalancer = (String) JavaScriptEngineFactory.walkJson(entries, "video_balancer/default");
             if (videoBalancer != null) {
                 final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 final XPath xPath = XPathFactory.newInstance().newXPath();
-                ajax = cloneBrowser(br);
+                ajax = getAjaxBR(br);
                 ajax.getPage(videoBalancer);
 
                 Document d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
@@ -197,7 +196,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                     String height = getAttByNamedItem(best, "height");
                     String bitrate = getAttByNamedItem(best, "bitrate");
                     String f4murl = getAttByNamedItem(best, "href");
-                    ajax = cloneBrowser(br);
+                    ajax = getAjaxBR(br);
                     ajax.getPage(baseUrl + f4murl);
 
                     d = parser.parse(new ByteArrayInputStream(ajax.toString().getBytes("UTF-8")));
@@ -235,12 +234,14 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         return null;
     }
 
-    private Browser cloneBrowser(Browser br) {
+    private Browser getAjaxBR(final Browser br) {
         final Browser ajax = br.cloneBrowser();
         // rv40.0 don't get "video_balancer".
-        ajax.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0");
+        ajax.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.209");
+        ajax.getHeaders().put("Content-Type", "application/json");
+        /* 2017-03-22: This Header is not required anymore! */
+        // ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/22.0.0.209");
         return ajax;
     }
 
