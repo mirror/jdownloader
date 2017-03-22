@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wobzip.org" }, urls = { "http://(www\\.)?wobzip\\.org/file/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wobzip.org" }, urls = { "http://(www\\.)?wobzip\\.org/file/(?:dl\\?file=)?[A-Za-z0-9]+" })
 public class WobzipOrg extends PluginForHost {
 
     public WobzipOrg(PluginWrapper wrapper) {
@@ -51,8 +51,9 @@ public class WobzipOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setAllowedResponseCodes(500);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == (404 | 500)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getRedirectLocation() != null && !this.br.getRedirectLocation().contains("/file/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
