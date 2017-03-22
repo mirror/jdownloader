@@ -55,7 +55,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         if (parameter.matches(TYPE_ARTIST)) {
-            final String username = parameter.substring(parameter.lastIndexOf("/"));
+            final String username = parameter.substring(parameter.lastIndexOf("/") + 1);
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
             final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -93,7 +93,6 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     dl.setLinkID(id);
                     dl.setName(filename);
                     dl.setProperty("full_name", full_name);
-                    dl.setAvailable(true);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                     distribute(dl);
