@@ -5,7 +5,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.appwork.utils.Files;
-import org.appwork.utils.Files.Handler;
 import org.appwork.utils.os.CrossSystem;
 
 public class IconKey {
@@ -21,7 +20,7 @@ public class IconKey {
         } else {
             images = new File(file.getParentFile(), "themes/themes/standard/org/jdownloader/images");
         }
-        Files.walkThroughStructure(new Handler<RuntimeException>() {
+        Files.walkThroughStructure(new org.appwork.utils.Files.AbstractHandler<RuntimeException>() {
             protected File root = null;
 
             @Override
@@ -37,10 +36,6 @@ public class IconKey {
                     String name = rel.toUpperCase().replaceAll("\\W", "_");
                     System.out.println("public static final String ICON_" + name + " = \"" + rel + "\";");
                 }
-            }
-
-            @Override
-            public void outro(File f) throws RuntimeException {
             }
         }, images);
         System.out.println(url);

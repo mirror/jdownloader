@@ -11,13 +11,12 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.Files;
-import org.appwork.utils.Files.Handler;
 import org.appwork.utils.IO;
 import org.appwork.utils.URLStream;
+
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public final class SandboxClassloader extends ClassLoader {
     protected final File jars[];
@@ -25,18 +24,12 @@ public final class SandboxClassloader extends ClassLoader {
     public SandboxClassloader(final File root) {
         super(SandboxClassloader.class.getClassLoader());
         final ArrayList<File> jars = new ArrayList<File>();
-
         final HashSet<Pattern> allowed = new HashSet<Pattern>();
         allowed.add(Pattern.compile("jdownloader\\.jar", Pattern.CASE_INSENSITIVE));
         allowed.add(Pattern.compile("jdownloader\\.jar.backup_\\d+", Pattern.CASE_INSENSITIVE));
         allowed.add(Pattern.compile("libs[/\\\\].*\\.jar", Pattern.CASE_INSENSITIVE));
         allowed.add(Pattern.compile("plugins[/\\\\].*\\.jar", Pattern.CASE_INSENSITIVE));
-        Files.walkThroughStructure(new Handler<RuntimeException>() {
-
-            @Override
-            public void intro(File f) throws RuntimeException {
-            }
-
+        Files.walkThroughStructure(new org.appwork.utils.Files.AbstractHandler<RuntimeException>() {
             @Override
             public void onFile(File f) throws RuntimeException {
                 for (Pattern p : allowed) {
@@ -47,11 +40,6 @@ public final class SandboxClassloader extends ClassLoader {
                     }
                 }
             }
-
-            @Override
-            public void outro(File f) throws RuntimeException {
-            }
-
         }, root);
         this.jars = jars.toArray(new File[] {});
     }
@@ -64,7 +52,6 @@ public final class SandboxClassloader extends ClassLoader {
         if (FilePackage.class.getName().equals(className)) {
             return FilePackage.class;
         }
-
         if (className.startsWith("org.appwork")) {
             final Class<?> ret = findSystemClass(className);
             return ret;
@@ -145,7 +132,6 @@ public final class SandboxClassloader extends ClassLoader {
             return findSystemClass(className);
         }
         return findSystemClass(className);
-
     }
 
     @Override
@@ -171,7 +157,6 @@ public final class SandboxClassloader extends ClassLoader {
             }
         }
         return null;
-
     }
 
     @Override
