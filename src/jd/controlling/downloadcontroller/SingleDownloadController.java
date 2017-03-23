@@ -103,7 +103,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private final CopyOnWriteArrayList<DownloadWatchDogJob> jobsAfterDetach                = new CopyOnWriteArrayList<DownloadWatchDogJob>();
     private final WaitingQueueItem                          queueItem;
     private final long                                      sizeBefore;
-    private final ArrayList<PluginSubTask>                  tasks;
+    private final ArrayList<PluginSubTask>                  tasks                          = new ArrayList<PluginSubTask>();
     private volatile HTTPProxy                              usedProxy;
     private volatile boolean                                resumed;
 
@@ -166,7 +166,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     protected SingleDownloadController(DownloadLinkCandidate candidate, DownloadWatchDog watchDog) {
         super("Download: " + candidate.getLink().getView().getDisplayName() + "_" + candidate.getLink().getHost());
-        tasks = new ArrayList<PluginSubTask>();
         setPriority(Thread.MIN_PRIORITY);
         this.watchDog = watchDog;
         this.candidate = candidate;
@@ -613,16 +612,18 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return sizeBefore;
     }
 
-    public void addTask(PluginSubTask subTask) {
-        synchronized (tasks) {
-            tasks.add(subTask);
+    public void addTask(final PluginSubTask subTask) {
+        if (subTask != null) {
+            synchronized (tasks) {
+                tasks.add(subTask);
+            }
         }
     }
 
     public void onDetach(DownloadLink downloadLink) {
         DownloadController.getInstance().getEventSender().removeListener(this);
         synchronized (tasks) {
-            for (PluginSubTask t : tasks) {
+            for (final PluginSubTask t : tasks) {
                 t.close();
             }
         }
@@ -663,9 +664,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 return;
             }
             if (property.getProperty() == DownloadLinkProperty.Property.PLUGIN_PROGRESS) {
-                PluginProgress newProgress = (PluginProgress) property.getValue();
-                PluginProgressTask task = null;
+                final PluginProgress newProgress = (PluginProgress) property.getValue();
                 synchronized (tasks) {
+                    PluginProgressTask task = null;
                     for (PluginSubTask t : tasks) {
                         if (t instanceof PluginProgressTask) {
                             if (((PluginProgressTask) t).getProgress() != newProgress) {
