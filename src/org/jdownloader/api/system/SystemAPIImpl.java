@@ -6,13 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
+import org.appwork.utils.ProcMounts;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
@@ -26,8 +24,10 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
-public class SystemAPIImpl implements SystemAPI {
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
 
+public class SystemAPIImpl implements SystemAPI {
     private final long startupTimeStamp = System.currentTimeMillis();
 
     public SystemAPIImpl() {
@@ -38,7 +38,6 @@ public class SystemAPIImpl implements SystemAPI {
     public void shutdownOS(final boolean force) {
         stopJD();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
             @Override
             public int getHookPriority() {
                 return Integer.MIN_VALUE;
@@ -142,10 +141,8 @@ public class SystemAPIImpl implements SystemAPI {
         ret.setOperatingSystem(os.name());
         ret.setOsFamily(os.getFamily().name());
         ret.setOsString(CrossSystem.getOSString());
-
         ret.setArchFamily(CrossSystem.getARCHFamily().name());
         ret.setArchString(CrossSystem.getARCHString());
-
         ret.setJavaVersion(Application.getJavaVersion());
         ret.setJavaVersionString(Application.getJVMVersion());
         ret.setJvm64Bit(Application.is64BitJvm());
@@ -157,20 +154,15 @@ public class SystemAPIImpl implements SystemAPI {
             }
         }
         ret.setJavaVendor(javaVendor);
-
         String javaName = System.getProperty("java.vm.name");
         if (javaName == null) {
             javaName = System.getProperty("java.runtime.name");
         }
         ret.setJavaName(javaName);
-
         ret.setHeadless(Application.isHeadless());
-
         ret.setOs64Bit(CrossSystem.is64BitOperatingSystem());
         ret.setArch64Bit(CrossSystem.is64BitArch());
-
         ret.setStartupTimeStamp(startupTimeStamp);
-
         try {
             final java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
             if (memory != null) {
@@ -181,8 +173,6 @@ public class SystemAPIImpl implements SystemAPI {
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
-
         return ret;
     }
-
 }

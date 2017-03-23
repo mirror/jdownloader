@@ -10,15 +10,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.ProcMounts;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.jdownloader.api.system.ProcMounts;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DiskSpaceManager {
-
     public static enum DISKSPACERESERVATIONRESULT {
         UNSUPPORTED,
         OK,
@@ -217,5 +216,4 @@ public class DiskSpaceManager {
     public synchronized boolean isReserved(DiskSpaceReservation reservation) {
         return reservations.containsKey(reservation);
     }
-
 }

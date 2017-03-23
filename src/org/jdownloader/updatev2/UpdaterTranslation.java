@@ -1,14 +1,14 @@
 package org.jdownloader.updatev2;
 
+import java.io.File;
+
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en", "de" })
 public interface UpdaterTranslation extends TranslateInterface {
-
     ;
-
     @Default(lngs = { "en", "de" }, values = { "Cancel", "Abbrechen" })
     String update_dialog_cancel();
 
@@ -37,9 +37,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     String update_dialog_yes();
 
     @Default(lngs = { "en", "de" }, values = { "You already have the latest version", "Sie nutzen bereits die aktuelle Version." })
-    String guiless_you_are_up2date();
-
-    ;
+    String guiless_you_are_up2date();;
 
     @Default(lngs = { "en", "de" }, values = { "Later", "Später" })
     String confirmdialog_new_update_available_answer_later();
@@ -233,4 +231,9 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Installation done. Exit in %s1" })
     String update_done_close_in_TIME(String formatMilliSeconds);
 
+    @Default(lngs = { "en", "de" }, values = { "There is not enough free space on your harddisk %s1.\r\nMake sure that there are at least %s2 of free space (%s3 more needed) and restart the update.\r\nFree space on %s1 after the installation: %s4", "Auf der Festplatte %s1 steht nicht genug freier Speicherplatz zur Verfügung.\r\nStellen Sie sicher, dass mindestens %s2 freier Speicherplatz vorhanden ist (Zusätzliche %s3 werden benötigt), und starten Sie die Aktualisierung neu.\r\nNach der Installation werden auf %s1 %s4 freier Speicherplatz sein." })
+    String errordialog_not_enough_space_specify_incl_changed(File file, String required, String missing, String after);
+
+    @Default(lngs = { "en", "de" }, values = { "There is not enough free space on your harddisk %s1.\r\nMake sure that there are at least %s2 of free space (%s3 more needed) and restart the update.", "Auf der Festplatte %s1 steht nicht genug freier Speicherplatz zur Verfügung.\r\nStellen Sie sicher, dass mindestens %s2 freier Speicherplatz vorhanden ist (Zusätzliche %s3 werden benötigt), und starten Sie die Aktualisierung neu." })
+    String errordialog_not_enough_space_specify(File file, String required, String missing);
 }
