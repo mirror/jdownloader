@@ -381,12 +381,16 @@ public class ZdfDeMediathek extends PluginForHost {
 
         public static class TRANSLATION {
 
-            public String getGrabSubtitleEnabled() {
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
+            }
+
+            public String getGrabSubtitleEnabled_label() {
                 return _JDT.T.lit_add_subtitles();
             }
 
             public String getGrabAudio_label() {
-                return "Audio herunterladen?";
+                return _JDT.T.lit_add_audio();
             }
 
             public String getGrabBESTEnabled_label() {
@@ -398,6 +402,7 @@ public class ZdfDeMediathek extends PluginForHost {
             }
 
             public String getNeoMagazinRoyaleDeOnlyGrabCurrentEpisode_label() {
+                /* Translation not required for this */
                 return "Füge nur die aktuelle Folge 'Neo Magazin Royale' beim Einfügen von 'http://www.neo-magazin-royale.de/zdi/' ein?";
             }
 

@@ -1092,6 +1092,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         }
 
         /** TODO: Add difference between thumbnail and poster (thumbnail_bigger). */
+        /** TODO: Add protocol to linkid! */
         public String getLinkID() {
             if (!isVideo()) {
                 return this.getName() + "_" + "THUMBNAIL";
