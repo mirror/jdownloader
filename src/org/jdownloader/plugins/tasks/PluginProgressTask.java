@@ -6,7 +6,7 @@ import org.jdownloader.plugins.PluginTaskID;
 
 public class PluginProgressTask extends AbstractPluginSubTask {
 
-    private PluginProgress progress;
+    private final PluginProgress progress;
 
     public PluginProgress getProgress() {
         return progress;
