@@ -602,28 +602,28 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
      * work properly!
      */
     private String getHeightForQualitySelection(final int height) {
-        final String widthselect;
+        final String heightselect;
         if (height > 0 && height <= 200) {
-            widthselect = "170";
+            heightselect = "170";
         } else if (height > 200 && height <= 300) {
-            widthselect = "270";
+            heightselect = "270";
         } else if (height > 300 && height <= 400) {
-            widthselect = "360";
+            heightselect = "360";
         } else if (height > 400 && height <= 500) {
-            widthselect = "480";
+            heightselect = "480";
         } else if (height > 500 && height <= 600) {
-            widthselect = "570";
+            heightselect = "570";
         } else if (height > 600 && height <= 800) {
-            widthselect = "720";
+            heightselect = "720";
         } else {
             /* Either unknown quality or audio (0x0) */
-            widthselect = Integer.toString(height);
+            heightselect = Integer.toString(height);
         }
-        return widthselect;
+        return heightselect;
     }
 
     private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
-        final HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
         DownloadLink keep = null;
         if (bestMap.size() > 0) {
             for (final String quality : all_known_qualities) {
@@ -634,6 +634,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             }
         }
+
+        if (newMap.isEmpty()) {
+            /* Failover in case of bad user selection or general failure! */
+            newMap = bestMap;
+        }
+
         return newMap;
     }
 

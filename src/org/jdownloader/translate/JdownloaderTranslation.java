@@ -1101,6 +1101,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add Subtitles" })
     String lit_add_subtitles();
 
+    @Default(lngs = { "en" }, values = { "Add Audio" })
+    String lit_add_audio();
+
     @Default(lngs = { "en" }, values = { "Add only the best video quality" })
     String lit_add_only_the_best_video_quality();
 
@@ -1109,6 +1112,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Add unknown formats (recommended)" })
     String lit_add_unknown_formats();
+
+    @Default(lngs = { "en" }, values = { "Enable fast linkcheck?\r\nFilesize will not be shown until downloadstart or manual linkcheck!" })
+    String lit_enable_fast_linkcheck();
 
     @Default(lngs = { "en" }, values = { "Port" })
     String lit_port();

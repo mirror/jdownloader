@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,12 +25,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -43,10 +40,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.plugins.config.Group;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -57,48 +52,29 @@ import org.jdownloader.translate._JDT;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" })
 public class Ardmediathek extends PluginForDecrypt {
-    private static final String                 EXCEPTION_LINKOFFLINE    = "EXCEPTION_LINKOFFLINE";
+    private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
     /* Constants */
-    private static final String                 AGE_RESTRICTED           = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
-    private static final String                 type_unsupported         = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
-    private static final String                 type_invalid             = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
-    private static final String                 type_ard_mediathek       = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
-    private static final String                 type_ardvideo            = "http://www\\.daserste\\.de/.+";
-    private static final String                 type_rbb_mediathek       = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
+    private static final String                 type_unsupported      = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
+    private static final String                 type_invalid          = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
+    private static final String                 type_ard_mediathek    = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
+    private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/.+";
+    private static final String                 type_rbb_mediathek    = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
     /* Variables */
-    private final HashMap<String, DownloadLink> foundQualitiesMap        = new HashMap<String, DownloadLink>();
-    ArrayList<DownloadLink>                     decryptedLinks           = new ArrayList<DownloadLink>();
+    private final HashMap<String, DownloadLink> foundQualitiesMap     = new HashMap<String, DownloadLink>();
+    ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private final List<String>                  all_known_qualities      = Arrays.asList("hd", "high", "medium", "low");
+    private final List<String>                  all_known_qualities   = Arrays.asList("http_0_720", "hls_0_720", "http_0_540", "hls_0_540", "http_0_360", "hls_0_360", "http_0_280", "hls0_280", "http_0_270", "hls_0_270", "http_0_180", "hls_0_180");
 
-    private String                              subtitleLink             = null;
-    private String                              parameter                = null;
-    private String                              title                    = null;
-    private String                              date                     = null;
-    private String                              date_formatted           = null;
-    private long                                existingQualityNum       = 0;
-    private long                                existingBrokenQualityNum = 0;
+    private String                              subtitleLink          = null;
+    private String                              parameter             = null;
+    private String                              title                 = null;
+    private String                              date                  = null;
+    private String                              date_formatted        = null;
+
+    private boolean                             grabHLS               = false;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public static class Translation {
-        public String getSubtitlesEnabled_label() {
-            return _JDT.T.lit_add_subtitles();
-        }
-
-        public String getOnlyBestVideoQualityEnabled_label() {
-            return _JDT.T.lit_add_only_the_best_video_quality();
-        }
-
-        public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
-            return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
-        }
-
-        public String getAddUnknownQualitiesEnabled_label() {
-            return _JDT.T.lit_add_unknown_formats();
-        }
     }
 
     @PluginHost(host = "ardmediathek.de", type = Type.CRAWLER)
@@ -107,22 +83,59 @@ public class Ardmediathek extends PluginForDecrypt {
 
     @PluginHost(host = "rbb-online.de", type = Type.CRAWLER)
     public static interface ArdConfigInterface extends PluginConfigInterface {
-        public static final Group[]     GROUPS      = new Group[] { new Group("Video Settings", ".*VideoQuality.*", IconKey.ICON_VIDEO) };
-        public static final Translation TRANSLATION = new Translation();
 
-        @AboutConfig
+        public static class TRANSLATION {
+
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
+            }
+
+            public String getGrabSubtitleEnabled_label() {
+                return _JDT.T.lit_add_subtitles();
+            }
+
+            public String getGrabAudio_label() {
+                return _JDT.T.lit_add_audio();
+            }
+
+            public String getGrabBESTEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality();
+            }
+
+            public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
+            }
+
+            public String getAddUnknownQualitiesEnabled_label() {
+                return _JDT.T.lit_add_unknown_formats();
+            }
+        }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
         @DefaultBooleanValue(false)
         @Order(10)
-        boolean isSubtitlesEnabled();
+        boolean isGrabSubtitleEnabled();
 
-        void setSubtitlesEnabled(boolean b);
+        void setGrabSubtitleEnabled(boolean b);
 
-        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(11)
+        boolean isGrabAudio();
+
+        void setGrabAudio(boolean b);
+
         @DefaultBooleanValue(false)
         @Order(20)
-        boolean isOnlyBestVideoQualityEnabled();
+        boolean isGrabBESTEnabled();
 
-        void setOnlyBestVideoQualityEnabled(boolean b);
+        void setGrabBESTEnabled(boolean b);
 
         @AboutConfig
         @DefaultBooleanValue(false)
@@ -131,62 +144,96 @@ public class Ardmediathek extends PluginForDecrypt {
 
         void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
 
-        @AboutConfig
         @DefaultBooleanValue(true)
-        @Order(22)
+        @Order(21)
         boolean isAddUnknownQualitiesEnabled();
 
         void setAddUnknownQualitiesEnabled(boolean b);
 
-        @AboutConfig
-        @DefaultBooleanValue(true)
+        @DefaultBooleanValue(false)
         @Order(30)
-        boolean isLowVideoQualityVersionEnabled();
+        boolean isGrabHLS180pVideoEnabled();
 
-        void setLowVideoQualityVersionEnabled(boolean b);
+        void setGrabHLS180pVideoEnabled(boolean b);
 
-        @AboutConfig
-        @DefaultBooleanValue(true)
+        @DefaultBooleanValue(false)
         @Order(40)
-        boolean isMediumVideoQualityVersionEnabled();
+        boolean isGrabHLS270pVideoEnabled();
 
-        void setMediumVideoQualityVersionEnabled(boolean b);
+        void setGrabHLS270pVideoEnabled(boolean b);
 
+        @DefaultBooleanValue(false)
+        @Order(41)
+        boolean isGrabHLS280pVideoEnabled();
+
+        void setGrabHLS280pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
         @Order(50)
-        @AboutConfig
-        @DefaultBooleanValue(true)
-        boolean isHighVideoQualityVersionEnabled();
+        boolean isGrabHLS360pVideoEnabled();
 
-        void setHighVideoQualityVersionEnabled(boolean b);
+        void setGrabHLS360pVideoEnabled(boolean b);
 
+        @DefaultBooleanValue(false)
         @Order(60)
-        @AboutConfig
-        @DefaultBooleanValue(true)
-        boolean isHDVideoQualityVersionEnabled();
+        boolean isGrabHLS480pVideoEnabled();
 
-        void setHDVideoQualityVersionEnabled(boolean b);
+        void setGrabHLS480pVideoEnabled(boolean b);
 
+        @DefaultBooleanValue(false)
         @Order(70)
-        @AboutConfig
+        boolean isGrabHLS540pVideoEnabled();
+
+        void setGrabHLS540pVideoEnabled(boolean b);
+
         @DefaultBooleanValue(false)
-        boolean isDossierAudioContentEnabled();
-
-        void setDossierAudioContentEnabled(boolean b);
-
         @Order(80)
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        boolean isRTMPEnabled();
+        boolean isGrabHLS720pVideoEnabled();
 
-        void setRTMPEnabled(boolean b);
+        void setGrabHLS720pVideoEnabled(boolean b);
 
+        @DefaultBooleanValue(true)
         @Order(90)
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        @DescriptionForConfigEntry("If enabled, the linkcheck will be faster, but the filesize might not be available before the actual download")
-        boolean isFastLinkCheckEnabled();
+        boolean isGrabHTTP180pVideoEnabled();
 
-        void setFastLinkCheckEnabled(boolean b);
+        void setGrabHTTP180pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(100)
+        boolean isGrabHTTP270pVideoEnabled();
+
+        void setGrabHTTP270pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(110)
+        boolean isGrabHTTP280pVideoEnabled();
+
+        void setGrabHTTP280pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(120)
+        boolean isGrabHTTP360pVideoEnabled();
+
+        void setGrabHTTP360pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(130)
+        boolean isGrabHTTP480pVideoEnabled();
+
+        void setGrabHTTP480pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(140)
+        boolean isGrabHTTP540pVideoEnabled();
+
+        void setGrabHTTP540pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(150)
+        boolean isGrabHTTP720pVideoEnabled();
+
+        void setGrabHTTP720pVideoEnabled(boolean b);
+
     }
 
     @Override
@@ -206,7 +253,6 @@ public class Ardmediathek extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        String fsk = null;
         parameter = Encoding.htmlDecode(param.toString());
         if (parameter.matches(type_unsupported) || parameter.matches(type_invalid)) {
             decryptedLinks.add(getOffline(parameter));
@@ -218,14 +264,62 @@ public class Ardmediathek extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
+
+        final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
+        final List<String> selectedQualities = new ArrayList<String>();
+        final boolean addHLS180 = cfg.isGrabHLS180pVideoEnabled();
+        final boolean addHLS270 = cfg.isGrabHLS270pVideoEnabled();
+        final boolean addHLS280 = cfg.isGrabHLS280pVideoEnabled();
+        final boolean addHLS360 = cfg.isGrabHLS360pVideoEnabled();
+        final boolean addHLS540 = cfg.isGrabHLS540pVideoEnabled();
+        final boolean addHLS720 = cfg.isGrabHLS720pVideoEnabled();
+
+        grabHLS = addHLS180 || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS720;
+
+        if (addHLS180) {
+            selectedQualities.add("hls_0_180");
+        }
+        if (addHLS270) {
+            selectedQualities.add("hls_0_270");
+        }
+        if (addHLS280) {
+            selectedQualities.add("hls_0_280");
+        }
+        if (addHLS360) {
+            selectedQualities.add("hls_0_360");
+        }
+        if (addHLS540) {
+            selectedQualities.add("hls_0_540");
+        }
+        if (addHLS720) {
+            selectedQualities.add("hls_0_720");
+        }
+        if (cfg.isGrabHTTP180pVideoEnabled()) {
+            selectedQualities.add("http_0_180");
+        }
+        if (cfg.isGrabHTTP270pVideoEnabled()) {
+            selectedQualities.add("http_0_270");
+        }
+        if (cfg.isGrabHTTP280pVideoEnabled()) {
+            selectedQualities.add("http_0_280");
+        }
+        if (cfg.isGrabHTTP360pVideoEnabled()) {
+            selectedQualities.add("http_0_360");
+        }
+        if (cfg.isGrabHTTP540pVideoEnabled()) {
+            selectedQualities.add("http_0_540");
+        }
+        if (cfg.isGrabHTTP720pVideoEnabled()) {
+            selectedQualities.add("http_0_720");
+        }
+
         try {
             if (br.getURL().matches(type_ard_mediathek) || parameter.matches(type_rbb_mediathek)) {
-                fsk = br.getRegex(AGE_RESTRICTED).getMatch(0);
                 decryptMediathek();
             } else {
                 decryptDasersteVideo();
             }
-            handleUserQualitySelection();
+            handleUserQualitySelection(selectedQualities);
         } catch (final DecrypterException e) {
             try {
                 if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
@@ -236,14 +330,14 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             throw e;
         }
-        if (existingQualityNum == 0 && existingBrokenQualityNum > 0) {
-            logger.info("Found only broken streams for this video --> Officially online but probably offline or broken");
-            decryptedLinks.add(getOffline(parameter, "STREAMS_BROKEN"));
-            return decryptedLinks;
-        }
         if (decryptedLinks == null) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.info("Failed to find any links");
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
         }
         return decryptedLinks;
     }
@@ -309,92 +403,52 @@ public class Ardmediathek extends PluginForDecrypt {
         if (subtitleLink != null && !subtitleLink.startsWith("http://")) {
             subtitleLink = "http://www.ardmediathek.de" + subtitleLink;
         }
-        int streaming_type = 0;
-        final String extension = ".mp4";
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> _mediaArray = (ArrayList) entries.get("_mediaArray");
         final LinkedHashMap<String, Object> _mediaArray_lastentry = (LinkedHashMap<String, Object>) _mediaArray.get(_mediaArray.size() - 1);
         final ArrayList<Object> mediaStreamArray = (ArrayList) _mediaArray_lastentry.get("_mediaStreamArray");
         for (final Object stream : mediaStreamArray) {
-            String directlink = null;
             final LinkedHashMap<String, Object> streammap = (LinkedHashMap<String, Object>) stream;
-            final String server = (String) streammap.get("_server");
-            String network = (String) streammap.get("_cdn");
-            /* Basically we change it for the filename */
-            if (network == null) {
-                network = "default_nonetwork";
-            }
-            /*
-             * Sometimes one quality has multiple streams/sub-qualities --> Usually one qualities is missing in the main array so let's
-             * "fix" that. Happens e.g. for documentId: 30102036
-             */
-            int quality = ((Number) streammap.get("_quality")).intValue();
             final Object stream_o = streammap.get("_stream");
-            long filesize_max = -1;
+            final ArrayList<Object> directURLs;
             if (stream_o instanceof ArrayList) {
-                /*
-                 * Array with even more qualities? Find the best - usually every array consists of max 2 entries so this should not take
-                 * that much time. In total we will then always have (max) 4 qualities.
-                 */
-                final ArrayList<Object> streamArray = (ArrayList) stream_o;
-                int counter = 0;
-                long filesize_current = 0;
-                URLConnectionAdapter con;
-                for (final Object stream_single_o : streamArray) {
-                    final String directlink_temp = (String) stream_single_o;
-                    if (counter == 0) {
-                        /* Make sure that, whatever happens, we get an http url! */
-                        directlink = directlink_temp;
-                    }
-                    try {
-                        con = br.openHeadConnection(directlink_temp);
-                        if (!con.isOK()) {
-                            /* E.g. 404 */
-                            existingBrokenQualityNum++;
-                            continue;
-                        }
-                        filesize_current = con.getLongContentLength();
-                        if (filesize_current > filesize_max) {
-                            filesize_max = filesize_current;
-                            directlink = directlink_temp;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                    counter++;
-                }
+                /* Multiple URLs */
+                directURLs = (ArrayList<Object>) stream_o;
             } else {
-                directlink = (String) streammap.get("_stream");
+                /* Single URL */
+                directURLs = new ArrayList<Object>();
+                directURLs.add(streammap.get("_stream"));
             }
-            // rtmp --> hds or rtmp
-            final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
-            /* Server needed for rtmp links */
-            if (!directlink.startsWith("http://") && isEmpty(server)) {
-                continue;
+
+            for (final Object qualityURLo : directURLs) {
+                final String directurl = (String) qualityURLo;
+                if (isUnsupportedProtocol(directurl)) {
+                    continue;
+                }
+                if (directurl.contains(".m3u8")) {
+                    addHLS(directurl);
+                } else {
+                    addQuality(directurl, null, 0, 0);
+                }
             }
-            // rtmp t=?
-            if (isRTMP) {
-                directlink = server + "@" + directlink.split("\\?")[0];
-            }
-            // /* Skip rtmp streams if user wants http only */
-            // if (isRTMP && HTTP_ONLY) {
-            // continue;
-            // }
-            if (!isHTTPUrl(directlink)) {
-                continue;
-            }
-            addQuality(network, title, extension, isRTMP, directlink, quality, streaming_type, filesize_max);
         }
         return;
     }
 
     /* INFORMATION: network = akamai or limelight == RTMP */
-    private void decryptDasersteVideo() throws IOException, DecrypterException {
+    private void decryptDasersteVideo() throws Exception {
         final String xml_URL = parameter.replace(".html", "~playerXml.xml");
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(xml_URL);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/xml")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        final String fskRating = this.br.getRegex("<fskRating>fsk(\\d+)</fskRating>").getMatch(0);
+        if (fskRating != null && Short.parseShort(fskRating) >= 12) {
+            /* Video is age restricted --> Only available from >=8PM. */
+            decryptedLinks.add(this.getOffline(parameter, "FSK_BLOCKED"));
+            return;
         }
         this.date = getXML("broadcastDate");
         title = getXML("shareTitle");
@@ -405,65 +459,118 @@ public class Ardmediathek extends PluginForDecrypt {
         title = encodeUnicode(title);
         this.date_formatted = formatDateDasErste(this.date);
         title = this.date_formatted + "_daserste_" + title;
-        /* TODO: Implement this */
-        subtitleLink = null;
-        int t = 0;
-        final String extension = ".mp4";
-        final String[] mediaStreamArray = br.getRegex("(<asset type=\".*?</asset>)").getColumn(0);
+        final String[] mediaStreamArray = br.getRegex("(<asset.*?</asset>)").getColumn(0);
         for (final String stream : mediaStreamArray) {
-            final String assettype = new Regex(stream, "<asset type=\"([^<>\"]*?)\">").getMatch(0);
-            final String server = null;
-            final String network = "default";
-            final int quality = this.convertASSETTYPEtoQuality(assettype);
-            if (quality == -1) {
-                /* Skip unknown qualities */
+            final String directurl = getXML(stream, "fileName");
+            final String filesize = getXML(stream, "size");
+            final String width_str = getXML(stream, "frameWidth");
+            final String height_str = getXML(stream, "frameHeight");
+            int width = 0;
+            int height = 0;
+            if (width_str != null && width_str.matches("\\d+")) {
+                width = Integer.parseInt(width_str);
+            }
+            if (height_str != null && height_str.matches("\\d+")) {
+                height = Integer.parseInt(height_str);
+            }
+            if (isUnsupportedProtocol(directurl)) {
                 continue;
             }
-            // rtmp --> hds or rtmp
-            String directlink = getXML(stream, "fileName");
-            final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
-            /* Skip HDS */
-            if (directlink.endsWith("manifest.f4m")) {
-                continue;
+            if (directurl.contains(".m3u8")) {
+                /* HLS */
+                addHLS(directurl);
+            } else {
+                /* HTTP */
+                addQuality(directurl, filesize, width, height);
             }
-            /* Skip unneeded playlists */
-            if ("default".equals(network) && directlink.endsWith("m3u")) {
-                continue;
-            }
-            /* Server needed for rtmp links */
-            if (!directlink.startsWith("http://") && isEmpty(server)) {
-                continue;
-            }
-            directlink += "@";
-            // rtmp t=?
-            if (isRTMP) {
-                directlink = server + "@" + directlink.split("\\?")[0];
-            }
-            /* Skip rtmp streams if user wants http only */
-            if (isRTMP && PluginJsonConfig.get(getConfigInterface()).isRTMPEnabled()) {
-                continue;
-            }
-            addQuality(network, title, extension, isRTMP, directlink, quality, t, -1);
         }
         return;
     }
 
-    private void handleUserQualitySelection() {
+    private void addHLS(final String hls_master) throws Exception {
+        if (!this.grabHLS) {
+            /* Avoid this http request if user hasn't selected any hls qualities */
+            return;
+        }
+        /* Access (hls) master. */
+        final Browser hlsBR = this.br.cloneBrowser();
+        hlsBR.getPage(hls_master);
+        final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
+        for (final HlsContainer hlscontainer : allHlsContainers) {
+            final String final_download_url = hlscontainer.getDownloadurl();
+            addQuality(final_download_url, null, hlscontainer.getWidth(), hlscontainer.getHeight());
+        }
+    }
+
+    private void addQuality(final String directurl, final String filesize_str, int width, int height) {
+        final String width_URL = new Regex(directurl, "/(\\d+)[^/]*?\\.mp4$").getMatch(0);
+        if (width_URL == null && width == 0 && height == 0) {
+            /* Skip items for which we cannot find out the height. */
+            return;
+        }
+        if (height == 0) {
+            height = Integer.parseInt(convertWidthToHeight(width_URL));
+        }
+        if (width == 0) {
+            width = Integer.parseInt(width_URL);
+        }
+
+        final String height_final = getHeightForQualitySelection(height);
+
+        long filesize = 0;
+        if (filesize_str != null && filesize_str.matches("\\d+")) {
+            filesize = Long.parseLong(filesize_str);
+        }
+
+        final String resolution = width + "x" + height;
+        final String protocol;
+        if (directurl.contains("m3u8")) {
+            protocol = "hls";
+        } else {
+            protocol = "http";
+        }
+
+        final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
+        final String plain_name = title + "_" + protocol + "_" + resolution;
+        final String full_name = plain_name + ".mp4";
+        final String qualityStringSelection = protocol + "_0_" + height_final;
+        final String qualityStringFull = protocol + "_" + resolution;
+        final String linkid = plain_name + "_" + protocol + "_0_" + height;
+        final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", "ardmediathek://"));
+        link.setFinalFileName(full_name);
+        link.setContentUrl(this.parameter);
+        link.setLinkID(linkid);
+        if (this.date != null) {
+            link.setProperty("date", this.date);
+        }
+        link.setProperty("directName", full_name);
+        link.setProperty("plain_name", plain_name);
+        link.setProperty("directQuality", qualityStringFull);
+        link.setProperty("mainlink", this.parameter);
+        if (filesize > 0) {
+            link.setDownloadSize(filesize);
+            link.setAvailable(true);
+        } else if (cfg.isFastLinkcheckEnabled()) {
+            link.setAvailable(true);
+        }
+
+        foundQualitiesMap.put(qualityStringSelection, link);
+    }
+
+    private void handleUserQualitySelection(List<String> selectedQualities) {
         /* We have to re-add the subtitle for the best quality if wished by the user */
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
-        List<String> selectedQualities = new ArrayList<String>();
 
-        if (PluginJsonConfig.get(getConfigInterface()).isOnlyBestVideoQualityEnabled()) {
+        if (PluginJsonConfig.get(getConfigInterface()).isGrabBESTEnabled()) {
             /* User wants BEST only */
             finalSelectedQualityMap = findBESTInsideGivenMap(this.foundQualitiesMap);
         } else {
+
+            final boolean grabUnknownQualities = PluginJsonConfig.get(getConfigInterface()).isAddUnknownQualitiesEnabled();
             boolean atLeastOneSelectedItemExists = false;
             for (final String quality : all_known_qualities) {
-                if (userWantsQuality(quality)) {
-                    selectedQualities.add(quality);
-                    if (foundQualitiesMap.containsKey(quality)) {
-                        atLeastOneSelectedItemExists = true;
-                    }
+                if (selectedQualities.contains(quality) && foundQualitiesMap.containsKey(quality)) {
+                    atLeastOneSelectedItemExists = true;
                 }
             }
             if (atLeastOneSelectedItemExists) {
@@ -483,8 +590,8 @@ public class Ardmediathek extends PluginForDecrypt {
                 final boolean isUnknownQuality = !all_known_qualities.contains(quality);
                 if (isUnknownQuality) {
                     logger.info("Found unknown quality: " + quality);
-                    if (PluginJsonConfig.get(getConfigInterface()).isAddUnknownQualitiesEnabled()) {
-                        logger.info("Adding unknoqn quality: " + quality);
+                    if (grabUnknownQualities) {
+                        logger.info("Adding unknown quality: " + quality);
                         finalSelectedQualityMap.put(quality, dl);
                     }
                 } else if (selectedQualities.contains(quality) || !atLeastOneSelectedItemExists) {
@@ -502,17 +609,16 @@ public class Ardmediathek extends PluginForDecrypt {
         while (it.hasNext()) {
             final Entry<String, DownloadLink> entry = it.next();
             final DownloadLink dl = entry.getValue();
-            if (PluginJsonConfig.get(getConfigInterface()).isSubtitlesEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
+            if (PluginJsonConfig.get(getConfigInterface()).isGrabSubtitleEnabled() && subtitleLink != null && !isEmpty(subtitleLink)) {
                 final String plain_name = dl.getStringProperty("plain_name", null);
-                final String orig_streamingtype = dl.getStringProperty("streamingType", null);
-                final String linkid = plain_name + "_" + orig_streamingtype + "_subtitle";
+                final String linkid = dl.getLinkID() + "_subtitle";
                 final String subtitle_filename = plain_name + ".xml";
-                final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                final DownloadLink dl_subtitle = createDownloadlink(subtitleLink.replaceAll("https?://", "ardmediathek://"));
                 dl_subtitle.setAvailable(true);
                 dl_subtitle.setFinalFileName(subtitle_filename);
-                dl_subtitle.setProperty("directURL", subtitleLink);
                 dl_subtitle.setProperty("directName", subtitle_filename);
                 dl_subtitle.setProperty("streamingType", "subtitle");
+                dl_subtitle.setProperty("directQuality", dl.getStringProperty("directQuality", null));
                 dl_subtitle.setProperty("mainlink", parameter);
                 dl_subtitle.setContentUrl(parameter);
                 dl_subtitle.setLinkID(linkid);
@@ -531,110 +637,13 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
-    private boolean isHTTPUrl(final String directlink) {
-        final boolean isHTTPUrl = directlink.startsWith("http") && !directlink.endsWith("m3u") && !directlink.endsWith("manifest.f4m");
+    private boolean isUnsupportedProtocol(final String directlink) {
+        final boolean isHTTPUrl = directlink == null || !directlink.startsWith("http") || directlink.endsWith("manifest.f4m");
         return isHTTPUrl;
     }
 
-    private boolean userWantsQuality(final int quality) {
-        ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
-        boolean best = cfg.isOnlyBestVideoQualityEnabled();
-        switch (quality) {
-        case 0:
-            if ((cfg.isLowVideoQualityVersionEnabled() || best) == false) {
-                return false;
-            }
-            return true;
-        case 1:
-            if ((cfg.isMediumVideoQualityVersionEnabled() || best) == false) {
-                return false;
-            }
-            return true;
-        case 2:
-            if ((cfg.isHighVideoQualityVersionEnabled() || best) == false) {
-                return false;
-            }
-            return true;
-        case 3:
-            if ((cfg.isHDVideoQualityVersionEnabled() || best) == false) {
-                return false;
-            }
-            return true;
-        default:
-            /* E.g. unsupported */
-            return false;
-        }
-    }
-
-    private boolean userWantsQuality(final String assettype) {
-        final int quality;
-        if (all_known_qualities.contains(assettype)) {
-            /* Not an assettype but an fmt */
-            quality = this.fmtToQuality(assettype);
-        } else {
-            quality = this.convertASSETTYPEtoQuality(assettype);
-        }
-        return userWantsQuality(quality);
-    }
-
-    /* Make fmt String out of quality Integer */
-    private String qualityToFMT(final int quality) {
-        String fmt = null;
-        switch (quality) {
-        case 0:
-            fmt = "low";
-            break;
-        case 1:
-            fmt = "medium";
-            break;
-        case 2:
-            fmt = "high";
-            break;
-        case 3:
-            fmt = "hd";
-            break;
-        }
-        return fmt;
-    }
-
-    /* Make fmt String out of quality Integer */
-    private int fmtToQuality(final String fmt) {
-        int quality;
-        if (fmt.equalsIgnoreCase("low")) {
-            quality = 0;
-        } else if (fmt.equalsIgnoreCase("medium")) {
-            quality = 1;
-        } else if (fmt.equalsIgnoreCase("high")) {
-            quality = 2;
-        } else if (fmt.equalsIgnoreCase("hd")) {
-            quality = 3;
-        } else {
-            /* Should never happen */
-            quality = 0;
-        }
-        return quality;
-    }
-
-    /* Converts asset-type Strings from daserste.de video to the same Integer values used for their Mediathek * */
-    private int convertASSETTYPEtoQuality(final String assettype) {
-        int quality;
-        if (assettype.equals("1.65 Web S VOD adaptive streaming") || assettype.contains("Prog 320x180")) {
-            quality = 0;
-        } else if (assettype.matches("[0-9\\.]+ Web M.*?") || assettype.equals("1.2.3.11.1 Web L")) {
-            /* E.g. 1.63 Web M VOD adaptive streaming */
-            quality = 1;
-        } else if (assettype.equals("1.71 ADS 4 VOD adaptive streaming") || assettype.equals("1.2.3.12.1 HbbTV 720x576")) {
-            quality = 2;
-        } else if (assettype.equals("1.69 Web L VOD adative streaming") || assettype.equals("1.2.3.12.2 Web L")) {
-            quality = 3;
-        } else {
-            quality = -1;
-        }
-        return quality;
-    }
-
     private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
-        final HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
         DownloadLink keep = null;
         if (bestMap.size() > 0) {
             for (final String quality : all_known_qualities) {
@@ -645,46 +654,55 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
+        if (newMap.isEmpty()) {
+            /* Failover in case of bad user selection or general failure! */
+            newMap = bestMap;
+        }
         return newMap;
     }
 
-    private void addQuality(final String network, final String title, final String extension, final boolean isRTMP, final String url, final int quality_int, final int streaming_type, final long filesize) {
-        existingQualityNum++;
-        final ArdConfigInterface cfg = PluginJsonConfig.get(getConfigInterface());
-        final String fmt = qualityToFMT(quality_int);
-        final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
-        final String plain_name = title + "@" + quality_part;
-        final String full_name = plain_name + extension;
-        String linkid = plain_name + "_" + streaming_type;
-        final DownloadLink link = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-        /* RTMP links have no filesize anyways --> No need to check them in host plugin */
-        if (isRTMP) {
-            link.setAvailable(true);
+    private String convertWidthToHeight(final String width_str) {
+        final int width = Integer.parseInt(width_str);
+        final String height;
+        if (width == 320) {
+            height = "180";
+        } else if (width == 480) {
+            height = "270";
+        } else if (width == 512) {
+            height = "288";
+        } else if (width == 640) {
+            height = "360";
+        } else if (width == 960) {
+            height = "540";
+        } else {
+            height = Integer.toString(width / 2);
         }
-        link.setFinalFileName(full_name);
-        link.setContentUrl(this.parameter);
-        link.setLinkID(linkid);
-        if (this.date != null) {
-            link.setProperty("date", this.date);
-        }
-        link.setProperty("directURL", url);
-        link.setProperty("directName", full_name);
-        link.setProperty("plain_name", plain_name);
-        link.setProperty("plain_quality_part", quality_part);
-        link.setProperty("plain_name", plain_name);
-        link.setProperty("plain_network", network);
-        link.setProperty("directQuality", Integer.toString(quality_int));
-        link.setProperty("streamingType", streaming_type);
-        link.setProperty("mainlink", this.parameter);
-        if (cfg.isFastLinkCheckEnabled()) {
-            link.setAvailable(true);
-        }
-        if (filesize > -1) {
-            link.setDownloadSize(filesize);
-            link.setAvailable(true);
-        }
+        return height;
+    }
 
-        foundQualitiesMap.put(fmt, link);
+    /**
+     * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
+     * work properly!
+     */
+    private String getHeightForQualitySelection(final int height) {
+        final String heightelect;
+        if (height > 0 && height <= 200) {
+            heightelect = "180";
+        } else if (height > 200 && height <= 272) {
+            heightelect = "270";
+        } else if (height > 272 && height <= 320) {
+            heightelect = "280";
+        } else if (height > 320 && height <= 400) {
+            heightelect = "360";
+        } else if (height > 400 && height <= 600) {
+            heightelect = "540";
+        } else if (height > 600 && height <= 800) {
+            heightelect = "720";
+        } else {
+            /* Either unknown quality or audio (0x0) */
+            heightelect = Integer.toString(height);
+        }
+        return heightelect;
     }
 
     private DownloadLink getOffline(final String parameter) {

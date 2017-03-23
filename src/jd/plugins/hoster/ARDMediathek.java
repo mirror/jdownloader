@@ -40,10 +40,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "http://ardmediathekdecrypted/\\d+" })
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.SkipReasonException;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "ardmediathek://.+" })
 public class ARDMediathek extends PluginForHost {
 
-    private String DLLINK = null;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -60,51 +65,54 @@ public class ARDMediathek extends PluginForHost {
         return -1;
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("ardmediathek://", "http://"));
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException {
-        DLLINK = null;
-        if (downloadLink.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException, InterruptedException, SkipReasonException {
+        dllink = downloadLink.getDownloadURL();
         /* Load this plugin as we use functions of it. */
         JDUtilities.getPluginForHost("br-online.de");
-        if (downloadLink.getStringProperty("directURL", null) == null) {
-            /* Undefined case! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         String finalName = downloadLink.getStringProperty("directName", null);
         if (finalName == null) {
+            /* TODO */
             finalName = getTitle(br) + ".mp4";
         }
         downloadLink.setFinalFileName(finalName);
-        if (!downloadLink.getStringProperty("directURL").startsWith("http")) {
-            return AvailableStatus.TRUE;
-        }
-        // get filesize
-        final Browser br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            br2.getHeaders().put("Accept-Encoding", "identity");
-            /* TODO: Remove this compatibility workaround AFTER 2015-10 */
-            DLLINK = downloadLink.getStringProperty("directURL");
-            if (DLLINK.contains("@")) {
-                DLLINK = DLLINK.split("@")[0];
-            }
-            con = br2.openGetConnection(DLLINK);
-            if (con.isOK() && !con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+
+        br.setFollowRedirects(true);
+        if (dllink.contains(".m3u8")) {
+            checkFFProbe(downloadLink, "Download a HLS Stream");
+            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (streamInfo == null) {
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             } else {
-                br2.followConnection();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (estimatedSize > 0) {
+                    downloadLink.setDownloadSize(estimatedSize);
+                }
             }
-            return AvailableStatus.TRUE;
-        } finally {
+        } else {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                br.getHeaders().put("Accept-Encoding", "identity");
+                con = br.openHeadConnection(dllink);
+                if (con.isOK() && !con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     private String getTitle(Browser br) {
@@ -132,23 +140,17 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getStringProperty("directURL", null) == null) {
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (DLLINK.startsWith("rtmp")) {
-            /* rtmp = unsupported */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // dl = new RTMPDownload(this, downloadLink, DLLINK);
-            // setupRTMPConnection(null, dl);
-            // ((RTMPDownload) dl).startDownload();
+        if (dllink.contains(".m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
         } else {
             br.setFollowRedirects(true);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (DLLINK.startsWith("mms")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
-            }
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
             boolean resume = true;
             int maxChunks = 0;
@@ -158,13 +160,13 @@ public class ARDMediathek extends PluginForHost {
                 resume = false;
                 maxChunks = 1;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             if (this.dl.startDownload()) {
                 this.postprocess(downloadLink);
@@ -317,7 +319,6 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private String unescape(final String s) {
-
         return jd.nutils.encoding.Encoding.unescapeYoutube(s);
     }
 
