@@ -41,7 +41,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(www\\.)?shink\\.in/(?-i)[a-zA-Z0-9]{5}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "https?://(www\\.)?shink\\.in/(s/)?(?-i)[a-zA-Z0-9]{5}" })
 public class ShinkIn extends antiDDoSForDecrypt {
 
     private static Object CTRLLOCK = new Object();
