@@ -38,6 +38,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -188,7 +189,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getApiUrl() {
-        return getProtocol() + getDomain() + "/api/v1";
+        return getProtocol() + getDomain() + "/api/v2";
     }
 
     /**
@@ -377,10 +378,10 @@ public abstract class K2SApi extends PluginForHost {
         final String available_traffic = PluginJSonUtils.getJsonValue(br, "available_traffic");
         final String account_expires = PluginJSonUtils.getJsonValue(br, "account_expires");
         if ("false".equalsIgnoreCase(account_expires)) {
-            account.setProperty("free", true);
+            account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
-            account.setProperty("free", false);
+            account.setType(AccountType.PREMIUM);
             if (!inValidate(account_expires)) {
                 ai.setValidUntil(Long.parseLong(account_expires) * 1000l);
             } else {
@@ -1196,7 +1197,7 @@ public abstract class K2SApi extends PluginForHost {
 
     protected void handleGeneralServerErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
         final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
-        if ((account == null || account.getBooleanProperty("free", false)) && br.containsHTML(alreadyDownloading)) {
+        if ((account == null || account.getType() == AccountType.FREE) && br.containsHTML(alreadyDownloading)) {
             // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
             // should only happen to free.
             // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
@@ -1390,7 +1391,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected final boolean isFreeAccount(Account account) {
-        return account == null || account.getBooleanProperty("free", false) || Account.AccountType.FREE.equals(account.getType());
+        return account == null || Account.AccountType.FREE.equals(account.getType());
     }
 
     @Override

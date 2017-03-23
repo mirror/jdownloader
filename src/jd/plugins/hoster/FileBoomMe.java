@@ -31,6 +31,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -110,7 +111,7 @@ public class FileBoomMe extends K2SApi {
      */
     private void setConstants(final Account account) {
         if (account != null) {
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 // free account
                 chunks = 1;
                 resumes = true;
@@ -416,7 +417,7 @@ public class FileBoomMe extends K2SApi {
         } else {
             try {
                 login(account, true);
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 account.setValid(false);
                 throw e;
             }
@@ -426,10 +427,10 @@ public class FileBoomMe extends K2SApi {
             if ("LifeTime".equalsIgnoreCase(expire)) {
                 ai.setStatus("Premium Account(LifeTime)");
                 ai.setValidUntil(-1);
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
             } else if (expire == null) {
                 ai.setStatus("Free Account");
-                account.setProperty("free", true);
+                account.setType(AccountType.FREE);
             } else {
                 final long expireTimeStamp = TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH);
                 if (expireTimeStamp == -1) {
@@ -437,7 +438,7 @@ public class FileBoomMe extends K2SApi {
                 }
                 ai.setValidUntil(expireTimeStamp + (24 * 60 * 60 * 1000l));
                 ai.setStatus("Premium Account");
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
             }
             final String trafficleft = br.getRegex("Available traffic \\(today\\):[\t\n\r ]+<b><a href=\"/user/statistic\\.html\">([^<>\"]*?)</a>").getMatch(0);
             if (trafficleft != null) {
@@ -451,9 +452,9 @@ public class FileBoomMe extends K2SApi {
 
     @Override
     protected void setAccountLimits(Account account) {
-        if (account != null && account.getBooleanProperty("free", false)) {
+        if (account != null && account.getType() == AccountType.FREE) {
             maxPrem.set(1);
-        } else if (account != null && !account.getBooleanProperty("free", false)) {
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
             maxPrem.set(20);
         }
     }
@@ -461,7 +462,7 @@ public class FileBoomMe extends K2SApi {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             if (checkShowFreeDialog(getHost())) {
                 showFreeDialog(getHost());
             }
@@ -473,7 +474,7 @@ public class FileBoomMe extends K2SApi {
             login(account, false);
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();
@@ -556,12 +557,12 @@ public class FileBoomMe extends K2SApi {
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
