@@ -20,12 +20,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
+import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -37,14 +50,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -149,8 +154,23 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return quals;
     }
 
-    public static String decodeSingleURL(final String encodedString) throws IOException {
-        String decode = Encoding.Base64Decode(encodedString);
+    public static String decodeSingleURL(final String encodedString) throws IOException, PluginException {
+        byte[] encodedArray = Base64.decode(encodedString);
+        String hash = Hash.getSHA256("nhasasdbasdtene7230asb");
+        // AES256
+        byte[] byteKey = hexStringToByteArray(hash);
+        byte[] byteIv = hexStringToByteArray("a5e8d2e9c1721ae0e84ad660c472c1f3");
+        SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
+        String decode = null;
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            byte[] byteResult = cipher.doFinal(encodedArray);
+            decode = new String(byteResult, "UTF-8");
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
         if (StringUtils.contains(decode, "blogspot.com/")) {
             // this is redirect bullshit
             final Browser test = new Browser();
@@ -158,6 +178,17 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             decode = test.getRedirectLocation();
         }
         return decode;
+    }
+
+    public static byte[] hexStringToByteArray(String hexString) {
+        byte[] bytes = new byte[hexString.length() / 2];
+
+        for (int i = 0; i < hexString.length(); i += 2) {
+            String sub = hexString.substring(i, i + 2);
+            Integer intVal = Integer.parseInt(sub, 16);
+            bytes[i / 2] = intVal.byteValue();
+        }
+        return bytes;
     }
 
     public static boolean isOffline(final Browser br) {
