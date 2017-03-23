@@ -32,6 +32,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -64,10 +65,10 @@ public class Keep2ShareCc extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
-    private final String DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    public final String  MAINPAGE         = "http://k2s.cc";
-    private final String DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
-    private final String DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
+    public final String  MAINPAGE      = "http://k2s.cc";
+    private final String DOMAINS_PLAIN = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
+
+    // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
 
     @Override
     public String[] siteSupportedNames() {
@@ -126,7 +127,7 @@ public class Keep2ShareCc extends K2SApi {
      */
     private void setConstants(final Account account) {
         if (account != null) {
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 // free account
                 chunks = 1;
                 resumes = true;
@@ -177,7 +178,15 @@ public class Keep2ShareCc extends K2SApi {
         br.setFollowRedirects(true);
         super.prepBrowserForWebsite(this.br);
         getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
+        if (this.isNewLayout2017()) {
+            return this.requestFileInformationNew2017(link);
+        } else {
+            return requestFileInformationOld(link);
+        }
+    }
+
+    public AvailableStatus requestFileInformationOld(final DownloadLink link) throws Exception {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
             link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -207,10 +216,73 @@ public class Keep2ShareCc extends K2SApi {
         return AvailableStatus.TRUE;
     }
 
+    /** 2017-03-22: They switched to a new layout (accessible via new.keep2share.cc), old is still online at the moment. */
+    public AvailableStatus requestFileInformationNew2017(final DownloadLink link) throws Exception {
+        /* for multihosters which call this method directly. */
+        if (useAPI()) {
+            return super.requestFileInformation(link);
+        }
+        this.setBrowserExclusive();
+        correctDownloadLink(link);
+        br.setFollowRedirects(true);
+        super.prepBrowserForWebsite(this.br);
+        getPage(link.getDownloadURL());
+        /*
+         * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a
+         * downloadlimit is reached!
+         */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = getFileNameNew2017();
+        final String filesize = getFileSizeNew2017();
+
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
+        if (filesize != null) {
+            /* Remove spaces to support such inputs: 1 000.0 MB */
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(" ", "")));
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (isPremiumOnly()) {
+            link.getLinkStatus().setStatusText("Only downloadable for premium users");
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    /**
+     * E.g. user starts a download, stops it, directurl does not work anymore --> Retry --> Keep2share will save that information based on
+     * his IP and possibly offer the free download without having to enter another captcha.
+     */
+    public boolean freeDownloadImmediatelyPossible() {
+        return br.containsHTML(">To download this file with slow speed, use");
+    }
+
+    /** Determines via html strings whether we are on the new- or the old keep2share website. */
+    public boolean isNewLayout2017() {
+        return br.containsHTML("class=\"footer\\-nav\"|class=\"list\\-services\"");
+    }
+
+    public String getFileNameNew2017() {
+        String filename = br.getRegex("class=\"name\\-file\">([^<>\"]+)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"title\\-file\">([^<>\"]+)<").getMatch(0);
+        }
+        return filename;
+    }
+
+    public String getFileSizeNew2017() {
+        String filesize = br.getRegex("<em>\\s*?(\\s+[^<>\"]+)\\s*?</em>").getMatch(0);
+        return filesize;
+    }
+
     public String getFileName() {
         String filename = null;
         // This might not be needed anymore but keeping it doesn't hurt either
-        if (br.containsHTML(DOWNLOADPOSSIBLE)) {
+        if (freeDownloadImmediatelyPossible()) {
             filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
         }
         if (filename == null) {
@@ -225,7 +297,7 @@ public class Keep2ShareCc extends K2SApi {
 
     public String getFileSize() {
         String filesize = null;
-        if (br.containsHTML(DOWNLOADPOSSIBLE)) {
+        if (freeDownloadImmediatelyPossible()) {
             filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
         }
         if (filesize == null) {
@@ -278,9 +350,9 @@ public class Keep2ShareCc extends K2SApi {
                 }
             }
         }
-        // if above has failed, dllink will be null
+        /* if above has failed, dllink will be null */
         if (inValidate(dllink)) {
-            if (br.containsHTML(DOWNLOADPOSSIBLE)) {
+            if (freeDownloadImmediatelyPossible()) {
                 dllink = getDllink();
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -407,6 +479,7 @@ public class Keep2ShareCc extends K2SApi {
         }
     }
 
+    /** TODO: Add/Check compatibility for new layout! */
     private boolean isPremiumOnly() {
         return br.containsHTML("File size to large!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members");
     }
@@ -414,7 +487,7 @@ public class Keep2ShareCc extends K2SApi {
     private String getDllink() throws PluginException {
         String dllink = br.getRegex("('|\")(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
         if (dllink != null) {
-            dllink = new Regex(br.getURL(), DOMAINS_HTTP).getMatch(0) + dllink;
+            dllink = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + dllink;
         }
         return dllink;
     }
@@ -557,10 +630,10 @@ public class Keep2ShareCc extends K2SApi {
             }
             account.setValid(true);
             if (br.containsHTML("class=\"free\"[^>]*>Free</a>")) {
-                account.setProperty("free", true);
+                account.setType(AccountType.FREE);
                 ai.setStatus("Free Account");
             } else {
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
                 final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
                 final String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
                 if (availableTraffic != null && usedTraffic != null) {
@@ -599,9 +672,9 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     protected void setAccountLimits(Account account) {
-        if (account != null && account.getBooleanProperty("free", false)) {
+        if (account != null && account.getType() == AccountType.FREE) {
             maxPrem.set(1);
-        } else if (account != null && !account.getBooleanProperty("free", false)) {
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
             maxPrem.set(20);
         }
     }
@@ -609,7 +682,7 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             if (checkShowFreeDialog(getHost())) {
                 showFreeDialog(getHost());
             }
@@ -639,7 +712,7 @@ public class Keep2ShareCc extends K2SApi {
                     }
                 }
             }
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 setConstants(account);
                 getPage(link.getDownloadURL());
                 doFree(link, account);
@@ -805,7 +878,7 @@ public class Keep2ShareCc extends K2SApi {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }

@@ -32,6 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -92,7 +93,7 @@ public class TezFilesCom extends K2SApi {
      */
     private void setConstants(final Account account) {
         if (account != null) {
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 // free account
                 chunks = 1;
                 resumes = true;
@@ -386,14 +387,14 @@ public class TezFilesCom extends K2SApi {
             final String expire = br.getRegex("Premium expires:[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setStatus("Free Account");
-                account.setProperty("free", true);
+                account.setType(AccountType.FREE);
             } else if ("LifeTime".equals(expire)) {
                 ai.setStatus("LifeTime Premium Account");
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
                 ai.setStatus("Premium Account");
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
             }
             final String trafficleft = br.getRegex("Available traffic \\(today\\):[\t\n\r ]+<b><a href=\"/user/statistic\\.html\">([^<>\"]*?)</a>").getMatch(0);
             if (trafficleft != null) {
@@ -407,9 +408,9 @@ public class TezFilesCom extends K2SApi {
 
     @Override
     protected void setAccountLimits(Account account) {
-        if (account != null && account.getBooleanProperty("free", false)) {
+        if (account != null && account.getType() == AccountType.FREE) {
             maxPrem.set(1);
-        } else if (account != null && !account.getBooleanProperty("free", false)) {
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
             maxPrem.set(20);
         }
     }
@@ -417,7 +418,7 @@ public class TezFilesCom extends K2SApi {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             if (checkShowFreeDialog(getHost())) {
                 showFreeDialog(getHost());
             }
@@ -429,7 +430,7 @@ public class TezFilesCom extends K2SApi {
             login(account, false);
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();
@@ -494,12 +495,12 @@ public class TezFilesCom extends K2SApi {
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return false;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return false;
         }
