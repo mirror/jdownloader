@@ -13,8 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.controlling.downloadcontroller.FileStoreHacks;
-
+import org.appwork.utils.Files17;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
@@ -47,7 +46,7 @@ public class SystemAPIImpl17 {
         }
         if (roots.isEmpty()) {
             for (final FileStore fileStore : FileSystems.getDefault().getFileStores()) {
-                final Path fileStorePath = FileStoreHacks.getPath(fileStore);
+                final Path fileStorePath = Files17.getPath(fileStore);
                 if (fileStorePath != null) {
                     roots.put(fileStorePath, fileStore);
                 }
