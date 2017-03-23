@@ -10,6 +10,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkInfo;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
@@ -321,30 +322,47 @@ public class RuleWrapper<T extends FilterRule> {
                     sources[1] = LinkCrawler.cleanURL(job.getCustomSourceUrl());
                 }
             }
+            final MatchType matchType = sourceRule.getMatchType();
+            Boolean matches = null;
             for (int j = inverted ? 0 : sources.length - 1; (inverted ? (j < sources.length) : (j >= 0)); j = (inverted ? (j + 1) : (j - 1))) {
                 final String url = sources[j];
-                if (url == null) {
-                    continue;
-                }
-                final String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + url : url;
-                if (sourceRule.matches(toMatch)) {
-                    return true;
-                } else if (indexed) {
-                    // for equals matchtypes, we need to ignore the index
-                    switch (sourceRule.getMatchType()) {
-                    case EQUALS:
-                    case EQUALS_NOT:
-                        if (sourceRule.matches(url)) {
-                            return true;
+                if (url != null) {
+                    final String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + url : url;
+                    if (indexed) {
+                        switch (sourceRule.getMatchType()) {
+                        case EQUALS:
+                        case EQUALS_NOT:
+                            if (sourceRule.matches(url)) {
+                                return true;
+                            }
+                            break;
+                        default:
+                            // nothing
+                            break;
                         }
-                        break;
-                    default:
-                        // nothing
-                        break;
+                    } else {
+                        final boolean match = sourceRule.matches(toMatch);
+                        switch (matchType) {
+                        case EQUALS:
+                        case CONTAINS:
+                            return match;
+                        case CONTAINS_NOT:
+                        case EQUALS_NOT:
+                            if (matches == null) {
+                                matches = match;
+                            } else {
+                                matches = matches.booleanValue() && match;
+                            }
+                            break;
+                        }
                     }
                 }
             }
-            return false;
+            if (matches != null) {
+                return matches.booleanValue();
+            } else {
+                return false;
+            }
         }
         return true;
     }
