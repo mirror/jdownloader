@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files17;
 import org.appwork.utils.ProcMounts;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -114,7 +115,10 @@ public class DiskSpaceManager {
         String bestRootMatch = null;
         if (Application.getJavaVersion() >= Application.JAVA17 && (CrossSystem.isUnix() || CrossSystem.isMac())) {
             try {
-                bestRootMatch = FileStoreHacks.getRootFor(reservation.getDestination());
+                final File guessRootMatch = Files17.guessRoot(reservation.getDestination());
+                if (guessRootMatch != null) {
+                    bestRootMatch = guessRootMatch.getAbsolutePath();
+                }
             } catch (final IOException e) {
                 LogController.CL().log(e);
                 if (OperatingSystem.FREEBSD.equals(CrossSystem.getOS()) && StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
