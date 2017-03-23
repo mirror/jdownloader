@@ -51,25 +51,23 @@ public class AllySh extends PluginForDecrypt {
         Form continueform = this.br.getFormbyProperty("id", "form-captcha");
         if (continueform == null) {
             continueform = this.br.getForm(0);
-        }
-        if (continueform == null) {
-            return null;
+            if (continueform == null) {
+                return null;
+            }
         }
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         br.submitForm(continueform);
-        String finallink = this.br.getRedirectLocation();
+        final String finallink = this.br.getRedirectLocation();
         if (finallink == null) {
             return null;
         }
         final String url_within_url = new Regex(finallink, "(https?://.*?)https?").getMatch(0);
-        if (url_within_url == null) {
+        if (url_within_url != null) {
             logger.info("Found url within url --> Using this as final url");
-            finallink = url_within_url;
+            decryptedLinks.add(createDownloadlink(url_within_url));
         }
-
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
