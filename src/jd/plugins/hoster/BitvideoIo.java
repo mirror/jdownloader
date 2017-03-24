@@ -84,44 +84,66 @@ public class BitvideoIo extends PluginForHost {
         /* Better filenames for offline case */
         link.setName(fid + ".mp4");
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        /* Only use one of their domains */
-        br.getPage("https://www.bitporno.com/?v=" + fid);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String url_filename = fid;
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<span itemprop=\"name\" title=\"(.*?)\"").getMatch(0);
+        String filename = null;
+        String json_source = null;
+        if (link.getDownloadURL().contains("rapidvideo.com")) {
+            /* 2017-03-24: Special handling for this domain - video json is not encrypted! */
+            br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) {
-                filename = url_filename;
+                /* Fallback */
+                filename = fid;
             }
-        }
-        if (filename.length() > 212) {
-            int dash = filename.indexOf('-', 200);
-            if (dash >= 0) {
-                filename = filename.substring(0, dash);
-            } else {
-                filename = filename.substring(0, 212);
+
+            json_source = this.br.getRegex("\"sources\"\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+        } else {
+            /* Only use one of their domains */
+            br.getPage("https://www.bitporno.com/?v=" + fid);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        if (this.br.containsHTML(html_video_encoding)) {
-            return AvailableStatus.TRUE;
-        }
-        // from iframe
-        br.getPage("/embed/" + fid);
-        final Form f = br.getForm(0);
-        if (f != null) {
-            if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
-                f.put("confirm.x", "62");
-                f.put("confirm.y", "70");
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<span itemprop=\"name\" title=\"(.*?)\"").getMatch(0);
             }
-            br.submitForm(f);
+            if (filename == null) {
+                /* Fallback */
+                filename = fid;
+            }
+            if (filename.length() > 212) {
+                int dash = filename.indexOf('-', 200);
+                if (dash >= 0) {
+                    filename = filename.substring(0, dash);
+                } else {
+                    filename = filename.substring(0, 212);
+                }
+            }
+            if (this.br.containsHTML(html_video_encoding)) {
+                return AvailableStatus.TRUE;
+            }
+            // from iframe
+            br.getPage("/embed/" + fid);
+            final Form f = br.getForm(0);
+            if (f != null) {
+                if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
+                    f.put("confirm.x", "62");
+                    f.put("confirm.y", "70");
+                }
+                br.submitForm(f);
+            }
+            final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
+            json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
         }
-        String dllink_temp = null;
-        final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
-        final String json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
         if (json_source != null) {
+            String dllink_temp = null;
             final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(json_source);
             LinkedHashMap<String, Object> entries = null;
             int maxvalue = 0;
@@ -138,17 +160,13 @@ public class BitvideoIo extends PluginForHost {
                     break;
                 } else {
                     /* Look for the highest quality! */
-                    tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)").getMatch(0));
+                    tempvalue = Integer.parseInt(new Regex(tempquality, "(\\d+)p?").getMatch(0));
                     if (tempvalue > maxvalue) {
                         maxvalue = tempvalue;
                         dllink = dllink_temp;
                     }
                 }
             }
-        }
-
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         filename = Encoding.htmlDecode(filename);

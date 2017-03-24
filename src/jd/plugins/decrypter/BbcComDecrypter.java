@@ -63,6 +63,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* Type 3 */
             jsons = this.br.getRegex("_exposedData=(\\{.+),").getColumn(0);
         }
+        if (jsons == null || jsons.length == 0) {
+            /* Type 4 */
+            jsons = this.br.getRegex("mediator\\.bind\\((\\{.*?\\}),\\s*?document\\.").getColumn(0);
+        }
         if (jsons == null) {
             logger.info("Failed to find any playable content");
             return decryptedLinks;
@@ -74,7 +78,9 @@ public class BbcComDecrypter extends PluginForDecrypt {
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             final Object story = entries.get("story");
+            final Object player = entries.get("player");
             String title = null;
+            String subtitle = null;
             String description = null;
             String vpid = null;
             if (story != null) {
@@ -86,6 +92,12 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 }
                 title = (String) entries.get("Title");
                 vpid = (String) entries.get("Vpid");
+            } else if (player != null) {
+                /* Type 4 */
+                entries = (LinkedHashMap<String, Object>) player;
+                title = (String) entries.get("title");
+                subtitle = (String) entries.get("subtitle");
+                vpid = (String) entries.get("vpid");
             } else {
                 /* Type 1 */
                 Object sourcemapo = JavaScriptEngineFactory.walkJson(entries, "settings/playlistObject");
@@ -107,12 +119,16 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 continue;
             }
 
-            title = encodeUnicode(title);
+            String filename_plain = title;
+            if (subtitle != null) {
+                filename_plain = title + " - " + subtitle;
+            }
+            filename_plain = encodeUnicode(filename_plain);
 
             final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
             dl.setLinkID(vpid);
-            dl.setName(title + ".mp4");
-            dl.setProperty("decrypterfilename", title);
+            dl.setName(filename_plain + ".mp4");
+            dl.setProperty("decrypterfilename", filename_plain);
             dl.setContentUrl(parameter);
 
             if (!inValidate(description)) {
@@ -123,7 +139,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         }
 
         if (decryptedLinks.size() == 0) {
-            /* Final fallback */
+            /* 2017-03-24: Final fallback - UNSURE if that is a good idea as these IDs must not be real videoIDs!! */
             final String[] videoIDs = this.br.getRegex("episode_id=([pb][a-z0-9]{7})").getColumn(0);
             for (final String vpid : videoIDs) {
                 final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);

@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
@@ -105,17 +105,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(parameter);
-        // Link offline
-        if (br.containsHTML(">File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<")) {
-            final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
-            finalOne.setAvailable(false);
-            finalOne.setProperty("offline", true);
-            finalOne.setName(new Regex(parameter, "download\\.php\\?id=(.+)").getMatch(0));
-            decryptedLinks.add(finalOne);
-            return decryptedLinks;
-        }
-        // Advertising link
-        if (br.containsHTML("the file can be accessed at the|>can be accessed at the")) {
+        if (jd.plugins.hoster.FilesMonsterCom.isOffline(this.br)) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
             finalOne.setProperty("offline", true);
@@ -144,7 +134,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
 
         if (addFree) {
             if (FAILED == null) {
-                String theImportantPartOfTheMainLink = new Regex(parameter, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
+                final String theImportantPartOfTheMainLink = jd.plugins.hoster.FilesMonsterCom.getMainLinkID(parameter);
                 for (String fileInfo : decryptedStuff) {
                     String filename = new Regex(fileInfo, "\"name\":\"(.*?)\"").getMatch(0);
                     String filesize = new Regex(fileInfo, "\"size\":(\")?(\\d+)").getMatch(1);

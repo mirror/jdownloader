@@ -17,13 +17,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,11 +54,23 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depfile.com" }, urls = { "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" })
 public class DepfileCom extends PluginForHost {
 
-    private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
-    private static final String MAINPAGE             = "http://depfile.com/";
-    private static Object       LOCK                 = new Object();
-    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
-    private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
+    private static final String            CAPTCHATEXT                  = "includes/vvc\\.php\\?vvcid=";
+    private static final String            MAINPAGE                     = "http://depfile.com/";
+    private static Object                  LOCK                         = new Object();
+    private static final String            ONLY4PREMIUM                 = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
+    private static final String            ONLY4PREMIUMUSERTEXT         = "Only downloadable for premium users";
+
+    private static final long              FREE_RECONNECTWAIT           = 1 * 60 * 60 * 1001L;
+    private String                         PROPERTY_LASTIP              = "DEPFILECOM_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD        = "depfilecom_lastdownload_timestamp";
+    private final String                   ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
+    private final String                   EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                     = new Object();
+    private static String[]                IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public DepfileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -133,6 +150,39 @@ public class DepfileCom extends PluginForHost {
         if (br.containsHTML(ONLY4PREMIUM)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT), PluginException.VALUE_ID_PREMIUM_ONLY);
         }
+
+        this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, Property.NULL);
+        currentIP.set(this.getIP());
+        synchronized (CTRLLOCK) {
+            /* Load list of saved IPs + timestamp of last download */
+            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            }
+        }
+
+        /* 2017-03-25: It is not possible to re-use generated direct URLs --> So we don't even try it! */
+
+        /**
+         * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+         */
+        logger.info("New Download: currentIP = " + currentIP.get());
+        if (PluginJsonConfig.get(jd.plugins.hoster.DepfileCom.DepfileConfigInterface.class).isEnableReconnectWorkaround()) {
+            long lastdownload = 0;
+            long passedTimeSinceLastDl = 0;
+            /*
+             * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
+             * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
+             * using the same free accounts after performing a reconnect!
+             */
+            lastdownload = getPluginSavedLastDownloadTimestamp();
+            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+            }
+        }
+
         String verifycode = br.getRegex("name='vvcid\' value=\'(\\d+)\'").getMatch(0);
         if (verifycode == null) {
             verifycode = br.getRegex("\\?vvcid=(\\d+)").getMatch(0);
@@ -176,12 +226,21 @@ public class DepfileCom extends PluginForHost {
         }
         dllink = Encoding.deepHtmlDecode(dllink).trim();
         int wait = 60;
-        String regexedWaittime = br.getRegex("var sec=(\\d+);").getMatch(0);
+        final String regexedWaittime = br.getRegex("var sec=(\\d+);").getMatch(0);
         if (regexedWaittime != null) {
             wait = Integer.parseInt(regexedWaittime);
         }
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        /*
+         * The download attempt triggers reconnect waittime (if the user stops downloads before this step, no limit will be set!)! Save
+         * timestamp here to calculate correct remaining waittime later!
+         */
+        synchronized (CTRLLOCK) {
+            blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+            getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+            setIP(downloadLink);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -194,31 +253,17 @@ public class DepfileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unchecked")
     private AccountInfo login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 br.setCustomCharset("utf-8");
                 // Set English language
                 br.setCookie(MAINPAGE, "sdlanguageid", "2");
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            // enforce english! this correction is only needed until next core update! -raztoki20160506
-                            final String value = "sdlanguageid".equals(key) && !"2".equals(cookieEntry.getValue()) ? "2" : cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                        return null;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return null;
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://depfile.com/", "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
@@ -268,19 +313,11 @@ public class DepfileCom extends PluginForHost {
                     account.setConcurrentUsePossible(true);
                 }
                 account.setValid(true);
-                ai.setUnlimitedTraffic();
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                setAccountTrafficLimits(account, ai);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
                 return ai;
             } catch (PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -333,7 +370,7 @@ public class DepfileCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             checkForTwoFactor();
-            checkForStupidFileDownloadQuota(account);
+            checkForStupidFileDownloadQuotaAndSetQuota(account);
             {
                 // they now have captcha for premium users, nice hey?
                 int count = -1;
@@ -350,7 +387,7 @@ public class DepfileCom extends PluginForHost {
                         br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&prem_plus=Next");
                     } while ((verifycode = getVerifyCode()) != null);
                     // can be another output after captcha... Link; 7944971887641.log; 4880971; jdlog://7944971887641
-                    checkForStupidFileDownloadQuota(account);
+                    checkForStupidFileDownloadQuotaAndSetQuota(account);
                 }
             }
             final String dllink = getPremiumDllink(br);
@@ -388,16 +425,131 @@ public class DepfileCom extends PluginForHost {
         return dllink;
     }
 
-    private void checkForStupidFileDownloadQuota(final Account account) throws PluginException {
-        if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours|class='notice'>You spent daily limit on \\d+Gb\\.</")) {
-            logger.info("Daily limit reached, temp disabling premium");
-            synchronized (LOCK) {
-                final AccountInfo ai = account.getAccountInfo();
+    private void checkForStupidFileDownloadQuotaAndSetQuota(final Account account) throws PluginException {
+        synchronized (LOCK) {
+            final AccountInfo ai = account.getAccountInfo();
+            if (br.containsHTML("class='notice'>You spent limit on urls/files per \\d+ hours|class='notice'>Sorry, you spent downloads limit on urls/files per \\d+ hours|class='notice'>You spent daily limit on \\d+Gb\\.</")) {
+                logger.info("Daily limit reached, temp disabling premium");
                 ai.setTrafficLeft(0);
                 account.setAccountInfo(ai);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
+            setAccountTrafficLimits(account, ai);
         }
+    }
+
+    private void setAccountTrafficLimits(final Account account, final AccountInfo ai) {
+        if (account.getType() == AccountType.PREMIUM) {
+            /*
+             * VERY very bad usability: Used- and max traffic is only shown when user accesses download URLs which are available - this is
+             * the only way we can get these values!
+             */
+            final long traffic_max;
+            final String traffic_used_str = this.br.getRegex("Used today\\s*?:\\s*?<b>([^<>\"\\']+)</b>").getMatch(0);
+            String traffic_max_str = this.br.getRegex("Download traffic per day\\s*?:\\s*?<b>([^<>\"\\']+)</b>").getMatch(0);
+            if (traffic_max_str == null) {
+                /* 2017-03-24: Hardcoded fallback */
+                traffic_max_str = "40GB";
+            }
+            traffic_max = SizeFormatter.getSize(traffic_max_str);
+            if (traffic_used_str != null) {
+                ai.setTrafficLeft(traffic_max - SizeFormatter.getSize(traffic_used_str));
+            } else {
+                /* Pretend as if we knew this. */
+                ai.setTrafficLeft(traffic_max);
+            }
+            ai.setTrafficMax(traffic_max);
+        } else {
+            /* Free accounts have the same limits as guests (= no account) - nothing we can display here --> Unlimited! */
+            ai.setUnlimitedTraffic();
+        }
+    }
+
+    private long getPluginSavedLastDownloadTimestamp() {
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            if (blockedIPsMap != null) {
+                final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Long> ipentry = it.next();
+                    final String ip = ipentry.getKey();
+                    final long timestamp = ipentry.getValue();
+                    if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                        /* Remove old entries */
+                        it.remove();
+                    }
+                    if (ip.equals(currentIP.get())) {
+                        lastdownload = timestamp;
+                    }
+                }
+            }
+        }
+        return lastdownload;
+    }
+
+    private String getIP() throws PluginException {
+        Browser ip = new Browser();
+        String currentIP = null;
+        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
+        Collections.shuffle(checkIP);
+        for (String ipServer : checkIP) {
+            if (currentIP == null) {
+                try {
+                    ip.getPage(ipServer);
+                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
+                    if (currentIP != null) {
+                        break;
+                    }
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (currentIP == null) {
+            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return currentIP;
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean setIP(final DownloadLink link) throws PluginException {
+        synchronized (IPCHECK) {
+            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (ipChanged(link) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                String lastIP = currentIP.get();
+                link.setProperty(PROPERTY_LASTIP, lastIP);
+                DepfileCom.lastIP.set(lastIP);
+                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
+                logger.info("LastIP = " + lastIP);
+                return true;
+            }
+        }
+    }
+
+    private boolean ipChanged(final DownloadLink link) throws PluginException {
+        String currIP = null;
+        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
+            currIP = currentIP.get();
+        } else {
+            currIP = getIP();
+        }
+        if (currIP == null) {
+            return false;
+        }
+        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
+        if (lastIP == null) {
+            lastIP = DepfileCom.lastIP.get();
+        }
+        if (lastIP == null) {
+            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
+        }
+        return !currIP.equals(lastIP);
     }
 
     private String getVerifyCode() {
@@ -471,6 +623,10 @@ public class DepfileCom extends PluginForHost {
                 return "Activate download of DMCA blocked links?\r\n-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\nNote the following:\r\n-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n--> If they're really offline, the correct (offline) status will be shown on downloadstart";
             }
 
+            public String getEnableReconnectWorkaround_label() {
+                return "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.";
+            }
+
         }
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -480,6 +636,12 @@ public class DepfileCom extends PluginForHost {
         boolean isEnableDMCADownload();
 
         void setEnableDMCADownload(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(9)
+        boolean isEnableReconnectWorkaround();
+
+        void setEnableReconnectWorkaround(boolean b);
 
     }
 }
