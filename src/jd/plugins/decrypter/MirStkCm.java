@@ -36,7 +36,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "filemack.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|multimirrorupload\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})", "https?://(?:www\\.)?filemack\\.com/(?:en/)?([a-zA-Z0-9]{12}|[a-z0-9]{2}_[a-zA-Z0-9]{16})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadmagnet.com", "filemack.com" }, urls = { "https?://(?:www\\.)?(?:multi\\.hotshare\\.biz|uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|multimirrorupload\\.com|multifilemirror\\.com)/([a-z0-9]{1,2}_)?([a-z0-9]{12})", "https?://(?:www\\.)?filemack\\.com/(?:en/)?([a-zA-Z0-9]{12}|[a-z0-9]{2}_[a-zA-Z0-9]{16})" })
 public class MirStkCm extends antiDDoSForDecrypt {
 
     /*
