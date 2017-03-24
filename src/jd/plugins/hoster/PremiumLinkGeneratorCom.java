@@ -5,6 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Request;
 import jd.http.requests.FormData;
@@ -17,13 +24,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision: 36130 $", interfaceVersion = 2, names = { "premiumlinkgenerator.com" }, urls = { "" })
 public class PremiumLinkGeneratorCom extends antiDDoSForHost {
@@ -137,7 +137,7 @@ public class PremiumLinkGeneratorCom extends antiDDoSForHost {
                 }
             }
         }
-        getPage(request);
+        sendRequest(request);
         final Map<String, Object> response = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.HASHMAP, null);
         final Number status = getNumber(response, "status");
         if (status == null || status.intValue() != 200) {
