@@ -149,18 +149,6 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (externID != null) {
             return "http://www.nowvideo.co/video/" + externID;
         }
-        externID = br.getRegex("dwn\\.so/player/embed\\.php\\?v=([A-Z0-9]+)\\&width=\\d+.*?").getMatch(0);
-        if (externID != null) {
-            br.getPage("http://dwn.so/player/embed.php?v=" + externID);
-            final String yk = br.getRegex("dwn\\.so/player/play4\\.swf\\?v=" + externID + "\\&yk=([a-z0-9]+)\'").getMatch(0);
-            if (yk != null) {
-                br.getPage("http://dwn.so/xml/videolink.php?v=" + externID + "&yk=" + yk);
-                final String finallink = br.getRegex("downloadurl=\"(http://dwn\\.so/[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null) {
-                    return finallink;
-                }
-            }
-        }
         externID = new Regex(fragment, "player\\.mixturecloud\\.com/video/([A-Za-z0-9]+)\\.swf\"").getMatch(0);
         if (externID != null) {
             return "http://www.mixturecloud.com/media/" + externID;

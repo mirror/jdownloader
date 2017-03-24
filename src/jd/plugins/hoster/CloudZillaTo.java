@@ -44,22 +44,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+" })
 public class CloudZillaTo extends PluginForHost {
 
     public CloudZillaTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.cloudzilla.to/premium/");
+        this.enablePremium("http://www.neodrive.co/premium/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.cloudzilla.to/terms/";
+        return "http://www.neodrive.co/terms/";
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("cloudzilla.to".equals(getHost())) {
+        if ("neodrive.co".equals(getHost())) {
             if (host == null || "cloudzilla.to".equals(host)) {
                 return "neodrive.co";
             }
@@ -132,7 +132,7 @@ public class CloudZillaTo extends PluginForHost {
             if (server == null || ticket_id == null || waittime == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://" + server + "/download/" + fid + "/" + ticket_id;
+            dllink = "//" + server + "/download/" + fid + "/" + ticket_id;
             this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

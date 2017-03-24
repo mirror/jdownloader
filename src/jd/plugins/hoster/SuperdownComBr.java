@@ -21,6 +21,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,11 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "https?://[\\w]+\\.superdown\\.com\\.br/(?:superdown/)?\\w+/[a-zA-Z0-9]+/\\d+/\\S+" })
 public class SuperdownComBr extends antiDDoSForHost {
 
@@ -55,8 +55,8 @@ public class SuperdownComBr extends antiDDoSForHost {
 
     private final String                                   html_loggedin      = "href=\"[^<>\"]*?logout[^<>\"]*?\"";
     private static Object                                  LOCK               = new Object();
-    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "mightyupload", "mightyupload.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" },
-            { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uptobox", "uptobox.com" } };
+    private static final String[][]                        HOSTS              = { { "mega", "mega.co.nz" }, { "oboom", "oboom.com" }, { "4shared", "4shared.com" }, { "datafile", "datafile.com" }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "Keep2share", "keep2share.cc" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "novafile", "novafile.com" }, { "Rapidgator", "rapidgator.net" }, { "Sendspace", "sendspace.com" }, { "Turbobit", "turbobit.net" },
+            { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "Crocko", "crocko.com" }, { "Gigasize", "gigasize.com" }, { "Mega", "mega.co.nz" }, { "Minhateca", "minhateca.com.br" }, { "Uptobox", "uptobox.com" } };
 
     public SuperdownComBr(PluginWrapper wrapper) {
         super(wrapper);

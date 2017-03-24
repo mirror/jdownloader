@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com", "restfile.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com|bz|cc|net)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com|bz|cc|net)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}" })
 public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -65,8 +65,8 @@ public class RestFileCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("restfile.com".equals(getHost())) {
-            if (host == null || "restfile.com".equals(host)) {
+        if ("restfilee.com".equals(getHost())) {
+            if (host == null || "restfile.com".equals(host) || "restfilee.com".equals(host)) {
                 return "restfilee.com";
             }
         }

@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ally.sh" }, urls = { "https?://(?:www\\.)?(?:al\\.ly|ally\\.sh)/[A-Za-z0-9]+" })
 public class AllySh extends PluginForDecrypt {
@@ -47,10 +47,10 @@ public class AllySh extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        this.br.setFollowRedirects(false);
-        Form continueform = this.br.getFormbyProperty("id", "form-captcha");
+        br.setFollowRedirects(false);
+        Form continueform = br.getFormbyProperty("id", "form-captcha");
         if (continueform == null) {
-            continueform = this.br.getForm(0);
+            continueform = br.getForm(0);
             if (continueform == null) {
                 return null;
             }
@@ -58,7 +58,7 @@ public class AllySh extends PluginForDecrypt {
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         br.submitForm(continueform);
-        final String finallink = this.br.getRedirectLocation();
+        final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             return null;
         }
