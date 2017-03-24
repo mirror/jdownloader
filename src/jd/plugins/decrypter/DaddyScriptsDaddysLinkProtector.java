@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +30,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision: 35972 $", interfaceVersion = 3, names = { "links.snahp.it", "protect-link.org", "linx.2ddl.link", "protect.dmd247.com" }, urls = { "https?://(?:www\\.)?links\\.snahp\\.it/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?linx\\.(?:2ddl|twoddl)\\.(?:[a-z]+)/(?:[;\\.A-Za-z0-9]+|%27)+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+" })
-public class DaddyScriptsDaddysLinkProtector extends PluginForDecrypt {
+public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
 
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,11 +42,11 @@ public class DaddyScriptsDaddysLinkProtector extends PluginForDecrypt {
     /* Tags: Daddy's Link Protector */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
+        br.setFollowRedirects(true);
+        getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -54,7 +55,7 @@ public class DaddyScriptsDaddysLinkProtector extends PluginForDecrypt {
         int counter = 0;
         Form confirmationForm = null;
         do {
-            confirmationForm = this.br.getForm(0);
+            confirmationForm = br.getForm(0);
             if (confirmationForm == null) {
                 passwordFail = false;
                 captchaFail = false;
@@ -73,7 +74,7 @@ public class DaddyScriptsDaddysLinkProtector extends PluginForDecrypt {
                 captchaFail = false;
                 break;
             }
-            this.br.submitForm(confirmationForm);
+            submitForm(confirmationForm);
             counter++;
         } while (confirmationForm != null && counter <= 2);
         if (captchaFail) {
