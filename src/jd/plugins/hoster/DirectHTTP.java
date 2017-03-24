@@ -27,6 +27,15 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,15 +60,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -918,8 +918,6 @@ public class DirectHTTP extends antiDDoSForHost {
                 br.getHeaders().put("Referer", "https://sites.google.com");
             } else if (link.contains("tinypic.com/")) {
                 // they seem to block direct link access
-                br.getHeaders().put("Referer", link);
-            } else if (link.contains("imagezilla.net")) {
                 br.getHeaders().put("Referer", link);
             } else if (link.contains("project-gxs.com")) {
                 br.getHeaders().put("Referer", "http://sh.st/");

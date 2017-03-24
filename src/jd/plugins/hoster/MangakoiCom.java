@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -26,8 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "http://mangakoidecrypted\\.com/\\d+" })
 public class MangakoiCom extends antiDDoSForHost {
@@ -46,16 +46,16 @@ public class MangakoiCom extends antiDDoSForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://manga.life/terms/";
+        return "http://www.mangahome.com/terms";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String url = link.getStringProperty("pageurl", null);
@@ -70,14 +70,14 @@ public class MangakoiCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        DLLINK = br.getRegex("\"(http[^<>\"]*?)\" id=\"image\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://a\\.(mangahome|mangakoi)\\.com/store/manga/[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(http[^<>\"]*?)\" id=\"image\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://a\\.(mangahome|mangakoi)\\.com/store/manga/[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -85,7 +85,7 @@ public class MangakoiCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openHeadConnection(DLLINK);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -94,7 +94,7 @@ public class MangakoiCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setProperty("directlink", DLLINK);
+            link.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -107,7 +107,7 @@ public class MangakoiCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

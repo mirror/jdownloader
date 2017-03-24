@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -12,8 +14,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
@@ -260,18 +260,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("<[^>]+pornative\\.com/embed/player\\.swf[^>]*>").getMatch(-1);
-        if (externID != null) {
-            String fuid = new Regex(externID, "\\?movie_id=(\\d+)").getMatch(0);
-            if (fuid == null) {
-                fuid = new Regex(externID, "FlashVars=\"movie_id=(\\d+)\"").getMatch(0);
-            }
-            if (fuid != null) {
-                final DownloadLink dl = createDownloadlink("http://pornative.com/" + fuid + ".html");
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9\\.]+\\|(\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + externID + ".html");
@@ -511,11 +499,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(https?://(?:www\\.)?txxx\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
-        externID = br.getRegex("('|\")(https?://(?:www\\.)?camvideos\\.org/embed/\\d+)\\1").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;

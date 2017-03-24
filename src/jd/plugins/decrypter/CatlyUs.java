@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * Eventually variant of OuoIo, see also fas.li
@@ -42,7 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author pspzockerscene
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catly.us", "paylinks.xyz", "akorto.eu", "u2s.io" }, urls = { "https?://(?:www\\.)?catly\\.us/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?paylinks\\.xyz/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akorto.eu", "u2s.io" }, urls = { "https?://(?:www\\.)?akorto\\.eu/[A-Za-z0-9]{4,}", "https?://(?:www\\.)?u2s\\.io/[A-Za-z0-9]{4,}" })
 public class CatlyUs extends antiDDoSForDecrypt {
 
     public CatlyUs(PluginWrapper wrapper) {
