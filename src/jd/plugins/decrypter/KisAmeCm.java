@@ -242,18 +242,11 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return quals;
     }
 
-    public String decodeSingleURLAsian(String encodedString, final String salt) throws IOException {
-        // getSecretKey
-        // var _SqdNL=["\x67\x65\x74\x53\x65\x63\x72\x65\x74\x4B\x65\x79"];var _8etPX=$kissenc[_SqdNL[0]]()
-        String varName = br.getRegex("\\x67\\x65\\x74\\x53\\x65\\x63\\x72\\x65\\x74\\x4B\\x65\\x79\"];var ([^=]+)=$kissenc").getMatch(0);
-
-        encodedString = "I0Nl2dZ3TKll8dBHcncinCNmFghdScykuOvsbV3zcevlJvOqTtWgS4+U1a9ICHU9BdUzyYAj7ngSXp1u0ZkWanwynqXxMUm37PPcND5jb95BHhUClLRdOkuIyypvIqfR3Q9vy8hSykMfH9w9Mpj1O+iGV76ix4HOd/LzQx2WJPT0S7weigop1IS8Sgx4l2OX87YGD77UhbsMuccRgTeV1Ec+aR+0s8Outda9fkFaVXTvraRJybhYfu6Lh8ZsDGhKJ5qmaGWb3b9RfKT5KNJP0Zc+z8qF55vqhGKT0HdIkuUSZU/NSN9njr+ne4rCKoCIqnQ3HdyCdLQoDQH97nBEurtOfzgypIjwHlMGPB7xYNLNb9QXpuACHKfVtSWtQa+lgdZV8+6ca9Gnjoa8o1IhbrKcga59nhVBgbhiPrZsJovR6sDeDWMZ56ba+i4YL4T5PVyxRVoSIGRJpAJVZjleN873OfjjZci+r4Vr/KFe/suhae+E85b5oLdSdQqkI2SO84X46uRTCy7aXmBSaVthhqDAKY7LkhfYoGmgo1jjS+Q3CAdzr76uS2pYpO8UHg2hd6rzQ/HWnymO6v8PZM/3VPyRAwRQk9MflA+oOllSWak8+fZg3I4O59S7OjJsfiBGiownc0VVu5QdRim6tsLeHAgkEXpXqkByS13IW23fqpG0sWIvvKHccm7Io86dwVZt6j+nfqY6MveUaA9kYqnG1tvJvqT50xZGkswXZ9LmlUfstzwceisTPBXlwLuEvj4onR+vZvESnPNBLWZwIwAZ69tEeetWefJAyXTCeXDtTCZm+a+CgOJ+cPB5FQa8AXHYXBmoVm7MySql9XbY20AtiBYN6ya7ZhbKomR6uLV1TWxZRIRPgRWUJHTLoWUP14o/y1DxywFYwkP3tpGUIN/jaFtmGL85kDlW+U27s92+5RvkgXUHPZqw3N0BB22duNb8iiMSdA98TgF8WDvwLrjb4Jcwq4B+l4eymiP0W1V7hRSvWBO/6LmVtR7Voe94ez4FVueFVxuoD1tMYhiraw1rSAnSM6yapNKac7D8iy4YUbt0iKBMS6Avq9ZHvYwJ2U0vIKVrlIEkPgrzWn/h2B8VMKep93tbdIq2UNsrMHLxY5rkzizYP7Ng8Z5pY4BOp1+a1ZXzvIJc44UI011ZIWjiEyceZQWgC+xYeUfPN+f4DsrBdTXMs0j3tf7rIRQjTE0eKsvTDtAwUpkmLdWa1KT7ww==";
+    public String decodeSingleURLAsian(final String encodedString, final String salt) throws IOException {
         byte[] encodedArray = Base64.decode(encodedString);
-        // 5uef59ceVrHkOWIklebI6torV16416
-        // 5uef59ceDniUzeOZGyGzco5Rx16416
-        // 4uef49ce'2BtO4hFAlngGX5C34'UlU0r18418
-        // String hash = Hash.getSHA256("5uef59ce" + salt + "16416");
-        String hash = Hash.getSHA256("4uef49ce2BtO4hFAlngGX5C34UlU0r18418");
+        String[][] match = br.getRegex("'k', 'l', 'm'];[^']+'([^']+)'[^']+'([^']+)';").getMatches();
+        String seed = match[0][0] + "uef" + salt + match[0][1];
+        String hash = Hash.getSHA256(seed);
         // AES256
         byte[] byteKey = hexStringToByteArray(hash);
         byte[] byteIv = hexStringToByteArray("32b812e9a1321ae0e84af660c4722b3a");
@@ -280,6 +273,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             // <html><head><title>Object moved</title></head><body>
             // <h2>Object moved to <a href="/Message/UnknownError?aspxerrorpath=/Play">here</a>.</h2>
             // </body></html>
+            // 503:
             decode = test.getRedirectLocation();
         }
         return decode;
