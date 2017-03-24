@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -28,12 +30,14 @@ import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.KissanimeToConfig;
 import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -50,13 +54,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  *
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "http://kisscartoon\\.me/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.to", "kissasian.com", "kisscartoon.me" }, urls = { "https?://(?:www\\.)?kissanime\\.(?:com|to|ru)/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+(?:\\?id=\\d+)?", "http://kissasian\\.com/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?", "https?://kisscartoon\\.(?:me|io)/[^/]+/[A-Za-z0-9\\-]+/[^/]+(?:\\?id=\\d+)?" })
 public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     public KisAmeCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,9 +72,34 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return KissanimeToConfig.class;
     }
 
+    private enum HostType {
+        KISS_ANIME,
+        KISS_ASIAN,
+        KISS_CARTOON,
+        KISS_UNKNOWN;
+
+        private static HostType parse(final String link) {
+            if (StringUtils.containsIgnoreCase(link, "kissanime")) {
+                return KISS_ANIME;
+            } else if (StringUtils.containsIgnoreCase(link, "kissasian")) {
+                return KISS_ASIAN;
+            } else if (StringUtils.containsIgnoreCase(link, "kisscartoon")) {
+                return KISS_CARTOON;
+            } else {
+                return KISS_UNKNOWN;
+            }
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        HostType hostType = HostType.parse(param.toString());
+        final String parameter;
+        if (hostType == HostType.KISS_CARTOON) {
+            parameter = param.toString().replace("kisscartoon.me", "kisscartoon.io");
+        } else {
+            parameter = param.toString();
+        }
         final KissanimeToConfig pc = PluginJsonConfig.get(KissanimeToConfig.class);
         if (pc == null) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "User has no config!");
@@ -90,17 +120,47 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
         final HashMap<String, DownloadLink> qualities = new HashMap<String, DownloadLink>();
         handleHumanCheck(this.br);
-        String title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
+        String title;
+        if (hostType == HostType.KISS_CARTOON) {
+            title = br.getRegex("<title>\\s*(.*?)\\s*Online Free").getMatch(0);
+        } else {
+            title = br.getRegex("<title>\\s*(.*?)\\s*- Watch\\s*\\1[^<]*</title>").getMatch(0);
+        }
         if (title == null) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         title = title.replaceAll("\\s+", " ");
         // we have two things we need to base64decode
-        final String[][] quals = getQuals(this.br);
+        final String[][] quals;
+        if (hostType == HostType.KISS_CARTOON) {
+            quals = getQualsCartoon(this.br, parameter);
+        } else {
+            quals = getQuals(this.br);
+        }
         if (quals != null) {
+            String salt = null;
+            if (hostType == HostType.KISS_ASIAN) {
+                final Browser ajax = br.cloneBrowser();
+                ajax.postPage("/External/RSK", new UrlQuery().append("krsk", "665", true));
+                salt = ajax.toString();
+            }
             for (final String qual[] : quals) {
-                String decode = decodeSingleURL(qual[1]);
+                String decode = null;
+                switch (hostType) {
+                case KISS_ANIME:
+                    decode = decodeSingleURLAnime(qual[1]);
+                    break;
+                case KISS_ASIAN:
+                    decode = decodeSingleURLAsian(qual[1], salt);
+                    break;
+                case KISS_CARTOON:
+                    decode = qual[1];
+                    break;
+                case KISS_UNKNOWN:
+                default:
+                    break;
+                }
                 final String quality = qual[2];
                 final DownloadLink dl = createDownloadlink(decode);
                 /* md5 of "kissanime.com" */
@@ -154,7 +214,78 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return quals;
     }
 
-    public static String decodeSingleURL(final String encodedString) throws IOException, PluginException {
+    @SuppressWarnings("unchecked")
+    public static String[][] getQualsCartoon(final Browser br, final String param) throws Exception {
+        String fid = new Regex(param, "id=(.*)").getMatch(0);
+        final Browser ajax = br.cloneBrowser();
+        ajax.postPage("https://kisscartoon.io/ajax/anime/load_episodes", new UrlQuery().append("episode_id", fid, true));
+        String queryUrl = PluginJSonUtils.getJson(ajax, "value");
+        ajax.getHeaders().put("Content-Type", "application/json");
+        ajax.getPage(queryUrl + "&_=" + System.currentTimeMillis());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+        List<Object> playlist = (List<Object>) entries.get("playlist");
+        List<Object> sources = (List<Object>) ((LinkedHashMap<String, Object>) playlist.get(0)).get("sources");
+        String[][] quals = new String[sources.size()][3];
+        for (int i = 0; i < sources.size(); i++) {
+            quals[i][0] = "";
+            String fileUrl = (String) ((LinkedHashMap<String, Object>) sources.get(i)).get("file");
+            if (StringUtils.contains(fileUrl, "blogspot.com/")) {
+                // this is redirect bullshit
+                final Browser test = new Browser();
+                test.setFollowRedirects(false);
+                test.getPage(fileUrl);
+                fileUrl = test.getRedirectLocation();
+            }
+            quals[i][1] = fileUrl;
+            quals[i][2] = (String) ((LinkedHashMap<String, Object>) sources.get(i)).get("label");
+        }
+        return quals;
+    }
+
+    public String decodeSingleURLAsian(String encodedString, final String salt) throws IOException {
+        // getSecretKey
+        // var _SqdNL=["\x67\x65\x74\x53\x65\x63\x72\x65\x74\x4B\x65\x79"];var _8etPX=$kissenc[_SqdNL[0]]()
+        String varName = br.getRegex("\\x67\\x65\\x74\\x53\\x65\\x63\\x72\\x65\\x74\\x4B\\x65\\x79\"];var ([^=]+)=$kissenc").getMatch(0);
+
+        encodedString = "I0Nl2dZ3TKll8dBHcncinCNmFghdScykuOvsbV3zcevlJvOqTtWgS4+U1a9ICHU9BdUzyYAj7ngSXp1u0ZkWanwynqXxMUm37PPcND5jb95BHhUClLRdOkuIyypvIqfR3Q9vy8hSykMfH9w9Mpj1O+iGV76ix4HOd/LzQx2WJPT0S7weigop1IS8Sgx4l2OX87YGD77UhbsMuccRgTeV1Ec+aR+0s8Outda9fkFaVXTvraRJybhYfu6Lh8ZsDGhKJ5qmaGWb3b9RfKT5KNJP0Zc+z8qF55vqhGKT0HdIkuUSZU/NSN9njr+ne4rCKoCIqnQ3HdyCdLQoDQH97nBEurtOfzgypIjwHlMGPB7xYNLNb9QXpuACHKfVtSWtQa+lgdZV8+6ca9Gnjoa8o1IhbrKcga59nhVBgbhiPrZsJovR6sDeDWMZ56ba+i4YL4T5PVyxRVoSIGRJpAJVZjleN873OfjjZci+r4Vr/KFe/suhae+E85b5oLdSdQqkI2SO84X46uRTCy7aXmBSaVthhqDAKY7LkhfYoGmgo1jjS+Q3CAdzr76uS2pYpO8UHg2hd6rzQ/HWnymO6v8PZM/3VPyRAwRQk9MflA+oOllSWak8+fZg3I4O59S7OjJsfiBGiownc0VVu5QdRim6tsLeHAgkEXpXqkByS13IW23fqpG0sWIvvKHccm7Io86dwVZt6j+nfqY6MveUaA9kYqnG1tvJvqT50xZGkswXZ9LmlUfstzwceisTPBXlwLuEvj4onR+vZvESnPNBLWZwIwAZ69tEeetWefJAyXTCeXDtTCZm+a+CgOJ+cPB5FQa8AXHYXBmoVm7MySql9XbY20AtiBYN6ya7ZhbKomR6uLV1TWxZRIRPgRWUJHTLoWUP14o/y1DxywFYwkP3tpGUIN/jaFtmGL85kDlW+U27s92+5RvkgXUHPZqw3N0BB22duNb8iiMSdA98TgF8WDvwLrjb4Jcwq4B+l4eymiP0W1V7hRSvWBO/6LmVtR7Voe94ez4FVueFVxuoD1tMYhiraw1rSAnSM6yapNKac7D8iy4YUbt0iKBMS6Avq9ZHvYwJ2U0vIKVrlIEkPgrzWn/h2B8VMKep93tbdIq2UNsrMHLxY5rkzizYP7Ng8Z5pY4BOp1+a1ZXzvIJc44UI011ZIWjiEyceZQWgC+xYeUfPN+f4DsrBdTXMs0j3tf7rIRQjTE0eKsvTDtAwUpkmLdWa1KT7ww==";
+        byte[] encodedArray = Base64.decode(encodedString);
+        // 5uef59ceVrHkOWIklebI6torV16416
+        // 5uef59ceDniUzeOZGyGzco5Rx16416
+        // 4uef49ce'2BtO4hFAlngGX5C34'UlU0r18418
+        // String hash = Hash.getSHA256("5uef59ce" + salt + "16416");
+        String hash = Hash.getSHA256("4uef49ce2BtO4hFAlngGX5C34UlU0r18418");
+        // AES256
+        byte[] byteKey = hexStringToByteArray(hash);
+        byte[] byteIv = hexStringToByteArray("32b812e9a1321ae0e84af660c4722b3a");
+        SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
+        String decode = null;
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            byte[] byteResult = cipher.doFinal(encodedArray);
+            decode = new String(byteResult, "UTF-8");
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+        // decode:
+        // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
+        if (StringUtils.contains(decode, "kissasian.com/")) {
+            // this is redirect bullshit
+            final Browser test = br.cloneBrowser();
+            test.setFollowRedirects(false);
+            test.getPage(decode);
+            // timeout:
+            // Location: /Message/UnknownError?aspxerrorpath=/Play
+            // <html><head><title>Object moved</title></head><body>
+            // <h2>Object moved to <a href="/Message/UnknownError?aspxerrorpath=/Play">here</a>.</h2>
+            // </body></html>
+            decode = test.getRedirectLocation();
+        }
+        return decode;
+    }
+
+    public static String decodeSingleURLAnime(final String encodedString) throws IOException {
         byte[] encodedArray = Base64.decode(encodedString);
         String hash = Hash.getSHA256("nhasasdbasdtene7230asb");
         // AES256
@@ -217,15 +348,41 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             return null;
         }
         handleHumanCheck(br);
+        HostType hostType = HostType.parse(source_url);
         /* Find new directlink for original quality */
-        final String[][] quals = getQuals(br);
+        final String[][] quals;
+        if (hostType == HostType.KISS_CARTOON) {
+            quals = getQualsCartoon(this.br, source_url);
+        } else {
+            quals = getQuals(this.br);
+        }
         if (quals != null) {
+            String salt = null;
+            if (hostType == HostType.KISS_ASIAN) {
+                final Browser ajax = br.cloneBrowser();
+                ajax.postPage("/External/RSK", new UrlQuery().append("krsk", "665", true));
+                salt = ajax.toString();
+            }
             for (final String qual[] : quals) {
                 final String quality = qual[2];
                 if (!quality.equalsIgnoreCase(source_quality)) {
                     continue;
                 }
-                directlink = decodeSingleURL(qual[1]);
+                switch (hostType) {
+                case KISS_ANIME:
+                    directlink = decodeSingleURLAnime(qual[1]);
+                    break;
+                case KISS_ASIAN:
+                    directlink = decodeSingleURLAsian(qual[1], salt);
+                    break;
+                case KISS_CARTOON:
+                    directlink = qual[1];
+                    break;
+                case KISS_UNKNOWN:
+                default:
+                    break;
+                }
+
                 break;
             }
         }
