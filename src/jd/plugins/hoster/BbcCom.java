@@ -75,6 +75,7 @@ public class BbcCom extends PluginForHost {
         String filesize_str = null;
         long filesize_max = 0;
         long filesize_temp = 0;
+        /* Find BEST possible quality throughout different streaming protocols. */
         final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
         for (final String mediasingle : media) {
             final String[] connections = new Regex(mediasingle, "(<connection.*?)/>").getColumn(0);
@@ -135,6 +136,13 @@ public class BbcCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (hls_master == null && (this.rtmp_app == null || this.rtmp_host == null || this.rtmp_playpath == null) && this.br.getHttpConnection().getResponseCode() == 403) {
+            /*
+             * 2017-03-24: Example html in this case: <?xml version="1.0" encoding="UTF-8"?><mediaSelection
+             * xmlns="http://bbc.co.uk/2008/mp/mediaselection"><error id="geolocation"/></mediaSelection>
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked");
+        }
         if (hls_master != null) {
             hls_master = Encoding.htmlDecode(hls_master);
             br.getPage(hls_master);

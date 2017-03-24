@@ -29,6 +29,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,12 +42,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -92,6 +96,7 @@ public class FilesMonsterCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         prepBR();
         br.setFollowRedirects(false);
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
         if (downloadLink.getDownloadURL().contains("/free/2/")) {
             br.getPage(downloadLink.getStringProperty("mainlink"));
             // Link offline 404
@@ -111,16 +116,7 @@ public class FilesMonsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(downloadLink.getDownloadURL());
-            // Link offline
-            if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            // Link offline 404
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            // Advertising link
-            if (br.containsHTML("the file can be accessed at the|>can be accessed at the")) {
+            if (isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // link not possible due to ip ban http://svn.jdownloader.org/issues/27798
@@ -163,14 +159,34 @@ public class FilesMonsterCom extends PluginForHost {
 
     }
 
-    private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws IOException, PluginException {
-        // TODO: FIX THIS. doesn't work see https://svn.jdownloader.org/issues/64192 && log Link; 1465673179241.log; 8306380;
-        // jdlog://1465673179241
+    public static boolean isOffline(final Browser br) {
+        if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
+            return true;
+        }
+        // Link offline 404
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        // Advertising link
+        if (br.containsHTML("the file can be accessed at the|>can be accessed at the")) {
+            return true;
+        }
+        return false;
+    }
 
-        // Find a new temporary link
-        String mainlinkpart = new Regex(mainlink, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
+    public static String getMainLinkID(final String mainlink) {
+        return new Regex(mainlink, "filesmonster\\.com/(?:download\\.php\\?id=|dl/)([^/]+)").getMatch(0);
+    }
+
+    private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws IOException, PluginException {
+        /* Find a new temporary link */
+        final String mainlinkpart = getMainLinkID(mainlink);
         String temporaryLink = null;
         br.getPage(mainlink);
+        if (isOffline(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        handleErrors();
         final String[] allInfo = getTempLinks();
         if (allInfo != null && allInfo.length != 0) {
             for (String singleInfo : allInfo) {
@@ -231,104 +247,102 @@ public class FilesMonsterCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (downloadLink.getBooleanProperty("PREMIUMONLY", false)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        handleErrors();
-        br.setFollowRedirects(true);
-        String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
-        if (postThat == null) {
-            postThat = new Regex(downloadLink.getDownloadURL(), POSTTHATREGEX2).getMatch(0);
-        }
-        if (postThat == null) {
-            logger.warning("The following string could not be found: postThat");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!downloadLink.getDownloadURL().contains("/free/2/")) {
-            br.postPage(postThat, "");
-            if (br.containsHTML("Free download links:")) {
-                downloadLink.setProperty("PREMIUMONLY", true);
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
-            }
-        } else {
-            downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
-            String newTemporaryLink = getNewTemporaryLink(downloadLink.getStringProperty("mainlink"), downloadLink.getStringProperty("origfilename"));
+        String dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            final String newTemporaryLink = getNewTemporaryLink(downloadLink.getStringProperty("mainlink"), downloadLink.getStringProperty("origfilename"));
             if (newTemporaryLink == null) {
                 logger.warning("Failed to find a new temporary link for this link --> Chances are high that it is not downloadable for freeusers anymore --> Free link(s) are offline");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(newTemporaryLink);
-        }
-        /* now we have the data page, check for wait time and data id */
-        // Captcha handling
-        final Recaptcha rc = new Recaptcha(br, this);
-        rc.parse();
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode("recaptcha", cf, downloadLink);
-        rc.setCode(c);
-        handleErrors();
-        if (br.containsHTML("(Captcha number error or expired|api\\.recaptcha\\.net)")) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        if (!downloadLink.getDownloadURL().contains("/free/2/")) {
-            String finalPage = br.getRegex("reserve_ticket\\(\\'(/dl/.*?)\\'\\)").getMatch(0);
-            if (finalPage == null) {
-                logger.warning("The following string could not be found: finalPage");
+
+            handleErrors();
+            br.setFollowRedirects(true);
+            String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
+            if (postThat == null) {
+                postThat = new Regex(downloadLink.getDownloadURL(), POSTTHATREGEX2).getMatch(0);
+            }
+            if (postThat == null) {
+                logger.warning("The following string could not be found: postThat");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* request ticket for this file */
-            br.getPage("http://filesmonster.com" + finalPage);
-            String linkPart = br.getRegex("dlcode\":\"(.*?)\"").getMatch(0);
-            String firstPart = new Regex(postThat, "(https?://filesmonster\\.com/dl/.*?/free/)").getMatch(0);
-            if (linkPart == null || firstPart == null) {
-                logger.warning("The following string could not be found: linkPart or firstPart");
+            if (!this.br.getURL().contains("/free/2/")) {
+                /* Check if maybe there are no free downloadable urls (anymore). */
+                br.postPage(postThat, "");
+                if (br.containsHTML("Free download links:")) {
+                    downloadLink.setProperty("PREMIUMONLY", true);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
+            }
+
+            /* now we have the data page, check for wait time and data id */
+            if (this.br.containsHTML("g\\-recaptcha")) {
+                final Form continueform = this.br.getFormbyKey("submitbtn");
+                if (continueform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                this.br.submitForm(continueform);
+            } else {
+                final Recaptcha rc = new Recaptcha(br, this);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                rc.setCode(c);
+                handleErrors();
+                if (br.containsHTML("(Captcha number error or expired|api\\.recaptcha\\.net)")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+            if (!downloadLink.getDownloadURL().contains("/free/2/")) {
+                String finalPage = br.getRegex("reserve_ticket\\(\\'(/dl/.*?)\\'\\)").getMatch(0);
+                if (finalPage == null) {
+                    logger.warning("The following string could not be found: finalPage");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* request ticket for this file */
+                br.getPage("http://filesmonster.com" + finalPage);
+                String linkPart = br.getRegex("dlcode\":\"(.*?)\"").getMatch(0);
+                String firstPart = new Regex(postThat, "(https?://filesmonster\\.com/dl/.*?/free/)").getMatch(0);
+                if (linkPart == null || firstPart == null) {
+                    logger.warning("The following string could not be found: linkPart or firstPart");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String nextLink = firstPart + "2/" + linkPart + "/";
+                br.getPage(nextLink);
+            }
+            String overviewLink = br.getRegex("get_link\\('(/dl/.*?)'\\)").getMatch(0);
+            if (overviewLink == null) {
+                logger.warning("The following string could not be found: strangeLink");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String nextLink = firstPart + "2/" + linkPart + "/";
-            br.getPage(nextLink);
+            overviewLink = "http://filesmonster.com" + overviewLink;
+            String regexedwaittime = br.getRegex("id=\\'sec\\'>(\\d+)</span>").getMatch(0);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+            int shortWaittime = 45;
+            if (regexedwaittime != null) {
+                shortWaittime = Integer.parseInt(regexedwaittime);
+            } else {
+                logger.warning("Waittime regex doesn't work, using default waittime...");
+            }
+            sleep(shortWaittime * 1100l, downloadLink);
+            try {
+                br.getPage(overviewLink);
+            } catch (final Exception e) {
+            }
+            handleErrors();
+            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            if (StringUtils.isEmpty(dllink)) {
+                logger.warning("The following string could not be found: dllink");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setProperty("directlink", dllink);
         }
-        String overviewLink = br.getRegex("get_link\\('(/dl/.*?)'\\)").getMatch(0);
-        if (overviewLink == null) {
-            logger.warning("The following string could not be found: strangeLink");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        overviewLink = "http://filesmonster.com" + overviewLink;
-        String regexedwaittime = br.getRegex("id=\\'sec\\'>(\\d+)</span>").getMatch(0);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        int shortWaittime = 45;
-        if (regexedwaittime != null) {
-            shortWaittime = Integer.parseInt(regexedwaittime);
-        } else {
-            logger.warning("Waittime regex doesn't work, using default waittime...");
-        }
-        sleep(shortWaittime * 1100l, downloadLink);
-        try {
-            br.getPage(overviewLink);
-        } catch (Exception e) {
-        }
-        handleErrors();
-        String dllink = br.getRegex("url\":\"(https?:.*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("The following string could not be found: dllink");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink.replace("\\", "");
-        dllink = dllink.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The downloadlink doesn't seem to refer to a file, following the connection...");
@@ -611,6 +625,35 @@ public class FilesMonsterCom extends PluginForHost {
             }
         }
         return decryptedStuff;
+    }
+
+    /**
+     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
+     * [NOT html]).
+     */
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                /* 2017-03-24: Do NOT use Head-Requests here! */
+                con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
     }
 
     @Override
