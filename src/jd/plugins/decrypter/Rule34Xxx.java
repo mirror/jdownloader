@@ -19,6 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -31,9 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 /**
  *
@@ -71,8 +71,11 @@ public class Rule34Xxx extends PluginForDecrypt {
             }
             if (image != null) {
                 // these should linkcheck as single event... but if from list its available = true.
+                // now core has changed we have to evaluate differently, as it doesn't re-enter decrypter if availablestatus is true.
+                final boolean isFromMassEvent = this.getCurrentLink().getSourceLink() != null && this.getCurrentLink().getSourceLink().getDownloadLink().getDownloadURL().contains("&s=view&");
                 final String link = HTMLEntities.unhtmlentities(image);
                 final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
+                dl.setAvailable(isFromMassEvent);
                 final String id = new Regex(parameter, "id=(\\d+)").getMatch(0);
                 // set by decrypter from list, but not set by view!
                 if (!StringUtils.equals(this.getCurrentLink().getSourceLink().getLinkID(), prefixLinkID + id)) {
@@ -109,8 +112,6 @@ public class Rule34Xxx extends PluginForDecrypt {
                     if (fp != null) {
                         fp.add(dl);
                     }
-                    // because of hundreds if links this is to speed shit up!
-                    dl.setAvailable(true);
                     // we should set temp filename also
                     final String id = new Regex(link, "id=(\\d+)").getMatch(0);
                     dl.setLinkID(prefixLinkID + id);
