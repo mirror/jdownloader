@@ -242,7 +242,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return quals;
     }
 
-    public String decodeSingleURLAsian(final String encodedString, final String salt) throws IOException {
+    public String decodeSingleURLAsian(final String encodedString, final String salt) throws IOException, PluginException {
         byte[] encodedArray = Base64.decode(encodedString);
         String seed = salt;
         String varName = br.getRegex("\\\\x67\\\\x65\\\\x74\\\\x53\\\\x65\\\\x63\\\\x72\\\\x65\\\\x74\\\\x4B\\\\x65\\\\x79\"];var ([^=]+)=\\$kissenc").getMatch(0);
@@ -271,7 +271,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             byte[] byteResult = cipher.doFinal(encodedArray);
             decode = new String(byteResult, "UTF-8");
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.info(e.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // decode:
         // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
@@ -291,7 +292,7 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return decode;
     }
 
-    public static String decodeSingleURLAnime(final String encodedString) throws IOException {
+    public String decodeSingleURLAnime(final String encodedString) throws IOException, PluginException {
         byte[] encodedArray = Base64.decode(encodedString);
         String hash = Hash.getSHA256("nhasasdbasdtene7230asb");
         // AES256
@@ -306,7 +307,8 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             byte[] byteResult = cipher.doFinal(encodedArray);
             decode = new String(byteResult, "UTF-8");
         } catch (final Exception e) {
-            e.printStackTrace();
+            logger.info(e.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (StringUtils.contains(decode, "blogspot.com/")) {
             // this is redirect bullshit
