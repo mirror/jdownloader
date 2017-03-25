@@ -317,6 +317,7 @@ jd_controlling_reconnect_Reconnector_progress_failed2=A Reconexão falhou vária
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nenhuma Reconexão selecionada</u></b><br/><p>Reconexão é uma abordagem avançada para evitar longas esperas que alguns servidores impoem para usuários free. <br>Não é útil ao usar uma conta premium.</p><p>Leia mais sobre Reconexão <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Sem Reconexão
 jd_plugins_PluginUtils_askPassword=Por favor, insira a senha para %s1
+lit_add_audio=Adicionar Áudio
 lit_add_only_the_best_video_quality=Adicionar somente melhor qualidade de vídeo
 lit_add_only_the_best_video_quality_within_user_selected_formats=Adicionar apenas a melhor qualidade de vídeo entre os formatos selecionados pelo usuário
 lit_add_subtitles=Adicionar legendas
@@ -325,6 +326,7 @@ lit_audio_bitrate=Taxa de bits do áudio
 lit_audio_codec=Codec do áudio
 lit_connections=Conexões
 lit_download_limit_exceeded=Limite de download excedido!
+lit_enable_fast_linkcheck=Habilitar verificação rápida de links?\r\nO tamanho do arquivo não será exibido até o início do download ou verificado manualmente!
 lit_expired=Expirado
 lit_file_container=Tipo de arquivo
 lit_hide=Ocultar
