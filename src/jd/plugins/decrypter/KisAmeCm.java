@@ -293,11 +293,18 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     }
 
     public String decodeSingleURLAnime(final String encodedString) throws IOException, PluginException {
+        String salt = br.getRegex("<script[^>]*>\\s*var.*?\\[\"([^\"]+)\",.*?CryptoJS.SHA256\\(").getMatch(0);
+        String key = "nhasasdbasdtene7230asb";
+        if (salt != null) {
+            key = Encoding.unescape(salt);
+        }
+        String iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
+
         byte[] encodedArray = Base64.decode(encodedString);
-        String hash = Hash.getSHA256("nhasasdbasdtene7230asb");
+        String hash = Hash.getSHA256(key);
         // AES256
         byte[] byteKey = hexStringToByteArray(hash);
-        byte[] byteIv = hexStringToByteArray("a5e8d2e9c1721ae0e84ad660c472c1f3");
+        byte[] byteIv = hexStringToByteArray(iv);
         SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
         IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
         String decode = null;
