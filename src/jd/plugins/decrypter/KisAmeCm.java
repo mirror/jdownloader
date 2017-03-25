@@ -244,8 +244,20 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
 
     public String decodeSingleURLAsian(final String encodedString, final String salt) throws IOException {
         byte[] encodedArray = Base64.decode(encodedString);
-        String[][] match = br.getRegex("'k', 'l', 'm'];[^']+'([^']+)'[^']+'([^']+)';").getMatches();
-        String seed = match[0][0] + "uef" + salt + match[0][1];
+        String seed = salt;
+        String varName = br.getRegex("\\\\x67\\\\x65\\\\x74\\\\x53\\\\x65\\\\x63\\\\x72\\\\x65\\\\x74\\\\x4B\\\\x65\\\\x79\"];var ([^=]+)=\\$kissenc").getMatch(0);
+        String match1 = br.getRegex("<script[^>]*>\\s*" + varName + " \\+= '([^']+)';\\s*</").getMatch(0);
+        if (match1 != null) {
+            seed += match1;
+        }
+        String[][] match2 = br.getRegex("var _x1 = '([^']+)'.*?x352\\('([^']+)',.*?'([^']+)';\\s*</").getMatches();
+        if (match2.length != 0) {
+            seed = match2[0][1] + "9c" + match2[0][0] + seed + match2[0][2];
+        }
+        String[][] match3 = br.getRegex("'k', 'l', 'm'];[^']+'([^']+)'[^']+'([^']+)';").getMatches();
+        if (match3.length != 0) {
+            seed = match3[0][0] + "uef" + seed + match3[0][1];
+        }
         String hash = Hash.getSHA256(seed);
         // AES256
         byte[] byteKey = hexStringToByteArray(hash);
