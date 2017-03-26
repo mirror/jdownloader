@@ -53,7 +53,7 @@ public class WobzipOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(500);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == (404 | 500)) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getRedirectLocation() != null && !this.br.getRedirectLocation().contains("/file/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
