@@ -28,8 +28,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.UserIO;
@@ -44,6 +42,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornsharing.com" }, urls = { "http://(?:www\\.)?pornsharing\\.com/[A-Za-z0-9\\-_]+v\\d+" })
 public class PornSharingCom extends PluginForHost {
@@ -73,25 +73,30 @@ public class PornSharingCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String source = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
         dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             br.getPage("http://pornsharing.com/videoplayer/nvplaylist_ps_beta.php?hq=1&autoplay=0&id=" + lid);
-            final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(decrypted);
-            final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
-            /* Usually only 480 + 320 is available */
-            final String[] qualities = { "1080p", "720p", "480p", "360", "320p", "240p", "180p" };
-            for (final String currentqual : qualities) {
-                final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
-                if (quality_info != null) {
-                    dllink = (String) quality_info.get("fileUrl");
-                    break;
+            if (!br._getURL().toString().contains("errors/404")) {
+                final String decrypted = decryptRC4HexString("TubeContext@Player", br.toString().trim());
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(decrypted);
+                final LinkedHashMap<String, Object> videos = (LinkedHashMap<String, Object>) entries.get("videos");
+                /* Usually only 480 + 320 is available */
+                final String[] qualities = { "1080p", "720p", "480p", "360", "320p", "240p", "180p" };
+                for (final String currentqual : qualities) {
+                    final LinkedHashMap<String, Object> quality_info = (LinkedHashMap<String, Object>) videos.get("_" + currentqual);
+                    if (quality_info != null) {
+                        dllink = (String) quality_info.get("fileUrl");
+                        break;
+                    }
                 }
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = Encoding.htmlDecode(dllink);
+            } else {
+                dllink = source;
             }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = Encoding.htmlDecode(dllink);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
