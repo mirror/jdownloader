@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -36,9 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class DebridLinkFr extends PluginForHost {
@@ -317,11 +317,8 @@ public class DebridLinkFr extends PluginForHost {
         }
         final String error = PluginJSonUtils.getJsonValue(br, "ERR");
         if (error != null) {
-            if ("maxLinkHost".equals(error)) {
-                // max link limit reached, see linkLimit
-                tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
-            } else if ("unknowR".equals(error)) {
-                // generic errors not specific to download routine!
+            // generic errors not specific to download routine!
+            if ("unknowR".equals(error)) {
                 // Bad r argument
                 // changes with the API? this shouldn't happen
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -379,6 +376,9 @@ public class DebridLinkFr extends PluginForHost {
                      * handled below in canHandle.
                      */
                     tempUnavailableHoster(account, downloadLink, 10 * 60 * 60 * 1000l);
+                } else if ("maxLinkHost".equals(error)) {
+                    // max link limit reached, see linkLimit
+                    tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
                 }
             }
         }

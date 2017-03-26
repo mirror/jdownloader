@@ -17,9 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
+
+import org.apache.http.conn.ConnectTimeoutException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unlimit.co.il" }, urls = { "http://[\\w\\.]*?unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unlimit.co.il" }, urls = { "http://[\\w\\.]*?unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-.+" })
 public class UnLimitCoIl extends PluginForHost {
 
     private static final String ONLY4PREMIUMUSERTEXT = "Download is only available for premium users";
@@ -117,6 +121,11 @@ public class UnLimitCoIl extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         boolean offline = false;
+        String filename = new Regex(link.getDownloadURL(), "unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-(.+)").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setName(filename.trim().replaceAll("\\&hdd=\\d+", ""));
         try {
             con = br.openGetConnection(link.getDownloadURL());
             if (con.getResponseCode() == 404) {
@@ -124,6 +133,11 @@ public class UnLimitCoIl extends PluginForHost {
             } else {
                 br.followConnection();
             }
+        } catch (Exception e) {
+            if (e instanceof BrowserException && e.getCause() != null && (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectTimeoutException)) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw e;
         } finally {
             try {
                 con.disconnect();
@@ -133,11 +147,6 @@ public class UnLimitCoIl extends PluginForHost {
         if (offline || br.containsHTML("(>404 Not Found<|<H1>Not Found</H1>|was not found on this server\\.)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(link.getDownloadURL(), "unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-(.+)").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(filename.trim().replaceAll("\\&hdd=\\d+", ""));
         link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.unlimitcoil.only4premium", ONLY4PREMIUMUSERTEXT));
         return AvailableStatus.TRUE;
     }

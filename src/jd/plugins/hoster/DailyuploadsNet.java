@@ -137,11 +137,7 @@ public class DailyuploadsNet extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
-            try {
-                link.setContentUrl(url_embed);
-            } catch (final Throwable e) {
-                /* Not available in 0.9.581 Stable */
-            }
+            link.setContentUrl(url_embed);
         }
         link.setUrlDownload(corrected_downloadurl);
     }

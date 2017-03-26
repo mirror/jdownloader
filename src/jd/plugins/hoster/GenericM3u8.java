@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -28,12 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8?(\\?.+)?|$)" })
 public class GenericM3u8 extends PluginForHost {
@@ -129,7 +129,7 @@ public class GenericM3u8 extends PluginForHost {
                 }
             }
         }
-        String name = getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
+        String name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
         if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
             name = name.substring(0, name.length() - 5);
         }
@@ -144,7 +144,7 @@ public class GenericM3u8 extends PluginForHost {
             }
         }
         name += "." + extension;
-        downloadLink.setName(name);
+        downloadLink.setFinalFileName(name);
         return AvailableStatus.TRUE;
     }
 
