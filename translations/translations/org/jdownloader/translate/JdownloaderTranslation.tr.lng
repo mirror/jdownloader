@@ -317,6 +317,7 @@ jd_controlling_reconnect_Reconnector_progress_failed2=Yeniden bağlanma çok sı
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Yeniden Bağlanma Kapalı seçildi</u></b><br/><p>Yeniden bağlanma ücretsiz kullanıcıları uzun bekleyişlere zorlayan barındırıcıları atlatmak için gelişmiş bir yaklaşımdır. <br>Premium hesap kullanırken faydalı değildir.</p><p>Yeniden Bağlanma hakkında <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>buradan</a> daha fazlasını okuyun</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Yeniden Bağlanma Kapalı
 jd_plugins_PluginUtils_askPassword=Lütfen %s1 için parola girin
+lit_add_audio=Ses ekle
 lit_add_only_the_best_video_quality=Sadece en iyi görüntü kalitesini ekle
 lit_add_only_the_best_video_quality_within_user_selected_formats=Sadece kullanıcının seçtiği biçimlerdeki en iyi görüntü kalitesini ekle
 lit_add_subtitles=Altyazıları Ekle
@@ -325,6 +326,7 @@ lit_audio_bitrate=Ses Bit Oranı
 lit_audio_codec=Ses Kodek
 lit_connections=Bağlantılar
 lit_download_limit_exceeded=İndirme sınırı aşıldı!
+lit_enable_fast_linkcheck=Hızlı bağlantı kontrolü etkinleştirilsin mi?\nİndirme başlayana ya da elle bağlantı kontrol edilene kadar dosya boyutu gösterilmeyecektir!
 lit_expired=Süresi Doldu
 lit_file_container=Dosya Türü
 lit_hide=Gizle
