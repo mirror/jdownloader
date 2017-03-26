@@ -18,18 +18,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -93,8 +94,16 @@ public class OuoIo extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private String getFinalLink() {
-        final String finallink = br.getRegex("\"\\s*([^\r\n]+)\\s*\"\\s+id=\"btn-main\"").getMatch(0);
+    private String getFinalLink() throws Exception {
+        final String finallink;
+        // can be another form after captcha - 20170326
+        final Form f = br.getForm(0);
+        if (f != null && f.containsHTML(">\\s*Get Link<")) {
+            submitForm(f);
+            finallink = br.getRedirectLocation();
+        } else {
+            finallink = br.getRegex("\"\\s*([^\r\n]+)\\s*\"\\s+id=\"btn-main\"").getMatch(0);
+        }
         return finallink;
     }
 
