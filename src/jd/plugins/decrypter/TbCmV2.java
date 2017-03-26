@@ -284,9 +284,10 @@ public class TbCmV2 extends PluginForDecrypt {
             }
         }
         ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
+        boolean reversePlaylistNumber = false;
         try {
-            boolean userWorkaround = false;
-            boolean channelWorkaround = false;
+            Boolean userWorkaround = null;
+            Boolean channelWorkaround = null;
             if (StringUtils.isNotEmpty(userID) && StringUtils.isEmpty(playlistID)) {
                 /*
                  * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
@@ -295,7 +296,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 br.getPage("https://www.youtube.com/user/" + userID + "/featured");
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, extractWebsiteTitle());
                 playlistID = br.getRegex(">Uploads</span>.*?list=([A-Za-z0-9\\-_]+)\".+?play-all-icon-btn").getMatch(0);
-                userWorkaround = StringUtils.isNotEmpty(playlistID);
+                userWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
             }
             if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
                 /*
@@ -316,22 +317,22 @@ public class TbCmV2 extends PluginForDecrypt {
                     // like https://www.youtube.com/channel/UCbmRs17gtQxFXQyvIo5k6Ag/feed
                     playlistID = "UU" + channelID.substring(2);
                 }
-                channelWorkaround = StringUtils.isNotEmpty(playlistID);
+                channelWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
             }
             ArrayList<YoutubeClipData> playlist;
             videoIdsToAdd.addAll(playlist = parsePlaylist(playlistID));
-            if (channelWorkaround && playlist.size() == 0) {
+            if (Boolean.TRUE.equals(channelWorkaround) && playlist.size() == 0) {
                 // failed
-                channelWorkaround = false;
+                channelWorkaround = Boolean.FALSE;
             }
-            if (userWorkaround && playlist.size() == 0) {
+            if (Boolean.TRUE.equals(userWorkaround) && playlist.size() == 0) {
                 // failed
-                userWorkaround = false;
+                userWorkaround = Boolean.FALSE;
             }
-            if (!channelWorkaround) {
+            if (Boolean.FALSE.equals(channelWorkaround)) {
                 videoIdsToAdd.addAll(parseChannelgrid(channelID));
             }
-            if (!userWorkaround) {
+            if (Boolean.FALSE.equals(userWorkaround)) {
                 videoIdsToAdd.addAll(parseUsergrid(userID));
             }
             // some unknown playlist type?
@@ -345,9 +346,13 @@ public class TbCmV2 extends PluginForDecrypt {
             if (videoIdsToAdd.size() == 0) {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));
             }
-            // channel/play lists are inverted, we really should process from entry 0 to end (oldest to newest), and not newest to oldest.
-            if (!playlist.isEmpty()) {
+            // /user/username/videos and /channel/[a-zA-Z0-9_-]+/videos are inverted (newest to oldest), we should always return oldest >
+            // newest so playlist counter is correct.
+            // userworkaround == true == newest to oldest
+            // channelworkaround == true == newest to oldest.
+            if (Boolean.TRUE.equals(userWorkaround) || Boolean.TRUE.equals(channelWorkaround)) {
                 Collections.reverse(videoIdsToAdd);
+                reversePlaylistNumber = true;
             }
         } catch (InterruptedException e) {
             return decryptedLinks;
@@ -362,7 +367,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 try {
                     YoutubeClipData old = vid;
                     vid = ClipDataCache.get(helper, vid.videoID);
-                    vid.playlistEntryNumber = old.playlistEntryNumber;
+                    vid.playlistEntryNumber = reversePlaylistNumber ? videoIdsToAdd.size() - old.playlistEntryNumber + 1 : old.playlistEntryNumber;
                 } catch (Exception e) {
                     if (hasCache) {
                         ClipDataCache.clearCache(vid.videoID);
