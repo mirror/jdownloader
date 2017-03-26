@@ -75,7 +75,7 @@ public class MegatvComDecrypter extends PluginForDecrypt {
                         final String url_real = "http://www.megatv.com/classics.asp?catid=" + catid + "&subid=" + subid + "&pubid=" + videoID;
                         final DownloadLink dl = createDownloadlink("http://www.megatvdecrypted.com/classics.asp?catid=" + catid + "&subid=" + subid + "&pubid=" + videoID);
                         dl.setLinkID(videoID);
-                        dl.setContentUrl(url_real);
+                        dl.setContentUrl(parameter); // url_real is not correct anymore
                         decryptedLinks.add(dl);
                     }
                     added_links_num = video_ids.length;
@@ -89,7 +89,7 @@ public class MegatvComDecrypter extends PluginForDecrypt {
                 final String url_real = "http://www.megatv.com/classics.asp?catid=" + catid + "&subid=" + subid + "&pubid=" + pubid;
                 final DownloadLink dl = createDownloadlink("http://www.megatvdecrypted.com/classics.asp?catid=" + catid + "&subid=" + subid + "&pubid=" + pubid);
                 dl.setLinkID(pubid);
-                dl.setContentUrl(url_real);
+                dl.setContentUrl(parameter); // url_real is not correct anymore
                 decryptedLinks.add(dl);
             }
         } else {
