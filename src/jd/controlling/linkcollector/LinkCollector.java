@@ -1360,9 +1360,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2763,12 +2763,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 lc.setDeepInspector(new LinkCrawlerDeepInspector() {
 
                                     private final boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+                                        final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
                                         if (urlConnection.getResponseCode() == 200) {
                                             if (urlConnection.isContentDisposition()) {
                                                 return true;
                                             } else if (StringUtils.contains(urlConnection.getContentType(), "octet-stream")) {
                                                 return true;
-                                            } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && !StringUtils.contains(urlConnection.getContentType(), "text")) {
+                                            } else if (urlConnection.getLongContentLength() > 2 * 1024 * 1024l && hasContentType && !StringUtils.contains(urlConnection.getContentType(), "text")) {
                                                 return true;
                                             }
                                         }
@@ -2788,6 +2789,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     @Override
                                     public List<CrawledLink> deepInspect(LinkCrawler lc, final LinkCrawler.LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
                                         if (urlConnection.getResponseCode() == 200 && urlConnection.getRequest().getLocation() == null) {
+                                            final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
                                             final LinkCrawlerRule matchingRule = link.getMatchingRule();
                                             if (matchingRule == null) {
                                                 final URL url = urlConnection.getURL();
@@ -2807,14 +2809,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                     }
                                                     return lc.find(generation, "directhttp://" + url, null, false, false);
                                                 }
-                                                if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
+                                                if (hasContentType && !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
                                                     final String fileName = Plugin.getFileNameFromURL(url);
                                                     final String fileExtension = Files.getExtension(fileName);
                                                     if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
                                                         if (!hasDirectHTTPRule(urlConnection)) {
                                                             final LinkCrawlerRule rule = new LinkCrawlerRule();
                                                             rule.setName("Learned file extension: " + fileExtension);
-                                                            rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
+                                                            rule.setPattern("(?i)https?://.*\\." + fileExtension + "($|\\?.*$)");
                                                             rule.setRule(RULE.DIRECTHTTP);
                                                             LinkCrawler.addLinkCrawlerRule(rule);
                                                         }
