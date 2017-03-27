@@ -17,13 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
-
-import org.apache.http.conn.ConnectTimeoutException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -133,11 +129,6 @@ public class UnLimitCoIl extends PluginForHost {
             } else {
                 br.followConnection();
             }
-        } catch (Exception e) {
-            if (e instanceof BrowserException && e.getCause() != null && (e.getCause() instanceof SocketTimeoutException || e.getCause() instanceof ConnectTimeoutException)) {
-                return AvailableStatus.UNCHECKABLE;
-            }
-            throw e;
         } finally {
             try {
                 con.disconnect();
