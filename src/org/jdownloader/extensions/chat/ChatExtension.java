@@ -983,10 +983,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     public void updateNamesPanel() {
         final StringBuilder sb = new StringBuilder();
+        sb.append("<ul>");
         final List<User> names = new ArrayList<User>(NAMES);
         Collections.sort(names);
         final boolean color = !getSettings().isUserColorEnabled();
-        sb.append("<ul>");
         for (final User name : names) {
             sb.append("<li>");
             if (!color) {
