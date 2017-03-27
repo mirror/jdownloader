@@ -96,7 +96,7 @@ public class DivxStageNet extends PluginForHost {
         if (br.containsHTML("The file is beeing transfered to our other servers")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
-        if (br.containsHTML("This file no longer exists on our servers")) {
+        if (br.containsHTML("This file no longer exists on our servers|This video is not yet ready")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"video_det\">.*?<strong>(.*?)</strong>").getMatch(0);
