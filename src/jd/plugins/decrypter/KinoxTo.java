@@ -48,7 +48,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().contains("Error-404")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -85,7 +85,9 @@ public class KinoxTo extends antiDDoSForDecrypt {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     getPage(br2, "/aGET/MirrorByEpisode/?Addr=" + addr_id + "&SeriesID=" + series_id + "&Season=" + season_number + "&Episode=" + episode);
                     /* Crawl Episode --> Find mirrors */
-                    decryptMirrors(decryptedLinks, br2, season_number, episode);
+                    if (br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0).length > 0) {
+                        decryptMirrors(decryptedLinks, br2, season_number, episode);
+                    }
                 }
             }
         } else {
