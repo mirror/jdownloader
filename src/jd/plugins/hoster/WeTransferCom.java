@@ -35,7 +35,7 @@ import jd.utils.JDHexUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-f0-9]{46}/[a-f0-9]{46}(/[a-z0-9]+)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(?:www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/([a-f0-9]{46}/)?[a-f0-9]{46}(/[a-z0-9]+)?)" })
 public class WeTransferCom extends PluginForHost {
 
     private String hash   = null;
@@ -85,7 +85,7 @@ public class WeTransferCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        final Regex urlregex = new Regex(dlink, "/downloads/([a-f0-9]+)/([a-f0-9]+)");
+        final Regex urlregex = new Regex(dlink, "/downloads/([a-f0-9]+)/(?:[a-f0-9]{46}/)?([a-f0-9]+)");
         final String small_string = new Regex(dlink, "([a-z0-9]+)$").getMatch(0);
         code = urlregex.getMatch(0);
         hash = urlregex.getMatch(1);

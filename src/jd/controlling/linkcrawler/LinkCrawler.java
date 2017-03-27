@@ -3236,8 +3236,17 @@ public class LinkCrawler {
                 }
                 final LinkCrawlerRule rule = link.getMatchingRule();
                 if (rule == null) {
-                    final String contentType = urlConnection.getContentType();
-                    if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(contentType, "text") || urlConnection.getCompleteContentLength() > limit)) {
+                    final boolean hasContentType = urlConnection.getHeaderField("Content-Type") != null;
+                    if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text") || urlConnection.getCompleteContentLength() > limit)) {
+                        if (!hasContentType) {
+                            try {
+                                br.followConnection();
+                                if (br.containsHTML("<!DOCTYPE html>") || (br.containsHTML("</html") && br.containsHTML("<html"))) {
+                                    return null;
+                                }
+                            } catch (final Throwable e) {
+                            }
+                        }
                         try {
                             urlConnection.disconnect();
                         } catch (Throwable e) {

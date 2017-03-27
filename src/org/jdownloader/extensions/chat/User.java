@@ -44,7 +44,6 @@ public class User implements Comparable<User> {
             name = name.substring(1);
         }
         this.name = name;
-
     }
 
     public int compareTo(User o) {
@@ -61,8 +60,9 @@ public class User implements Comparable<User> {
             return "!!!" + name.toLowerCase();
         case RANK_VOICE:
             return "!!" + name.toLowerCase();
+        default:
+            return name.toLowerCase();
         }
-        return name.toLowerCase();
     }
 
     public String getRank() {
@@ -71,26 +71,23 @@ public class User implements Comparable<User> {
             return "@";
         case RANK_VOICE:
             return "+";
+        default:
+            return "";
         }
-        return "";
     }
 
     public String getStyle() {
-
         return "color:#" + getColor();
     }
 
     public boolean isUser(String name) {
         if (name.startsWith("@")) {
-
             name = name.substring(1);
         }
         if (name.startsWith("+")) {
-
             name = name.substring(1);
         }
         return name.equals(this.name);
-
     }
 
     // @Override
@@ -101,9 +98,9 @@ public class User implements Comparable<User> {
             return "@" + name;
         case RANK_VOICE:
             return "+" + name;
+        default:
+            return name;
         }
-        return name;
-
     }
 
 }

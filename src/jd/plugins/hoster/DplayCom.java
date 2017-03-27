@@ -196,8 +196,13 @@ public class DplayCom extends PluginForHost {
             /* 2017-03-16: Try hardcoded header ... */
             final boolean useStaticAuthorizationValue = true;
             if (useStaticAuthorizationValue) {
-                /* 2017-03-21: This actually seems to work fine (based on user feedback)! */
-                authorizationValue = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU0VSSUQ6ZHBsYXlpdDo2ZTRhOTIyNS1iNzk2LTQ3ZjItYTg5Zi1mZmFhYjBiNmMxZjUiLCJhbm9ueW1vdXMiOnRydWUsImlhdCI6MTQ4OTYxNzgzNCwianRpIjoidG9rZW4tYTcyYWJiZmEtNjRkZC00MzQxLTg5MTUtMGU0MGZmYjM3Zjk3In0=.7YxUHBznpIYHTe2V5cGu_5uw0vsJjDv3Qs0vKIwUk2w=";
+                if (true) {
+                    // token no longer valid
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    /* 2017-03-21: This actually seems to work fine (based on user feedback)! */
+                    authorizationValue = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJVU0VSSUQ6ZHBsYXlpdDo2ZTRhOTIyNS1iNzk2LTQ3ZjItYTg5Zi1mZmFhYjBiNmMxZjUiLCJhbm9ueW1vdXMiOnRydWUsImlhdCI6MTQ4OTYxNzgzNCwianRpIjoidG9rZW4tYTcyYWJiZmEtNjRkZC00MzQxLTg5MTUtMGU0MGZmYjM3Zjk3In0=.7YxUHBznpIYHTe2V5cGu_5uw0vsJjDv3Qs0vKIwUk2w=";
+                }
             } else {
                 authorizationValue = "Bearer " + policyKey;
             }

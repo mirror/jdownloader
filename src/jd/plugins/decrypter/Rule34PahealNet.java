@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -46,35 +47,40 @@ public class Rule34PahealNet extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "/post/list/(.*?)/\\d+").getMatch(0));
+        final HashSet<String> loop = new HashSet<String>();
         String next = null;
+        final HashSet<String> dups = new HashSet<String>();
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
                 return decryptedLinks;
             }
             if (next != null) {
+                sleep(1000, param);
                 br.getPage(next);
             }
-            String[] links = br.getRegex("<br><a href=('|\")(http://.*?)\\1>").getColumn(1);
+            String[] links = br.getRegex("<br><a href=('|\")(https?://.*?)\\1>").getColumn(1);
             if (links == null || links.length == 0) {
-                links = br.getRegex("('|\")(http://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                links = br.getRegex("('|\")(https?://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
             }
             if (links == null || links.length == 0) {
-                links = br.getRegex("('|\")(http://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                links = br.getRegex("('|\")(https?://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singlelink : links) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + singlelink);
-                dl.setAvailable(true);
-                fp.add(dl);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                if (dups.add(singlelink)) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + singlelink);
+                    dl.setAvailable(true);
+                    fp.add(dl);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
             }
             next = br.getRegex("\"(/post/[^<>\"]*?)\">Next</a>").getMatch(0);
-        } while (next != null);
+        } while (next != null && loop.add(next));
         return decryptedLinks;
     }
 

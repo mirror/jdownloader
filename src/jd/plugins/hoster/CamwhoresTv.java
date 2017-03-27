@@ -92,7 +92,6 @@ public class CamwhoresTv extends PluginForHost {
         }
         is_private_video = this.br.containsHTML("This video is a private");
         String filename = getTitle(this.br, link.getDownloadURL());
-        getDllink(link);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -100,6 +99,11 @@ public class CamwhoresTv extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
+        if (is_private_video && br.containsHTML("login-required")) {
+            link.setName(filename);
+            return AvailableStatus.UNCHECKABLE;
+        }
+        getDllink(link);
         if (dllink != null) {
             link.setFinalFileName(filename);
             final Browser br2 = br.cloneBrowser();
@@ -116,7 +120,9 @@ public class CamwhoresTv extends PluginForHost {
                 }
             } finally {
                 try {
-                    con.disconnect();
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 } catch (final Throwable e) {
                 }
             }
@@ -273,10 +279,8 @@ public class CamwhoresTv extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
