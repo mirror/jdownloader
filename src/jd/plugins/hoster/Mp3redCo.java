@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mp3red.co" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co)/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mp3red.co" }, urls = { "https?://(?:[a-z0-9]+\\.)?mp3red\\.(?:su|co|me)/\\d+/[a-z0-9\\-]+\\.html" })
 public class Mp3redCo extends PluginForHost {
 
     public Mp3redCo(PluginWrapper wrapper) {

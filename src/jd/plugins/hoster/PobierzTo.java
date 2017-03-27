@@ -42,6 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -526,7 +527,7 @@ public class PobierzTo extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 416, 429 });
         if (enable_RANDOM_UA) {
             if (agent.get() == null) {
-                agent.set(UserAgents.stringUserAgent());
+                agent.set(UserAgents.stringUserAgent(BrowserName.Chrome));
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
