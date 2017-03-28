@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,9 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[\\w\\-\\.]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[\\w\\-\\.]+" })
 public class TwoSharedCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.2shared.com";
@@ -62,7 +62,7 @@ public class TwoSharedCom extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("var msg = \\'")) {
+        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("var msg = \\'") || br.containsHTML("<a href=\"/linkerror.jsp\" target=\"_blank\" id=\"dlBtn\"><img src=\"/images/butDownload\\.gif\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
