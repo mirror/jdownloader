@@ -8,11 +8,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.JTableHeader;
+
+import jd.gui.swing.jdgui.AlternateHighlighter;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -27,6 +30,9 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.CounterMap;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
+import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary.FLAG;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -40,8 +46,6 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.AlternateHighlighter;
 
 public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper> implements GenericConfigEventListener<Object> {
     protected static int globalCompare(int ret, AbstractVariantWrapper o1, AbstractVariantWrapper o2, boolean b) {
@@ -331,6 +335,7 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     protected AutoResizingIntColumn                  audioBitrateColumn;
     protected boolean                                hasAudioSpatial;
     protected boolean                                hasDescription;
+    private final Set<FLAG>                          supportedFlags;
 
     public VariantsMapTableModel(ArrayList<AbstractVariantWrapper> sorted) {
         this("VariantsMapTableModel", sorted);
@@ -339,8 +344,13 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
     public VariantsMapTableModel(String id, ArrayList<AbstractVariantWrapper> sorted) {
         super(id);
         this.all = sorted;
-
         initListeners();
+        final FFmpeg ffmpeg = new FFmpeg();
+        if (ffmpeg.isAvailable()) {
+            this.supportedFlags = ffmpeg.getSupportedFlags();
+        } else {
+            this.supportedFlags = null;
+        }
         initHighLighter();
     }
 
@@ -358,11 +368,32 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
                 if (alternateMergeIDMap == null || alternateMergeIDMap.get(value) == null) {
                     return alternate.accept(column, value, selected, focus, row);
                 }
-
                 return alternateMergeIDMap.get(value) % 2 == 0;
             }
-
         });
+        if (supportedFlags != null) {
+            addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractVariantWrapper>(Color.RED, null, null) {
+
+                final boolean isOpusSupported   = supportedFlags.contains(AbstractFFmpegBinary.FLAG.OPUS);
+                final boolean isVorbisSupported = supportedFlags.contains(AbstractFFmpegBinary.FLAG.VORBIS);
+
+                @Override
+                protected Color getBackground(Color current) {
+                    return LAFOptions.getInstance().getColorForTablePackageRowBackground();
+                }
+
+                @Override
+                public boolean accept(ExtColumn<AbstractVariantWrapper> column, AbstractVariantWrapper value, boolean selected, boolean focus, int row) {
+                    if (StringUtils.equalsIgnoreCase("Opus", value.getAudioCodec())) {
+                        return !isOpusSupported;
+                    } else if (StringUtils.equalsIgnoreCase("Vorbis", value.getAudioCodec())) {
+                        return !isVorbisSupported;
+                    } else {
+                        return false;
+                    }
+                }
+            });
+        }
     }
 
     protected void initListeners() {
@@ -375,7 +406,6 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
         CFG_YOUTUBE.BLACKLISTED_VIDEO_CODECS.getEventSender().addListener(this, true);
         CFG_YOUTUBE.BLACKLISTED_VIDEO_FRAMERATES.getEventSender().addListener(this, true);
         CFG_YOUTUBE.DISABLED_VARIANTS.getEventSender().addListener(this, true);
-
         onConfigValueModified(null, null);
     }
 

@@ -8,12 +8,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -22,6 +25,7 @@ import jd.plugins.download.raf.FileBytesMap;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -40,11 +44,91 @@ import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
 public class AbstractFFmpegBinary {
 
-    protected FFmpegSetup   config;
-    protected final Browser sourceBrowser;
+    public static enum FLAGTYPE {
+        LIB,
+        FORMAT,
+        CODEC
+    };
+
+    public static enum FLAG {
+        OPUS(FLAGTYPE.CODEC, "DEA...\\s*opus"), // encode/decode
+        VORBIS(FLAGTYPE.CODEC, "DEA...\\s*vorbis"), // encode/decode
+        WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
+        DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
+        HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
+
+        private final Pattern  pattern;
+        private final FLAGTYPE type;
+
+        private FLAG(FLAGTYPE type, final String pattern) {
+            this.pattern = Pattern.compile(pattern);
+            this.type = type;
+        }
+
+        public FLAGTYPE getType() {
+            return type;
+        }
+
+        public boolean isSupported(final String string) {
+            return pattern.matcher(string).find();
+        }
+    }
+
+    public Set<FLAG> getSupportedFlags() {
+        try {
+            HashSet<FLAG> ret = null;
+            for (final FLAG flag : FLAG.values()) {
+                final Boolean isSupported = isSupported(flag);
+                if (isSupported != null) {
+                    if (isSupported.booleanValue()) {
+                        if (ret == null) {
+                            ret = new HashSet<AbstractFFmpegBinary.FLAG>();
+                        }
+                        ret.add(flag);
+                    }
+                }
+            }
+            return ret;
+        } catch (Throwable e) {
+        }
+        return null;
+    }
+
+    protected final FFmpegSetup config = JsonConfig.create(FFmpegSetup.class);
+    protected final Browser     sourceBrowser;
 
     public AbstractFFmpegBinary(Browser br) {
         this.sourceBrowser = br;
+    }
+
+    protected Boolean isSupported(FLAG flag) throws InterruptedException, IOException {
+        final String fullPath = getFullPath();
+        if (fullPath != null) {
+            final int timeout = 10 * 1000;
+            final File root = Application.getApplicationRoot();
+            final String ret[];
+            switch (flag.getType()) {
+            case CODEC:
+                ret = execute(timeout, null, root, fullPath, "-codecs");
+                break;
+            case FORMAT:
+                ret = execute(timeout, null, root, fullPath, "-formats");
+                break;
+            default:
+            case LIB:
+                ret = execute(timeout, null, root, fullPath);
+                break;
+            }
+            if (ret != null) {
+                for (final String output : ret) {
+                    if (flag.isSupported(output)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return null;
     }
 
     protected Browser getRequestBrowser() {
@@ -62,7 +146,6 @@ public class AbstractFFmpegBinary {
         final StringBuilder inputStream = new StringBuilder();
         final StringBuilder errorStream = new StringBuilder();
         final Process process = pb.start();
-
         final Thread reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
@@ -91,7 +174,7 @@ public class AbstractFFmpegBinary {
         if (timeout > 0) {
             final AtomicBoolean timeoutReached = new AtomicBoolean(false);
             final AtomicBoolean processAlive = new AtomicBoolean(true);
-            Thread timouter = new Thread("ffmpegReaderTimeout") {
+            final Thread timouter = new Thread("ffmpegReaderTimeout") {
                 public void run() {
                     try {
                         Thread.sleep(timeout);
@@ -120,7 +203,6 @@ public class AbstractFFmpegBinary {
             reader2.join();
             return new String[] { inputStream.toString(), errorStream.toString() };
         }
-
     }
 
     private String readInputStreamToString(StringBuilder ret, final InputStream fis, boolean b) throws IOException {
@@ -172,7 +254,7 @@ public class AbstractFFmpegBinary {
     }
 
     protected LogSource  logger;
-    protected String     path;
+    private String       path;
     protected HttpServer server;
 
     public String getPath() {
@@ -189,6 +271,7 @@ public class AbstractFFmpegBinary {
 
     public String getFullPath() {
         try {
+            final String path = getPath();
             if (StringUtils.isEmpty(path)) {
                 return null;
             }
@@ -196,7 +279,7 @@ public class AbstractFFmpegBinary {
             if (!file.isAbsolute()) {
                 file = Application.getResource(path);
             }
-            if (!file.exists()) {
+            if (!file.exists() || file.isDirectory()) {
                 return null;
             }
             if (Application.getJavaVersion() >= Application.JAVA16) {

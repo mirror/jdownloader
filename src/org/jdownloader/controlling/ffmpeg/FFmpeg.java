@@ -22,22 +22,23 @@ public class FFmpeg extends AbstractFFmpegBinary {
 
     public FFmpeg() {
         super(null);
-        config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
-        path = config.getBinaryPath();
-        if (path != null && !validatePaths()) {
+        final String path = config.getBinaryPath();
+        if (path != null && !validatePaths(path)) {
             config.setBinaryPath(null);
-            path = null;
+            setPath(null);
+        } else {
+            setPath(path);
         }
     }
 
-    private boolean validatePaths() {
-        File root = Application.getResource("");
-        String relative = Files.getRelativePath(root, new File(path));
+    private boolean validatePaths(final String path) {
+        final File root = Application.getResource("");
+        final String relative = Files.getRelativePath(root, new File(path));
         logger.info("Validate Relative Path: " + relative);
         if (relative != null) {
-            File correctPath = FFMpegInstallThread.getFFmpegPath("ffmpeg");
-            String relativeCorrect = Files.getRelativePath(root, correctPath);
+            final File correctPath = FFMpegInstallThread.getFFmpegPath("ffmpeg");
+            final String relativeCorrect = Files.getRelativePath(root, correctPath);
             logger.info("Validate Relative Correct Path: " + relativeCorrect);
             if (relativeCorrect != null) {
                 if (!Application.getResource(relativeCorrect).exists() && Application.getResource(relative).exists()) {

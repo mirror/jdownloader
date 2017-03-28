@@ -7,9 +7,11 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractValidator;
+import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.ValidatorFactory;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 
@@ -27,13 +29,58 @@ public interface FFmpegSetup extends ConfigInterface {
                     throw new ValidationException("Binary '" + binaryPath + "' must be a file!");
                 } else if (CrossSystem.isUnix() && !file.canExecute()) {
                     throw new ValidationException("Binary '" + binaryPath + "' is not executable!");
+                } else if (CrossSystem.isWindows() && !file.getName().endsWith(".exe")) {
+                    throw new ValidationException("Binary '" + binaryPath + "' is not executable!");
                 }
             }
         }
     }
 
+    class DefaultFFMpegBinary extends AbstractDefaultFactory<String> {
+        final String binary = "ffmpeg";
+
+        @Override
+        public String getDefaultValue() {
+            if (CrossSystem.isLinux()) {
+                final BinayPathValidator binaryPathValidator = new BinayPathValidator();
+                for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
+                    try {
+                        final String binaryPath = path + binary;
+                        binaryPathValidator.validate(binaryPath);
+                        return binaryPath;
+                    } catch (ValidationException ignore) {
+                    }
+                }
+            }
+            return null;
+        }
+
+    }
+
+    class DefaultFFProbeBinary extends AbstractDefaultFactory<String> {
+        final String binary = "ffprobe";
+
+        @Override
+        public String getDefaultValue() {
+            if (CrossSystem.isLinux()) {
+                final BinayPathValidator binaryPathValidator = new BinayPathValidator();
+                for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
+                    try {
+                        final String binaryPath = path + binary;
+                        binaryPathValidator.validate(binaryPath);
+                        return binaryPath;
+                    } catch (ValidationException ignore) {
+                    }
+                }
+            }
+            return null;
+        }
+
+    }
+
     @AboutConfig
     @ValidatorFactory(BinayPathValidator.class)
+    @DefaultFactory(DefaultFFMpegBinary.class)
     @DescriptionForConfigEntry("full path (including binary filename) to ffmpeg")
     String getBinaryPath();
 
@@ -41,6 +88,7 @@ public interface FFmpegSetup extends ConfigInterface {
 
     @AboutConfig
     @ValidatorFactory(BinayPathValidator.class)
+    @DefaultFactory(DefaultFFProbeBinary.class)
     @DescriptionForConfigEntry("full path (including binary filename) to ffprobe")
     String getBinaryPathProbe();
 

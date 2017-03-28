@@ -24,8 +24,9 @@ import org.jdownloader.logging.LogController;
 
 public class WindowsAntiStandby extends Thread implements Runnable {
 
-    private final AtomicBoolean        lastState = new AtomicBoolean(false);
-    private static final int           sleep     = 5000;
+    private final AtomicBoolean        lastEnabledState         = new AtomicBoolean(false);
+    private final AtomicBoolean        lastDisplayRequiredState = new AtomicBoolean(false);
+    private static final int           sleep                    = 5000;
     private final AntiStandbyExtension jdAntiStandby;
 
     private final LogSource            logger;
@@ -35,7 +36,6 @@ public class WindowsAntiStandby extends Thread implements Runnable {
         this.jdAntiStandby = jdAntiStandby;
         this.setDaemon(true);
         setName("WindowsAntiStandby");
-
         logger = LogController.CL(AntiStandbyExtension.class);
     }
 
@@ -60,14 +60,16 @@ public class WindowsAntiStandby extends Thread implements Runnable {
     }
 
     private void enableAntiStandby(final boolean enabled) {
-        if (lastState.compareAndSet(!enabled, enabled)) {
+        final boolean displayRequired = jdAntiStandby.getSettings().isDisplayRequired();
+        if (lastEnabledState.compareAndSet(!enabled, enabled) || lastDisplayRequiredState.compareAndSet(!displayRequired, displayRequired)) {
             if (enabled) {
-                if (jdAntiStandby.getSettings().isDisplayRequired()) {
+                if (displayRequired) {
                     Kernel32.INSTANCE.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
+                    logger.fine("JDAntiStandby: Start and Prevent Screensaver");
                 } else {
                     Kernel32.INSTANCE.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED);
+                    logger.fine("JDAntiStandby: Start");
                 }
-                logger.fine("JDAntiStandby: Start");
             } else {
                 Kernel32.INSTANCE.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
                 logger.fine("JDAntiStandby: Stop");
