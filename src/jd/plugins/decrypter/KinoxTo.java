@@ -27,7 +27,6 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -85,9 +84,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     getPage(br2, "/aGET/MirrorByEpisode/?Addr=" + addr_id + "&SeriesID=" + series_id + "&Season=" + season_number + "&Episode=" + episode);
                     /* Crawl Episode --> Find mirrors */
-                    if (br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0).length > 0) {
-                        decryptMirrors(decryptedLinks, br2, season_number, episode);
-                    }
+                    decryptMirrors(decryptedLinks, br2, season_number, episode);
                 }
             }
         } else {
@@ -101,7 +98,8 @@ public class KinoxTo extends antiDDoSForDecrypt {
     private void decryptMirrors(List<DownloadLink> decryptedLinks, Browser br2, final String season_number, final String episode) throws Exception {
         final String[] mirrors = br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0);
         if (mirrors == null || mirrors.length == 0) {
-            throw new DecrypterException("Decrypter broken");
+            // throw new DecrypterException("Decrypter broken"); // Link doesn't always exist
+            return;
         }
         final DecimalFormat df = new DecimalFormat("00");
         final FilePackage fp = FilePackage.getInstance();
