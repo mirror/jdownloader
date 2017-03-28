@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,10 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?(br\\.)?mangahost\\.(com|net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+)?|one-shot)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahost.com" }, urls = { "http://(?:www\\.)?(br\\.)?mangahost\\.(com|net)/manga/[^/]+/([^\\s]*\\d+(\\.\\d+|[a-z])?|one-shot)" })
 public class MangahostCom extends antiDDoSForDecrypt {
 
     public MangahostCom(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class MangahostCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?)(?:\\s*\\|\\s*[^<]*)?</title>").getMatch(0);
         String[] links = null;
         if (br.containsHTML("var images")) {
             if (br.containsHTML("(jpe?g|png)\\.webp")) {
