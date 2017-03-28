@@ -8,7 +8,6 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -19,12 +18,13 @@ import org.jdownloader.logging.LogController;
 public class FFprobe extends AbstractFFmpegBinary {
     public FFprobe(Browser br) {
         super(br);
-        config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFprobe.class.getName());
-        path = config.getBinaryPathProbe();
-        if (path != null && !validatePaths()) {
+        final String path = config.getBinaryPathProbe();
+        if (path != null && !validatePaths(path)) {
             config.setBinaryPath(null);
-            path = null;
+            setPath(null);
+        } else {
+            this.setPath(path);
         }
     }
 
@@ -32,7 +32,7 @@ public class FFprobe extends AbstractFFmpegBinary {
         this(null);
     }
 
-    private boolean validatePaths() {
+    private boolean validatePaths(final String path) {
         final File root = Application.getResource("");
         final String relative = Files.getRelativePath(root, new File(path));
         logger.info("Validate Relative Path: " + relative);

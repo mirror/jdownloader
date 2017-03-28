@@ -52,10 +52,10 @@ public class MangahostCom extends antiDDoSForDecrypt {
         String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         String[] links = null;
         if (br.containsHTML("var images")) {
-            if (br.containsHTML("(jpg|png)\\.webp")) {
+            if (br.containsHTML("(jpe?g|png)\\.webp")) {
                 links = br.getRegex("(https?://img\\.mangahost.net/br/images/[^<>\"\\']+\\.webp)").getColumn(0);
             } else {
-                links = br.getRegex("(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpg|png))").getColumn(0);
+                links = br.getRegex("(https?://img\\.mangahost.net/br/mangas_files/[^<>\"\\']+(jpe?g|png))").getColumn(0);
             }
         } else {
             // this is JSON, DO NOT universally unescape it.
