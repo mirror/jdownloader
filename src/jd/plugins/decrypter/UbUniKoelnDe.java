@@ -37,7 +37,7 @@ public class UbUniKoelnDe extends PluginForDecrypt {
         } else if (size < 10000000) {
             return 7;
         } else {
-            return 8;// hello djmakinera
+            return 8;
         }
     }
 
