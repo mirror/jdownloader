@@ -335,13 +335,17 @@ public class TestClient {
 
                     if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
                         //
-                        throw new ExceptionResponse(new String(ret, "UTF-8"), con.getResponseCode());
+                        throw new ExceptionResponse(new String(ret, "UTF-8"), con.getResponseCode(), con.getResponseMessage());
                     }
                     return ret;
                 } catch (final ExceptionResponse e) {
                     throw e;
                 } catch (final Exception e) {
-                    throw new ExceptionResponse(e);
+                    if (con != null) {
+                        throw new ExceptionResponse(e, con.getResponseCode(), con.getResponseMessage());
+                    } else {
+                        throw new ExceptionResponse(e);
+                    }
                 } finally {
                     try {
                         con.disconnect();
