@@ -96,12 +96,15 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
             }
             // System.out.println(con);
             if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
-                throw new ExceptionResponse(toString(ret), con.getResponseCode());
+                throw new ExceptionResponse(toString(ret), con.getResponseCode(), con.getResponseMessage());
             }
             return ret;
         } catch (final ExceptionResponse e) {
             throw e;
         } catch (final Exception e) {
+            if (con != null) {
+                throw new ExceptionResponse(e, con.getResponseCode(), con.getResponseMessage());
+            }
             throw new ExceptionResponse(e);
         } finally {
             try {
