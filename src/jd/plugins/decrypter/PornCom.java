@@ -21,7 +21,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Files;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[^<>\"/]+-?\\d+(\\.html)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z\\-]*?\\d+" })
 public class PornCom extends PluginForDecrypt {
 
     public PornCom(PluginWrapper wrapper) {
@@ -65,7 +65,7 @@ public class PornCom extends PluginForDecrypt {
             final String fid = new Regex(url, "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
-            jd.plugins.hoster.PornHubCom.getPage(brc, "https?://www.porn.com/videos/embed/" + fid + ".html");
+            jd.plugins.hoster.PornHubCom.getPage(brc, "https://www.porn.com/videos/embed/" + fid);
             links = getLinks(brc, url, fileName);
         }
         if (links.size() == 0) {

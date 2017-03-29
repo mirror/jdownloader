@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[^<>\"/]+-?\\d+(\\.html)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(www\\.)?porn\\.com/videos/(embed/)?[a-z\\-]*?\\d+" })
 public class PornCom extends antiDDoSForHost {
 
     /* DEV NOTES */
@@ -116,10 +116,10 @@ public class PornCom extends antiDDoSForHost {
         }
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)(?:\\.html)?$").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
-            brc.getPage("https://www.porn.com/videos/embed/" + fid + ".html");
+            brc.getPage("https://www.porn.com/videos/embed/" + fid);
             if (q != null) {
                 dllink = brc.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
             } else {
