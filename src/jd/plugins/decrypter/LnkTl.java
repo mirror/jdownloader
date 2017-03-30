@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,8 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 27628 $", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" })
 public class LnkTl extends antiDDoSForDecrypt {
@@ -124,6 +124,15 @@ public class LnkTl extends antiDDoSForDecrypt {
         if (url.contains("link.tl/fly/go.php?")) {
             getPage(url);
             url = br.getRegex("href=\"([^\"]+)\"\\s*>Skip!<").getMatch(0);
+            if (url != null && url.contains("/fly/site.php")) {
+                getPage(url);
+                // skip
+                url = br.getRegex("<div class=\"skip\">\\s*<a href=\"(.*?)\"").getMatch(0);
+                if (url == null) {
+                    // they also load iframe
+                    url = br.getRegex("<iframe class=\"site_frame\" [^>]*src=\"(.*?)\"").getMatch(0);
+                }
+            }
         }
 
         decryptedLinks.add(createDownloadlink(url));
