@@ -430,11 +430,14 @@ public class Ardmediathek extends PluginForDecrypt {
                     if (isUnsupportedProtocol(directurl)) {
                         continue;
                     }
-                    /*
-                     * json can contain multiple hls URLs leading to the same video qualities (sometimes on different servers) --> Only grab
-                     * one of them!
-                     */
-                    if (directurl.contains(".m3u8") && !hls_grabbed) {
+                    if (directurl.contains(".m3u8")) {
+                        if (hls_grabbed) {
+                            /*
+                             * json can contain multiple hls master URLs leading to the same video qualities (sometimes on different
+                             * servers) --> Only grab one of them!
+                             */
+                            continue;
+                        }
                         addHLS(directurl);
                         hls_grabbed = true;
                     } else {
