@@ -98,7 +98,7 @@ public class YouJizzCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.trim();
-        final String embed = br.getRegex("src=(\\'|\")(https?://(?:www\\.)?youjizz\\.com/videos/embed/[0-9]+)(\\'|\")").getMatch(1);
+        final String embed = br.getRegex("src=(\\'|\"|&#x22;)(https?://(?:www\\.)?youjizz\\.com/videos/embed/[0-9]+)(\\'|\"|&#x22;)").getMatch(1);
         if (embed == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
