@@ -28,17 +28,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.config.KissanimeToConfig;
-import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -55,6 +44,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.KissanimeToConfig;
+import org.jdownloader.plugins.components.google.GoogleVideoRefresh;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -341,6 +341,9 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         final Form ruh = br.getFormbyAction("/Special/AreYouHuman");
         // recaptchav2 event can happen here
         if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || ruh != null) {
+            if (ruh == null) {
+                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+            }
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             ruh.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(ruh);
