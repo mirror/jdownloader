@@ -25,9 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +45,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" })
 public class RapiduNet extends PluginForHost {
@@ -438,9 +438,9 @@ public class RapiduNet extends PluginForHost {
                 account.setProperty("cookies", Property.NULL);
                 final String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("Maintenance")) {
-                    throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, e.getMessage(), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, e).localizedMessage(e.getLocalizedMessage());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
                 }
             } else {
                 throw e;
@@ -576,15 +576,15 @@ public class RapiduNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
-                                                  }
-                                              };
+        {
+            put("PREFER_RECONNECT", "Prefer Reconnect if the wait time is detected");
+        }
+    };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
-                                                  }
-                                              };
+        {
+            put("PREFER_RECONNECT", "Wybierz Ponowne Połaczenie, jeśli wykryto czas oczekiwania na kolejne pobieranie");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

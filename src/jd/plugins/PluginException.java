@@ -24,8 +24,8 @@ public class PluginException extends Exception {
     public static int         VALUE_ID_PREMIUM_DISABLE      = 1;
     public static int         VALUE_ID_PREMIUM_ONLY         = 2;
     private String            localizedMessage;
-    private int               linkStatus;
-    private long              value;
+    private final int         linkStatus;
+    private final long        value;
 
     public PluginException(int linkStatus) {
         this(linkStatus, null, -1);
@@ -40,7 +40,9 @@ public class PluginException extends Exception {
     }
 
     public PluginException localizedMessage(String localizedMessage) {
-        this.localizedMessage = localizedMessage;
+        if (!StringUtils.equals(getMessage(), localizedMessage)) {
+            this.localizedMessage = localizedMessage;
+        }
         return this;
     }
 
@@ -90,13 +92,4 @@ public class PluginException extends Exception {
         return linkStatus;
     }
 
-    public PluginException value(int value) {
-        this.value = value;
-        return this;
-    }
-
-    public PluginException linkStatus(int linkStatus) {
-        this.linkStatus = linkStatus;
-        return this;
-    }
 }
