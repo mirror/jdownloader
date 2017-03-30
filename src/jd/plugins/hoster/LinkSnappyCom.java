@@ -19,8 +19,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,6 +38,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -97,12 +97,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             getPage("https://linksnappy.com/api/USERDETAILS");
         }
         if (cookies == null || br.containsHTML("Session Expired")) {
-            try {
-                login(currentAcc);
-            } catch (final PluginException e) {
-                ac.setStatus(e.getLocalizedMessage());
-                throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            login(currentAcc);
             getPage("https://linksnappy.com/api/USERDETAILS");
         }
         if ("ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
@@ -258,11 +253,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         if (cookies != null) {
             br.setCookies(this.getHost(), cookies);
         } else {
-            try {
-                login(currentAcc);
-            } catch (final PluginException e) {
-                throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            login(currentAcc);
         }
         dllink = link.getStringProperty("linksnappycomdirectlink", null);
         if (dllink != null) {
@@ -274,11 +265,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                 getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
                 if (br.containsHTML("Session Expired")) {
-                    try {
-                        login(currentAcc);
-                    } catch (final PluginException e) {
-                        throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    login(currentAcc);
                     getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
                 }
                 if (!attemptDownload()) {

@@ -397,8 +397,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 sb.append(file.toURI().toString());
             }
         }
-
         final LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), sb.toString());
+        lcj.setCustomSourceUrl(query.getSourceUrl());
         lcj.setAssignJobID(Boolean.TRUE.equals(query.isAssignJobID()));
         final boolean overwritePackagizerRules = Boolean.TRUE.equals(query.isOverwritePackagizerRules());
 

@@ -24,8 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
@@ -334,9 +334,9 @@ public class FreshfilePl extends PluginForHost {
                 account.setProperty("cookies", Property.NULL);
                 final String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("Maintenance")) {
-                    throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, e.getMessage(), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE, e).localizedMessage(e.getLocalizedMessage());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed: " + errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
                 }
             }
             throw e;
