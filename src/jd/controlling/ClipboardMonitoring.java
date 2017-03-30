@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -36,13 +44,6 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControl
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
@@ -265,9 +266,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
-    private static final DataFlavor          URLFLAVOR;
-    private static final DataFlavor          URILISTFLAVOR;
+    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
+    private static final DataFlavor                                                          URLFLAVOR;
+    private static final DataFlavor                                                          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -311,16 +312,16 @@ public class ClipboardMonitoring {
         }
     }
 
-    private boolean ignoreTransferable(Transferable transferable) {
-        if (transferable == null) {
+    private boolean ignoreTransferable(Transferable transferable, DataFlavor[] dataFlavors) {
+        if (transferable == null && (dataFlavors == null || dataFlavors.length == 0)) {
             return true;
         }
-        if (transferable.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+        if (isDataFlavorSupported(transferable, dataFlavors, PackageControllerTableTransferable.FLAVOR)) {
             /* we have Package/Children in clipboard, skip them */
             return true;
         }
         try {
-            if (transferable.getClass().getName().contains("TransferableProxy")) {
+            if (transferable != null && transferable.getClass().getName().contains("TransferableProxy")) {
                 final Field isLocal = transferable.getClass().getDeclaredField("isLocal");
                 if (isLocal != null) {
                     isLocal.setAccessible(true);
@@ -363,15 +364,24 @@ public class ClipboardMonitoring {
                                 return;
                             }
                             try {
-                                final Transferable currentContent = clipboard.getContents(null);
-                                if (ignoreTransferable(currentContent)) {
+                                final Transferable currentContent;
+                                final DataFlavor[] dataFlavors;
+                                if (CrossSystem.isLinux()) {
+                                    dataFlavors = clipboard.getAvailableDataFlavors();
+                                    currentContent = null;
+                                } else {
+                                    currentContent = clipboard.getContents(null);
+                                    dataFlavors = null;
+                                }
+
+                                if (ignoreTransferable(currentContent, dataFlavors)) {
                                     continue;
                                 }
                                 String handleThisRound = null;
                                 boolean macOSWorkaroundNeeded = false;
                                 try {
                                     /* change detection for List/URI content */
-                                    final String newListContent = getListTransferData(currentContent);
+                                    final String newListContent = getListTransferData(currentContent, dataFlavors);
                                     try {
                                         if (!oldListContent.equals(newListContent)) {
                                             handleThisRound = newListContent;
@@ -392,7 +402,7 @@ public class ClipboardMonitoring {
                                 final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
                                 if (StringUtils.isEmpty(handleThisRound)) {
                                     /* change detection for String/HTML content */
-                                    final String newStringContent = getStringTransferData(currentContent);
+                                    final String newStringContent = getStringTransferData(currentContent, dataFlavors);
                                     try {
                                         if (!oldStringContent.equals(newStringContent)) {
                                             /*
@@ -403,7 +413,7 @@ public class ClipboardMonitoring {
                                                 /*
                                                  * lets fetch fresh HTML Content if available
                                                  */
-                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent);
+                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
                                                 if (htmlFragment != null) {
                                                     /*
                                                      * remember that we had HTML content this round
@@ -426,7 +436,7 @@ public class ClipboardMonitoring {
                                                 /*
                                                  * lets fetch fresh HTML Content if available
                                                  */
-                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent);
+                                                final HTMLFragment htmlFragment = getHTMLFragment(currentContent, dataFlavors);
                                                 if (htmlFragment != null) {
                                                     /*
                                                      * remember that we had HTML content this round
@@ -498,13 +508,13 @@ public class ClipboardMonitoring {
         if (currentContent != null) {
             String stringContent = null;
             try {
-                stringContent = getStringTransferData(currentContent);
+                stringContent = getStringTransferData(currentContent, null);
             } catch (final Throwable e) {
             }
             HTMLFragment htmlFragment = null;
             try {
                 /* lets fetch fresh HTML Content if available */
-                htmlFragment = getHTMLFragment(currentContent);
+                htmlFragment = getHTMLFragment(currentContent, null);
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
@@ -627,7 +637,7 @@ public class ClipboardMonitoring {
 
     @Deprecated
     public static String getHTMLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        final HTMLFragment ret = getHTMLFragment(transferable);
+        final HTMLFragment ret = getHTMLFragment(transferable, null);
         if (ret != null) {
             return ret.getFragment();
         } else {
@@ -635,13 +645,20 @@ public class ClipboardMonitoring {
         }
     }
 
-    public static HTMLFragment getHTMLFragment(final Transferable transferable) throws UnsupportedFlavorException, IOException {
+    public static HTMLFragment getHTMLFragment(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
         DataFlavor htmlFlavor = null;
         final Class<?> preferClass = byte[].class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
-        final DataFlavor[] flavors = transferable.getTransferDataFlavors();
+        final DataFlavor[] flavors;
+        if (transferable != null) {
+            flavors = transferable.getTransferDataFlavors();
+        } else if (dataFlavors != null) {
+            flavors = dataFlavors;
+        } else {
+            return null;
+        }
         for (final DataFlavor flav : flavors) {
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
                 /*
@@ -658,7 +675,7 @@ public class ClipboardMonitoring {
                 }
             }
         }
-        final byte[] htmlDataBytes = getBytes(null, htmlFlavor, transferable);
+        final byte[] htmlDataBytes = getBytes(transferable, dataFlavors, null, htmlFlavor);
         if (htmlDataBytes != null && htmlDataBytes.length != 0) {
             final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
             final String result = convertBytes(htmlDataBytes, charSet, true);
@@ -669,11 +686,11 @@ public class ClipboardMonitoring {
                     if (!StringUtils.isEmpty(sourceURL) && HTMLParser.getProtocol(sourceURL) != null) {
                         return new HTMLFragment(sourceURL, fragment);
                     }
-                    final String browserURL = getCurrentBrowserURL(transferable, result);
+                    final String browserURL = getCurrentBrowserURL(transferable, dataFlavors, result);
                     return new HTMLFragment(browserURL, fragment);
                 }
             }
-            final String browserURL = getCurrentBrowserURL(transferable, result);
+            final String browserURL = getCurrentBrowserURL(transferable, dataFlavors, result);
             return new HTMLFragment(browserURL, result);
         }
         return null;
@@ -729,11 +746,12 @@ public class ClipboardMonitoring {
 
     public static void processSupportedTransferData(final Transferable transferable, LinkOrigin origin) {
         try {
-            final String listContent = getListTransferData(transferable);
-            final String stringContent = getStringTransferData(transferable);
+            final DataFlavor[] dataFlavors = null;
+            final String listContent = getListTransferData(transferable, dataFlavors);
+            final String stringContent = getStringTransferData(transferable, dataFlavors);
             final HTMLFragment htmlFragment;
             if (StringUtils.isNotEmpty(stringContent)) {
-                htmlFragment = getHTMLFragment(transferable);
+                htmlFragment = getHTMLFragment(transferable, null);
             } else {
                 htmlFragment = null;
             }
@@ -742,9 +760,9 @@ public class ClipboardMonitoring {
                 sourceURL = htmlFragment.getSourceURL();
             } else {
                 if (htmlFragment == null) {
-                    sourceURL = getCurrentBrowserURL(transferable, null);
+                    sourceURL = getCurrentBrowserURL(transferable, dataFlavors, null);
                 } else {
-                    sourceURL = getCurrentBrowserURL(transferable, htmlFragment.getFragment());
+                    sourceURL = getCurrentBrowserURL(transferable, dataFlavors, htmlFragment.getFragment());
                 }
             }
             StringBuilder sb = new StringBuilder();
@@ -783,9 +801,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    public static String getStringTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-            final Object ret = transferable.getTransferData(DataFlavor.stringFlavor);
+    public static String getStringTransferData(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
+        if (isDataFlavorSupported(transferable, dataFlavors, DataFlavor.stringFlavor)) {
+            final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, DataFlavor.stringFlavor);
             if (ret == null) {
                 return null;
             }
@@ -794,9 +812,9 @@ public class ClipboardMonitoring {
         return null;
     }
 
-    public static String getURLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (URLFLAVOR != null && transferable.isDataFlavorSupported(URLFLAVOR)) {
-            Object ret = transferable.getTransferData(URLFLAVOR);
+    public static String getURLTransferData(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException {
+        if (URLFLAVOR != null && isDataFlavorSupported(transferable, dataFlavors, URLFLAVOR)) {
+            Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, URLFLAVOR);
             if (ret == null) {
                 return null;
             }
@@ -809,12 +827,35 @@ public class ClipboardMonitoring {
         return null;
     }
 
+    public static boolean isDataFlavorSupported(final Transferable transferable, DataFlavor[] dataFlavors, DataFlavor dataFlavor) {
+        if (transferable != null && transferable.isDataFlavorSupported(dataFlavor)) {
+            return true;
+        } else if (dataFlavors != null) {
+            for (int index = 0; index < dataFlavors.length; index++) {
+                if (dataFlavors[index].equals(dataFlavor)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static Object getTransferData(final Transferable transferable, Clipboard clipboard, DataFlavor dataFlavor) throws UnsupportedFlavorException, IOException {
+        if (transferable != null) {
+            return transferable.getTransferData(dataFlavor);
+        } else if (clipboard != null) {
+            return clipboard.getData(dataFlavor);
+        } else {
+            return null;
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException, URISyntaxException {
+    public static String getListTransferData(final Transferable transferable, DataFlavor[] dataFlavors) throws UnsupportedFlavorException, IOException, URISyntaxException {
         final StringBuilder sb = new StringBuilder("");
-        if (URILISTFLAVOR != null && transferable.isDataFlavorSupported(URILISTFLAVOR)) {
+        if (URILISTFLAVOR != null && isDataFlavorSupported(transferable, dataFlavors, URILISTFLAVOR)) {
             /* url-lists are defined by rfc 2483 as crlf-delimited */
-            final Object ret = transferable.getTransferData(URILISTFLAVOR);
+            final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, URILISTFLAVOR);
             if (ret != null) {
                 final StringTokenizer izer = new StringTokenizer((String) ret, "\r\n");
                 while (izer.hasMoreTokens()) {
@@ -831,8 +872,8 @@ public class ClipboardMonitoring {
                 return sb.toString();
             }
         }
-        if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-            final Object ret = transferable.getTransferData(DataFlavor.javaFileListFlavor);
+        if (isDataFlavorSupported(transferable, dataFlavors, DataFlavor.javaFileListFlavor)) {
+            final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, DataFlavor.javaFileListFlavor);
             if (ret != null) {
                 final List<File> list = (List<File>) ret;
                 for (final File f : list) {
@@ -859,31 +900,47 @@ public class ClipboardMonitoring {
         return INSTANCE;
     }
 
-    private static byte[] getBytes(String mimeType, DataFlavor flavor, final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (mimeType == null && flavor == null) {
+    private static byte[] getBytes(final Transferable transferable, DataFlavor[] dataFlavors, String mimeType, DataFlavor dataFlavor) throws UnsupportedFlavorException, IOException {
+        if (mimeType == null && dataFlavor == null) {
             return null;
         }
         final Class<?> preferClass = byte[].class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
-        if (flavor == null) {
-            for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
-                if (flav.getMimeType().contains(mimeType) && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
-                    flavor = flav;
+        final DataFlavor flavor;
+        if (dataFlavor != null) {
+            flavor = dataFlavor;
+        } else if (transferable != null) {
+            DataFlavor found = null;
+            for (final DataFlavor test : transferable.getTransferDataFlavors()) {
+                if (test.getMimeType().contains(mimeType) && test.getRepresentationClass().isAssignableFrom(preferClass)) {
+                    found = test;
                     break;
                 }
             }
+            flavor = found;
+        } else if (dataFlavors != null) {
+            DataFlavor found = null;
+            for (final DataFlavor test : dataFlavors) {
+                if (test.getMimeType().contains(mimeType) && test.getRepresentationClass().isAssignableFrom(preferClass)) {
+                    found = test;
+                    break;
+                }
+            }
+            flavor = found;
+        } else {
+            flavor = null;
         }
         if (flavor != null) {
             byte[] htmlBytes = null;
             /* this can throw exception on some java versions when content is >256kb */
             if (flavor.getRepresentationClass().isAssignableFrom(byte[].class)) {
-                htmlBytes = (byte[]) transferable.getTransferData(flavor);
+                htmlBytes = (byte[]) getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, flavor);
             } else if (flavor.getRepresentationClass().isAssignableFrom(InputStream.class)) {
                 InputStream is = null;
                 try {
-                    is = (InputStream) transferable.getTransferData(flavor);
+                    is = (InputStream) getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, flavor);
                     htmlBytes = IO.readStream(-1, is);
                 } finally {
                     try {
@@ -898,17 +955,17 @@ public class ClipboardMonitoring {
     }
 
     public static String getCurrentBrowserURL(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        return getCurrentBrowserURL(transferable, null);
+        return getCurrentBrowserURL(transferable, null, null);
     }
 
-    public static String getCurrentBrowserURL(final Transferable transferable, final String htmlFlavor) throws UnsupportedFlavorException, IOException {
+    public static String getCurrentBrowserURL(final Transferable transferable, final DataFlavor[] dataFlavors, final String htmlFlavor) throws UnsupportedFlavorException, IOException {
         if (ClipboardMonitoring.getINSTANCE().windowsClipboardHack != null) {
             final String ret = ClipboardMonitoring.getINSTANCE().windowsClipboardHack.getURLFromCF_HTML();
             if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
                 return ret;
             }
         }
-        final String ret = getBrowserMime("x-moz-url-priv", transferable);
+        final String ret = getBrowserMime(transferable, dataFlavors, "x-moz-url-priv");
         if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
             return ret;
         }
@@ -925,8 +982,8 @@ public class ClipboardMonitoring {
         return null;
     }
 
-    public static String getBrowserMime(final String mime, final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        final byte[] xmozurlprivBytes = getBytes(mime, null, transferable);
+    public static String getBrowserMime(final Transferable transferable, final DataFlavor[] dataFlavors, final String mime) throws UnsupportedFlavorException, IOException {
+        final byte[] xmozurlprivBytes = getBytes(transferable, dataFlavors, mime, null);
         return convertBytes(xmozurlprivBytes, "UTF-8", false);
     }
 }
