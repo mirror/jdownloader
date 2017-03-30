@@ -119,6 +119,10 @@ public class ChoMikujPl extends antiDDoSForHost {
                 /* Additional offline check */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+            }
             String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename != null) {
                 logger.info("Found html filename for single link");
