@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
@@ -95,7 +96,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         boolean parameter_correct = false;
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
-            br.getPage(parameter);
+            getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
@@ -140,7 +141,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.info("Decryption aborted by user");
                 return decryptedLinks;
             }
-            this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
+            getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + Encoding.urlEncode(mainhashID) + "&path=" + Encoding.urlEncode(path_main));
             if (PluginJSonUtils.getJsonValue(br, "error") != null) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
@@ -276,6 +277,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
         final AvailableStatus status = jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheck(this, dl, entries);
         dl.setAvailableStatus(status);
+    }
+
+    private void getPage(final String url) throws IOException {
+        jd.plugins.hoster.DiskYandexNet.getPage(this.br, url);
     }
 
     /**

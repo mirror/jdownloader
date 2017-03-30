@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -14,6 +12,8 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
@@ -503,8 +503,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(https?://(?:www\\.)?bemywife\\.cc/video/[a-z0-9]+)").getMatch(0);
+        externID = br.getRegex("\"(https?://(?:www\\.)?(?:bemywife|mydaddy)\\.cc/video/[a-z0-9]+)").getMatch(0);
         if (externID != null) {
+            /* 2017-03-30: Added mydaddy.cc */
             final DownloadLink dl = createDownloadlink(externID);
             if (title != null) {
                 dl.setProperty("decryptertitle", title);
