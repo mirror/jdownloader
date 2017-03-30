@@ -18,23 +18,16 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -50,8 +43,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filespace.com" }, urls = { "https?://(www\\.)?(spaceforfiles|filespace)\\.com/(vidembed\\-)?[a-z0-9]{12}" })
 public class FilespaceCom extends antiDDoSForHost {
@@ -94,11 +96,11 @@ public class FilespaceCom extends antiDDoSForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.1
-    // mods: TRY_SPECIAL_WAY, requestFileInformation[Added another FNF RegEx]
+    // mods: heavily modified, do NOT upgrade!
     // limit-info: free account untested, set FREE limits
     // protocol: no https
-    // captchatype: solvemedia
-    // other:
+    // captchatype: recaptchaV2
+    // other: 2017-03-30: special: Login captcha (reCaptchaV2)
 
     @Override
     public String[] siteSupportedNames() {
@@ -453,6 +455,10 @@ public class FilespaceCom extends antiDDoSForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (correctedBR.contains("class=\"g-recaptcha\"")) {
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
 
@@ -999,27 +1005,21 @@ public class FilespaceCom extends antiDDoSForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    /* 2017-03-30: Always try to re-use cookies to prevent login captcha! */
+                    this.br.setCookies(this.getHost(), cookies);
+                    getPage(COOKIE_HOST + "/");
+                    if (correctedBR.contains("op=logout")) {
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
+                    /* Delete old cookies/headers. */
+                    this.br = this.prepBrowser(new Browser(), this.getHost());
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
@@ -1033,6 +1033,27 @@ public class FilespaceCom extends antiDDoSForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+
+                final String reCaptchaV2SiteKey = PluginJSonUtils.getJsonValue(correctedBR, "sitekey");
+                if (loginform.containsHTML("capatcha")) {
+                    /* 2017-03-30: New: Login captcha */
+                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                    }
+                    final String recaptchaV2Response;
+                    if (!StringUtils.isEmpty(reCaptchaV2SiteKey)) {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2SiteKey).getToken();
+                    } else {
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    }
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+
                 submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1049,11 +1070,9 @@ public class FilespaceCom extends antiDDoSForHost {
                 } else {
                     account.setProperty("nopremium", false);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(COOKIE_HOST));
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
