@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.net.SocketTimeoutException;
@@ -56,7 +55,6 @@ import jd.utils.locale.JDL;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" })
 public class LinkSnappyCom extends antiDDoSForHost {
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public LinkSnappyCom(PluginWrapper wrapper) {
@@ -72,10 +70,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     private static final String USE_API                = "USE_API";
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
-
     private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
     private int                 i                      = 1;
-
     private DownloadLink        currentLink            = null;
     private Account             currentAcc             = null;
     private boolean             resumes                = true;
@@ -91,7 +87,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         ArrayList<String> supportedHosts = new ArrayList<String>();
-
         /** Load cookies */
         final Cookies cookies;
         synchronized (account) {
@@ -105,18 +100,16 @@ public class LinkSnappyCom extends antiDDoSForHost {
             try {
                 login(currentAcc);
             } catch (final PluginException e) {
-                ac.setStatus(e.getErrorMessage());
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + e.getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                ac.setStatus(e.getLocalizedMessage());
+                throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             getPage("https://linksnappy.com/api/USERDETAILS");
         }
-
         if ("ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
             final String error = PluginJSonUtils.getJsonValue(br, "error");
             ac.setStatus(error);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-
         String accountType = null;
         final String expire = PluginJSonUtils.getJsonValue(br, "expire");
         if ("lifetime".equals(expire)) {
@@ -147,10 +140,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 ac.setTrafficMax(Long.parseLong(maxtraffic));
             }
         }
-
         /* now it's time to get all supported hosts */
         getPage("https://linksnappy.com/api/FILEHOSTS");
-
         if ("ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
             final String error = PluginJSonUtils.getJsonValue(br, "error");
             if ("Account has exceeded the daily quota".equals(error)) {
@@ -163,10 +154,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
         if (hostText == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         // connection info map
         final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
-
         String[] hosts = new Regex(hostText, "([a-z0-9\\-]+\\.){1,}([a-z]{2,4})[^\\}]+\\}").getColumn(-1);
         for (final String hostInfo : hosts) {
             HashMap<String, Object> e = new HashMap<String, Object>();
@@ -236,7 +225,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -252,7 +240,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
         }
-
         long tt = link.getLongProperty("filezize", -1);
         if (link.getView().getBytesLoaded() <= 0 || tt == -1) {
             long a = link.getView().getBytesTotalEstimated();
@@ -274,10 +261,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
             try {
                 login(currentAcc);
             } catch (final PluginException e) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + e.getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-
         dllink = link.getStringProperty("linksnappycomdirectlink", null);
         if (dllink != null) {
             dllink = (attemptDownload() ? dllink : null);
@@ -285,15 +271,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
         if (dllink == null) {
             /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
             link.setProperty("linksnappycomdirectlink", Property.NULL);
-
             for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
-
                 getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
                 if (br.containsHTML("Session Expired")) {
                     try {
                         login(currentAcc);
                     } catch (final PluginException e) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + e.getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     getPage("https://linksnappy.com/api/linkgen?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\"}"));
                 }
@@ -303,7 +287,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 break;
             }
         }
-
         if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 503) {
             stupidServerError();
         } else if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 999) {
@@ -436,7 +419,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     }
                 }
             }
-
             dllink = PluginJSonUtils.getJsonValue(br, "generated");
             if (dllink == null) {
                 logger.info("Direct downloadlink not found");
@@ -453,7 +435,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
         }
-
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, currentLink, dllink, resumes, chunks);
         } catch (final SocketTimeoutException e) {
@@ -585,5 +566,4 @@ public class LinkSnappyCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

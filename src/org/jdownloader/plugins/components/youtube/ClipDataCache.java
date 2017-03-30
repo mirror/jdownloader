@@ -9,28 +9,26 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 public class ClipDataCache {
-    private static final Object LOCK = new Object();
+    public static final String  THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY = "The Download is not available in your country";
+    private static final Object LOCK                                          = new Object();
 
     private static class CachedClipData {
-
         private YoutubeClipData clipData;
-
         public List<HTTPProxy>  proxyList;
 
         public CachedClipData(List<HTTPProxy> proxyListNew, YoutubeClipData youtubeClipData) {
             this.clipData = youtubeClipData;
-
             proxyList = proxyListNew;
             if (proxyList == null) {
                 proxyList = EMPTY;
@@ -40,24 +38,19 @@ public class ClipDataCache {
         private static ArrayList<HTTPProxy> EMPTY = new ArrayList<HTTPProxy>();
 
         public boolean hasValidProxyList(List<HTTPProxy> proxyListNew) {
-
             if (proxyListNew == null) {
                 proxyListNew = EMPTY;
             }
-
             if (proxyListNew.size() != proxyList.size()) {
                 return false;
             }
-
             for (int i = 0; i < proxyList.size(); i++) {
                 if (!proxyList.get(i).equals(proxyListNew.get(i))) {
                     return false;
                 }
             }
             return true;
-
         }
-
     }
 
     private static final HashMap<String, MinTimeWeakReference<CachedClipData>> CACHE = new HashMap<String, MinTimeWeakReference<CachedClipData>>();
@@ -67,7 +60,6 @@ public class ClipDataCache {
         CachedClipData ret = getInternal(helper, videoID);
         ret.clipData.copyToDownloadLink(downloadLink);
         // put a reference to the link. if we remove all links with the ref, the cache will cleanup it self
-
         downloadLink.getTempProperties().setProperty("CLIP_DATA_REFERENCE", ret);
         return ret.clipData;
     }
@@ -77,15 +69,13 @@ public class ClipDataCache {
     }
 
     private static MinTimeWeakReferenceCleanup CLEANUP = new MinTimeWeakReferenceCleanup() {
-
-                                                           @Override
-                                                           public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
-                                                               synchronized (LOCK) {
-                                                                   CACHE.remove(minTimeWeakReference.getID());
-
-                                                               }
-                                                           }
-                                                       };
+        @Override
+        public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+            synchronized (LOCK) {
+                CACHE.remove(minTimeWeakReference.getID());
+            }
+        }
+    };
 
     private static CachedClipData getInternal(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
         synchronized (LOCK) {
@@ -106,7 +96,7 @@ public class ClipDataCache {
             }
             if (cachedData.clipData.streams == null || StringUtils.isNotEmpty(cachedData.clipData.error)) {
                 if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is unavailable.")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY).localizedMessage(_JDT.T.CountryIPBlockException_createCandidateResult());
                 }
                 if (StringUtils.containsIgnoreCase(cachedData.clipData.error, "This video has been removed")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, cachedData.clipData.error);
@@ -115,7 +105,7 @@ public class ClipDataCache {
                     /*
                      * 15.12 .2014
                      */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY).localizedMessage(_JDT.T.CountryIPBlockException_createCandidateResult());
                 }
                 if (cachedData.clipData.error != null) {
                     String lc = cachedData.clipData.error.toLowerCase(Locale.ENGLISH);
@@ -123,13 +113,13 @@ public class ClipDataCache {
                         // 18.04.2016
                         // „Unfortunately, this video is not available in Germany because it may contain music for which GEMA has not
                         // granted the respective music rights.”
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY).localizedMessage(_JDT.T.CountryIPBlockException_createCandidateResult());
                     }
                     if (lc.contains("content is not available in")) {
                         // „Unfortunately, this UMG-music-content is not available in Germany because GEMA has not granted the
                         // respective music publishing rights.”
                         // 18.04.2016
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.CountryIPBlockException_createCandidateResult());
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY).localizedMessage(_JDT.T.CountryIPBlockException_createCandidateResult());
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, cachedData.clipData.error);
@@ -139,7 +129,6 @@ public class ClipDataCache {
     }
 
     private static URL YOUTUBE_URL;
-
     static {
         try {
             YOUTUBE_URL = new URL("http://youtube.com");
@@ -166,7 +155,6 @@ public class ClipDataCache {
     //
     // return ret;
     // }
-
     private static CachedClipData getInternal(YoutubeHelper helper, String videoID) throws Exception {
         return getInternal(helper, new YoutubeClipData(videoID));
     }
@@ -174,15 +162,11 @@ public class ClipDataCache {
     public static void clearCache(DownloadLink downloadLink) {
         String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
         clearCache(videoID);
-
     }
 
     public static void clearCache(String videoID) {
-
         synchronized (LOCK) {
-
             CACHE.remove(videoID);
-
         }
     }
 
@@ -193,31 +177,25 @@ public class ClipDataCache {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         synchronized (LOCK) {
             String cachedID = vid.videoID;
             for (Entry<String, MinTimeWeakReference<CachedClipData>> es : CACHE.entrySet()) {
                 if (StringUtils.equals(es.getKey(), cachedID)) {
                     CachedClipData v = es.getValue().get();
-
                     if (v != null && v.hasValidProxyList(proxyListNew)) {
                         v.clipData = vid;
                         link.getTempProperties().setProperty("CLIP_DATA_REFERENCE", v);
                         return;
-
                     }
                 }
-
             }
             MinTimeWeakReference<CachedClipData> ref = new MinTimeWeakReference<CachedClipData>(new CachedClipData(proxyListNew, vid), 1500, cachedID, CLEANUP);
             CACHE.put(cachedID, ref);
-
         }
     }
 
     public static boolean hasCache(YoutubeHelper helper, String videoID) {
         synchronized (LOCK) {
-
             MinTimeWeakReference<CachedClipData> ref = CACHE.get(videoID);
             CachedClipData cachedData = ref == null ? null : ref.get();
             List<HTTPProxy> proxyListNew = null;
@@ -227,7 +205,6 @@ public class ClipDataCache {
                 e.printStackTrace();
             }
             if (cachedData != null) {
-
                 if (!cachedData.hasValidProxyList(proxyListNew)) {
                     cachedData = null;
                 }
@@ -238,7 +215,6 @@ public class ClipDataCache {
 
     public static boolean hasCache(YoutubeHelper helper, DownloadLink downloadLink) {
         String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
-
         synchronized (LOCK) {
             String cachedID = videoID;
             MinTimeWeakReference<CachedClipData> ref = CACHE.get(cachedID);
@@ -246,5 +222,4 @@ public class ClipDataCache {
             return cachedData != null;
         }
     }
-
 }

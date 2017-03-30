@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.lang.reflect.Field;
@@ -54,20 +53,16 @@ import jd.plugins.components.ZeveraApiTracker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" })
 public class ZeveraCom extends antiDDoSForHost {
-
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
-
     private static ZeveraApiTracker                                   API                = new ZeveraApiTracker();
-
     private static final String                                       mName              = "zevera.com";
     private static final String                                       NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");
     private static final String                                       mProt              = "http://";
     private String                                                    mServ              = mProt + API.get() + mName;
     private static Object                                             LOCK               = new Object();
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
-
     private static final String                                       NOCHUNKS           = "NOCHUNKS";
     private Account                                                   currAcc            = null;
     private DownloadLink                                              currDownloadLink   = null;
@@ -222,7 +217,6 @@ public class ZeveraCom extends antiDDoSForHost {
         //
         // Besides redirects, the connections often run into socket exceptions. do the same on socket problems - retry
         // according to Zevera, 20 retries should be enough
-
         br.setFollowRedirects(true);
         showMessage(link, "Phase 3/3: Check download!");
         int maxchunks = 0;
@@ -233,7 +227,7 @@ public class ZeveraCom extends antiDDoSForHost {
             logger.info("Connecting to " + new URL(dllink).getHost());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks, true);
         } catch (final PluginException e) {
-            if ("Redirectloop".equals(e.getErrorMessage())) {
+            if ("Redirectloop".equals(e.getMessage())) {
                 logger.info("Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
                 handleErrorRetries("redirectloop", 20, 2 * 60 * 1000l);
             }
@@ -243,7 +237,7 @@ public class ZeveraCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             logger.info("Download failed because: " + e.getMessage());
-            logger.info("Name of the errorMessage: " + e.getErrorMessage());
+            logger.info("Name of the errorMessage: " + e.getLocalizedMessage());
             throw e;
         } catch (final SocketTimeoutException e) {
             logger.info("Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
@@ -371,7 +365,6 @@ public class ZeveraCom extends antiDDoSForHost {
             if (dllink == null) {
                 // to check for newly reported logs via statserv reporting.
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
                 // zevera will respond with invalid redirect
                 // ----------------Response Information------------
                 // Connection-Time: keep-Alive
@@ -478,7 +471,6 @@ public class ZeveraCom extends antiDDoSForHost {
             }
             String[] hosts = br.getRegex("([^,]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-
             supportedHosts.add("icerbox.com");// gethosters is not up2date
             /*
              * set ArrayList<String> with all supported multiHosts of this service
@@ -557,9 +549,7 @@ public class ZeveraCom extends antiDDoSForHost {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
-
         final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-
         synchronized (hostUnavailableMap) {
             HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
@@ -582,5 +572,4 @@ public class ZeveraCom extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
