@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.awt.Component;
@@ -46,45 +45,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
-
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -177,6 +137,45 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
@@ -184,23 +183,18 @@ import org.jdownloader.updatev2.UpdateController;
  */
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
-
     private static final Pattern[] PATTERNS       = new Pattern[] {
-
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
-
+            /**
+             * these patterns should split filename and fileextension (extension must include the point)
+             */
+            // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
-
     private boolean                dlSet          = false;
 
     public LazyHostPlugin getLazyP() {
@@ -249,10 +243,10 @@ public abstract class PluginForHost extends Plugin {
             case LinkStatus.ERROR_CAPTCHA: {
                 invalidateLastChallengeResponse();
                 final String errorMsg;
-                if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                if (StringUtils.isEmpty(pluginException.getLocalizedMessage())) {
                     errorMsg = _JDT.T.DownloadLink_setSkipped_statusmessage_captcha();
                 } else {
-                    errorMsg = pluginException.getErrorMessage();
+                    errorMsg = pluginException.getLocalizedMessage();
                 }
                 account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
                 return ai;
@@ -261,22 +255,22 @@ public abstract class PluginForHost extends Plugin {
                 validateLastChallengeResponse();
                 if (PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE == pluginException.getValue()) {
                     final String errorMsg;
-                    if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                    if (StringUtils.isEmpty(pluginException.getLocalizedMessage())) {
                         if (!ai.isUnlimitedTraffic() && ai.getTrafficLeft() <= 0) {
                             errorMsg = _JDT.T.AccountController_updateAccountInfo_status_traffic_reached();
                         } else {
                             errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
                         }
                     } else {
-                        errorMsg = pluginException.getErrorMessage();
+                        errorMsg = pluginException.getLocalizedMessage();
                     }
                     account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
                 } else {
                     final String errorMsg;
-                    if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                    if (StringUtils.isEmpty(pluginException.getLocalizedMessage())) {
                         errorMsg = _JDT.T.AccountController_updateAccountInfo_status_logins_wrong();
                     } else {
-                        errorMsg = pluginException.getErrorMessage();
+                        errorMsg = pluginException.getLocalizedMessage();
                     }
                     account.setError(AccountError.INVALID, errorMsg);
                 }
@@ -284,20 +278,20 @@ public abstract class PluginForHost extends Plugin {
             }
             case LinkStatus.ERROR_PLUGIN_DEFECT: {
                 final String errorMsg;
-                if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                if (StringUtils.isEmpty(pluginException.getLocalizedMessage())) {
                     errorMsg = _JDT.T.AccountController_updateAccountInfo_status_plugin_defect();
                 } else {
-                    errorMsg = pluginException.getErrorMessage();
+                    errorMsg = pluginException.getLocalizedMessage();
                 }
                 account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
                 return ai;
             }
             default: {
                 final String errorMsg;
-                if (StringUtils.isEmpty(pluginException.getErrorMessage())) {
+                if (StringUtils.isEmpty(pluginException.getLocalizedMessage())) {
                     errorMsg = _JDT.T.AccountController_updateAccountInfo_status_uncheckable();
                 } else {
-                    errorMsg = pluginException.getErrorMessage();
+                    errorMsg = pluginException.getLocalizedMessage();
                 }
                 account.setError(AccountError.TEMP_DISABLED, 60 * 60 * 1000l, errorMsg);
                 return ai;
@@ -476,7 +470,6 @@ public abstract class PluginForHost extends Plugin {
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
         link.addPluginProgress(progress);
-
         final boolean isAccountLogin = c.isCreatedInsideAccountChecker() || c.isAccountLogin() || Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage());
         try {
             if (isAccountLogin) {
@@ -519,7 +512,6 @@ public abstract class PluginForHost extends Plugin {
                         HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));
                     }
                     break;
-
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(link.getParentNode()));
                     if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
@@ -581,17 +573,11 @@ public abstract class PluginForHost extends Plugin {
     protected volatile DownloadInterface dl                                           = null;
     private static final String          AUTO_FILE_NAME_CORRECTION_NAME_SPLIT         = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT";
     private static final String          AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN";
-
     private long                         WAIT_BETWEEN_STARTS                          = 0;
-
     private boolean                      enablePremium                                = false;
-
     private boolean                      accountWithoutUsername                       = false;
-
     private String                       premiumurl                                   = null;
-
     private DownloadLink                 link                                         = null;
-
     protected DownloadInterfaceFactory   customizedDownloadFactory                    = null;
 
     public DownloadInterfaceFactory getCustomizedDownloadFactory() {
@@ -775,7 +761,6 @@ public abstract class PluginForHost extends Plugin {
                     while (url.charAt(url.length() - 1) == '"') {
                         url = url.substring(0, url.length() - 1);
                     }
-
                     /*
                      * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
@@ -931,7 +916,6 @@ public abstract class PluginForHost extends Plugin {
         for (Entry<String, Object> es : props.entrySet()) {
             String key = es.getKey();
             Object value = es.getValue();
-
             if (value != null) {
                 ret.addPair(key, value.toString());
             }
@@ -999,7 +983,6 @@ public abstract class PluginForHost extends Plugin {
     public void checkPhantomJS(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
         final PhantomJS binding = new PhantomJS();
         if (!binding.isAvailable()) {
-
             final InstallProgress progress = new InstallProgress();
             progress.setProgressSource(this);
             try {
@@ -1008,7 +991,6 @@ public abstract class PluginForHost extends Plugin {
             } finally {
                 downloadLink.removePluginProgress(progress);
             }
-
             if (!binding.isAvailable()) {
                 throw new SkipReasonException(SkipReason.PHANTOM_JS_MISSING);
             }
@@ -1621,7 +1603,6 @@ public abstract class PluginForHost extends Plugin {
     // DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
     // return null;
     // }
-
     public char[] getFilenameReplaceMap() {
         return new char[0];
     }
@@ -1742,18 +1723,15 @@ public abstract class PluginForHost extends Plugin {
                         return newName + fileNameSplit[1];
                     }
                 }
-
                 if ((!StringUtils.isEmpty(MD5) && MD5.equalsIgnoreCase(next.getMD5Hash())) || (!StringUtils.isEmpty(SHA1) && SHA1.equalsIgnoreCase(next.getSha1Hash())) || (!StringUtils.isEmpty(SHA256) && SHA256.equalsIgnoreCase(next.getSha256Hash()))) {
                     // 100% mirror! ok and now? these files should have the
                     // same filename!!
                     return next.getView().getDisplayName();
                 }
             }
-
         } catch (Throwable e) {
             LogController.CL().log(e);
         }
-
         return null;
     }
 
@@ -1925,7 +1903,6 @@ public abstract class PluginForHost extends Plugin {
 
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
         return downloadLink.getVariant(GenericVariants.class);
-
     }
 
     public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
@@ -1967,7 +1944,6 @@ public abstract class PluginForHost extends Plugin {
                             final boolean isNewFTP = StringUtils.startsWithCaseInsensitive(newURLText, "ftp");
                             if (isOldFTP == isNewFTP) {
                                 DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-
                                     @Override
                                     public boolean isHighPriority() {
                                         return false;
@@ -1986,7 +1962,6 @@ public abstract class PluginForHost extends Plugin {
                                             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
                                         } else {
                                             con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
                                                 @Override
                                                 public void execute(DownloadSession currentSession) {
                                                     downloadLink.setPluginPatternMatcher(newURL.toString());
@@ -2002,7 +1977,6 @@ public abstract class PluginForHost extends Plugin {
                                                 public boolean isHighPriority() {
                                                     return false;
                                                 }
-
                                             });
                                         }
                                     }
@@ -2023,12 +1997,9 @@ public abstract class PluginForHost extends Plugin {
             final JMenu setVariants = new JMenu(_GUI.T.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
             setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
             setVariants.setEnabled(false);
-
             final JMenu addVariants = new JMenu("Add converted variant...");
-
             addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
             addVariants.setEnabled(false);
-
             // setVariants.setVisible(false);
             // addVariants.setVisible(false);
             new Thread("Collect Variants") {
@@ -2041,11 +2012,9 @@ public abstract class PluginForHost extends Plugin {
                     HashSet<GenericVariants> map = new HashSet<GenericVariants>();
                     final ArrayList<GenericVariants> list = new ArrayList<GenericVariants>();
                     for (CrawledLink cl : pv.getChildren()) {
-
                         if (cl.getDownloadLink() == null || !cl.getDownloadLink().getBooleanProperty("GENERIC_VARIANTS", false) || !cl.getDownloadLink().hasVariantSupport()) {
                             continue;
                         }
-
                         List<GenericVariants> v = cl.getDownloadLink().getVariants(GenericVariants.class);
                         if (v != null) {
                             for (LinkVariant lv : v) {
@@ -2061,24 +2030,19 @@ public abstract class PluginForHost extends Plugin {
                         return;
                     }
                     Collections.sort(list, new Comparator<GenericVariants>() {
-
                         @Override
                         public int compare(GenericVariants o1, GenericVariants o2) {
                             return o1.name().compareTo(o2.name());
                         }
                     });
-
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             setVariants.setEnabled(true);
                             addVariants.setEnabled(true);
                             setVariants.setVisible(true);
                             addVariants.setVisible(true);
-
                             for (final GenericVariants gv : list) {
-
                                 setVariants.add(new JMenuItem(new BasicAction() {
                                     {
                                         setName(gv._getName(link));
@@ -2087,7 +2051,6 @@ public abstract class PluginForHost extends Plugin {
                                     @Override
                                     public void actionPerformed(ActionEvent e) {
                                         java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
                                         for (CrawledLink cl : pv.getChildren()) {
                                             // List<GenericVariants> variants = new ArrayList<GenericVariants>();
                                             for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
@@ -2097,15 +2060,11 @@ public abstract class PluginForHost extends Plugin {
                                                     break;
                                                 }
                                             }
-
                                         }
-
                                         LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                                         linkChecker.check(checkableLinks);
                                     }
-
                                 }));
-
                                 addVariants.add(new JMenuItem(new BasicAction() {
                                     {
                                         setName(gv._getName(link));
@@ -2114,13 +2073,11 @@ public abstract class PluginForHost extends Plugin {
                                     @Override
                                     public void actionPerformed(ActionEvent e) {
                                         java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
                                         for (CrawledLink cl : pv.getChildren()) {
                                             List<GenericVariants> variants = new ArrayList<GenericVariants>();
                                             for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
                                                 if (v.equals(gv)) {
                                                     CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, gv);
-
                                                     if (newLink != null) {
                                                         checkableLinks.add(newLink);
                                                     } else {
@@ -2129,22 +2086,16 @@ public abstract class PluginForHost extends Plugin {
                                                     break;
                                                 }
                                             }
-
                                         }
-
                                         LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                                         linkChecker.check(checkableLinks);
                                     }
-
                                 }));
                             }
                         }
-
                     };
-
                 };
             }.start();
-
             parent.add(setVariants);
             parent.add(addVariants);
         }
@@ -2160,7 +2111,6 @@ public abstract class PluginForHost extends Plugin {
                 public Browser getContextBrowser() {
                     return br.cloneBrowser();
                 }
-
             };
         }
         return new DownloadLinkDownloadable(downloadLink);
@@ -2347,7 +2297,6 @@ public abstract class PluginForHost extends Plugin {
         }
         progress.setFile(newFile);
         revertList.add(new ExceptionRunnable() {
-
             @Override
             public void run() throws Exception {
                 renameOrMove(progress, downloadLink, newFile, currentFile);
@@ -2357,7 +2306,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private void renameOrMove(MovePluginProgress progress, final DownloadLink downloadLink, File old, File newFile) throws FileExistsException, CouldNotRenameException, IOException {
-
         // TODO: what if newFile exists?
         if (newFile.exists()) {
             throw new FileExistsException(old, newFile);
@@ -2409,7 +2357,6 @@ public abstract class PluginForHost extends Plugin {
                         Thread.sleep(3000);
                         // System.out.println("Dialog go");
                         ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
-
                             @Override
                             public void run() throws Exception {
                                 while (true) {
@@ -2425,7 +2372,6 @@ public abstract class PluginForHost extends Plugin {
                             @Override
                             public int getProgress() {
                                 double perc = progress.getPercent();
-
                                 return Math.min(99, (int) (perc));
                             }
 
@@ -2446,28 +2392,23 @@ public abstract class PluginForHost extends Plugin {
                             }
 
                             protected void extendLayout(JPanel p) {
-
                                 if (p.getComponentCount() == 0) {
                                     final JPanel subp = new MigPanel("ins 0,wrap 1", "[]", "[][]");
                                     p.add(subp, "wrap");
                                     p = subp;
-
                                     String packagename = downloadLink.getParentNode().getName();
-
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_hoster())), "split 2,sizegroup left,alignx left");
                                     DomainInfo di = downloadLink.getDomainInfo();
                                     JLabel ret = new JLabel(di.getTld());
                                     ret.setHorizontalAlignment(SwingConstants.LEFT);
                                     ret.setIcon(di.getFavIcon());
                                     p.add(ret);
-
                                     if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
                                         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(packagename));
                                     }
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filesize())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(SizeFormatter.formatBytes(old.length())));
-
                                     if (newFile.getName().equals(old.getName())) {
                                         p.add(SwingUtils.toBold(new JLabel(_GUI.T.lit_filename())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(newFile.getName()));
@@ -2477,21 +2418,17 @@ public abstract class PluginForHost extends Plugin {
                                         p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_NEWFILENAME())), "split 2,sizegroup left,alignx left");
                                         p.add(leftLabel(newFile.getName()));
                                     }
-
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_OLD())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(old.getParent()));
-
                                     p.add(SwingUtils.toBold(new JLabel(_GUI.T.PLUGINFORHOST_MOVECOPY_DIALOG_NEW())), "split 2,sizegroup left,alignx left");
                                     p.add(leftLabel(newFile.getParent()));
                                 }
                             }
-
                         };
                         UIOManager.I().show(null, dialog);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-
                 }
             };
             thread.start();
@@ -2500,7 +2437,6 @@ public abstract class PluginForHost extends Plugin {
         }
         try {
             IO.copyFile(new ProgressFeedback() {
-
                 @Override
                 public void setBytesTotal(long length) {
                     progress.setTotal(length);
@@ -2548,7 +2484,6 @@ public abstract class PluginForHost extends Plugin {
      *
      * @return
      */
-
     public String getMirrorID(DownloadLink link) {
         return null;
     }
@@ -2572,7 +2507,6 @@ public abstract class PluginForHost extends Plugin {
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
-
             }
             if (variants.size() > 1) {
                 return variants;
@@ -2592,10 +2526,8 @@ public abstract class PluginForHost extends Plugin {
                 if (isVideo) {
                     final List<GenericVariants> variants = new ArrayList<GenericVariants>();
                     variants.add(GenericVariants.DEMUX_GENERIC_AUDIO);
-
                     return variants;
                 }
-
             }
         }
         return null;
@@ -2640,5 +2572,4 @@ public abstract class PluginForHost extends Plugin {
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
         return downloadProxySelector == candidateProxySelector && downloadAccount == candidateAccount;
     }
-
 }

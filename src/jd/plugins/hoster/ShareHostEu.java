@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -23,6 +22,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,11 +41,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehost.eu" }, urls = { "https?://(www\\.)?sharehost\\.eu/[^<>\"]*?/(.*)" })
 public class ShareHostEu extends PluginForHost {
-
     public ShareHostEu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sharehost.eu/premium.html");
@@ -70,7 +68,6 @@ public class ShareHostEu extends PluginForHost {
         // url* - link URL (required)
         // filePassword - password for file (if exists)
         br.postPage(MAINPAGE + "/fapi/fileInfo", "url=" + downloadLink.getDownloadURL());
-
         // Output:
         // fileName - file name
         // filePath - file path
@@ -82,7 +79,6 @@ public class ShareHostEu extends PluginForHost {
         // invalidUrl - wrong url format, too long or contauns invalid characters
         // fileNotFound
         // filePasswordNotMatch - podane hasło dostępu do pliku jest niepoprawne
-
         final String success = PluginJSonUtils.getJsonValue(br, "success");
         if ("false".equals(success)) {
             final String error = PluginJSonUtils.getJsonValue(br, "error");
@@ -99,7 +95,6 @@ public class ShareHostEu extends PluginForHost {
         String fileSize = PluginJSonUtils.getJsonValue(br, "fileSize");
         String fileAvailable = PluginJSonUtils.getJsonValue(br, "fileAvailable");
         // String fileDescription = PluginJSonUtils.getJsonValue(br, "fileDescription");
-
         if ("true".equals(fileAvailable)) {
             if (fileName == null || fileSize == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,11 +124,11 @@ public class ShareHostEu extends PluginForHost {
         } catch (PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.setProperty("cookies", Property.NULL);
-                final String errorMessage = e.getErrorMessage();
+                final String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("Maintenance")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw e.linkStatus(LinkStatus.ERROR_PREMIUM).value(PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("LOGIN_ERROR"));
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "loginError").localizedMessage(getPhrase("LOGIN_ERROR"));
                 }
             } else {
                 throw e;
@@ -157,7 +152,6 @@ public class ShareHostEu extends PluginForHost {
         String userTrafficToday = PluginJSonUtils.getJsonValue(accountResponse, "userTrafficToday");
         long userTrafficLeft = Long.parseLong(userTrafficToday);
         ai.setTrafficLeft(userTrafficLeft);
-
         if ("true".equals(userIsPremium)) {
             ai.setProperty("premium", "true");
             // ai.setTrafficMax(PREMIUM_DAILY_TRAFFIC_MAX); // Compile error
@@ -183,12 +177,10 @@ public class ShareHostEu extends PluginForHost {
     }
 
     private String login(final Account account, final boolean force) throws Exception, PluginException {
-
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
-
                 // API CALL: /fapi/userInfo
                 // Input:
                 // login*
@@ -212,10 +204,8 @@ public class ShareHostEu extends PluginForHost {
                 } else {
                     account.setProperty("premium", "false");
                 }
-
                 br.setFollowRedirects(true);
                 br.postPage(MAINPAGE + "/index.php", "v=files%7Cmain&c=aut&f=login&friendlyredir=1&usr_login=" + Encoding.urlEncode(account.getUser()) + "&usr_pass=" + Encoding.urlEncode(account.getPass()));
-
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 /** Save cookies */
@@ -250,19 +240,15 @@ public class ShareHostEu extends PluginForHost {
         if (fileId == null) {
             fileId = br.getRegex("<a href='/\\?v=download_free&fil=(\\d+)' class='btn btn_gray'>Wolne pobieranie</a>").getMatch(0);
         }
-
         br.getPage(MAINPAGE + "/?v=download_free&fil=" + fileId);
-
         Form dlForm = br.getFormbyAction("http://sharehost.eu/");
         String dllink = "";
         for (int i = 0; i < 3; i++) {
             String waitTime = br.getRegex("var iFil=" + fileId + ";[\r\t\n ]+const DOWNLOAD_WAIT=(\\d+)").getMatch(0);
             sleep(Long.parseLong(waitTime) * 1000l, downloadLink);
             String captchaId = br.getRegex("<img src='/\\?c=aut&amp;f=imageCaptcha&amp;id=(\\d+)' id='captcha_img'").getMatch(0);
-
             String code = getCaptchaCode(MAINPAGE + "/?c=aut&f=imageCaptcha&id=" + captchaId, downloadLink);
             dlForm.put("cap_key", code);
-
             // br.submitForm(dlForm);
             br.postPage(MAINPAGE + "/", "v=download_free&c=dwn&f=getWaitedLink&cap_id=" + captchaId + "&fil=" + fileId + "&cap_key=" + code);
             if (br.containsHTML("Nie możesz w tej chwili pobrać kolejnego pliku")) {
@@ -274,7 +260,6 @@ public class ShareHostEu extends PluginForHost {
                 break;
             }
         }
-
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Can't find final download link/Captcha errors!", -1l);
         }
@@ -309,7 +294,6 @@ public class ShareHostEu extends PluginForHost {
         String downloadUrl = downloadLink.getPluginPatternMatcher();
         setMainPage(downloadUrl);
         br.setFollowRedirects(true);
-
         String loginInfo = login(account, false);
         boolean isPremium = "true".equals(account.getProperty("premium"));
         // long userTrafficleft;
@@ -318,11 +302,9 @@ public class ShareHostEu extends PluginForHost {
         // } catch (Exception e) {
         // userTrafficleft = 0;
         // }
-
         // if (isPremium || (!isPremium && userTrafficleft > 0)) {
         requestFileInformation(downloadLink);
         if (isPremium) {
-
             // API CALLS: /fapi/fileDownloadLink
             // INput:
             // login* - login użytkownika w serwisie
@@ -331,7 +313,6 @@ public class ShareHostEu extends PluginForHost {
             // filePassword - hasło dostępu do pliku (o ile właściciel je ustanowił)
             // Output:
             // fileUrlDownload (link valid for 24 hours)
-
             br.postPage(MAINPAGE + "/fapi/fileDownloadLink", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&url=" + downloadLink.getDownloadURL());
             // Errors
             // emptyLoginOrPassword - nie podano w parametrach loginu lub hasła
@@ -350,28 +331,22 @@ public class ShareHostEu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-
             String finalDownloadLink = PluginJSonUtils.getJsonValue(br, "fileUrlDownload");
             setLoginData(account);
-
             String dllink = finalDownloadLink.replace("\\", "");
-
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORPREMIUM);
             if (dl.getConnection().getContentType().contains("html")) {
-
                 logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
                 br.followConnection();
                 logger.warning("br returns:" + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             dl.startDownload();
         } else {
             MAXCHUNKSFORPREMIUM = 1;
             setLoginData(account);
             handleFree(downloadLink);
         }
-
     }
 
     private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
@@ -431,7 +406,6 @@ public class ShareHostEu extends PluginForHost {
                                                       put("NO_FREE_SLOTS", "No free slots for downloading this file");
                                                   }
                                               };
-
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
                                                   {
                                                       put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
@@ -444,7 +418,6 @@ public class ShareHostEu extends PluginForHost {
                                                       put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
                                                       put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
                                                       put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
-
                                                   }
                                               };
 
