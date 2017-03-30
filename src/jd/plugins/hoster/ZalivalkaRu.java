@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zalivalka.ru" }, urls = { "http://(www\\.)?zalivalka\\.ru/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zalivalka.ru" }, urls = { "http://(www\\.)?zalivalka\\.ru/\\d+" })
 public class ZalivalkaRu extends PluginForHost {
 
     public ZalivalkaRu(PluginWrapper wrapper) {
@@ -42,21 +42,25 @@ public class ZalivalkaRu extends PluginForHost {
         return "http://zalivalka.ru/";
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex finfo = br.getRegex("<div class=\"filename\">[\r\n\t ]+<span class=\"left\">([^<>\"]*?)</span>[\r\n\t ]+<span class=\"right\">([^<>\"]*?)<div class=\"right\">");
         final String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = fixFilesize(filesize);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = fixFilesize(filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -65,39 +69,25 @@ public class ZalivalkaRu extends PluginForHost {
         requestFileInformation(downloadLink);
         final String postpage = br.getRegex("<form action=\"(http://s\\d+\\.zalivalka\\.ru/download/[^<>\"]*?)\"").getMatch(0);
         final String download_key = br.getRegex("name=\"download_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (postpage == null || download_key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        int maxChunks = -2;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postpage, "download_key=" + download_key, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            /* Page simply re-loaded without downloadstart */
-            if (br.containsHTML("<meta name=\"keywords\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (postpage == null || download_key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) return;
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(ZalivalkaRu.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(ZalivalkaRu.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postpage, "download_key=" + download_key, true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(ZalivalkaRu.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(ZalivalkaRu.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+            br.followConnection();
+            /* Page simply re-loaded without downloadstart */
+            if (br.containsHTML("<meta name=\"keywords\"")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
-            throw e;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        this.dl.startDownload();
     }
 
     private String fixFilesize(String filesize) {

@@ -131,77 +131,92 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
             return decryptedLinks;
         }
         title = title.replaceAll("\\s+", " ");
-        // we have two things we need to base64decode
-        final String[][] quals;
-        if (hostType == HostType.KISS_CARTOON) {
-            quals = getQualsCartoon(this.br, parameter);
-        } else {
-            quals = getQuals(this.br);
+        final String url_base = this.br.getURL();
+        String[] mirrors = this.br.getRegex("(\\&s=[A-Za-z0-9\\-_]+)\"").getColumn(0);
+        if (mirrors.length == 0) {
+            mirrors = new String[] { "dummy" };
         }
-        if (quals != null) {
-            String skey = null;
-            String iv = null;
-            switch (hostType) {
-            case KISS_ANIME:
-                skey = getSecretKeyAnime();
-                iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
-                break;
-            case KISS_ASIAN:
-                skey = getSecretKeyAsian();
-                iv = "32b812e9a1321ae0e84af660c4722b3a";
-                break;
-            default:
-                break;
+
+        for (int mirror_number = 0; mirror_number <= mirrors.length - 1; mirror_number++) {
+            if (mirror_number > 0) {
+                final String mirror_param = mirrors[mirror_number];
+                this.getPage(url_base + mirror_param);
             }
-            for (final String qual[] : quals) {
-                String decode = null;
+            // we have two things we need to base64decode
+            final String[][] quals;
+            if (hostType == HostType.KISS_CARTOON) {
+                quals = getQualsCartoon(this.br, parameter);
+            } else {
+                quals = getQuals(this.br);
+            }
+            if (quals != null) {
+                String skey = null;
+                String iv = null;
                 switch (hostType) {
                 case KISS_ANIME:
-                case KISS_ASIAN:
-                    decode = decodeSingleURL(qual[1], skey, iv);
+                    skey = getSecretKeyAnime();
+                    iv = "a5e8d2e9c1721ae0e84ad660c472c1f3";
                     break;
-                case KISS_CARTOON:
-                    decode = qual[1];
+                case KISS_ASIAN:
+                    skey = getSecretKeyAsian();
+                    iv = "32b812e9a1321ae0e84af660c4722b3a";
                     break;
                 default:
                     break;
                 }
-                final String quality = qual[2];
-                final DownloadLink dl = createDownloadlink(decode);
-                /* md5 of "kissanime.com" */
-                dl.setProperty("refresh_url_plugin", getHost());
-                dl.setProperty("source_url", parameter);
-                dl.setProperty("source_quality", quality);
-                dl.setFinalFileName(title + "-" + quality + ".mp4");
-                dl.setAvailableStatus(AvailableStatus.TRUE);
-                /* Best comes first --> Simply quit the loop if user wants best quality. */
-                if (grabBEST) {
-                    decryptedLinks.add(dl);
-                    break;
+                for (final String qual[] : quals) {
+                    String decode = null;
+                    switch (hostType) {
+                    case KISS_ANIME:
+                    case KISS_ASIAN:
+                        decode = decodeSingleURL(qual[1], skey, iv);
+                        break;
+                    case KISS_CARTOON:
+                        decode = qual[1];
+                        break;
+                    default:
+                        break;
+                    }
+                    if (decode == null) {
+                        continue;
+                    }
+                    final String quality = qual[2];
+                    final DownloadLink dl = createDownloadlink(decode);
+                    /* md5 of "kissanime.com" */
+                    dl.setProperty("refresh_url_plugin", getHost());
+                    dl.setProperty("source_url", parameter);
+                    dl.setProperty("source_quality", quality);
+                    dl.setFinalFileName(title + "-" + quality + ".mp4");
+                    dl.setAvailableStatus(AvailableStatus.TRUE);
+                    /* Best comes first --> Simply quit the loop if user wants best quality. */
+                    if (grabBEST) {
+                        decryptedLinks.add(dl);
+                        break;
+                    }
+                    qualities.put(quality, dl);
                 }
-                qualities.put(quality, dl);
-            }
-            if (!grabBEST) {
-                if (grab1080p && qualities.containsKey("1080p")) {
-                    decryptedLinks.add(qualities.get("1080p"));
+                if (!grabBEST) {
+                    if (grab1080p && qualities.containsKey("1080p")) {
+                        decryptedLinks.add(qualities.get("1080p"));
+                    }
+                    if (grab720p && qualities.containsKey("720p")) {
+                        decryptedLinks.add(qualities.get("720p"));
+                    }
+                    if (grab480p && qualities.containsKey("480p")) {
+                        decryptedLinks.add(qualities.get("480p"));
+                    }
+                    if (grab360p && qualities.containsKey("360p")) {
+                        decryptedLinks.add(qualities.get("360p"));
+                    }
                 }
-                if (grab720p && qualities.containsKey("720p")) {
-                    decryptedLinks.add(qualities.get("720p"));
+            } else {
+                /* iframed.. seen openload.. but maybe others */
+                final String link = br.getRegex("\\$\\('#divContentVideo'\\)\\.html\\('<iframe\\s+[^>]* src=\"(.*?)\"").getMatch(0);
+                if (link != null) {
+                    decryptedLinks.add(createDownloadlink(link));
                 }
-                if (grab480p && qualities.containsKey("480p")) {
-                    decryptedLinks.add(qualities.get("480p"));
-                }
-                if (grab360p && qualities.containsKey("360p")) {
-                    decryptedLinks.add(qualities.get("360p"));
-                }
-            }
-        } else {
-            // iframed.. seen openload.. but maybe others
-            final String link = br.getRegex("\\$\\('#divContentVideo'\\)\\.html\\('<iframe\\s+[^>]* src=\"(.*?)\"").getMatch(0);
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            }
 
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
@@ -286,38 +301,41 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
         return skey;
     }
 
-    public String decodeSingleURL(final String encodedString, final String skey, final String iv) throws IOException, PluginException {
-        byte[] encodedArray = Base64.decode(encodedString);
-        String hash = Hash.getSHA256(skey);
-        // AES256
-        byte[] byteKey = hexStringToByteArray(hash);
-        byte[] byteIv = hexStringToByteArray(iv);
-        SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
+    public String decodeSingleURL(final String encodedString, final String skey, final String iv) {
         String decode = null;
         try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            byte[] byteResult = cipher.doFinal(encodedArray);
-            decode = new String(byteResult, "UTF-8");
-        } catch (final Exception e) {
-            logger.info(e.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // decode:
-        // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
-        if (StringUtils.contains(decode, "kissasian.com/") || StringUtils.contains(decode, "blogspot.com/")) {
-            // this is redirect bullshit
-            final Browser test = br.cloneBrowser();
-            test.setFollowRedirects(false);
-            test.getPage(decode);
-            // timeout:
-            // Location: /Message/UnknownError?aspxerrorpath=/Play
-            // <html><head><title>Object moved</title></head><body>
-            // <h2>Object moved to <a href="/Message/UnknownError?aspxerrorpath=/Play">here</a>.</h2>
-            // </body></html>
-            // 503:
-            decode = test.getRedirectLocation();
+            byte[] encodedArray = Base64.decode(encodedString);
+            String hash = Hash.getSHA256(skey);
+            // AES256
+            byte[] byteKey = hexStringToByteArray(hash);
+            byte[] byteIv = hexStringToByteArray(iv);
+            SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
+            IvParameterSpec ivSpec = new IvParameterSpec(byteIv);
+            try {
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                byte[] byteResult = cipher.doFinal(encodedArray);
+                decode = new String(byteResult, "UTF-8");
+            } catch (final Exception e) {
+                logger.info(e.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // decode:
+            // http://kissasian.com/Play?key=AaKw5OKkuxsCX+g11bWAThZKjXqDGPQWhjJWnuT5dTGj1fd1cpjSu3IoG+BS9DrWjnEmbfIX6hzW21Wg+0x1x2xKpQsxMSf2Qq+Sj0x1x2xXplONQDkgERfg+oOe+8gdidU13A97bfhucXMOZpuH+qEyMsodmaW+HdcTG3FwUxF3b2QSmHTllXLU3LLVSvxWtiICNbHITdp9r9yaf6r9fVHXTvmGgwvQqC7Kn6A2VYb8FDelQLZfIcXr8xP9Gcjp2rZw9UTCZetxz6tPFXxUAOBTNfMirs90x1x2xNgCaH3CY2Dd0CnmDWTetRbccDcEwQ0gwGnXUrtsjcjnRykZZ53lFlyfsoWk8RmJc4QQKF58fRMuZNcB9My7lmIO5km6Y+sr0x1x2xGUJqlPB9YV1GH4PiiR4YS8XYwFg21p0x1x2x1VjNDsCKIVQSwCWw622f5Fh45xaWNzys0x1x2xqPuIeYiXHYReyUodf6hoWtfatwxeenjIV71W7JNfuVaxvpjasM0ahDd3QevYcZa3WJLDmMxKVvFmfXdGu0Mp647bmb4FPOP0x1x2xwQfOiFNWfl4d974FAztZyGzGMNxBDFMR4oqaVKCG+U0x1x2xP3bDAVQjW+1Ig9aIifmHzusAchhcVI8vsa9m2SarsZ4mjVzC3hikmvP6+ojddwd99fJP3tupbAL6sI3FDmf8O4ipGD5jMPUDeR+BvtD90lLA12cQXg0Oj+91gv4FR4JRC5oHybnjkFCUnSRSYiB7AGg5YrpxHq6WV7m2JuEWHlqUpNh+OCZEXriY+SMbNOK+LLobcA9KF10nSA3TarRRyMBPpLZquyeGkKyjxThfpIP1RYppeUJPP6Dcogfc00ESESAK0rGZELE6ahHwpB2eA==
+            if (StringUtils.contains(decode, "kissasian.com/") || StringUtils.contains(decode, "blogspot.com/")) {
+                // this is redirect bullshit
+                final Browser test = br.cloneBrowser();
+                test.setFollowRedirects(false);
+                test.getPage(decode);
+                // timeout:
+                // Location: /Message/UnknownError?aspxerrorpath=/Play
+                // <html><head><title>Object moved</title></head><body>
+                // <h2>Object moved to <a href="/Message/UnknownError?aspxerrorpath=/Play">here</a>.</h2>
+                // </body></html>
+                // 503:
+                decode = test.getRedirectLocation();
+            }
+        } catch (final Throwable e) {
         }
         return decode;
     }
