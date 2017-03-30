@@ -842,7 +842,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     sb.append(html);
                 }
             }
-            final String text = ClipboardMonitoring.getStringTransferData(support.getTransferable());
+            final String text = ClipboardMonitoring.getStringTransferData(support.getTransferable(), null);
             if (!StringUtils.isEmpty(text)) {
                 if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) {
                     sb.append("\r\n");
