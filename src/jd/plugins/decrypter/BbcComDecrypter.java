@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,6 +42,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -72,6 +74,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         LinkedHashMap<String, Object> entries = null;
+        LinkedHashMap<String, Object> entries2 = null;
         for (String json : jsons) {
             if (json.contains("{&quot;")) {
                 json = Encoding.htmlDecode(json);
@@ -82,6 +85,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
             String title = null;
             String subtitle = null;
             String description = null;
+            String tv_brand = null;
+            String episodeType = null;
+            String date = null;
+            String date_formatted = null;
             String vpid = null;
             if (story != null) {
                 /* Type 3 */
@@ -94,10 +101,15 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 vpid = (String) entries.get("Vpid");
             } else if (player != null) {
                 /* Type 4 */
+                entries2 = (LinkedHashMap<String, Object>) entries.get("episode");
                 entries = (LinkedHashMap<String, Object>) player;
                 title = (String) entries.get("title");
                 subtitle = (String) entries.get("subtitle");
                 vpid = (String) entries.get("vpid");
+                tv_brand = (String) entries.get("masterbrand");
+                episodeType = (String) entries.get("episodeType");
+                date = (String) entries2.get("release_date_time");
+                description = (String) JavaScriptEngineFactory.walkJson(entries, "synopses/large");
             } else {
                 /* Type 1 */
                 Object sourcemapo = JavaScriptEngineFactory.walkJson(entries, "settings/playlistObject");
@@ -119,9 +131,21 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 continue;
             }
 
-            String filename_plain = title;
+            if (inValidate(tv_brand)) {
+                tv_brand = "bbc";
+            }
+            if (date != null) {
+                date_formatted = new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            }
+
+            String filename_plain = "";
+            if (date_formatted != null) {
+                filename_plain = date_formatted + "_";
+            }
+            filename_plain += tv_brand + "_";
+            filename_plain += title + "_";
             if (subtitle != null) {
-                filename_plain = title + " - " + subtitle;
+                filename_plain += " - " + subtitle;
             }
             filename_plain = encodeUnicode(filename_plain);
 
@@ -138,15 +162,11 @@ public class BbcComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
-        if (decryptedLinks.size() == 0) {
+        if (decryptedLinks.size() == 0 && this.br.getURL().matches("https?://[^/]+/programmes/[^/]+")) {
             /* 2017-03-24: Final fallback - UNSURE if that is a good idea as these IDs must not be real videoIDs!! */
             final String[] videoIDs = this.br.getRegex("episode_id=([pb][a-z0-9]{7})").getColumn(0);
             for (final String vpid : videoIDs) {
-                final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + vpid);
-                dl.setLinkID(vpid);
-                dl.setName(vpid + ".mp4");
-                dl.setContentUrl(parameter);
-                decryptedLinks.add(dl);
+                decryptedLinks.add(createDownloadlink(String.format("http://www.bbc.co.uk/iplayer/episode/%s", vpid)));
             }
         }
 

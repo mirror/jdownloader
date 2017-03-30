@@ -424,6 +424,8 @@ public class Ardmediathek extends PluginForDecrypt {
 
                 final int width = (int) JavaScriptEngineFactory.toLong(streammap.get("_width"), 0);
                 final int height = (int) JavaScriptEngineFactory.toLong(streammap.get("_height"), 0);
+                final int qualityNumber = (int) JavaScriptEngineFactory.toLong(streammap.get("_quality"), -1);
+                int counter = 0;
 
                 for (final Object qualityURLo : directURLs) {
                     final String directurl = (String) qualityURLo;
@@ -441,13 +443,17 @@ public class Ardmediathek extends PluginForDecrypt {
                         addHLS(directurl);
                         hls_grabbed = true;
                     } else {
-                        if (directURLs.size() == 1) {
-                            /* Only one URL --> We can be sure that we can use the eventually given width and height values! */
-                            addQuality(directurl, null, width, height);
+                        if (counter == 0) {
+                            /*
+                             * Only use that information for the first URL of that array because all URLs after that might be of lower
+                             * quality!
+                             */
+                            addQuality(directurl, null, width, height, qualityNumber);
                         } else {
-                            addQuality(directurl, null, 0, 0);
+                            addQuality(directurl, null, 0, 0, -1);
                         }
                     }
+                    counter++;
                 }
             }
         }
@@ -499,7 +505,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 addHLS(directurl);
             } else {
                 /* HTTP */
-                addQuality(directurl, filesize, width, height);
+                addQuality(directurl, filesize, width, height, -1);
             }
         }
         return;
@@ -516,18 +522,18 @@ public class Ardmediathek extends PluginForDecrypt {
         final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(hlsBR);
         for (final HlsContainer hlscontainer : allHlsContainers) {
             final String final_download_url = hlscontainer.getDownloadurl();
-            addQuality(final_download_url, null, hlscontainer.getWidth(), hlscontainer.getHeight());
+            addQuality(final_download_url, null, hlscontainer.getWidth(), hlscontainer.getHeight(), -1);
         }
     }
 
-    private void addQuality(final String directurl, final String filesize_str, int width, int height) {
+    private void addQuality(final String directurl, final String filesize_str, int width, int height, final int quality_number) {
         /* Get/Fix correct width/height values. */
         String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn|s|m|sm|ml|l)\\.mp4$").getMatch(0);
         if (width_URL == null) {
             width_URL = new Regex(directurl, "/(\\d{1,4})\\-\\d+\\.mp4$").getMatch(0);
         }
-        width = getWidth(width_URL, width);
-        height = getHeight(width_URL, width, height);
+        width = getWidth(width_URL, width, quality_number);
+        height = getHeight(width_URL, width, height, quality_number);
         /* Errorhandling */
         if (width == 0 || height == 0) {
             /* Skip items for which we cannot find out the resolution. */
@@ -680,15 +686,12 @@ public class Ardmediathek extends PluginForDecrypt {
         return newMap;
     }
 
-    /** Returns videos' width. */
-    private int getWidth(final String width_str, final int width_given) {
-        if (width_str == null && width_given == 0) {
-            return 0;
-        }
+    /** Returns videos' width. Do not remove parts of thise code without understanding them - this code is crucial for the plugin! */
+    private int getWidth(final String width_str, final int width_given, final int quality_number) {
         final int width;
         if (width_given > 0) {
             width = width_given;
-        } else {
+        } else if (width_str != null) {
             if (width_str.matches("\\d+")) {
                 width = Integer.parseInt(width_str);
             } else {
@@ -707,17 +710,21 @@ public class Ardmediathek extends PluginForDecrypt {
                     width = 0;
                 }
             }
+        } else {
+            width = convertQualityNumberToWidth(quality_number);
         }
         return width;
     }
 
-    /** Returns videos' height. */
-    private int getHeight(final String width_str, final int width, final int height_given) {
+    /** Returns videos' height. Do not remove parts of thise code without understanding them - this code is crucial for the plugin! */
+    private int getHeight(final String width_str, final int width, final int height_given, final int quality_number) {
         final int height;
         if (height_given > 0) {
             height = height_given;
-        } else {
+        } else if (width_str != null) {
             height = Integer.parseInt(convertWidthToHeight(width_str));
+        } else {
+            height = Integer.parseInt(convertQualityNumberToHeight(quality_number));
         }
         return height;
     }
@@ -758,6 +765,68 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         return height;
+    }
+
+    /**
+     * 2017-03-30: TODO: Either leave this disabled or improve upper handling - especially when a "_mediaStreamArray" object contains a
+     * "_stream" array with multiple qualities, it is just trail and error which quality is which ...
+     */
+    private String convertQualityNumberToHeight(final int quality_number) {
+        String height;
+        switch (quality_number) {
+        case 0:
+            height = "180";
+            break;
+        case 1:
+            height = "270";
+            break;
+        case 2:
+            height = "288";
+            break;
+        case 3:
+            height = "360";
+            break;
+        case 4:
+            height = "540";
+            break;
+        default:
+            height = "0";
+            break;
+        }
+        /* Set this to 0 as long as it does not work reliable! */
+        height = "0";
+        return height;
+    }
+
+    /**
+     * 2017-03-30: TODO: Either leave this disabled or improve upper handling - especially when a "_mediaStreamArray" object contains a
+     * "_stream" array with multiple qualities, it is just trail and error which quality is which ...
+     */
+    private int convertQualityNumberToWidth(final int quality_number) {
+        int width;
+        switch (quality_number) {
+        case 0:
+            width = 320;
+            break;
+        case 1:
+            width = 480;
+            break;
+        case 2:
+            width = 512;
+            break;
+        case 3:
+            width = 640;
+            break;
+        case 4:
+            width = 720;
+            break;
+        default:
+            width = 0;
+            break;
+        }
+        /* Set this to 0 as long as it does not work reliable! */
+        width = 0;
+        return width;
     }
 
     /**
