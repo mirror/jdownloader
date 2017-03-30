@@ -51,7 +51,7 @@ import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.premium\\.to/file/[A-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium4.me", "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
 public class PremiumTo extends UseNet {
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
 
@@ -61,9 +61,10 @@ public class PremiumTo extends UseNet {
     private final String                                       specialTraffic                 = "specialTraffic";
     private static final String                                lang                           = System.getProperty("user.language");
     private static final String                                CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String                                type_storage                   = "https?://storage[a-z0-9]*?\\.premium\\.to/file/[A-Z0-9]+";
-    private static final String                                type_torrent                   = "https?://torrent[a-z0-9]*?\\.premium\\.to/.+";
-    private static final String                                API_BASE                       = "http://api.premium.to/";
+    private static final String                                type_storage                   = "https?://storage.+";
+    private static final String                                type_torrent                   = "https?://torrent.+";
+    /* 2017-03-30: Before: api.premium.to */
+    private static final String                                API_BASE                       = "http://api.premium4.me/";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,8 +78,8 @@ public class PremiumTo extends UseNet {
 
     @Override
     public String rewriteHost(String host) {
-        if (host == null || "premium4.me".equals(host)) {
-            return "premium.to";
+        if (host == null || "premium4.me".equals(host) || "premium.to".equals(host)) {
+            return "premium4.me";
         }
         return super.rewriteHost(host);
     }
@@ -117,7 +118,7 @@ public class PremiumTo extends UseNet {
             throw e;
         }
         Browser tbr = br.cloneBrowser();
-        tbr.getPage("http://premium.to/sstraffic.php");
+        tbr.getPage("http://" + this.getHost() + "/sstraffic.php");
         /* NormalTraffic:SpecialTraffic:TorrentTraffic */
         String[] traffic = tbr.toString().split(";");
         if (traffic != null && traffic.length == 3) {
@@ -228,7 +229,7 @@ public class PremiumTo extends UseNet {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.getCookie("premium.to", "auth") == null) {
+                if (br.getCookie(this.br.getHost(), "auth") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Save cookies */
@@ -395,7 +396,7 @@ public class PremiumTo extends UseNet {
                          * TODO: Check if there is a way to determine if the deletion was successful and add loggers for
                          * successful/unsuccessful cases!
                          */
-                        br.getPage("https://storage.premium.to/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                        br.getPage("https://storage." + this.getHost() + "/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
                         success = true;
                     } catch (final Throwable e) {
                         /* Don't fail here */

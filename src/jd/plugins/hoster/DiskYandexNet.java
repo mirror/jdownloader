@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -146,7 +147,7 @@ public class DiskYandexNet extends PluginForHost {
             final_filename = link.getFinalFileName();
         }
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (link.getDownloadURL().matches(TYPE_VIDEO_USER)) {
                 /* offline|empty|enything else (e.g. abuse) */
                 if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"")) {
@@ -163,7 +164,7 @@ public class DiskYandexNet extends PluginForHost {
                     iframe_url = "http:" + iframe_url;
                 }
                 link.setUrlDownload(iframe_url);
-                br.getPage(iframe_url);
+                getPage(iframe_url);
             }
             if (br.containsHTML("<title>Яндекс\\.Видео</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -183,7 +184,7 @@ public class DiskYandexNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (use_api_file_free_availablecheck) {
-                this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
                 if (apiAvailablecheckIsOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -197,7 +198,7 @@ public class DiskYandexNet extends PluginForHost {
                 }
                 return parseInformationAPIAvailablecheck(this, link, (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString()));
             } else {
-                br.getPage(getMainLink(link));
+                getPage(getMainLink(link));
                 if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -275,6 +276,19 @@ public class DiskYandexNet extends PluginForHost {
         return br;
     }
 
+    private void getPage(final String url) throws IOException {
+        getPage(this.br, url);
+    }
+
+    public static void getPage(final Browser br, final String url) throws IOException {
+        br.getPage(url);
+        /* 2017-03-30: New */
+        final String jsRedirect = br.getRegex("(https?://[^<>\"]+force_show=1[^<>\"]*?)").getMatch(0);
+        if (jsRedirect != null) {
+            br.getPage(jsRedirect);
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -298,7 +312,7 @@ public class DiskYandexNet extends PluginForHost {
                  * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                  */
                 /* Free API download. */
-                this.br.getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + Encoding.urlEncode(this.currHash) + "&path=" + Encoding.urlEncode(this.currPath));
                 if (this.br.containsHTML("DiskNotFoundError")) {
                     /* Inside key 'error' */
                     /*
@@ -316,10 +330,10 @@ public class DiskYandexNet extends PluginForHost {
             } else {
                 /* Free website download. */
                 this.br = this.prepbrWebsite(new Browser());
-                br.getPage(getMainLink(downloadLink));
+                getPage(getMainLink(downloadLink));
                 String sk = getSK(this.br);
                 /* 2017-02-09: Required */
-                br.getPage("https://yadi.sk/tns.html");
+                getPage("https://yadi.sk/tns.html");
                 if (sk == null) {
                     logger.warning("sk in account handling (without move) is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -382,12 +396,12 @@ public class DiskYandexNet extends PluginForHost {
             file += ".mp4";
             downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
         }
-        br.getPage("http://static.video.yandex.net/get-token/" + linkpart + "?nc=0." + System.currentTimeMillis());
+        getPage("http://static.video.yandex.net/get-token/" + linkpart + "?nc=0." + System.currentTimeMillis());
         final String token = br.getRegex("<token>([^<>\"]*?)</token>").getMatch(0);
         if (token == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://streaming.video.yandex.ru/get-location/" + linkpart + "/" + file + "?token=" + token + "&ref=video.yandex.ru");
+        getPage("http://streaming.video.yandex.ru/get-location/" + linkpart + "/" + file + "?token=" + token + "&ref=video.yandex.ru");
         String dllink = br.getRegex("<video\\-location>(http://[^<>\"]*?)</video\\-location>").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -474,7 +488,7 @@ public class DiskYandexNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://disk.yandex.com/?auth=1");
+                getPage("https://disk.yandex.com/?auth=1");
                 br.postPage("https://passport.yandex.com/passport?mode=auth&from=cloud&origin=facelogin.en", "twoweeks=yes&retpath=&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAIN_DOMAIN, "yandex_login") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -509,7 +523,7 @@ public class DiskYandexNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("https://beta.disk.yandex.com/client/disk/Downloads/");
+        getPage("https://beta.disk.yandex.com/client/disk/Downloads/");
         ACCOUNT_SK = br.getRegex("\"sk\":\"([a-z0-9]+)\"").getMatch(0);
         if (ACCOUNT_SK == null) {
             final String lang = System.getProperty("user.language");
@@ -605,7 +619,7 @@ public class DiskYandexNet extends PluginForHost {
                 }
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
-                br.getPage(getMainLink(link));
+                getPage(getMainLink(link));
                 br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + this.ACCOUNT_SK);
                 handleErrorsFree();
                 dllink = siteGetDllink(link);

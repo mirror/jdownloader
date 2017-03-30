@@ -63,6 +63,7 @@ public class AuroravidTo extends PluginForHost {
     private static final String DOMAIN                       = "auroravid.to";
 
     private String              dllink                       = "";
+    private boolean             server_issues                = false;
 
     public AuroravidTo(final PluginWrapper wrapper) {
         super(wrapper);
@@ -99,15 +100,16 @@ public class AuroravidTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
+        server_issues = false;
+
         br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        jd.plugins.hoster.VideoWeedCom.checkForContinueForm(this.br);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        accessMainURL(downloadLink);
         if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|/download\\.php\\?file=\"") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         // onlinecheck für Videolinks
         if (downloadLink.getDownloadURL().contains("video")) {
             String filename = br.getRegex("property=\"og:title\" content=\"Watch ([^<>\"]+) online \\| AuroraVid\"").getMatch(0);
@@ -144,17 +146,22 @@ public class AuroravidTo extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText("Server error 'invalid token'");
                 return AvailableStatus.TRUE;
             }
-            Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
+            br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(dllink);
+                try {
+                    con = br.openGetConnection(dllink);
+                } catch (final Throwable e) {
+                    /* 2017-03-30: Do not fail here during availablecheck! */
+                    return AvailableStatus.TRUE;
+                }
                 if (!con.getContentType().contains("html") && con.isOK()) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
+                    downloadLink.setProperty("free_directlink", con.getURL().toString());
                 } else {
+                    server_issues = true;
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
@@ -179,6 +186,11 @@ public class AuroravidTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void accessMainURL(final DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
+        jd.plugins.hoster.VideoWeedCom.checkForContinueForm(this.br);
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -187,8 +199,12 @@ public class AuroravidTo extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        }
         if (dllink == null) {
             if (downloadLink.getDownloadURL().contains("video")) {
+                accessMainURL(downloadLink);
                 dllink = jd.plugins.hoster.VideoWeedCom.getDllink(this.br);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

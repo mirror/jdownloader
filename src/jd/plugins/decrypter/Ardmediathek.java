@@ -403,36 +403,51 @@ public class Ardmediathek extends PluginForDecrypt {
         if (subtitleLink != null && !subtitleLink.startsWith("http://")) {
             subtitleLink = "http://www.ardmediathek.de" + subtitleLink;
         }
+        boolean hls_grabbed = false;
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final ArrayList<Object> _mediaArray = (ArrayList) entries.get("_mediaArray");
-        final LinkedHashMap<String, Object> _mediaArray_lastentry = (LinkedHashMap<String, Object>) _mediaArray.get(_mediaArray.size() - 1);
-        final ArrayList<Object> mediaStreamArray = (ArrayList) _mediaArray_lastentry.get("_mediaStreamArray");
-        for (final Object stream : mediaStreamArray) {
-            final LinkedHashMap<String, Object> streammap = (LinkedHashMap<String, Object>) stream;
-            final Object stream_o = streammap.get("_stream");
-            final ArrayList<Object> directURLs;
-            if (stream_o instanceof ArrayList) {
-                /* Multiple URLs */
-                directURLs = (ArrayList<Object>) stream_o;
-            } else {
-                /* Single URL */
-                directURLs = new ArrayList<Object>();
-                directURLs.add(streammap.get("_stream"));
-            }
-
-            for (final Object qualityURLo : directURLs) {
-                final String directurl = (String) qualityURLo;
-                if (isUnsupportedProtocol(directurl)) {
-                    continue;
-                }
-                if (directurl.contains(".m3u8")) {
-                    addHLS(directurl);
+        for (final Object mediaO : _mediaArray) {
+            final LinkedHashMap<String, Object> mediaObjectInfo = (LinkedHashMap<String, Object>) mediaO;
+            final ArrayList<Object> mediaStreamArray = (ArrayList) mediaObjectInfo.get("_mediaStreamArray");
+            for (final Object stream : mediaStreamArray) {
+                final LinkedHashMap<String, Object> streammap = (LinkedHashMap<String, Object>) stream;
+                final Object stream_o = streammap.get("_stream");
+                final ArrayList<Object> directURLs;
+                if (stream_o instanceof ArrayList) {
+                    /* Multiple URLs */
+                    directURLs = (ArrayList<Object>) stream_o;
                 } else {
-                    addQuality(directurl, null, 0, 0);
+                    /* Single URL */
+                    directURLs = new ArrayList<Object>();
+                    directURLs.add(streammap.get("_stream"));
+                }
+
+                final int width = (int) JavaScriptEngineFactory.toLong(streammap.get("_width"), 0);
+                final int height = (int) JavaScriptEngineFactory.toLong(streammap.get("_height"), 0);
+
+                for (final Object qualityURLo : directURLs) {
+                    final String directurl = (String) qualityURLo;
+                    if (isUnsupportedProtocol(directurl)) {
+                        continue;
+                    }
+                    /*
+                     * json can contain multiple hls URLs leading to the same video qualities (sometimes on different servers) --> Only grab
+                     * one of them!
+                     */
+                    if (directurl.contains(".m3u8") && !hls_grabbed) {
+                        addHLS(directurl);
+                        hls_grabbed = true;
+                    } else {
+                        if (directURLs.size() == 1) {
+                            /* Only one URL --> We can be sure that we can use the eventually given width and height values! */
+                            addQuality(directurl, null, width, height);
+                        } else {
+                            addQuality(directurl, null, 0, 0);
+                        }
+                    }
                 }
             }
         }
-        return;
     }
 
     /* INFORMATION: network = akamai or limelight == RTMP */
@@ -503,16 +518,17 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     private void addQuality(final String directurl, final String filesize_str, int width, int height) {
-        final String width_URL = new Regex(directurl, "/(\\d+)[^/]*?\\.mp4$").getMatch(0);
-        if (width_URL == null && width == 0 && height == 0) {
-            /* Skip items for which we cannot find out the height. */
+        /* Get/Fix correct width/height values. */
+        String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn|s|m|sm|ml|l)\\.mp4$").getMatch(0);
+        if (width_URL == null) {
+            width_URL = new Regex(directurl, "/(\\d{1,4})\\-\\d+\\.mp4$").getMatch(0);
+        }
+        width = getWidth(width_URL, width);
+        height = getHeight(width_URL, width, height);
+        /* Errorhandling */
+        if (width == 0 || height == 0) {
+            /* Skip items for which we cannot find out the resolution. */
             return;
-        }
-        if (height == 0) {
-            height = Integer.parseInt(convertWidthToHeight(width_URL));
-        }
-        if (width == 0) {
-            width = Integer.parseInt(width_URL);
         }
 
         final String height_final = getHeightForQualitySelection(height);
@@ -661,21 +677,82 @@ public class Ardmediathek extends PluginForDecrypt {
         return newMap;
     }
 
-    private String convertWidthToHeight(final String width_str) {
-        final int width = Integer.parseInt(width_str);
-        final String height;
-        if (width == 320) {
-            height = "180";
-        } else if (width == 480) {
-            height = "270";
-        } else if (width == 512) {
-            height = "288";
-        } else if (width == 640) {
-            height = "360";
-        } else if (width == 960) {
-            height = "540";
+    /** Returns videos' width. */
+    private int getWidth(final String width_str, final int width_given) {
+        if (width_str == null && width_given == 0) {
+            return 0;
+        }
+        final int width;
+        if (width_given > 0) {
+            width = width_given;
         } else {
-            height = Integer.toString(width / 2);
+            if (width_str.matches("\\d+")) {
+                width = Integer.parseInt(width_str);
+            } else {
+                /* Convert given quality-text to width. */
+                if (width_str.equals("mn") || width_str.equals("sm")) {
+                    width = 480;
+                } else if (width_str.equals("hi") || width_str.equals("m")) {
+                    width = 512;
+                } else if (width_str.equals("ln") || width_str.equals("ml")) {
+                    width = 640;
+                } else if (width_str.equals("lo") || width_str.equals("s")) {
+                    width = 320;
+                } else if (width_str.equals("hq") || width_str.equals("l")) {
+                    width = 960;
+                } else {
+                    width = 0;
+                }
+            }
+        }
+        return width;
+    }
+
+    /** Returns videos' height. */
+    private int getHeight(final String width_str, final int width, final int height_given) {
+        final int height;
+        if (height_given > 0) {
+            height = height_given;
+        } else {
+            height = Integer.parseInt(convertWidthToHeight(width_str));
+        }
+        return height;
+    }
+
+    private String convertWidthToHeight(final String width_str) {
+        final String height;
+        if (width_str == null) {
+            height = "0";
+        } else if (width_str.matches("\\d+")) {
+            final int width = Integer.parseInt(width_str);
+            if (width == 320) {
+                height = "180";
+            } else if (width == 480) {
+                height = "270";
+            } else if (width == 512) {
+                height = "288";
+            } else if (width == 640) {
+                height = "360";
+            } else if (width == 960) {
+                height = "540";
+            } else {
+                height = Integer.toString(width / 2);
+            }
+        } else {
+            /* Convert given quality-text to height. */
+            if (width_str.equals("mn") || width_str.equals("sm")) {
+                height = "270";
+            } else if (width_str.equals("hi") || width_str.equals("m")) {
+                height = "288";
+            } else if (width_str.equals("ln") || width_str.equals("ml")) {
+                height = "360";
+            } else if (width_str.equals("lo") || width_str.equals("s")) {
+                height = "180";
+            } else if (width_str.equals("hq") || width_str.equals("l")) {
+                height = "540";
+            } else {
+                height = "0";
+            }
         }
         return height;
     }
