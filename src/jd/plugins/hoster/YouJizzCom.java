@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 public class YouJizzCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
-    private String DLLINK = null;
+    private String dllink = null;
 
     public YouJizzCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -98,41 +98,41 @@ public class YouJizzCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = filename.trim();
-        final String embed = br.getRegex("src=(\\'|\"|&#x22;)(https?://(?:www\\.)?youjizz\\.com/videos/embed/[0-9]+)(\\'|\"|&#x22;)").getMatch(1);
+        final String embed = br.getRegex("src=('|\"|&#x22;)(https?://(?:www\\.)?youjizz\\.com/videos/embed/[0-9]+)\\1").getMatch(1);
         if (embed == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(embed);
-        DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
-        if (DLLINK == null) {
+        br.getPage(Encoding.htmlOnlyDecode(embed));
+        dllink = br.getRegex("addVariable\\(\"file\"\\s*,.*?\"(https?://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+        if (dllink == null) {
             // 02.dec.2016
-            DLLINK = br.getRegex("<source src=\"([^\"]+)").getMatch(0);
+            dllink = br.getRegex("<source src=\"([^\"]+)").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (dllink == null) {
             // 02.dec.2016
-            DLLINK = br.getRegex("newLink\\.setAttribute\\(\\'href\\'\\,\\'([^']+)").getMatch(0);
+            dllink = br.getRegex("newLink\\.setAttribute\\('href'\\s*,\\s*'([^']+)").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
-            if (DLLINK == null) {
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+            if (dllink == null) {
                 // class="buttona" >Download This Video</
-                DLLINK = br.getRegex("\"(http://im\\.[^<>\"]+)\"").getMatch(0);
+                dllink = br.getRegex("\"(http://im\\.[^<>\"]+)\"").getMatch(0);
             }
-            if (DLLINK == null) {
-                String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?youjizz\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
+            if (dllink == null) {
+                String playlist = br.getRegex("so\\.addVariable\\(\"playlist\"\\s*,\\s*\"(https?://(www\\.)?youjizz\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
                 if (playlist == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 Browser br2 = br.cloneBrowser();
                 br2.getPage(playlist);
                 // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
-                DLLINK = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
-                if (DLLINK != null) {
-                    DLLINK = DLLINK.replace("%252", "%2");
+                dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
+                if (dllink != null) {
+                    dllink = dllink.replace("%252", "%2");
                 }
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Browser br2 = br.cloneBrowser();
@@ -140,7 +140,7 @@ public class YouJizzCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(Encoding.htmlOnlyDecode(dllink));
             if (!con.getContentType().contains("html")) {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
@@ -160,7 +160,7 @@ public class YouJizzCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
