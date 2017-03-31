@@ -161,7 +161,7 @@ public class FourDownFilesCom extends antiDDoSForHost {
         br.setFollowRedirects(true);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>\\s*(Download )?File Not Found\\s*<|>The file was removed by|Reason for deletion:)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
