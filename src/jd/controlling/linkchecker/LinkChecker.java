@@ -41,6 +41,7 @@ public class LinkChecker<E extends CheckableLink> {
         protected final CheckableLink                        link;
         protected final long                                 linkCheckerGeneration;
         protected final LinkChecker<? extends CheckableLink> checker;
+        protected final AtomicBoolean                        checkFlag = new AtomicBoolean(false);
 
         public InternCheckableLink(CheckableLink link, LinkChecker<? extends CheckableLink> checker) {
             this.link = link;
@@ -48,32 +49,44 @@ public class LinkChecker<E extends CheckableLink> {
             this.checker = checker;
         }
 
-        public CheckableLink getCheckableLink() {
+        public final CheckableLink getCheckableLink() {
             return this.link;
         }
 
-        public boolean linkCheckAllowed() {
-            if (link instanceof CrawledLink) {
-                final CrawledLink cl = (CrawledLink) link;
-                final UniqueAlltimeID pn = cl.getPreviousParentNodeID();
-                if (pn != null) {
-                    // we need at least previousParentNode, that will be set after changing the parentNode
-                    final CrawledPackage cn = cl.getParentNode();
-                    if (cn == null || cn.getControlledBy() == null) {
+        public final boolean isChecked() {
+            return checkFlag.get();
+        }
+
+        public final boolean check() {
+            return checkFlag.compareAndSet(false, true);
+        }
+
+        public final boolean linkCheckAllowed() {
+            if (this.linkCheckerGeneration == getLinkChecker().checkerGeneration.get()) {
+                if (link instanceof CrawledLink) {
+                    final CrawledLink cl = (CrawledLink) link;
+                    final UniqueAlltimeID pn = cl.getPreviousParentNodeID();
+                    if (pn != null) {
+                        // we need at least previousParentNode, that will be set after changing the parentNode
+                        final CrawledPackage cn = cl.getParentNode();
+                        if (cn == null || cn.getControlledBy() == null) {
+                            return false;
+                        }
+                    }
+                } else {
+                    final DownloadLink dlLink = link.getDownloadLink();
+                    final FilePackage fp = dlLink.getFilePackage();
+                    if (FilePackage.isDefaultFilePackage(fp) || fp.getControlledBy() == null) {
                         return false;
                     }
                 }
+                return true;
             } else {
-                final DownloadLink dlLink = link.getDownloadLink();
-                final FilePackage fp = dlLink.getFilePackage();
-                if (FilePackage.isDefaultFilePackage(fp) || fp.getControlledBy() == null) {
-                    return false;
-                }
+                return false;
             }
-            return this.linkCheckerGeneration == checker.checkerGeneration.get();
         }
 
-        public LinkChecker<? extends CheckableLink> getLinkChecker() {
+        public final LinkChecker<? extends CheckableLink> getLinkChecker() {
             return checker;
         }
 
@@ -148,9 +161,9 @@ public class LinkChecker<E extends CheckableLink> {
 
     @SuppressWarnings("unchecked")
     protected void linkChecked(InternCheckableLink link) {
-        if (link != null) {
+        if (link != null && !link.isChecked()) {
             final boolean stopEvent;
-            if (linksRequested.decrementAndGet() == 0) {
+            if (link.check() && linksRequested.decrementAndGet() == 0) {
                 synchronized (CHECKER) {
                     if (linksRequested.get() == 0 && runningState.compareAndSet(true, false)) {
                         stopEvent = true;
@@ -493,7 +506,6 @@ public class LinkChecker<E extends CheckableLink> {
 
     /* start new linkCheckThreads until max is reached or no left to start */
     private static void startNewThreads() {
-        final ArrayList<InternCheckableLink> removeList = new ArrayList<InternCheckableLink>();
         synchronized (LOCK) {
             final Set<String> removeHosts = new HashSet<String>();
             final Set<Entry<String, WeakHashMap<LinkChecker<?>, ArrayDeque<InternCheckableLink>>>> allTodos = LINKCHECKER.entrySet();
@@ -531,9 +543,6 @@ public class LinkChecker<E extends CheckableLink> {
             for (final String host : removeHosts) {
                 LINKCHECKER.remove(host);
             }
-        }
-        for (final InternCheckableLink removedLink : removeList) {
-            removedLink.getLinkChecker().linkChecked(removedLink);
         }
     }
 
