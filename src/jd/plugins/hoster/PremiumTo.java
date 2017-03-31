@@ -51,7 +51,7 @@ import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium4.me", "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent[a-z0-9]*?\\.(premium\\.to|premium4\\.me)/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage[a-z0-9]*?\\.(?:premium\\.to|premium4\\.me)/file/[A-Z0-9]+" })
 public class PremiumTo extends UseNet {
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
 
@@ -63,8 +63,7 @@ public class PremiumTo extends UseNet {
     private static final String                                CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
     private static final String                                type_storage                   = "https?://storage.+";
     private static final String                                type_torrent                   = "https?://torrent.+";
-    /* 2017-03-30: Before: api.premium.to */
-    private static final String                                API_BASE                       = "http://api.premium4.me/";
+    private static final String                                API_BASE                       = "http://api.premium.to/";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,7 +78,7 @@ public class PremiumTo extends UseNet {
     @Override
     public String rewriteHost(String host) {
         if (host == null || "premium4.me".equals(host) || "premium.to".equals(host)) {
-            return "premium4.me";
+            return "premium.to";
         }
         return super.rewriteHost(host);
     }

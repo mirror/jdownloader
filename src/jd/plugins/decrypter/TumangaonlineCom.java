@@ -71,7 +71,8 @@ public class TumangaonlineCom extends antiDDoSForDecrypt {
         final String images_array_text = Encoding.unescape((String) entries.get("imagenes"));
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(url_chapter + "_" + url_name);
+        /* 2017-30-31: First chapter name, then chapter number (user request, thread 73101) */
+        fp.setName(url_name + "_" + url_chapter);
 
         final String[] images = new Regex(images_array_text, "\"([^<>\"]+)\"").getColumn(0);
         int page = 0;
@@ -85,10 +86,7 @@ public class TumangaonlineCom extends antiDDoSForDecrypt {
             if (finallink == null) {
                 return null;
             }
-            if (ext == null) {
-                /* No general extension given? Get it from inside the URL. */
-                ext = getFileNameExtensionFromURL(finallink, ".jpg");
-            }
+            ext = getFileNameExtensionFromURL(finallink, ".jpg");
             final String filename = url_chapter + "_" + url_name + "_" + page_formatted + ext;
 
             final DownloadLink dl = this.createDownloadlink("directhttp://" + finallink);
@@ -102,7 +100,7 @@ public class TumangaonlineCom extends antiDDoSForDecrypt {
         }
 
         if (!StringUtils.isEmpty(official_downloadurl)) {
-            /* E.g. single mega.co.nz url. */
+            /* E.g. single mega.co.nz url. Do not add it to the package which contains the single images! */
             decryptedLinks.add(this.createDownloadlink(official_downloadurl));
         }
 

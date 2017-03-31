@@ -528,8 +528,18 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private void addQuality(final String directurl, final String filesize_str, int width, int height, final int quality_number) {
         /* Get/Fix correct width/height values. */
-        String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn|s|m|sm|ml|l)\\.mp4$").getMatch(0);
+        /* Type 1 */
+        String width_URL = new Regex(directurl, "(hi|hq|ln|lo|mn)\\.mp4$").getMatch(0);
         if (width_URL == null) {
+            /* Type 2 */
+            width_URL = new Regex(directurl, "(s|m|sm|ml|l)\\.mp4$").getMatch(0);
+        }
+        if (width_URL == null) {
+            /* Type 3 */
+            width_URL = new Regex(directurl, "\\d+((?:_(?:webs|webl))?_ard)\\.mp4$").getMatch(0);
+        }
+        if (width_URL == null) {
+            /* Type 4 */
             width_URL = new Regex(directurl, "/(\\d{1,4})\\-\\d+\\.mp4$").getMatch(0);
         }
         width = getWidth(width_URL, width, quality_number);
@@ -698,13 +708,13 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* Convert given quality-text to width. */
                 if (width_str.equals("mn") || width_str.equals("sm")) {
                     width = 480;
-                } else if (width_str.equals("hi") || width_str.equals("m")) {
+                } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard")) {
                     width = 512;
                 } else if (width_str.equals("ln") || width_str.equals("ml")) {
                     width = 640;
-                } else if (width_str.equals("lo") || width_str.equals("s")) {
+                } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("_webs_ard")) {
                     width = 320;
-                } else if (width_str.equals("hq") || width_str.equals("l")) {
+                } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("_webl_ard")) {
                     width = 960;
                 } else {
                     width = 0;
@@ -752,13 +762,13 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Convert given quality-text to height. */
             if (width_str.equals("mn") || width_str.equals("sm")) {
                 height = "270";
-            } else if (width_str.equals("hi") || width_str.equals("m")) {
+            } else if (width_str.equals("hi") || width_str.equals("m") || width_str.equals("_ard")) {
                 height = "288";
             } else if (width_str.equals("ln") || width_str.equals("ml")) {
                 height = "360";
-            } else if (width_str.equals("lo") || width_str.equals("s")) {
+            } else if (width_str.equals("lo") || width_str.equals("s") || width_str.equals("_webs_ard")) {
                 height = "180";
-            } else if (width_str.equals("hq") || width_str.equals("l")) {
+            } else if (width_str.equals("hq") || width_str.equals("l") || width_str.equals("_webl_ard")) {
                 height = "540";
             } else {
                 height = "0";
@@ -793,8 +803,6 @@ public class Ardmediathek extends PluginForDecrypt {
             height = "0";
             break;
         }
-        /* Set this to 0 as long as it does not work reliable! */
-        height = "0";
         return height;
     }
 
@@ -824,8 +832,6 @@ public class Ardmediathek extends PluginForDecrypt {
             width = 0;
             break;
         }
-        /* Set this to 0 as long as it does not work reliable! */
-        width = 0;
         return width;
     }
 
