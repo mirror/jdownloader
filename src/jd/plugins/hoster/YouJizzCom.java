@@ -135,12 +135,13 @@ public class YouJizzCom extends PluginForHost {
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = Encoding.htmlOnlyDecode(dllink);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(Encoding.htmlOnlyDecode(dllink));
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
