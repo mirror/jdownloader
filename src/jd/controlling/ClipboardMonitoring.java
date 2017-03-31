@@ -24,14 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -44,12 +36,17 @@ import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControl
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
-
     public static class HTMLFragment {
-
         private final String sourceURL;
 
         public final String getSourceURL() {
@@ -119,7 +116,6 @@ public class ClipboardMonitoring {
                 return length == string.length() && hash == string.hashCode();
             }
         }
-
     }
 
     private static class WindowsClipboardHack {
@@ -172,7 +168,6 @@ public class ClipboardMonitoring {
     }
 
     protected static class ClipboardChangeDetector {
-
         protected static enum CHANGE_FLAG {
             DETECTED,
             INTERRUPTED,
@@ -266,9 +261,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
-    private static final DataFlavor                                                          URLFLAVOR;
-    private static final DataFlavor                                                          URILISTFLAVOR;
+    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
+    private static final DataFlavor          URLFLAVOR;
+    private static final DataFlavor          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -366,14 +361,13 @@ public class ClipboardMonitoring {
                             try {
                                 final Transferable currentContent;
                                 final DataFlavor[] dataFlavors;
-                                if (CrossSystem.isLinux()) {
+                                if (true) {
                                     dataFlavors = clipboard.getAvailableDataFlavors();
                                     currentContent = null;
                                 } else {
                                     currentContent = clipboard.getContents(null);
                                     dataFlavors = null;
                                 }
-
                                 if (ignoreTransferable(currentContent, dataFlavors)) {
                                     continue;
                                 }
@@ -466,7 +460,6 @@ public class ClipboardMonitoring {
                                         final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
                                         if (pws != null && pws.size() > 0) {
                                             job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
-
                                                 @Override
                                                 public void modifyCrawledLink(CrawledLink link) {
                                                     link.getArchiveInfo().getExtractionPasswords().addAll(pws);
@@ -558,7 +551,6 @@ public class ClipboardMonitoring {
         if (clipboard != null) {
             try {
                 clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
-
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
                         skipChangeDetection.set(false);
                     }
@@ -574,7 +566,6 @@ public class ClipboardMonitoring {
         if (clipboard != null) {
             try {
                 clipboard.setContents(object, new ClipboardOwner() {
-
                     public void lostOwnership(Clipboard clipboard, Transferable contents) {
                         skipChangeDetection.set(false);
                     }
@@ -788,7 +779,6 @@ public class ClipboardMonitoring {
                 final HashSet<String> pws = PasswordUtils.getPasswords(content);
                 if (pws != null && pws.size() > 0) {
                     job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
-
                         @Override
                         public void modifyCrawledLink(CrawledLink link) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(pws);

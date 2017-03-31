@@ -16,10 +16,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -29,6 +25,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -42,6 +39,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 public class UpdateController implements UpdateCallbackInterface {
     private static final UpdateController INSTANCE = new UpdateController();
@@ -73,7 +74,16 @@ public class UpdateController implements UpdateCallbackInterface {
         eventSender = new UpdaterEventSender();
         logger = LogController.getInstance().getLogger(UpdateController.class.getName());
         settings = JsonConfig.create(UpdateSettings.class);
+        installedRevisionJDU = readRevision("update/versioninfo/JDU/rev");
+        installedRevisionJD = readRevision("update/versioninfo/JD/rev");
+    }
 
+    public int getInstalledRevisionJDU() {
+        return installedRevisionJDU;
+    }
+
+    public int getInstalledRevisionJD() {
+        return installedRevisionJD;
     }
 
     private UpdateHandler      handler;
@@ -86,7 +96,8 @@ public class UpdateController implements UpdateCallbackInterface {
     private String             statusLabel;
     private double             statusProgress      = -1;
     private volatile boolean   hasPendingUpdates   = false;
-
+    private int                installedRevisionJDU;
+    private int                installedRevisionJD;
     public static final int    DEBUG_SELFTEST_PORT = System.getProperty("DEBUG_SELFTEST") == null ? -1 : Integer.parseInt(System.getProperty("DEBUG_SELFTEST"));
 
     public UpdateHandler getHandler() {
@@ -102,20 +113,15 @@ public class UpdateController implements UpdateCallbackInterface {
             }
             logger = newLogger;
         }
-
         this.appid = appid;
         this.updaterid = updaterid;
         hasPendingUpdates = handler.hasPendingUpdates();
         handler.startIntervalChecker();
-
         try {
             jd.SecondLevelLaunch.UPDATE_HANDLER_SET.setReached();
         } catch (Throwable e) {
-
         }
-
         // UpdateAction.getInstance().setEnabled(true);
-
     }
 
     private synchronized boolean isThreadConfirmed() {
@@ -135,7 +141,6 @@ public class UpdateController implements UpdateCallbackInterface {
                 it.remove();
             }
         }
-
     }
 
     @Override
@@ -179,12 +184,27 @@ public class UpdateController implements UpdateCallbackInterface {
         lhandler.runUpdateCheck(manually);
     }
 
+    private int readRevision(String rev) {
+        try {
+            File file = Application.getResource(rev);
+            if (file.exists()) {
+                return Integer.parseInt(IO.readFileToString(file).trim());
+            }
+        } catch (Throwable e) {
+            LoggerFactory.getDefaultLogger().log(e);
+        }
+        return -1;
+    }
+
     @Override
     public void setRunning(boolean b) {
         this.running = b;
+        if (!b) {
+            installedRevisionJDU = readRevision("update/versioninfo/JDU/rev");
+            installedRevisionJD = readRevision("update/versioninfo/JD/rev");
+        }
         if (!org.appwork.utils.Application.isHeadless()) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     if (running) {
@@ -196,7 +216,6 @@ public class UpdateController implements UpdateCallbackInterface {
                         lazyGetIcon().setTitle(_GUI.T.JDUpdater_JDUpdater_object_icon());
                         lazyGetIcon().setDescription(null);
                         JDGui.getInstance().getStatusBar().addProcessIndicator(icon);
-
                     } else {
                         lazyGetIcon().setIndeterminate(false);
                         JDGui.getInstance().getStatusBar().removeProcessIndicator(icon);
@@ -204,16 +223,13 @@ public class UpdateController implements UpdateCallbackInterface {
                 }
             };
         }
-
     }
 
     protected IconedProcessIndicator lazyGetIcon() {
         if (icon != null) {
             return icon;
         }
-
         icon = new EDTHelper<UpdateProgress>() {
-
             @Override
             public UpdateProgress edtRun() {
                 if (icon != null) {
@@ -225,7 +241,6 @@ public class UpdateController implements UpdateCallbackInterface {
                 icon.setTitle(_GUI.T.JDUpdater_JDUpdater_object_icon());
                 icon.setEnabled(true);
                 icon.addMouseListener(new MouseListener() {
-
                     @Override
                     public void mouseReleased(MouseEvent e) {
                     }
@@ -244,14 +259,12 @@ public class UpdateController implements UpdateCallbackInterface {
 
                     @Override
                     public void mouseClicked(MouseEvent e) {
-
                         // JDUpdater.getInstance().startUpdate(false);
                     }
                 });
                 return icon;
             }
         }.getReturnValue();
-
         return icon;
     }
 
@@ -273,17 +286,14 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setGuiToFront(JFrame mainFrame) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 final UpdateHandler lhandler = handler;
                 if (lhandler != null && lhandler.isGuiVisible()) {
                     lhandler.setGuiVisible(true, true);
-
                 }
             }
         };
-
     }
 
     @Override
@@ -309,7 +319,6 @@ public class UpdateController implements UpdateCallbackInterface {
             return new RememberRelativeLocator("Updater", JDGui.getInstance().getMainFrame());
         }
         return null;
-
     }
 
     @Override
@@ -319,7 +328,6 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public boolean doContinueUpdateAvailable(boolean app, boolean updater, long appDownloadSize, long updaterDownloadSize, int appRevision, int updaterRevision, int appDestRevision, int updaterDestRevision) {
-
         if (!settings.isDoAskBeforeDownloadingAnUpdate()) {
             return true;
         }
@@ -329,32 +337,24 @@ public class UpdateController implements UpdateCallbackInterface {
         try {
             if (app && appDownloadSize < 0 || updater && updaterDownloadSize < 0) {
                 confirm(0, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_message(), _UPDATE.T.confirmdialog_new_update_available_answer_now(), _UPDATE.T.confirmdialog_new_update_available_answer_later());
-
             } else {
-
                 long download = 0;
                 if (app) {
                     download += appDownloadSize;
-
                 }
                 if (updater) {
                     download += updaterDownloadSize;
                 }
                 confirm(0, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_message_sized(SizeFormatter.formatBytes(download)), _UPDATE.T.confirmdialog_new_update_available_answer_now(), _UPDATE.T.confirmdialog_new_update_available_answer_later());
-
             }
-
             // setUpdateConfirmed(true);
             return true;
         } catch (DialogClosedException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-
         } catch (DialogCanceledException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-
         }
         return false;
-
     }
 
     @Override
@@ -371,16 +371,12 @@ public class UpdateController implements UpdateCallbackInterface {
     public void onResults(boolean app, boolean updater, int clientRevision, int clientDestRevision, int selfRevision, int selfDestRevision, File awfFileclient, File awfFileSelf, File selfWOrkingDir, boolean jdlaunched) throws InterruptedException, IOException {
         try {
             logger.info("onResult");
-
             if (handler.hasPendingSelfupdate()) {
                 fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
                     if (handler.isGuiVisible() || settings.isDoAskMeBeforeInstallingAnUpdateEnabled()) {
-
                         logger.info("ASK for installing selfupdate");
-
                         confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message(), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
-
                         setUpdateConfirmed(true);
                         handler.setGuiVisible(true, true);
                     } else {
@@ -391,7 +387,6 @@ public class UpdateController implements UpdateCallbackInterface {
                 UpdateController.getInstance().installUpdates(null);
                 return;
             }
-
             // no need to do this if we have a selfupdate pending
             InstallLog awfoverview = handler.createAWFInstallLog();
             logger.info(JSonStorage.toString(awfoverview));
@@ -422,7 +417,6 @@ public class UpdateController implements UpdateCallbackInterface {
                 if (!settings.isInstallUpdatesSilentlyIfPossibleEnabled()) {
                     logger.info("ask to install plugins");
                     confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message_plugin(), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
-
                 }
                 logger.info("run install");
                 UpdateController.getInstance().installUpdates(awfoverview);
@@ -437,13 +431,11 @@ public class UpdateController implements UpdateCallbackInterface {
                 }.start();
                 logger.info("set gui finished");
                 handler.setGuiFinished(_UPDATE.T.updatedplugins());
-
                 if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) {
                     handler.setGuiVisible(false, false);
                 }
                 fireUpdatesAvailable(false, null);
                 return;
-
             }
             fireUpdatesAvailable(false, awfoverview);
             // we need at least one restart
@@ -451,20 +443,16 @@ public class UpdateController implements UpdateCallbackInterface {
                 installUpdates(awfoverview);
                 fireUpdatesAvailable(false, null);
             } else {
-
                 if (handler.isGuiVisible() || settings.isDoAskMeBeforeInstallingAnUpdateEnabled()) {
-
                     List<String> rInstalls = handler.getRequestedInstalls();
                     List<String> ruInstalls = handler.getRequestedUnInstalls();
                     if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
                         confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE.T.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
-
                     } else {
                         confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message(), _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
                     }
                     setUpdateConfirmed(true);
                     handler.setGuiVisible(true, true);
-
                     UpdateController.getInstance().installUpdates(awfoverview);
                     fireUpdatesAvailable(false, null);
                 } else {
@@ -475,17 +463,14 @@ public class UpdateController implements UpdateCallbackInterface {
             logger.log(e);
             handler.setGuiVisible(false, false);
         } finally {
-
         }
     }
-
     // public static final String UPDATE = "update";
     // public static final String SELFTEST = "selftest";
     // public static final String SELFUPDATE_ERROR = "selfupdateerror";
     // public static final String AFTER_SELF_UPDATE = "afterupdate";
 
     // public static final String OK = "OK";
-
     private void fireUpdatesAvailable(boolean self, InstallLog installLog) {
         hasPendingUpdates = handler.hasPendingUpdates();
         eventSender.fireEvent(new UpdaterEvent(this, UpdaterEvent.Type.UPDATES_AVAILABLE, self, installLog));
@@ -498,7 +483,6 @@ public class UpdateController implements UpdateCallbackInterface {
     private void confirm(int flags, String title, String message, String ok, String no) throws DialogCanceledException, DialogClosedException {
         final UpdateHandler lhandler = handler;
         final ConfirmUpdateDialog cd = new ConfirmUpdateDialog(flags, title, message, null, ok, no) {
-
             @Override
             protected Window getDesiredRootFrame() {
                 if (lhandler == null) {
@@ -506,9 +490,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 }
                 return lhandler.getGuiFrame();
             }
-
         };
-
         UIOManager.I().show(ConfirmDialogInterface.class, cd).throwCloseExceptions();
         if (cd.isClosedBySkipUntilNextRestart()) {
             if (lhandler != null) {
@@ -516,11 +498,9 @@ public class UpdateController implements UpdateCallbackInterface {
             }
             throw new DialogCanceledException(0);
         }
-
     }
 
     public boolean hasPendingUpdates() {
-
         return hasPendingUpdates;
     }
 
@@ -531,15 +511,11 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public Process runExeAsynch(List<String> call, File root) throws IOException {
-
         if (DEBUG_SELFTEST_PORT > 0) {
             // -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=y
-
             call.addAll(RestartController.getInstance().getFilteredRestartParameters());
-
             call.add(1, "-Xdebug");
             call.add(2, "-Xrunjdwp:transport=dt_socket,server=y,address=" + DEBUG_SELFTEST_PORT + ",suspend=y");
-
             logger.info("Call: " + call + " in " + root);
             if (CrossSystem.isWindows()) {
                 StringBuilder sb = new StringBuilder();
@@ -553,7 +529,6 @@ public class UpdateController implements UpdateCallbackInterface {
                     sb.append("\"").append(c).append("\"");
                 }
                 File tmp = Application.getTempResource("selftestLaunch.bat");
-
                 tmp.delete();
                 sb.append(" >self_log_std" + time + ".txt  2>self_log_err" + time + ".txt\r\ntype self_log_std" + time + ".txt\r\ntype self_log_err" + time + ".txt");
                 sb.append("\r\n");
@@ -567,19 +542,15 @@ public class UpdateController implements UpdateCallbackInterface {
                 newList.add(tmp.getAbsolutePath());
                 call = newList;
             }
-
             final ProcessBuilder pb = ProcessBuilderFactory.create(call);
             pb.redirectErrorStream(true);
             pb.directory(root);
-
             final Process process = pb.start();
             if (process != null) {
                 // logger.logAsynch(process.getErrorStream());
                 logger.logAsynch(process.getInputStream());
             }
-
             return process;
-
         } else {
             call.addAll(RestartController.getInstance().getFilteredRestartParameters());
             logger.info("Start Process: " + call);
@@ -605,12 +576,10 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void runExtensionInstallation(String id) throws InterruptedException {
-
         handler.installExtension(id);
     }
 
     public void waitForUpdate() throws InterruptedException {
-
         handler.waitForUpdate();
     }
 
@@ -644,6 +613,5 @@ public class UpdateController implements UpdateCallbackInterface {
         }
         handler.requestFullExtensionUpdate(list.toArray(new String[] {}));
         runUpdateChecker(false);
-
     }
 }
