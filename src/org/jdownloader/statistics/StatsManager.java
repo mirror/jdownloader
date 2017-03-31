@@ -47,7 +47,6 @@ import org.appwork.utils.logging2.LogSink.FLUSH;
 import org.appwork.utils.logging2.LogSinkFileHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceProvider;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
@@ -68,6 +67,7 @@ import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 import org.jdownloader.settings.AccountSettings;
+import org.jdownloader.updatev2.UpdateController;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
@@ -759,8 +759,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setHost(Candidate.replace(link.getHost()));
             dl.setCandidate(Candidate.create(account));
             dl.setCaptchaRuntime(captcha);
-            dl.setRevU(readRevision("update/versioninfo/JDU/rev"));
-            dl.setRev(readRevision("update/versioninfo/JD/rev"));
+            dl.setRevU(UpdateController.getInstance().getInstalledRevisionJDU());
+            dl.setRev(UpdateController.getInstance().getInstalledRevisionJD());
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
             dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
@@ -1360,8 +1360,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // long duration = link.getView().getDownloadTime();
             // long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
             dl.setBuildTime(StatsManager.readBuildTime());
-            dl.setRevU(readRevision("update/versioninfo/JDU/rev"));
-            dl.setRev(readRevision("update/versioninfo/JD/rev"));
+            dl.setRevU(UpdateController.getInstance().getInstalledRevisionJDU());
+            dl.setRev(UpdateController.getInstance().getInstalledRevisionJD());
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(Candidate.replace(link.getHost()));
@@ -1427,18 +1427,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         } catch (Throwable e1) {
             logger.log(e1);
         }
-    }
-
-    private int readRevision(String rev) {
-        try {
-            File file = Application.getResource(rev);
-            if (file.exists()) {
-                return Integer.parseInt(IO.readFileToString(file).trim());
-            }
-        } catch (Throwable e) {
-            LoggerFactory.getDefaultLogger().log(e);
-        }
-        return -1;
     }
 
     public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
