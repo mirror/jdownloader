@@ -47,6 +47,7 @@ import org.appwork.utils.logging2.LogSink.FLUSH;
 import org.appwork.utils.logging2.LogSinkFileHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceProvider;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
@@ -148,9 +149,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private boolean log(final StatsLogInterface dl) {
         if (isEnabled()) {
-            if (!isJared) {
-                return false;
-            }
             synchronized (list) {
                 if (list.size() == maxListSize) {
                     list.pollFirst();
@@ -550,7 +548,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 throw new Exception("Empty LogZip!");
             }
             final String id = JDServUtils.upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
-            sendLogDetails(new LogDetails(id, action.getData()));
+            sendLogDetails(new LogDetails(id, action.getData(), action.getCls(), action.getHost(), action.getType()));
             if (!silent) {
                 UIOManager.I().showMessageDialog(_GUI.T.StatsManager_createAndUploadLog_thanks_(action.getData()));
             }
@@ -761,6 +759,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setHost(Candidate.replace(link.getHost()));
             dl.setCandidate(Candidate.create(account));
             dl.setCaptchaRuntime(captcha);
+            dl.setRevU(readRevision("update/versioninfo/JDU/rev"));
+            dl.setRev(readRevision("update/versioninfo/JD/rev"));
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
             dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
@@ -779,7 +779,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
             // this.
             dl.setLinkID(link.getUniqueID().getID());
-            String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
+            String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getClazz() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
             AtomicInteger errorCounter = counterMap.get(id);
             if (errorCounter == null) {
                 counterMap.put(id, errorCounter = new AtomicInteger());
@@ -849,16 +849,48 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         public PostAction(/* storable */) {
         }
 
-        public PostAction(ActionID id, String data) {
+        public PostAction(ActionID id, String data, String cls, String host, String type) {
             this.id = id;
             this.data = data;
+            this.cls = cls;
+            this.host = host;
+            this.type = type;
         }
 
         private String   data = null;
         private ActionID id   = null;
+        private String   host;
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        private String cls;
+
+        public String getCls() {
+            return this.cls;
+        }
+
+        public void setCls(String cls) {
+            this.cls = cls;
+        }
+
+        private String type;
 
         public String getData() {
-            return data;
+            return this.data;
         }
 
         public void setData(String data) {
@@ -866,7 +898,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         }
 
         public ActionID getId() {
-            return id;
+            return this.id;
         }
 
         public void setId(ActionID id) {
@@ -1326,8 +1358,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             HTTPProxy usedProxy = downloadController.getUsedProxy();
             boolean aborted = downloadController.isAborting();
             // long duration = link.getView().getDownloadTime();
-            long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
+            // long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
             dl.setBuildTime(StatsManager.readBuildTime());
+            dl.setRevU(readRevision("update/versioninfo/JDU/rev"));
+            dl.setRev(readRevision("update/versioninfo/JD/rev"));
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(Candidate.replace(link.getHost()));
@@ -1351,7 +1385,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
             // this.
             dl.setLinkID(link.getUniqueID().getID());
-            String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
+            String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getClazz() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
             AtomicInteger errorCounter = counterMap.get(id);
             if (errorCounter == null) {
                 counterMap.put(id, errorCounter = new AtomicInteger());
@@ -1393,6 +1427,18 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         } catch (Throwable e1) {
             logger.log(e1);
         }
+    }
+
+    private int readRevision(String rev) {
+        try {
+            File file = Application.getResource(rev);
+            if (file.exists()) {
+                return Integer.parseInt(IO.readFileToString(file).trim());
+            }
+        } catch (Throwable e) {
+            LoggerFactory.getDefaultLogger().log(e);
+        }
+        return -1;
     }
 
     public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {

@@ -4,7 +4,6 @@ import org.appwork.storage.JSonStorage;
 
 public class DownloadLogEntry extends AbstractLogEntry {
     public DownloadLogEntry() {
-
     }
 
     @Override
@@ -51,7 +50,6 @@ public class DownloadLogEntry extends AbstractLogEntry {
     private Candidate candidate = null;
 
     public Candidate getCandidate() {
-
         return candidate;
     }
 
@@ -123,8 +121,26 @@ public class DownloadLogEntry extends AbstractLogEntry {
     private boolean proxy   = false;
     private int     counter = 1;
     private long    linkID  = -1;
+    private String  host;
+    private int     revU;
 
-    private String host;
+    public int getRevU() {
+        return revU;
+    }
+
+    public void setRevU(int revU) {
+        this.revU = revU;
+    }
+
+    public int getRev() {
+        return rev;
+    }
+
+    public void setRev(int rev) {
+        this.rev = rev;
+    }
+
+    private int rev;
 
     public long getLinkID() {
         return linkID;
@@ -157,5 +173,4 @@ public class DownloadLogEntry extends AbstractLogEntry {
     public String getHost() {
         return host;
     }
-
 }
