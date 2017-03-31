@@ -435,8 +435,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private final List<CrawledLink>                                             filteredStuff      = new CopyOnWriteArrayList<CrawledLink>();
 
-    private volatile LinkCrawlerFilter                                          crawlerFilter      = null;
-
     private volatile ExtractionExtension                                        archiver;
     private final DelayedRunnable                                               asyncSaving;
 
@@ -456,6 +454,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private final DelayedRunnable                                               asyncCacheCleanup;
 
     private final AutoStartManager                                              autoStartManager;
+
+    private final boolean                                                       isDupeManagerEnabled;
 
     private LinkCollector() {
         autoStartManager = new AutoStartManager();
@@ -486,6 +486,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         });
         final LinkCollectorConfig cfg = JsonConfig.create(LinkCollectorConfig.class);
+        this.isDupeManagerEnabled = cfg.isDupeManagerEnabled();
         final long minimumDelay = Math.max(5000, cfg.getMinimumSaveDelay());
         long maximumDelay = cfg.getMaximumSaveDelay();
         if (maximumDelay <= 0) {
@@ -1360,9 +1361,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -3045,19 +3046,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private CrawledLink putCrawledLinkByLinkID(final String linkID, final CrawledLink link) {
-        final WeakReference<CrawledLink> item = dupeCheckMap.put(linkID, new WeakReference<CrawledLink>(link));
-        if (item != null) {
-            final CrawledLink itemLink = item.get();
-            if (itemLink != null) {
-                final String itemLinkID = itemLink.getLinkID();
-                if (itemLink == link) {
-                    return null;
-                } else if (StringUtils.equals(itemLinkID, linkID)) {
-                    return itemLink;
-                } else {
-                    logger.warning("DupeCheckMap pollution detected: " + linkID);
-                    if (putCrawledLinkByLinkID(itemLinkID, itemLink) != null) {
-                        logger.warning("Failed to clean DupeCheckMap pollution: " + itemLinkID);
+        if (isDupeManagerEnabled) {
+            final WeakReference<CrawledLink> item = dupeCheckMap.put(linkID, new WeakReference<CrawledLink>(link));
+            if (item != null) {
+                final CrawledLink itemLink = item.get();
+                if (itemLink != null) {
+                    final String itemLinkID = itemLink.getLinkID();
+                    if (itemLink == link) {
+                        return null;
+                    } else if (StringUtils.equals(itemLinkID, linkID)) {
+                        return itemLink;
+                    } else {
+                        logger.warning("DupeCheckMap pollution detected: " + linkID);
+                        if (putCrawledLinkByLinkID(itemLinkID, itemLink) != null) {
+                            logger.warning("Failed to clean DupeCheckMap pollution: " + itemLinkID);
+                        }
                     }
                 }
             }
