@@ -98,15 +98,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
 
-        @Override
-        public void killQueue() {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-            /*
-             * this queue can't be killed
-             */
-        }
+                                    @Override
+                                    public void killQueue() {
+                                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
+                                        /*
+                                         * this queue can't be killed
+                                         */
+                                    }
 
-    };
+                                };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -594,7 +594,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public void moveOrAddAt(final PackageType pkg, final List<ChildType> moveChildren, final int moveChildrenindex, final int pkgIndex) {
-
         if (pkg != null && moveChildren != null && moveChildren.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 /**
@@ -728,7 +727,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /* remove all */
                         /*
                          * TODO: speed optimization, we have to correct the index to match changes in children structure
-                         *
+                         * 
                          * TODO: optimize this loop. only process existing links in this package
                          */
                         for (final ChildType child : elementsToMove) {

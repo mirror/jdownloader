@@ -9,6 +9,13 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LinkCollectorConfig extends ConfigInterface {
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isDupeManagerEnabled();
+
+    void setDupeManagerEnabled(boolean b);
+
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
