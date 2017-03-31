@@ -24,6 +24,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,10 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedshare.eu" }, urls = { "https?://(www\\.)?speedshare\\.eu/(vidembed\\-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedshare.eu" }, urls = { "https?://(www\\.)?speedshare\\.eu/(vidembed\\-)?[a-z0-9]{12}" })
 public class SpeedShareEu extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -132,10 +132,16 @@ public class SpeedShareEu extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
+            // offline content fail safe.. they place in meta refresh when content isn't there.
+            if (new Regex(correctedBR, "<meta http-equiv=\"refresh\"\\s*content=\"\\d+; url=").matches()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (fileInfo[2] != null && !fileInfo[2].equals("")) {
+        if (fileInfo[2] != null && !fileInfo[2].equals(""))
+
+        {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
