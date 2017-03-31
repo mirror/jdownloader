@@ -80,11 +80,15 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        return requestFileInformation(downloadLink, downloadLink.getPluginPatternMatcher());
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final String dllink) throws Exception {
         checkFFProbe(downloadLink, "Download a HLS Stream");
         this.setBrowserExclusive();
         final String cookiesString = downloadLink.getStringProperty("cookies", null);
         if (cookiesString != null) {
-            final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
+            final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
         final String referer = downloadLink.getStringProperty("Referer", null);
@@ -92,7 +96,7 @@ public class GenericM3u8 extends PluginForHost {
             br.getPage(referer);
             br.followRedirect();
         }
-        final HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
+        final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
         final StreamInfo streamInfo = downloader.getProbe();
         if (downloader.isEncrypted()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Encrypted HLS is not supported");
@@ -150,10 +154,13 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+    }
+
+    public void handleFree(final DownloadLink downloadLink, final String dllink) throws Exception {
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         final String cookiesString = downloadLink.getStringProperty("cookies", null);
         if (cookiesString != null) {
-            final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
+            final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
         final String referer = downloadLink.getStringProperty("Referer", null);
@@ -161,7 +168,7 @@ public class GenericM3u8 extends PluginForHost {
             br.getPage(referer);
             br.followRedirect();
         }
-        dl = new HLSDownloader(downloadLink, br, downloadLink.getPluginPatternMatcher());
+        dl = new HLSDownloader(downloadLink, br, dllink);
         dl.startDownload();
     }
 
