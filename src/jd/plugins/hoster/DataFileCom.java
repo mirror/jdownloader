@@ -35,6 +35,12 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,12 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.ThrowingRunnable;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" })
 public class DataFileCom extends antiDDoSForHost {
@@ -514,7 +514,7 @@ public class DataFileCom extends antiDDoSForHost {
                 // https is forced here anyways
                 String protocol = "https://";
                 br.postPage(protocol + "www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=0&remember_me=1&btn=");
-                if (br.getCookie(MAINPAGE, "shash") == null || br.getCookie(MAINPAGE, "user") == null) {
+                if (!containsLoginCookie()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -535,6 +535,11 @@ public class DataFileCom extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean containsLoginCookie() {
+        final boolean logincookie = br.getCookie(MAINPAGE, "hash") != null || br.getCookie(MAINPAGE, "user") != null || br.getCookie(MAINPAGE, "shash") != null;
+        return logincookie;
     }
 
     @SuppressWarnings("deprecation")
@@ -598,7 +603,7 @@ public class DataFileCom extends antiDDoSForHost {
             if (account.getBooleanProperty("free")) {
                 br.getPage(downloadLink.getDownloadURL());
                 // if the cached cookie expired, relogin.
-                if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) {
+                if (!containsLoginCookie()) {
                     synchronized (LOCK) {
                         account.setProperty("cookies", Property.NULL);
                         // if you retry, it can use another account...
