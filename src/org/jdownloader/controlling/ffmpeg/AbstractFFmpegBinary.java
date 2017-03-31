@@ -51,8 +51,8 @@ public class AbstractFFmpegBinary {
     };
 
     public static enum FLAG {
-        OPUS(FLAGTYPE.CODEC, "DEA...\\s*opus"), // encode/decode
-        VORBIS(FLAGTYPE.CODEC, "DEA...\\s*vorbis"), // encode/decode
+        OPUS(FLAGTYPE.CODEC, "D.A...\\s*opus"), // encode/decode
+        VORBIS(FLAGTYPE.CODEC, "D.A...\\s*vorbis"), // encode/decode
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
