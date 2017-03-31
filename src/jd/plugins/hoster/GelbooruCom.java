@@ -60,13 +60,16 @@ public class GelbooruCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
+
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String url_filename = new Regex(link.getDownloadURL(), "id=(\\d+)$").getMatch(0);
+        link.setName(url_filename);
+
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "id=(\\d+)$").getMatch(0);
         String filename = br.getRegex("<title>Gelbooru\\- Image View \\- ([^<>\"]+) \\| \\d+</title>").getMatch(0);
         if (filename != null) {
             filename = url_filename + "_" + filename;
@@ -75,15 +78,15 @@ public class GelbooruCom extends PluginForHost {
         }
         dllink = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://img\\.gelbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
+            dllink = this.br.getRegex("<a href=\"([^<>\"\\']+)\"[^<>]+>Original image</a>").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(gelbooru\\.com//images/[^<>\"]+)\"").getMatch(0);
+            }
             if (dllink == null) {
                 /* 2017-02-18 */
                 String imglink = br.getRegex("Resize image.*?<a href=(\"|'|)(.*?)\\1").getMatch(1);
                 if (imglink == null) {
                     imglink = br.getRegex("<img alt=.*?src=(\"|'|)(.*?)\\1").getMatch(1);
-                }
-                if (imglink != null) {
-                    dllink = "http:" + imglink;
                 }
             }
             if (dllink == null) {
@@ -94,6 +97,11 @@ public class GelbooruCom extends PluginForHost {
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + " dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink.startsWith("//")) {
+            dllink = "https:" + dllink;
+        } else if (!dllink.startsWith("http")) {
+            dllink = "https://" + dllink;
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
