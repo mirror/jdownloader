@@ -204,7 +204,7 @@ public class MultiVipNet extends PluginForHost {
         if (dllink == null) {
             /* request Download */
             if (USE_API) {
-                br.getPage("/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+                br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
                 /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
                 if ("204".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
                     /*
@@ -217,7 +217,7 @@ public class MultiVipNet extends PluginForHost {
                 }
                 dllink = PluginJSonUtils.getJsonValue(br, "directlink");
             } else {
-                br.postPage("/links.php", "do=addlinks&links=" + Encoding.urlEncode(link.getDownloadURL()) + "&vipkey=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://multivip.net/links.php", "do=addlinks&links=" + Encoding.urlEncode(link.getDownloadURL()) + "&vipkey=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("Universal VIP key is missing or incorrect")) {
                     logger.info("Given Vip key is invalid");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
