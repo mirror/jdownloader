@@ -603,8 +603,8 @@ public class LinkCrawler {
                 }
 
                 @Override
-                protected LinkedHashSet<String> exportResults() {
-                    final LinkedHashSet<String> ret = new LinkedHashSet<String>();
+                protected Collection<String> exportResults() {
+                    final ArrayList<String> ret = new ArrayList<String>();
                     outerLoop: for (final HtmlParserCharSequence result : this.getResults()) {
                         if (!fastResults.contains(result)) {
                             final int index = result.indexOf("...");
