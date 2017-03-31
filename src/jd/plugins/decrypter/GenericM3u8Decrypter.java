@@ -16,9 +16,14 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,10 +36,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|\\?[^\\s<>\"']*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -84,6 +85,12 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             // invalid link
             return ret;
         }
+        return parse(param, br, referer, cookiesString, null);
+
+    }
+
+    public ArrayList<DownloadLink> parse(final CryptedLink param, final Browser br, final String referer, final String cookiesString, final String filename) throws IOException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
             final ArrayList<String> infos = new ArrayList<String>();
             for (final String line : Regex.getLines(br.toString())) {
@@ -92,6 +99,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 } else if (!line.startsWith("#")) {
                     final URL url = br.getURL(line);
                     final DownloadLink link = createDownloadlink(url.toString());
+                    if (filename != null) {
+                        link.setFinalFileName(filename);
+                    }
                     if (referer != null) {
                         link.setProperty("Referer", referer);
                     }
