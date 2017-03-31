@@ -27,6 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,15 +58,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-upload.cc" }, urls = { "https?://(?:www\\.)?file\\-upload\\.(?:com|cc)/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file-upload.com" }, urls = { "https?://(?:www\\.)?file\\-upload\\.(?:com|cc|io)/(?:embed\\-)?[a-z0-9]{12}" })
 public class FileuploadCc extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -67,7 +67,7 @@ public class FileuploadCc extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                        = "http://file-upload.cc";
+    private static final String            COOKIE_HOST                        = "http://file-upload.com";
     private static final String            NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -93,7 +93,7 @@ public class FileuploadCc extends PluginForHost {
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
+    private final boolean                  SUPPORTS_HTTPS                     = true;
     private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
@@ -152,8 +152,8 @@ public class FileuploadCc extends PluginForHost {
     @Override
     public String rewriteHost(String host) {
         if ("file-upload.com".equals(getHost())) {
-            if (host == null || "file-upload.com".equals(host)) {
-                return "file-upload.cc";
+            if (host == null || "file-upload.com".equals(host) || "file-upload.io".equals(host) || "file-upload.cc".equals(host)) {
+                return "file-upload.com";
             }
         }
         return super.rewriteHost(host);
