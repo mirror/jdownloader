@@ -17,12 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,14 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.info" }, urls = { "https?://(?:www\\.)?(?:libgen\\.net|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "libgen.net", "libgen.io", "golibgen.io" };
+        return new String[] { "libgen.me", "libgen.info", "libgen.net", "libgen.io", "golibgen.io" };
     }
 
     public LibGenInfo(PluginWrapper wrapper) {
@@ -48,12 +46,6 @@ public class LibGenInfo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://libgen.info/";
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("libgen.net/", "golibgen.io/"));
     }
 
     private static final String  type_picture        = ".+/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png)";
@@ -147,8 +139,6 @@ public class LibGenInfo extends PluginForHost {
                     logger.info("Could not find download form");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // they have use multiple quotation marks within form input lines. This returns null values.
-                download = cleanForm(download);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, FREE_RESUME, FREE_MAXCHUNKS);
             }
         } else {
@@ -175,38 +165,6 @@ public class LibGenInfo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
-     *
-     * TODO: remove after JD2 goes stable!
-     *
-     * @author raztoki
-     */
-    private Form cleanForm(Form form) {
-        if (form == null) {
-            return null;
-        }
-        String data = form.getHtmlCode();
-        ArrayList<String> cleanupRegex = new ArrayList<String>();
-        cleanupRegex.add("(\\w+\\s*=\\s*\"[^\"]+\")");
-        cleanupRegex.add("(\\w+\\s*=\\s*'[^']+')");
-        for (String reg : cleanupRegex) {
-            String results[] = new Regex(data, reg).getColumn(0);
-            if (results != null) {
-                String quote = new Regex(reg, "(\"|')").getMatch(0);
-                for (String result : results) {
-                    String cleanedResult = result.replaceFirst(quote, "\\\"").replaceFirst(quote + "$", "\\\"");
-                    data = data.replace(result, cleanedResult);
-                }
-            }
-        }
-        Form ret = new Form(data);
-        ret.setAction(form.getAction());
-        ret.setMethod(form.getMethod());
-        return ret;
     }
 
     public boolean hasAutoCaptcha() {
