@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "funonly.net" }, urls = { "http://(www\\.)?funonly\\.net/funny_videos\\.aspx/funny_video~[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/video_type~flash/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "funonly.net" }, urls = { "http://(www\\.)?funonly\\.net/(?:not_)?funny_videos\\.aspx/(?:not_)?funny_video~[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/video_type~flash/" })
 public class FunOnlyNet extends PluginForHost {
 
     public FunOnlyNet(PluginWrapper wrapper) {
