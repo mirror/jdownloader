@@ -154,6 +154,7 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        handleFree(downloadLink, downloadLink.getPluginPatternMatcher());
     }
 
     public void handleFree(final DownloadLink downloadLink, final String dllink) throws Exception {
