@@ -279,7 +279,7 @@ public class CamwhoresTv extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account, final boolean force, final boolean test) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -287,7 +287,14 @@ public class CamwhoresTv extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    if (test) {
+                        br.getPage("http://www." + this.getHost() + "/");
+                        if (br.getCookie(this.getHost(), "kt_member") != null) {
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
                 }
                 br.getPage("http://www." + this.getHost() + "/login/");
                 /*
@@ -314,12 +321,7 @@ public class CamwhoresTv extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, false, true);
         /* Registered users can watch private videos when they follow/subscribe to the uploaders. */
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
@@ -333,7 +335,7 @@ public class CamwhoresTv extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
+        login(account, false, false);
         requestFileInformation(link);
         doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
