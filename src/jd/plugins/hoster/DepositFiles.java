@@ -159,8 +159,7 @@ public class DepositFiles extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         setMainpage();
-        String url = link.getDownloadURL();
-        final String currentDomain = Browser.getHost(link.getDownloadURL(), true);
+        final String currentDomain = Browser.getHost(link.getDownloadURL(), false);
         if (!currentDomain.matches(DOMAINS)) {
             // this is needed to fix old users bad domain name corrections (say hotpspots/gateways)
             String mainPage = MAINPAGE.get();

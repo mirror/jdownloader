@@ -39,7 +39,8 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
  *
  *         Name: urlink.biz Address: 37.48.120.85<br/>
  *         Name: ur-link.biz Address: 37.48.120.85<br/>
- *         Name: url-ink.biz Address: 37.48.120.85 Name: url-ink.com Address: 37.48.120.85<br/>
+ *         Name: url-ink.biz Address: 37.48.120.85<br/>
+ *         Name: url-ink.com Address: 37.48.120.85<br/>
  *         Name: urli-nk.com Address: 37.48.120.85<br/>
  *
  */
