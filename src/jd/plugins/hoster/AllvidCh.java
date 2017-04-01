@@ -26,6 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,11 +50,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allvid.ch" }, urls = { "https?://(www\\.)?allvid\\.ch/(embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coo5shaine.com" }, urls = { "https?://(www\\.)?(?:allvid\\.ch|coo5shaine\\.com)/(embed\\-)?[a-z0-9]{12}" })
 public class AllvidCh extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -59,11 +59,11 @@ public class AllvidCh extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                   = "http://allvid.ch";
+    private static final String            COOKIE_HOST                   = "http://coo5shaine.com";
     private static final String            NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                       = "(allvid\\.ch)";
+    private static final String            DOMAINS                       = "(allvid\\.ch|coo5shaine\\.com)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -91,12 +91,6 @@ public class AllvidCh extends PluginForHost {
     private static final boolean           FREE_RESUME                   = true;
     private static final int               FREE_MAXCHUNKS                = -5;
     private static final int               FREE_MAXDOWNLOADS             = 2;
-    private static final boolean           ACCOUNT_FREE_RESUME           = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
 
     /* Linktypes */
     private static final String            TYPE_EMBED                    = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
@@ -116,8 +110,6 @@ public class AllvidCh extends PluginForHost {
     private static AtomicInteger           totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
     private static AtomicInteger           maxFree                       = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                       = new AtomicInteger(1);
-    private static Object                  LOCK                          = new Object();
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.7.0.1

@@ -251,7 +251,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                     return decryptedLinks;
                 }
                 br.setFollowRedirects(true);
-                br.getPage(parameter);
+                getPage(parameter);
                 br.setFollowRedirects(false);
                 if (br.containsHTML(">403 Forbidden<")) {
                     logger.info("Link offline: " + parameter);
@@ -277,7 +277,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 } else if (click != null && click.contains("adfoc.us/")) {
                     br.getHeaders().put("Referer", parameter);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getPage(HTMLEntities.unhtmlentities(click));
+                    getPage(HTMLEntities.unhtmlentities(click));
                     if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches("http://adfoc.us/")) {
                         finallink = br.getRedirectLocation();
                     }

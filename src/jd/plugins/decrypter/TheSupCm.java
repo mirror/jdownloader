@@ -20,6 +20,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,15 +31,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  *
  * don't fk with regex, doesn't support any pages or spanning pages.
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 32430 $", interfaceVersion = 2, names = { "thesuperficial.com" }, urls = { "https?://(?:www\\.)?thesuperficial\\.com(?!(/$|/photos/?$|/page/?|/page/\\d+|/photos/(?:hot-bodies|candid|red-carpet|sightings|most-important-people|crap-we-missed)(/?|/\\d+|/page|/page/\\d+)))(?:/[^\\s]+|/photos/[^/]+/[^\\s*]+)" }) 
+@DecrypterPlugin(revision = "$Revision: 32430 $", interfaceVersion = 2, names = { "thesuperficial.com" }, urls = { "https?://(?:www\\.)?thesuperficial\\.com(?!(/$|/photos/?$|/page/?|/page/\\d+|/photos/(?:hot-bodies|candid|red-carpet|sightings|most-important-people|crap-we-missed)(/?|/\\d+|/page|/page/\\d+)))(?:/[^\\s]+|/photos/[^/]+/[^\\s*]+)" })
 public class TheSupCm extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -66,7 +66,7 @@ public class TheSupCm extends PluginForDecrypt {
                 br.getPage(gal);
             } else {
                 // return since we found nudda!
-                return decryptedLinks;
+                // return decryptedLinks;
             }
         }
         String fpName = null;
@@ -83,8 +83,8 @@ public class TheSupCm extends PluginForDecrypt {
             final String name = (String) JavaScriptEngineFactory.walkJson(resource, "page_title");
             final Integer index = (Integer) JavaScriptEngineFactory.walkJson(resource, "index");
             if (image != null && name != null && index != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + image);
-                dl.setFinalFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + getFileNameExtensionFromString(image, ".jpg"));
+                final DownloadLink dl = createDownloadlink("directhttp://" + image.replaceFirst("-compressed\\.", "."));
+                dl.setForcedFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + getFileNameExtensionFromString(image, ".jpg"));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
