@@ -48,6 +48,7 @@ public class ImgwalletCom extends PluginForHost {
         this.setBrowserExclusive();
         jd.plugins.decrypter.ImgShotDecrypt.prepBR(this.br);
         final String fid = jd.plugins.decrypter.ImgShotDecrypt.getFid(link.getDownloadURL());
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (jd.plugins.decrypter.ImgShotDecrypt.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -70,7 +71,8 @@ public class ImgwalletCom extends PluginForHost {
                 br.getHeaders().put("Referer", postURL);
                 this.br.getPage(postURL);
             }
-            dllink = jd.plugins.decrypter.ImgShotDecrypt.getFinallink(this.br, downloadLink.getDownloadURL());
+            // dllink = jd.plugins.decrypter.ImgShotDecrypt.getFinallink(this.br, downloadLink.getDownloadURL());
+            dllink = br.getRegex("<a href=\\'(https://imgwallet.com/images/big/[^\\']+)\\'").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
