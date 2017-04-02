@@ -21,38 +21,39 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.to" }, urls = { "http://(?:www\\.)?ddl-music\\.(?:org|to)/(download/\\d+/.*?/|download/links/[a-z0-9]+/(mirror/\\d+/)?)" }) 
-public class DDLMscrg extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.to" }, urls = { "http://(?:www\\.)?ddl-music\\.(?:org|to)/(download/\\d+/.*?/|download/links/[a-z0-9]+/(mirror/\\d+/)?)" })
+public class DDLMscrg extends antiDDoSForDecrypt {
     private static final String DECRYPTER_DDLMSC_MAIN  = "http://(www\\.)?ddl-music\\.to/download/\\d+/.*?/";
     private static final String DECRYPTER_DDLMSC_CRYPT = "http://(www\\.)?ddl-music\\.to/download/links/[a-z0-9]+/(mirror/\\d+/)?";
-    private static final String CAPTCHATEXT            = "captcha\\.php\\?id=";
+    private static final String CAPTCHATEXT            = "captcha\\.php\\?id=|class=\"g-recaptcha\"";
 
     public DDLMscrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("ddl-music.org/", "ddl-music.to/");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("ddl-music.org/", "ddl-music.to/");
         if (parameter.matches(DECRYPTER_DDLMSC_CRYPT)) {
             logger.info("The user added a DECRYPTER_DDLMSC_CRYPT link...");
             int add = 0;
             for (int i = 1; i < 10; i++) {
-                br.getPage(parameter);
-                try {
-                    Thread.sleep(3000 + add);
-                } catch (InterruptedException e) {
-                }
+                getPage(parameter);
+                sleep(3000 + add, param);
                 if (br.containsHTML("class=\"fehler\"")) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
@@ -60,17 +61,25 @@ public class DDLMscrg extends PluginForDecrypt {
                 if (!br.containsHTML(CAPTCHATEXT)) {
                     return null;
                 }
-                String captchaUrl = "/captcha.php?id=" + new Regex(parameter, "/download/links/([a-z0-9]+)/").getMatch(0) + "&rand=" + new Random().nextInt(1000);
-                String code = getCaptchaCode(captchaUrl, param);
-                br.postPage(parameter, "sent=1&captcha=" + code);
-                if (!br.containsHTML(">Sicherheitscode nicht korrekt\\!<") && !br.containsHTML("captcha.php?id=")) {
+                if (br.containsHTML("class=(\"|')g-recaptcha\\1")) {
+                    final Form captcha = br.getForm(0);
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    submitForm(captcha);
                     break;
                 } else {
-                    if (i >= 8) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    String captchaUrl = "/captcha.php?id=" + new Regex(parameter, "/download/links/([a-z0-9]+)/").getMatch(0) + "&rand=" + new Random().nextInt(1000);
+                    String code = getCaptchaCode(captchaUrl, param);
+                    postPage(parameter, "sent=1&captcha=" + code);
+                    if (!br.containsHTML(">Sicherheitscode nicht korrekt\\!<") && !br.containsHTML("captcha.php?id=")) {
+                        break;
+                    } else {
+                        if (i >= 8) {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
                     }
+                    add += 500;
                 }
-                add += 500;
             }
             String[] allLinks = br.getRegex("\"(https?://[^<>\"]*?)\" target=\"_blank\" style=\"border:0px;\">[\t\n\r ]+<img src=\"images/download_links_button\\.png\"").getColumn(0);
             if (allLinks == null || allLinks.length == 0) {
@@ -82,7 +91,7 @@ public class DDLMscrg extends PluginForDecrypt {
             }
         } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
             logger.info("The user added a DECRYPTER_DDLMSC_MAIN link...");
-            br.getPage(parameter);
+            getPage(parameter);
             String fpName = br.getRegex("<title>DDL\\-Music v3.0 // ([^<>\"]*?) // Download</title>").getMatch(0);
             if (br.containsHTML(">Download nicht gefunden")) {
                 logger.info("Link offline: " + parameter);

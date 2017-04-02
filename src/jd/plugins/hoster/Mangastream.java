@@ -17,7 +17,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/[a-z0-9-_/\\%\\+\\.]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/[a-z0-9-_/\\%\\+\\.]+" })
 public class Mangastream extends antiDDoSForHost {
 
     public Mangastream(PluginWrapper wrapper) {
@@ -91,7 +91,7 @@ public class Mangastream extends antiDDoSForHost {
             }
         } else {
             /* old method - or most recent one! (present in Naturo chap. 547) */
-            String picUrl = br.getRegex("id=\"manga-page\"\\s+src=\"(http[^<>\"]*?)\"").getMatch(0);
+            String picUrl = br.getRegex("id=\"manga-page\"\\s+src=\"((?:https?:)?//[^<>\"]*?)\"").getMatch(0);
             String ext = new Regex(picUrl, ".*?(\\.jpg|\\.png)").getMatch(0);
             if (picUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

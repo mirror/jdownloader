@@ -170,11 +170,6 @@ public class Offline extends PluginForHost {
     }
 
     @Override
-    public Boolean siteTesterDisabled() {
-        return true;
-    }
-
-    @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls != null) {
             for (final DownloadLink link : urls) {
