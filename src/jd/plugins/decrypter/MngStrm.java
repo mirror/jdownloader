@@ -16,7 +16,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangastream.com" }, urls = { "https?://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%\\+\\.]+/){2}\\d+(\\?page=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangastream.com" }, urls = { "https?://(?:www\\.)?(?:mangastream\\.com|readms\\.(?:com|net))/(read|r)/([a-z0-9\\-_%\\+\\.]+/){2}\\d+(\\?page=\\d+)?" })
 public class MngStrm extends PluginForDecrypt {
 
     public MngStrm(PluginWrapper wrapper) {
@@ -30,7 +30,7 @@ public class MngStrm extends PluginForDecrypt {
 
         final String part = new Regex(parameter.getCryptedUrl(), "\\?page=(\\d+)").getMatch(0);
         int requestedPage = part == null ? -1 : Integer.parseInt(part);
-        String url = parameter.toString().replace("readms.com/", "mangastream.com/");
+        String url = parameter.toString().replaceFirst("readms.(?:com|net)/", "mangastream.com/");
 
         url = url.replaceAll("\\?page=\\d+$", "");
         url = url.replace("/r/", "/read/");
