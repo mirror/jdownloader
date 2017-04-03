@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulshare.se", "musickapoz.se" }, urls = { "https?://(www\\.)?(musickapoz|ulshare)\\.se/(embed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulshare.se", "musickapoz.se" }, urls = { "https?://(www\\.)?(musickapoz|ulshare)\\.se/(embed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
 public class MusickapozSe extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -261,6 +261,15 @@ public class MusickapozSe extends PluginForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)</span>").getMatch(0);
+            if (fileInfo[0].endsWith("&#133;")) {
+                fileInfo[0] = new Regex(correctedBR, "<title>(?:Download )?([^<>\"]*?)</title>").getMatch(0);
+                if (fileInfo[0] != null && fileInfo[0].endsWith(" mp3")) {
+                    fileInfo[0] = fileInfo[0].replace(" mp3", ".mp3");
+                }
+                if (fileInfo[0] != null && fileInfo[0].endsWith(" zip")) {
+                    fileInfo[0] = fileInfo[0].replace(" zip", ".zip");
+                }
+            }
         }
         /* Filesize is never given */
         // if (fileInfo[1] == null) {
