@@ -1010,56 +1010,64 @@ public class FilespaceCom extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                final boolean login;
                 if (cookies != null) {
                     /* 2017-03-30: Always try to re-use cookies to prevent login captcha! */
                     this.br.setCookies(this.getHost(), cookies);
+                    br.setFollowRedirects(true);
                     getPage(COOKIE_HOST + "/");
                     if (correctedBR.contains("op=logout")) {
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
+                        login = false;
+                    } else {
+                        login = true;
                     }
-                    /* Delete old cookies/headers. */
-                    this.br = this.prepBrowser(new Browser(), this.getHost());
+                } else {
+                    login = true;
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (login) {
+                    if (cookies != null) {
+                        /* Delete old cookies/headers. */
+                        this.br = this.prepBrowser(new Browser(), this.getHost());
                     }
-                }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    getPage(COOKIE_HOST + "/login.html");
+                    final Form loginform = br.getFormbyProperty("name", "FL");
+                    if (loginform == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
 
-                final String reCaptchaV2SiteKey = PluginJSonUtils.getJsonValue(correctedBR, "sitekey");
-                if (loginform.containsHTML("capatcha")) {
-                    /* 2017-03-30: New: Login captcha */
-                    logger.info("Detected captcha method \"reCaptchaV2\" for this host");
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                    final String reCaptchaV2SiteKey = PluginJSonUtils.getJsonValue(correctedBR, "sitekey");
+                    if (loginform.containsHTML("capatcha")) {
+                        /* 2017-03-30: New: Login captcha */
+                        logger.info("Detected captcha method \"reCaptchaV2\" for this host");
+                        final DownloadLink dlinkbefore = this.getDownloadLink();
+                        if (dlinkbefore == null) {
+                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        }
+                        final String recaptchaV2Response;
+                        if (!StringUtils.isEmpty(reCaptchaV2SiteKey)) {
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2SiteKey).getToken();
+                        } else {
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        }
+                        if (dlinkbefore != null) {
+                            this.setDownloadLink(dlinkbefore);
+                        }
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     }
-                    final String recaptchaV2Response;
-                    if (!StringUtils.isEmpty(reCaptchaV2SiteKey)) {
-                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2SiteKey).getToken();
-                    } else {
-                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    }
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-
-                submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    submitForm(loginform);
+                    if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 if (!br.getURL().contains("/?op=my_account")) {

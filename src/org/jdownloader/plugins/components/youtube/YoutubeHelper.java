@@ -1106,26 +1106,36 @@ public class YoutubeHelper {
         if (vid.date <= 0) {
             // dd MMM yyyy - old
             final Locale locale = Locale.ENGLISH;
-            SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy", locale);
-            formatter.setTimeZone(TimeZone.getDefault());
-            String date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
+            SimpleDateFormat formatter = null;
+            // yyyy-MM-dd (20150508)
+
+            String date = this.br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d{4}-\\d{2}-\\d{2})\">").getMatch(0);
+            if (date != null) {
+                logger.info("Formatter " + "yyyy-MM-dd " + locale + " on " + date);
+                formatter = new SimpleDateFormat("yyyy'-'MM'-'dd", locale);
+                formatter.setTimeZone(TimeZone.getDefault());
+            }
+
             if (date == null) {
-                date = this.br.getRegex("<strong[^>]*>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
+                date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
+                if (date == null) {
+                    date = this.br.getRegex("<strong[^>]*>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
+                }
+                if (date != null) {
+                    formatter = new SimpleDateFormat("dd MMM yyyy", locale);
+                    formatter.setTimeZone(TimeZone.getDefault());
+                }
             }
             // MMM dd, yyyy (20150508)
             if (date == null) {
-                formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
-                formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<strong[^>]*>Published on ([A-Za-z]{3} \\d{1,2}, \\d{4})</strong>").getMatch(0);
-                logger.info("Formatter " + "MMM dd, yyyy " + locale + " on " + date);
+                if (date != null) {
+                    logger.info("Formatter " + "MMM dd, yyyy " + locale + " on " + date);
+                    formatter = new SimpleDateFormat("MMM' 'dd', 'yyyy", locale);
+                    formatter.setTimeZone(TimeZone.getDefault());
+                }
             }
-            // yyyy-MM-dd (20150508)
-            if (date == null) {
-                formatter = new SimpleDateFormat("yyyy-MM-dd", locale);
-                formatter.setTimeZone(TimeZone.getDefault());
-                date = this.br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d{4}-\\d{2}-\\d{2})\">").getMatch(0);
-                logger.info("Formatter " + "yyyy-MM-dd " + locale + " on " + date);
-            }
+
             if (date != null) {
                 try {
                     vid.date = formatter.parse(date).getTime();

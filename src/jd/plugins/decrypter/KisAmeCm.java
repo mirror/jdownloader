@@ -356,15 +356,26 @@ public class KisAmeCm extends antiDDoSForDecrypt implements GoogleVideoRefresh {
     }
 
     private void handleHumanCheck(final Browser br) throws IOException, PluginException, InterruptedException, DecrypterException {
-        final Form ruh = br.getFormbyAction("/Special/AreYouHuman");
-        // recaptchav2 event can happen here
-        if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || ruh != null) {
-            if (ruh == null) {
-                throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+        int retries = 5;
+        while (retries-- > 0) {
+            if (isAbort()) {
+                throw new InterruptedException("Aborted");
             }
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            ruh.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(ruh);
+            final Form ruh = br.getFormbyAction("/Special/AreYouHuman");
+            // recaptchav2 event can happen here
+            if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || ruh != null) {
+                if (ruh == null) {
+                    throw new DecrypterException(DecrypterException.PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                ruh.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(ruh);
+            } else {
+                break;
+            }
+        }
+        if (br.containsHTML("<title>\\s*Are You Human\\s*</title>") || br.getFormbyAction("/Special/AreYouHuman") != null) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
         }
     }
 
