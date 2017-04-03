@@ -86,7 +86,7 @@ public class ImgurCom extends PluginForDecrypt {
                     try {
                         /* Gallery (single image) */
                         if (parameter.matches(type_gallery)) {
-                            br.getPage("https://api.imgur.com/3/gallery/:" + lid);
+                            br.getPage("https://api.imgur.com/3/gallery/" + lid);
                             if (br.getHttpConnection().getResponseCode() == 404) {
                                 /*
                                  * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this

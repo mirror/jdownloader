@@ -32,9 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it-ebooks.directory" }, urls = { "https?://(?:www\\.)?it\\-ebooks\\.directory/book\\-\\d+[a-z0-9]*?\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "it-ebooks.directory" }, urls = { "https?://(?:www\\.)?it(\\-)?ebooks\\.directory/book\\-\\d+[a-z0-9]*?\\.html" })
 public class ItEbooksDirectory extends PluginForHost {
 
     public ItEbooksDirectory(PluginWrapper wrapper) {
@@ -69,16 +70,24 @@ public class ItEbooksDirectory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = new Regex(link.getDownloadURL(), "book\\-(\\d+)").getMatch(0);
+        final String isb10 = br.getRegex("<td>ISBN-10:</td><td itemprop=\"isbn\">(\\d+)<").getMatch(0);
+        final String isb13 = br.getRegex("<td>ISBN-13:</td><td itemprop=\"isbn\">(\\d+)<").getMatch(0);
+
         String filename = br.getRegex("<title>([^<>\"]+) Download Free</title>").getMatch(0);
         if (filename == null) {
             filename = fid;
         }
-        String filesize = br.getRegex("Book size:</td><td>([^<>\"]+)</td>").getMatch(0);
-        filename = Encoding.htmlDecode(filename).trim();
-        if (!filename.endsWith(".pdf")) {
+        filename = Encoding.htmlOnlyDecode(filename).trim();
+        if (StringUtils.endsWithCaseInsensitive(filename, "CHM")) {
+            filename += ".chm";
+        } else if (StringUtils.endsWithCaseInsensitive(filename, "PDF")) {
             filename += ".pdf";
         }
+        if (isb10 != null) {
+            filename = isb10 + "_" + filename;
+        }
         link.setName(filename);
+        final String filesize = br.getRegex("Book size:</td><td>([^<>\"]+)</td>").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
