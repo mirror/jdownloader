@@ -52,7 +52,7 @@ public class IndianPornVideosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video does not exist|video id not found") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("This video (does not exist|Was Deleted)|video id not found") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
