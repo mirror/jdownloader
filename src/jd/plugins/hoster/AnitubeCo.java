@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -34,7 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|info)/video/\\d+/[a-z0-9\\-]+" })
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.info" }, urls = { "https?://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se|es|info)/video/\\d+/[a-z0-9\\-]+" })
 public class AnitubeCo extends antiDDoSForHost {
 
     // note: .co, .tv, .com.br, .jp, .se don't respond only .info -raztoki20160716
@@ -55,7 +55,7 @@ public class AnitubeCo extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp|se|info)", ".info"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp|se|es|info)", ".info"));
     }
 
     @Override
