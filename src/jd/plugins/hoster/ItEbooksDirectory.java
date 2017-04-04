@@ -70,8 +70,8 @@ public class ItEbooksDirectory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = new Regex(link.getDownloadURL(), "book\\-(\\d+)").getMatch(0);
-        final String isb10 = br.getRegex("<td>ISBN-10:</td><td itemprop=\"isbn\">(\\d+)<").getMatch(0);
-        final String isb13 = br.getRegex("<td>ISBN-13:</td><td itemprop=\"isbn\">(\\d+)<").getMatch(0);
+        final String isb10 = br.getRegex("<td>ISBN-10:</td><td itemprop=\"isbn\">([0-9X]+)<").getMatch(0);
+        final String isb13 = br.getRegex("<td>ISBN-13:</td><td itemprop=\"isbn\">([0-9X]+)<").getMatch(0);
 
         String filename = br.getRegex("<title>([^<>\"]+) Download Free</title>").getMatch(0);
         if (filename == null) {
@@ -79,9 +79,9 @@ public class ItEbooksDirectory extends PluginForHost {
         }
         filename = Encoding.htmlOnlyDecode(filename).trim();
         if (StringUtils.endsWithCaseInsensitive(filename, "CHM")) {
-            filename += ".chm";
+            filename = filename.substring(0, filename.length() - 3).trim() + ".chm";
         } else if (StringUtils.endsWithCaseInsensitive(filename, "PDF")) {
-            filename += ".pdf";
+            filename = filename.substring(0, filename.length() - 3).trim() + ".pdf";
         }
         if (isb10 != null) {
             filename = isb10 + "_" + filename;
