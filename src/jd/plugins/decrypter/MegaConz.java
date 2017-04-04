@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:///#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((!|%21)[a-zA-Z0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]{16,}((!|%21)[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
 
     private static AtomicLong CS = new AtomicLong(System.currentTimeMillis());
@@ -83,19 +83,19 @@ public class MegaConz extends PluginForDecrypt {
         final String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
