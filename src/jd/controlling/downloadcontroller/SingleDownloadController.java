@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
@@ -24,6 +23,21 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
@@ -52,28 +66,11 @@ import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
 
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.plugins.tasks.PluginSubTask;
-
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
-
     /**
      * signals that abort request has been received
      */
     private final AtomicBoolean                          abortFlag        = new AtomicBoolean(false);
-
     /**
      * signals the activity of the plugin in use
      */
@@ -90,15 +87,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     private static final HashMap<String, WaitingQueueItem>  LAST_DOWNLOAD_START_TIMESTAMPS = new HashMap<String, WaitingQueueItem>();
-
     private final DownloadLink                              downloadLink;
     private final Account                                   account;
-
     private volatile long                                   startTimestamp                 = -1;
     private final DownloadLinkCandidate                     candidate;
     private final DownloadWatchDog                          watchDog;
     private final LinkStatus                                linkStatus;
-
     private volatile HashResult                             hashResult                     = null;
     private final CopyOnWriteArrayList<DownloadWatchDogJob> jobsAfterDetach                = new CopyOnWriteArrayList<DownloadWatchDogJob>();
     private final WaitingQueueItem                          queueItem;
@@ -106,7 +100,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private final ArrayList<PluginSubTask>                  tasks                          = new ArrayList<PluginSubTask>();
     private volatile HTTPProxy                              usedProxy;
     private volatile boolean                                resumed;
-
     private final DownloadSession                           session;
     private final AtomicBoolean                             finished                       = new AtomicBoolean(false);
 
@@ -219,7 +212,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         if (abortFlag.compareAndSet(false, true)) {
             /* this is our initial abort request */
             Thread abortThread = new Thread() {
-
                 @Override
                 public void run() {
                     while (isActive() && SingleDownloadController.this.isAlive()) {
@@ -245,7 +237,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         }
                     }
                 }
-
             };
             abortThread.setDaemon(true);
             abortThread.setName("Abort: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getUniqueID());
@@ -369,14 +360,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         }
                         final PluginForHost finalHandlePlugin = handlePlugin;
                         watchDog.localFileCheck(this, new ExceptionRunnable() {
-
                             @Override
                             public void run() throws Exception {
                                 final File partFile = new File(downloadLink.getFileOutput() + ".part");
                                 final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
                                 final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
                                 final DiskSpaceReservation reservation = new DiskSpaceReservation() {
-
                                     @Override
                                     public File getDestination() {
                                         return partFile;
@@ -386,7 +375,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                                     public long getSize() {
                                         return remainingSize + Math.max(0, finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink));
                                     }
-
                                 };
                                 final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(reservation);
                                 switch (result) {
@@ -553,7 +541,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             if (ps != null) {
                 final Thread currentThread = Thread.currentThread();
                 ps.addSelectProxyByUrlHook(hook = new SelectProxyByURLHook() {
-
                     @Override
                     public void onProxyChoosen(URL url, List<HTTPProxy> ret) {
                         if (currentThread == Thread.currentThread()) {
@@ -567,6 +554,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
             }
             downloadLogger = LogController.getFastPluginLogger(logID);
+            downloadLogger.info("Start SDL");
             downloadLogger.info("Start Download of " + downloadLink.getPluginPatternMatcher());
             super.setLogger(downloadLogger);
             try {
@@ -592,6 +580,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             } finally {
                 finalizeProcessingPlugin();
                 finished.set(true);
+            }
+            if (downloadLogger != null) {
+                downloadLogger.info("END SDL");
             }
         }
     }
@@ -755,5 +746,4 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         }
         return new File(getSessionDownloadDirectory(), name);
     }
-
 }

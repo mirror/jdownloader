@@ -776,6 +776,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
+            downloadController.getLogger().info("ErrorID: " + dl.getErrorID());
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
             // this.
             dl.setLinkID(link.getUniqueID().getID());
@@ -1380,6 +1381,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 stacktrace = "IDV" + STACKTRACE_VERSION + "\r\n" + cleanErrorID(stacktrace);
             }
             dl.setErrorID(errorID == null ? null : Hash.getMD5(stacktrace));
+          
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(StatsManager.I().getSessionStart());
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
