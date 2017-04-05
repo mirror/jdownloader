@@ -46,7 +46,7 @@ public class FreeDiscPl extends PluginForHost {
 
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://freedisc.pl/start");
+        this.enablePremium("http://freedisc.pl/");
         this.setStartIntervall(1000);
         try {
             Browser.setRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
@@ -333,14 +333,14 @@ public class FreeDiscPl extends PluginForHost {
                 if (cookies != null) {
                     /* Always try to re-use cookies. */
                     br.setCookies(this.getHost(), cookies);
-                    br.getPage("http://" + this.getHost() + "/start");
+                    br.getPage("http://" + this.getHost() + "/");
                     if (br.containsHTML("id=\"btnLogout\"")) {
                         return;
                     }
 
                 }
                 Browser br = prepBR(new Browser());
-                br.getPage("http://" + this.getHost() + "/start");
+                br.getPage("http://" + this.getHost() + "/");
                 // this is done via ajax!
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
