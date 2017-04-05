@@ -167,6 +167,13 @@ public class Keep2ShareCc extends K2SApi {
         link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "k2s.cc/"));
     }
 
+    public void followRedirectNew(Browser br) throws Exception {
+        final String forceNew = br.getRegex("<a href=\"(/file/[a-z0-9]+\\?force_new=1)").getMatch(0);
+        if (forceNew != null) {
+            getPage(forceNew);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         // for multihosters which call this method directly.
@@ -178,6 +185,7 @@ public class Keep2ShareCc extends K2SApi {
         br.setFollowRedirects(true);
         super.prepBrowserForWebsite(this.br);
         getPage(link.getDownloadURL());
+        followRedirectNew(br);
         if (this.isNewLayout2017()) {
             return this.requestFileInformationNew2017(link);
         } else {
@@ -227,6 +235,7 @@ public class Keep2ShareCc extends K2SApi {
         br.setFollowRedirects(true);
         super.prepBrowserForWebsite(this.br);
         getPage(link.getDownloadURL());
+        followRedirectNew(br);
         /*
          * TODO: Add errorhandling here - filename might not be available or located in a different place for abused content or when a
          * downloadlimit is reached!
@@ -715,6 +724,7 @@ public class Keep2ShareCc extends K2SApi {
             if (account.getType() == AccountType.FREE) {
                 setConstants(account);
                 getPage(link.getDownloadURL());
+                followRedirectNew(br);
                 doFree(link, account);
             } else {
                 String dllink = getDirectLinkAndReset(link, true);
@@ -739,6 +749,7 @@ public class Keep2ShareCc extends K2SApi {
                 if (dllink == null) {
                     br.setFollowRedirects(false);
                     getPage(link.getDownloadURL());
+                    followRedirectNew(br);
                     handleGeneralErrors(account);
                     // Set cookies for other domain if it is changed via redirect
                     String currentDomain = MAINPAGE.replace("http://", "");
@@ -757,6 +768,7 @@ public class Keep2ShareCc extends K2SApi {
                         resetCookies(account, currentDomain, newDomain);
                         if (dllink == null) {
                             getPage(link.getDownloadURL().replace(currentDomain, newDomain));
+                            followRedirectNew(br);
                             dllink = br.getRedirectLocation();
                             if (dllink == null) {
                                 dllink = getDllinkPremium();
