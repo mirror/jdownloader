@@ -22,6 +22,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,11 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 /**
  *
@@ -164,8 +164,8 @@ public class Keep2ShareCc extends K2SApi {
             }
         }
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
-        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "k2s.cc/"));
-        link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "k2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2share.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("k2s.cc/", "keep2share.cc/"));
     }
 
     public void followRedirectNew(Browser br) throws Exception {
