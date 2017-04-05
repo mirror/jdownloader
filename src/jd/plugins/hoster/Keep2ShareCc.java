@@ -276,7 +276,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileNameNew2017() {
-        String filename = br.getRegex("class=\"name\\-file\">([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("<span class=\"name-file\">\\s*(.*?)\\s*<em").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"title\\-file\">([^<>\"]+)<").getMatch(0);
         }
@@ -284,14 +284,14 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileSizeNew2017() {
-        String filesize = br.getRegex("<em>\\s*?(\\s+[^<>\"]+)\\s*?</em>").getMatch(0);
+        final String filesize = br.getRegex("<span class=\"name-file\">.*?<em>(.*?)</em").getMatch(0);
         return filesize;
     }
 
     public String getFileName() {
-        String filename = null;
+        String filename = getFileNameNew2017();
         // This might not be needed anymore but keeping it doesn't hurt either
-        if (freeDownloadImmediatelyPossible()) {
+        if (filename == null && freeDownloadImmediatelyPossible()) {
             filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
         }
         if (filename == null) {
@@ -305,8 +305,8 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String getFileSize() {
-        String filesize = null;
-        if (freeDownloadImmediatelyPossible()) {
+        String filesize = getFileSizeNew2017();
+        if (filesize == null && freeDownloadImmediatelyPossible()) {
             filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
         }
         if (filesize == null) {
