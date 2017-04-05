@@ -441,7 +441,8 @@ public class RealDebridCom extends PluginForHost {
             case FILE_UNAVAILABLE:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.downloadlink_status_error_hoster_temp_unavailable(), 10 * 60 * 1000l);
             case UNSUPPORTED_HOSTER:
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Hoster: " + link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                logger.severe("Unsupported Hoster: " + link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Hoster: " + link.getHost());
             case HOSTER_TEMP_UNAVAILABLE:
             case HOSTER_IN_MAINTENANCE:
             case HOSTER_LIMIT_REACHED:
