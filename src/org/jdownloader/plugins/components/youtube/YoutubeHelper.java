@@ -1115,7 +1115,14 @@ public class YoutubeHelper {
                 formatter = new SimpleDateFormat("yyyy'-'MM'-'dd", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
             }
-
+            if (date == null) {
+                date = this.br.getRegex("\"text\":\"Published on ([A-Za-z]{3} \\d{1,2}, \\d{4})\"").getMatch(0);
+                if (date != null) {
+                    logger.info("Formatter " + "MMM dd, yyyy " + locale + " on " + date);
+                    formatter = new SimpleDateFormat("MMM' 'dd', 'yyyy", locale);
+                    formatter.setTimeZone(TimeZone.getDefault());
+                }
+            }
             if (date == null) {
                 date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
                 if (date == null) {
