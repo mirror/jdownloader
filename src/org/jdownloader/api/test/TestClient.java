@@ -59,12 +59,10 @@ import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
 
 public class TestClient {
-
     private static TestLogin LOGIN;
 
     static ImageIcon createImage(final CaptchaChallenge challenge) throws IOException {
         final BufferedImage image = ImageIO.read(new ByteArrayInputStream(Base64.decode(challenge.getImage().substring(challenge.getImage().lastIndexOf(",")))));
-
         return new ImageIcon(image);
     }
 
@@ -85,7 +83,6 @@ public class TestClient {
             if (list.getList().size() == 1) {
                 return list.getList().get(0).getId();
             }
-
             int defIndex = 0;
             ArrayList<DeviceData> devList = list.getList();
             if (lastDevice != null) {
@@ -97,13 +94,11 @@ public class TestClient {
             final int device = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", devList.toArray(new DeviceData[] {}), defIndex, null, null, null, null);
             lastDevice = list.getList().get(device);
             final String dev = lastDevice.getId();
-
             return dev;
         }
     }
 
     public static class TestLogin extends Test {
-
         @Override
         public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
             final LoginDialog login = new LoginDialog(0);
@@ -114,21 +109,17 @@ public class TestClient {
             final LoginData li = Dialog.getInstance().showDialog(login);
             if (li.isSave()) {
                 config.put("email", li.getUsername());
-
                 config.put("password", li.getPassword());
             }
             try {
                 api.connect(li.getUsername(), li.getPassword());
             } catch (final EmailNotValidatedException e) {
                 final CaptchaChallenge challenge = api.getChallenge();
-
                 final String response = Dialog.getInstance().showInputDialog(0, "Enter Captcha to register", "Enter", null, TestClient.createImage(challenge), null, null);
                 challenge.setCaptchaResponse(response);
-
                 api.requestRegistrationEmail(challenge, li.getUsername(), null);
                 api.finishRegistration(Dialog.getInstance().showInputDialog(0, "Email Confirmal Key", "Enter", null, null, null, null), li.getUsername(), li.getPassword());
                 api.connect(li.getUsername(), li.getPassword());
-
             }
         }
 
@@ -136,20 +127,16 @@ public class TestClient {
         public String getName() {
             return "Login";
         }
-
     }
 
     public static class ConfigTest extends Test {
-
         @Override
         public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
             final AdvancedConfigInterface link = api.link(AdvancedConfigInterface.class, chooseDevice(api));
             ArrayList<AdvancedConfigEntryDataStorable> fullList = link.list(".*", true, true, true, true);
-
             ArrayList<AdvancedConfigEntryDataStorable> captchacondif = link.list(".*captcha.*", false, true, false);
             System.out.println(fullList);
             System.out.println("maxforceddownloads = " + link.get("org.jdownloader.settings.GeneralSettings", null, "maxforceddownloads"));
-
             ArrayList<AdvancedConfigEntryDataStorable> trigger = link.list("org.jdownloader.settings.GeneralSettings.CreateFolderTrigger", false, true, false);
             ArrayList<EnumOptionStorable> enumValues = link.listEnum(trigger.get(0).getType());
             System.out.println(enumValues);
@@ -174,7 +161,6 @@ public class TestClient {
      * @throws InterruptedException
      */
     public static void main(final String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException, IOException, InterruptedException {
-
         register(LOGIN = new TestLogin());
         register(new ConfigTest());
         register(new AccountTest());
@@ -182,31 +168,19 @@ public class TestClient {
         register(new DownloadListTest());
         register(new LinkgrabberTest());
         register(new KeepAliveTest());
-
         register(new DialogTest());
         register(new ChangePasswordTest());
-
         register(new ListDevicesTest());
         register(new DisconnectTest());
-
         register(new FeedbackTest());
-
         register(new ChallengeTest());
-
         register(new RegainTest());
-
         register(new GetUptimeTest());
-
         register(new GenericCallTest());
-
         register(new SystemTest());
-
         register(new CaptchaListTest());
-
         register(new WriteSessionTest());
-
         register(new RegisterTest());
-
         register(new RestoreSessionTest());
         register(new TerminateAccountTest());
         register(new StorageCreateTest());
@@ -230,9 +204,7 @@ public class TestClient {
         register(new ValidateArchiveTest());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
-
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
-
             @Override
             public String objectToJSon(final Object payload) {
                 return JSonStorage.serializeToJson(payload);
@@ -241,24 +213,17 @@ public class TestClient {
             @Override
             public <T> T jsonToObject(final String dec, final Type clazz) {
                 return (T) JSonStorage.restoreFromString(dec, new TypeRef(clazz) {
-
                 });
             }
         };
-
         jm.addSerializer(JsonFactoryInterface.class, new JsonSerializer<JsonFactoryInterface>() {
-
             @Override
             public String toJSonString(final JsonFactoryInterface list) {
                 return list.toJsonString();
-
             }
-
         });
         AbstractDialog.setDefaultLocator(new RememberAbsoluteDialogLocator("MYJDTest"));
-
         final AbstractMyJDClientForDesktopJVM api = new AbstractMyJDClientForDesktopJVM("Java Test Application") {
-
             @Override
             protected byte[] base64decode(final String base64encodedString) {
                 return Base64.decode(base64encodedString);
@@ -286,13 +251,11 @@ public class TestClient {
                     codes[i] = i;
                 }
                 br.setAllowedResponseCodes(codes);
-
                 try {
                     if (keyAndIV != null) {
                         br.putRequestHeader("Accept-Encoding", "gazeisp");
                         final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
                         final HashMap<String, String> header = new HashMap<String, String>();
-                        header.put(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "" + sendBytes.length);
                         final String url;
                         if (query == null) {
                             url = getServerRoot();
@@ -301,7 +264,7 @@ public class TestClient {
                         } else {
                             url = getServerRoot() + query;
                         }
-                        con = br.openPostConnection(new URL(url), null, new ByteArrayInputStream(sendBytes), header);
+                        con = br.openPostConnection(new URL(url), null, new ByteArrayInputStream(sendBytes), header, sendBytes.length);
                         final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
                         final String content_Type = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
                         if (con.getResponseCode() == 200) {
@@ -332,7 +295,6 @@ public class TestClient {
                         ret = br.postPage(new URL(url), object == null ? "" : object).getBytes("UTF-8");
                         con = br.getConnection();
                     }
-
                     if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
                         //
                         throw new ExceptionResponse(new String(ret, "UTF-8"), con.getResponseCode(), con.getResponseMessage());
@@ -352,16 +314,11 @@ public class TestClient {
                     } catch (final Throwable e) {
                     }
                 }
-
             }
-
         };
         final Storage config = JSonStorage.getPlainStorage("APiClientTest");
-
         api.setServerRoot("http://api.jdownloader.org");
-
         // api.setServerRoot("http://192.168.2.110:10101");
-
         if (false) {
             api.connect(config.get("email", ""), config.get("password", ""));
             try {
@@ -402,15 +359,12 @@ public class TestClient {
             api.disconnect();
             return;
         }
-
         try {
-
             Test lastOption = LOGIN;
             while (true) {
                 try {
                     lastOption = (Test) Dialog.getInstance().showComboDialog(0, "Please Choose", "Choose Test", TESTS.toArray(new Test[] {}), lastOption, null, null, null, new ListCellRenderer() {
                         private ListCellRenderer org;
-
                         {
                             org = new JComboBox().getRenderer();
                         }
@@ -418,21 +372,15 @@ public class TestClient {
                         @Override
                         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                             return org.getListCellRendererComponent(list, ((Test) value).getName(), index, isSelected, cellHasFocus);
-
                         }
-
                     });
-
                     lastOption.run(config, api);
-
                 } catch (final DialogNoAnswerException e) {
                     System.exit(1);
                 } catch (final Exception e) {
-
                     Dialog.getInstance().showExceptionDialog("Error!!", e.getClass().getSimpleName() + ": " + e, e);
                 }
             }
-
         } catch (final Exception e) {
             e.printStackTrace();
             Dialog.getInstance().showExceptionDialog("Error!!", e.getClass().getSimpleName() + ": " + e, e);
@@ -453,5 +401,4 @@ public class TestClient {
     private static void register(Test testLogin) {
         TESTS.add(testLogin);
     }
-
 }
