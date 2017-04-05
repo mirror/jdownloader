@@ -30,7 +30,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?(sh\\.st|viid\\.me)/[^<>\r\n\t]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?(sh\\.st|viid\\.me|wiid\\.me)/[^<>\r\n\t]+" })
 public class ShorteSt extends antiDDoSForDecrypt {
 
     public ShorteSt(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
         }
         br.getPage(parameter);
         final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
-        if (redirect != null && redirect.contains("sh.st/login")) {
+        if (redirect != null && (redirect.contains("sh.st/login") || redirect.contains("viid.me/login") || redirect.contains("wiid.me/login"))) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (redirect != null) {

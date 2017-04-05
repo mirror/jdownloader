@@ -24,21 +24,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.plugins.tasks.PluginSubTask;
-
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -65,6 +50,22 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
+
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
     /**
@@ -536,6 +537,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         LogSource downloadLogger = null;
         SelectProxyByURLHook hook = null;
         final PluginProgressTask task = new PluginProgressTask(null);
+        final long id = UniqueAlltimeID.next();
         final AbstractProxySelectorImpl ps = getProxySelector();
         try {
             if (ps != null) {
@@ -554,8 +556,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
             }
             downloadLogger = LogController.getFastPluginLogger(logID);
-            downloadLogger.info("Start SDL");
-            downloadLogger.info("Start Download of " + downloadLink.getPluginPatternMatcher());
+            downloadLogger.info("StartDownloadMarker:" + id);
+            downloadLogger.info("Start Download of:" + downloadLink.getPluginPatternMatcher() + "|ID:" + id);
             super.setLogger(downloadLogger);
             try {
                 watchDog.getEventSender().fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, this, candidate));
@@ -582,7 +584,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 finished.set(true);
             }
             if (downloadLogger != null) {
-                downloadLogger.info("END SDL");
+                downloadLogger.info("StopDownloadMarker:" + id);
             }
         }
     }
