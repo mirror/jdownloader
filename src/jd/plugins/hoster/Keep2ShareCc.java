@@ -65,7 +65,8 @@ public class Keep2ShareCc extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
-    public final String  MAINPAGE      = "http://k2s.cc";
+    public final String  MAINPAGE      = "http://keep2share.cc";                        // new.keep2share.cc and keep2share.cc share same
+    // tld
     private final String DOMAINS_PLAIN = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
     // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
@@ -523,6 +524,7 @@ public class Keep2ShareCc extends K2SApi {
                         }
                         if (validateCookie != null) {
                             getPage(MAINPAGE + "/site/profile.html");
+                            followRedirectNew(br);
                             if (force == false || !br.getURL().contains("login.html")) {
                                 return cookies;
                             }
@@ -558,7 +560,7 @@ public class Keep2ShareCc extends K2SApi {
                         postData = postData + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                     }
                 }
-                postPage(MAINPAGE + "/login.html", postData);
+                postPage("/login.html", postData);
                 if (br.containsHTML("Incorrect username or password")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -636,15 +638,20 @@ public class Keep2ShareCc extends K2SApi {
             }
             if (validateCookie.get() == false) {
                 getPage(MAINPAGE + "/site/profile.html");
+                followRedirectNew(br);
             }
             account.setValid(true);
-            if (br.containsHTML("class=\"free\"[^>]*>Free</a>")) {
+            final String accountType = br.getRegex("<span>Account type: </span>\\s*<strong>\\s*(.*?)\\s*<").getMatch(0);
+            if (br.containsHTML("class=\"free\"[^>]*>Free</a>") || "Free".equalsIgnoreCase(accountType)) {
                 account.setType(AccountType.FREE);
                 ai.setStatus("Free Account");
             } else {
                 account.setType(AccountType.PREMIUM);
-                final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
-                final String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                final String usedTraffic = br.getRegex("Used traffic(.*?\\(today\\))?.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                if (availableTraffic == null) {
+                    availableTraffic = br.getRegex("Traffic left(.*?\\(today\\))?.*?<a href=\"/user/statistic\\.html\">(.*?)</").getMatch(1);
+                }
                 if (availableTraffic != null && usedTraffic != null) {
                     final long used = SizeFormatter.getSize(usedTraffic);
                     final long available = SizeFormatter.getSize(availableTraffic);
@@ -656,8 +663,11 @@ public class Keep2ShareCc extends K2SApi {
                 String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
                 if (expire == null) {
                     expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+                    if (expire == null) {
+                        expire = br.getRegex("Premium expires:.*?<strong.*?>\\s*(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+                    }
                 }
-                if (expire == null && br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
+                if (expire == null && (br.containsHTML(">Premium:[\t\n\r ]+LifeTime") || "LifeTime".equals(accountType))) {
                     ai.setStatus("Premium Lifetime Account");
                     ai.setValidUntil(-1);
                 } else if (expire == null) {
