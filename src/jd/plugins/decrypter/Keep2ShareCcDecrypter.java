@@ -58,6 +58,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final String parameter = host + "/file/" + uid;
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
+        ((jd.plugins.hoster.Keep2ShareCc) plugin).followRedirectNew(br);
         // empty folder
         if (br.containsHTML("<span class=\"empty\">No results found\\.\\s*</span>")) {
             return decryptedLinks;
@@ -117,5 +118,4 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
