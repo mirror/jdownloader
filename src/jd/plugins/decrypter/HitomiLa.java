@@ -47,6 +47,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final String guid = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         /* Avoid https, prefer http */
+        getPage(parameter.replace("http://", "https://"));
         getPage("https://hitomi.la/reader/" + guid + ".html");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
