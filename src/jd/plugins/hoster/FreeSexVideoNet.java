@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -30,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotclips24.com" }, urls = { "http://(?:www\\.)?(?:free-sex-video\\.net|hotclips24\\.com)/video/[a-z0-9\\-]+\\d+\\.html" })
 public class FreeSexVideoNet extends PluginForHost {
@@ -45,7 +45,7 @@ public class FreeSexVideoNet extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = 1;   // https://svn.jdownloader.org/issues/83286
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
