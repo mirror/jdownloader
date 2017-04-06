@@ -179,22 +179,22 @@ public class Tube8Com extends PluginForHost {
         }
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0) + "&download_cdn=true&_=" + System.currentTimeMillis());
+        br2.getPage("https://www.tube8.com/ajax/getVideoDownloadURL.php?hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0) + "&download_cdn=true&_=" + System.currentTimeMillis());
         String ret = br2.getRegex("^(.*?)$").getMatch(0);
         return ret != null ? ret.replace("\\", "") : "";
     }
 
     private void findMobileLink(final String correctedBR) throws Exception {
-        dllink = new Regex(correctedBR, "\"mobile_url\":\"(http:.*?)\"").getMatch(0);
+        dllink = new Regex(correctedBR, "\"mobile_url\":\"(https?:.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.mobile\\.tube8\\.com/.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "\"(https?://cdn\\d+\\.mobile\\.tube8\\.com/.*?)\"").getMatch(0);
         }
     }
 
     private void findNormalLink(final String correctedBR) throws Exception {
         dllink = new Regex(correctedBR, "\"standard_url\":\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.public\\.tube8\\.com/.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "\"(https?://cdn\\d+\\.public\\.tube8\\.com/.*?)\"").getMatch(0);
         }
         if (dllink == null) {
             dllink = new Regex(correctedBR, "page_params\\.videoUrlJS = \"(http[^<>\"]*?)\";").getMatch(0);
@@ -313,8 +313,8 @@ public class Tube8Com extends PluginForHost {
         boolean follow = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            br.getPage("http://www.tube8.com");
-            final PostRequest postRequest = new PostRequest("http://www.tube8.com/ajax2/login/");
+            br.getPage("https://www.tube8.com");
+            final PostRequest postRequest = new PostRequest("https://www.tube8.com/ajax2/login/");
             postRequest.addVariable("username", Encoding.urlEncode(account.getUser()));
             postRequest.addVariable("password", Encoding.urlEncode(account.getPass()));
             postRequest.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
