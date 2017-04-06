@@ -46,6 +46,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -157,7 +158,14 @@ public class Uploadedto extends PluginForHost {
         boolean red = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         try {
-            getPage(br, getProtocol() + "uploaded.net/file/" + id + "/status");
+            try {
+                getPage(br, getProtocol() + "uploaded.net/file/" + id + "/status");
+            } catch (BrowserException e) {
+                if (e.getRequest() != null && e.getRequest().getHttpConnection().getResponseCode() == 451) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw e;
+            }
             final String ret = br.getRedirectLocation();
             if (ret != null) {
                 if (ret.contains("/404")) {

@@ -532,6 +532,9 @@ public class PremiumizeMe extends UseNet {
             int status = Integer.parseInt(statusCode);
             switch (status) {
             case 0:
+                if ("Your account is not premium".equalsIgnoreCase(statusMessage)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // 20150425
                 // {"result":null,"statusmessage":"Daily limit reached for this host!","status":0}
                 if (statusMessage == null) {
@@ -539,13 +542,13 @@ public class PremiumizeMe extends UseNet {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000, statusMessage);
                 break;
-                /* DB cnnection problem */
-                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-                // /* Retried enough times --> Temporarily disable account! */
-                // globalDB.compareAndSet(5, 0);
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                // }
-                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+            /* DB cnnection problem */
+            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+            // /* Retried enough times --> Temporarily disable account! */
+            // globalDB.compareAndSet(5, 0);
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            // }
+            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
