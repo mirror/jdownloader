@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -31,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.me" }, urls = { "https?://(?:www\\.)?(?:libgen\\.(?:net|me)|golibgen\\.io)/view\\.php\\?id=\\d+|http://libgen\\.(?:in|io)/(?:[^/]+/)?(?:get|ads)\\.php\\?md5=[A-Za-z0-9]{32}(?:\\&key=[A-Z0-9]+)?|https?://(?:libgen\\.(?:net|io|me)|golibgen\\.io)/covers/\\d+/[^<>\"\\']*?\\.(?:jpg|jpeg|png|gif)" })
 public class LibGenInfo extends PluginForHost {
 
@@ -41,6 +41,14 @@ public class LibGenInfo extends PluginForHost {
 
     public LibGenInfo(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || "libgen.me".equals(host) || "libgen.info".equals(host)) {
+            return "libgen.me";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
