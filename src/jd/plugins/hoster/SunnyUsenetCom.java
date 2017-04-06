@@ -47,30 +47,30 @@ public class SunnyUsenetCom extends UseNet {
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
                 br.getPage("https://www.sunnyusenet.com/en");
-                br.getPage("https://members.sunnyusenet.com/en/index");
-                login = br.getFormbyKey("token");
-                if (login != null && (login.containsHTML("username") || login.containsHTML("password"))) {
+                br.getPage("https://www.sunnyusenet.com/en/login");
+                login = br.getFormbyActionRegex(".*/login");
+                if (login != null && (login.containsHTML("email") || login.containsHTML("password"))) {
                     br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "SUN-SESS") == null) {
+                } else if (br.getCookie(getHost(), "auth-token") == null) {
                     br.getCookies(getHost()).clear();
                 }
             }
-            if (br.getCookie(getHost(), "SUN-SESS") == null) {
+            if (br.getCookie(getHost(), "auth-token") == null) {
                 account.clearCookies("");
                 final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for sunnyusenet.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.getPage("https://www.sunnyusenet.com/en");
-                br.getPage("https://members.sunnyusenet.com/en/index");
-                login = br.getFormbyKey("token");
-                login.put("username", Encoding.urlEncode(userName));
+                br.getPage("https://www.sunnyusenet.com/en/login");
+                login = br.getFormbyActionRegex(".*/login");
+                login.put("email", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                login = br.getFormbyKey("token");
-                if (login != null && (login.containsHTML("username") || login.containsHTML("password"))) {
+                login = br.getFormbyActionRegex(".*/login");
+                if (login != null && (login.containsHTML("email") || login.containsHTML("password"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(getHost(), "SUN-SESS") == null) {
+                } else if (br.getCookie(getHost(), "auth-token") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
