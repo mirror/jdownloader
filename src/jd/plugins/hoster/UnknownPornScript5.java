@@ -54,6 +54,7 @@ public class UnknownPornScript5 extends PluginForHost {
     private static final int     free_maxdownloads            = -1;
 
     private String               dllink                       = null;
+    private boolean              server_issues                = false;
 
     @Override
     public String getAGBLink() {
@@ -215,7 +216,7 @@ public class UnknownPornScript5 extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    server_issues = true;
                 }
             } finally {
                 try {
@@ -244,6 +245,8 @@ public class UnknownPornScript5 extends PluginForHost {
         requestFileInformation(downloadLink);
         if (inValidateDllink()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
