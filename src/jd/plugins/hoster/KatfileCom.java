@@ -1113,9 +1113,9 @@ public class KatfileCom extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|You can`t download more than 1)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|>Please wait|You can`t download more than 1)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+            String wait = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait|>Please wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
