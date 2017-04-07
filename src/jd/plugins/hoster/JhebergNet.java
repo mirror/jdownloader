@@ -236,7 +236,7 @@ public class JhebergNet extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         br.getPage("/profile/");
-        String expire = br.getRegex("class=\"user_infos_details\">(?:up to|jusqu\\'au)\\s*([^<>\"]*?)\\s*(?:\\(.*?\\))?</span>").getMatch(0);
+        String expire = br.getRegex("class=\"user_infos_details\">(?:up to|jusqu\\'au)\\s*([^<>\"]*?)\\s*(?:\\(.*?\\))?\\s*</span>").getMatch(0);
         if (expire != null) {
             if (expire.contains("a.m.") || expire.contains("p.m.")) {
                 expire = expire.replace("a.m.", "AM").replace("p.m.", "PM");
