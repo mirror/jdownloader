@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,13 +29,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImgShotDecrypt extends antiDDoSForDecrypt {
     /**
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imgtrial.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "imgspot.org", "imgserve.net", "shotimg.org", "imageon.org", "gogoimage.org", "dimtus.com", "imagedecode.com", "imageteam.org", "imgadult.com", "fapat.me", "imgtornado.com" };
+        return new String[] { "imgtrial.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "damimage.com", "imgstudio.org", "imgshot.com", "imgease.re", "fireimg.cc", "imgsen.se", "imgspot.org", "imgserve.net", "shotimg.org", "imageon.org", "gogoimage.org", "dimtus.com", "imagedecode.com", "imageteam.org", "imgadult.com", "fapat.me", "imgtornado.com", "imgu.me" };
     }
 
     /**

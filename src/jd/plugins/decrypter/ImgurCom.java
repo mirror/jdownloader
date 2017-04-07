@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -221,9 +222,13 @@ public class ImgurCom extends PluginForDecrypt {
             logger.info("Empty album: " + parameter);
             return;
         }
+        final int padLength = getPadLength(imgcount);
+        int itemNumber = 0;
         for (final String item : items) {
+            itemNumber++;
             String directlink = getJson(item, "link");
             String title = getJson(item, "title");
+            final String itemnumber_formatted = String.format(Locale.US, "%0" + padLength + "d", itemNumber);
             final String filesize_str = getJson(item, "size");
             final String imgUID = getJson(item, "id");
             /* TODO: */
@@ -258,6 +263,7 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setProperty("decryptedfilesize", filesize);
             dl.setProperty("directtitle", title);
             dl.setProperty("directusername", author);
+            dl.setProperty("orderid", itemnumber_formatted);
             final String filename = jd.plugins.hoster.ImgUrCom.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
@@ -293,9 +299,13 @@ public class ImgurCom extends PluginForDecrypt {
             logger.info("Empty album: " + parameter);
             return;
         }
+        final int padLength = getPadLength(items.length);
+        int itemNumber = 0;
         for (final String item : items) {
+            itemNumber++;
             String directlink;
             String title = getJson(item, "title");
+            final String itemnumber_formatted = String.format(Locale.US, "%0" + padLength + "d", itemNumber);
             final String filesize_str = getJson(item, "size");
             final String imgUID = getJson(item, "hash");
             videoSource = getJson(item, "video_source");
@@ -337,6 +347,7 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setProperty("decryptedfilesize", filesize);
             dl.setProperty("directtitle", title);
             dl.setProperty("directusername", author);
+            dl.setProperty("orderid", itemnumber_formatted);
             final String filename = jd.plugins.hoster.ImgUrCom.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             /* No need to hide directlinks */
@@ -345,6 +356,26 @@ public class ImgurCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(videoSource));
             }
             decryptedLinks.add(dl);
+        }
+    }
+
+    private final int getPadLength(final int size) {
+        if (size < 10) {
+            return 1;
+        } else if (size < 100) {
+            return 2;
+        } else if (size < 1000) {
+            return 3;
+        } else if (size < 10000) {
+            return 4;
+        } else if (size < 100000) {
+            return 5;
+        } else if (size < 1000000) {
+            return 6;
+        } else if (size < 10000000) {
+            return 7;
+        } else {
+            return 8;
         }
     }
 

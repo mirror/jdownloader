@@ -67,6 +67,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String fpName = null;
         String mainhashID = null;
         String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
+        boolean is_part_of_a_folder = false;
         if (path_main == null) {
             path_main = "/";
         }
@@ -117,6 +118,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             final Regex hashregex = new Regex(hash_decoded, "(.*?):(/.+)");
             mainhashID = hashregex.getMatch(0);
             path_main = hashregex.getMatch(1);
+            is_part_of_a_folder = true;
         }
         if (!parameter_correct) {
             parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
@@ -164,6 +166,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 decryptSingleFile(dl, entries);
+                if (is_part_of_a_folder) {
+                    dl.setProperty("is_part_of_a_folder", is_part_of_a_folder);
+                    /* 2017-04-07: Overwrite previously set path value with correct value. */
+                    dl.setProperty("path", path_main);
+                }
                 dl.setProperty("mainlink", parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -229,6 +236,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         /* md5 hash is usually given */
                         dl.setMD5Hash(md5);
                     }
+                    /* All items decrypted here are part of a folder! */
                     dl.setProperty("is_part_of_a_folder", true);
                     dl.setContentUrl(url_content);
                     dl.setLinkID(hash + path);
@@ -271,7 +279,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private String regexHashFromURL(final String url) {
-        return new Regex(url, "hash=([A-Za-z0-9=%\\+]+)").getMatch(0);
+        return new Regex(url, "hash=([A-Za-z0-9=%\\+\\-]+)").getMatch(0);
     }
 
     private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {

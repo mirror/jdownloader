@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -33,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+" })
+@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-\\d+\\-page\\-\\d+\\.html" })
 public class MangaTradersBiz extends PluginForDecrypt {
 
     private PluginForHost plugin = null;
@@ -69,42 +70,96 @@ public class MangaTradersBiz extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceAll("http(s?)://[^/]+(/.+)", "http$1://" + this.getHost() + "$2");
         prepBrowser(br);
-        // pages now are just links to download files. We need to be logged in to get this information.
-        if (!login()) {
-            decryptedLinks.add(createOfflinelink(parameter, "In order to use this website you need an Account!"));
-            return decryptedLinks;
-        }
-        br.setFollowRedirects(true);
+        final FilePackage fp = FilePackage.getInstance();
+        if (parameter.matches(".+/read\\-online/.+")) {
+            getPage(parameter);
+            if (isOffline(this.br)) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            final String extension_fallback = ".jpg";
+            final Regex urlinfo = new Regex(parameter, "read\\-online/(.+)\\-chapter\\-(\\d+)\\-page\\-\\d+\\.html$");
+            final String url_chapter = urlinfo.getMatch(1);
+            final String url_name = urlinfo.getMatch(0);
+            String ext = null;
 
-        getPage(parameter);
-        if (isOffline(this.br)) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
+            short page_max = 0;
+            final String[] pages = this.br.getRegex(">Page (\\d+)</option>").getColumn(0);
+            for (final String page_temp_str : pages) {
+                final short page_temp = Short.parseShort(page_temp_str);
+                if (page_temp > page_max) {
+                    page_max = page_temp;
+                }
+            }
 
-        final String seriesNameUrl = new Regex(parameter, "series/(.+)").getMatch(0);
-        String fpName = br.getRegex("class=\"SeriesName\">([^<>]+)<").getMatch(0);
-        if (fpName == null) {
-            /* Fallback */
-            fpName = seriesNameUrl;
-        }
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
+            fp.setName(url_chapter + "_" + url_name);
 
-        // logger.info(br.toString());
-        final String[][] linkinfos = br.getRegex("linkValue=\"([A-Za-z0-9]+)\">\\s*<[^<>]+>([^<>]+)</span>").getMatches();
+            final int padLength = getPadLength(page_max);
 
-        if (linkinfos == null || linkinfos.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        if (linkinfos != null && linkinfos.length != 0) {
-            for (final String linkinfo[] : linkinfos) {
-                final DownloadLink dlink = createDownloadlink("http://" + this.getHost() + "/downloadlink/" + linkinfo[0]);
-                dlink.setProperty("mainlink", parameter);
-                dlink.setName(linkinfo[1]);
-                dlink.setAvailable(true);
-                decryptedLinks.add(dlink);
+            for (short page = 1; page <= page_max; page++) {
+                if (this.isAbort()) {
+                    return decryptedLinks;
+                }
+                final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
+                final String page_url = String.format("http://%s/read-online/%s-chapter-%s-page-%s.html", this.getHost(), url_name, url_chapter, Short.toString(page));
+                getPage(page_url);
+
+                final String finallink = this.br.getRegex("class=\"CurImage\" src=\"(http[^<>\"]+)\"").getMatch(0);
+                if (finallink == null) {
+                    return null;
+                }
+                ext = getFileNameExtensionFromURL(finallink, extension_fallback);
+                if (ext == null) {
+                    ext = extension_fallback;
+                }
+                final String filename = url_chapter + "_" + url_name + "_" + page_formatted + ext;
+
+                final DownloadLink dl = this.createDownloadlink(finallink);
+                dl._setFilePackage(fp);
+                dl.setFinalFileName(filename);
+                // dl.setContentUrl(page_url);
+                dl.setLinkID(filename);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
+        } else {
+            // pages now are just links to download files. We need to be logged in to get this information.
+            if (!login()) {
+                decryptedLinks.add(createOfflinelink(parameter, "In order to use this website you need an Account!"));
+                return decryptedLinks;
+            }
+            br.setFollowRedirects(true);
+
+            getPage(parameter);
+            if (isOffline(this.br)) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+
+            final String seriesNameUrl = new Regex(parameter, "series/(.+)").getMatch(0);
+            String fpName = br.getRegex("class=\"SeriesName\">([^<>]+)<").getMatch(0);
+            if (fpName == null) {
+                /* Fallback */
+                fpName = seriesNameUrl;
+            }
+            fp.setName(fpName);
+
+            // logger.info(br.toString());
+            final String[][] linkinfos = br.getRegex("linkValue=\"([A-Za-z0-9]+)\">\\s*<[^<>]+>([^<>]+)</span>").getMatches();
+
+            if (linkinfos == null || linkinfos.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (linkinfos != null && linkinfos.length != 0) {
+                for (final String linkinfo[] : linkinfos) {
+                    final DownloadLink dlink = createDownloadlink("http://" + this.getHost() + "/downloadlink/" + linkinfo[0]);
+                    dlink.setProperty("mainlink", parameter);
+                    dlink.setName(linkinfo[1]);
+                    dlink.setAvailable(true);
+                    decryptedLinks.add(dlink);
+                }
             }
         }
 
@@ -131,6 +186,26 @@ public class MangaTradersBiz extends PluginForDecrypt {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private final int getPadLength(final int size) {
+        if (size < 10) {
+            return 1;
+        } else if (size < 100) {
+            return 2;
+        } else if (size < 1000) {
+            return 3;
+        } else if (size < 10000) {
+            return 4;
+        } else if (size < 100000) {
+            return 5;
+        } else if (size < 1000000) {
+            return 6;
+        } else if (size < 10000000) {
+            return 7;
+        } else {
+            return 8;
         }
     }
 

@@ -53,7 +53,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up-4ever.com" }, urls = { "https?://(?:www\\.)?up\\-4ever\\.com/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "up-4ever.com" }, urls = { "https?://(?:www\\.)?up\\-4ever\\.com/(?:(?:embed\\-)?[a-z0-9]{12}|d/[A-Za-z0-9]+)" })
 public class Up4everCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
@@ -88,8 +88,8 @@ public class Up4everCom extends PluginForHost {
      */
     private final boolean                  IMAGEHOSTER                        = false;
 
-    private final boolean                  SUPPORTS_HTTPS                     = false;
-    private final boolean                  SUPPORTS_HTTPS_FORCED              = false;
+    private final boolean                  SUPPORTS_HTTPS                     = true;
+    private final boolean                  SUPPORTS_HTTPS_FORCED              = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ALT        = true;
     private final boolean                  SUPPORTS_AVAILABLECHECK_ABUSE      = true;
     /* Enable/Disable random User-Agent - only needed if a website blocks the standard JDownloader User-Agent */
@@ -135,7 +135,7 @@ public class Up4everCom extends PluginForHost {
 
     /**
      * DEV NOTES XfileSharingProBasic Version 2.7.3.2<br />
-     * mods:<br />
+     * mods: 2017-04-07: Heavily modified, do NOT upgrade!<br />
      * limit-info:<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
@@ -148,15 +148,22 @@ public class Up4everCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
-        /* link cleanup, prefer https if possible */
-        final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
-        if (link.getDownloadURL().matches(TYPE_EMBED)) {
-            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
-            /* Make sure user gets the kind of content urls that he added to JD. */
-            link.setContentUrl(url_embed);
+        if (fuid.matches("[a-z0-9]{12}")) {
+            /* 2017-04-07: Only correct url if we have a standard XFS fuid here!! */
+            /* link cleanup, prefer https if possible */
+            final String protocol = correctProtocol("https://");
+            final String corrected_downloadurl = buildDownloadURL(fuid);
+            if (link.getDownloadURL().matches(TYPE_EMBED)) {
+                /* Make sure user gets the kind of content urls that he added to JD. */
+                final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+                link.setContentUrl(url_embed);
+            }
+            link.setUrlDownload(corrected_downloadurl);
         }
-        link.setUrlDownload(corrected_downloadurl);
+    }
+
+    private String buildDownloadURL(final String fuid) {
+        return String.format("%s%s/%s", correctProtocol("https://"), this.getHost(), fuid);
     }
 
     @Override
@@ -322,7 +329,14 @@ public class Up4everCom extends PluginForHost {
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
         }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "<h2>([^<>\"]+)</h2>").getMatch(0);
+        }
         if (ENABLE_HTML_FILESIZE_CHECK) {
+            if (inValidate(fileInfo[1])) {
+                /* 2017-04-07: Special */
+                fileInfo[1] = new Regex(correctedBR, ">Filesize \\(([^<>\"]+)\\)<").getMatch(0);
+            }
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (inValidate(fileInfo[1])) {
@@ -361,7 +375,12 @@ public class Up4everCom extends PluginForHost {
      * @throws Exception
      */
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws Exception {
-        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fuid, false);
+        /** 2017-04-07: Special */
+        String fid = regexXFSFid();
+        if (fid == null) {
+            fid = this.fuid;
+        }
+        getPage(br, correctProtocol(COOKIE_HOST) + "/?op=report_file&id=" + fid, false);
         return br.getRegex("<b>Filename\\s*:?\\s*</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
@@ -371,15 +390,24 @@ public class Up4everCom extends PluginForHost {
      * Especially often needed for <b><u>IMAGEHOSTER</u> ' s</b>.<br />
      * Important: Only call this if <b><u>SUPPORTS_AVAILABLECHECK_ALT</u></b> is <b>true</b>!<br />
      */
-    @SuppressWarnings("deprecation")
     private String getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink dl) {
+        /** 2017-04-07: Special */
+        String fid = regexXFSFid();
+        if (fid == null) {
+            fid = this.fuid;
+        }
         String filesize = null;
         try {
-            postPage(br, correctProtocol(COOKIE_HOST) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(dl.getDownloadURL()), false);
-            filesize = br.getRegex(this.fuid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
+            postPage(br, correctProtocol("https://") + "www." + this.getHost() + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(buildDownloadURL(fid)), false);
+            filesize = br.getRegex(fid + "</td>\\s*?<td style=\"color:green;\">Found</td>\\s*?<td>([^<>\"]*?)</td>").getMatch(0);
         } catch (final Throwable e) {
         }
         return filesize;
+    }
+
+    /** 2017-04-07: Special */
+    private String regexXFSFid() {
+        return new Regex(this.correctedBR, "name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
     }
 
     /**
@@ -1075,7 +1103,8 @@ public class Up4everCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFUIDFromURL(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        /* 2017-03-07: Special */
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
