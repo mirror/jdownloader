@@ -52,7 +52,7 @@ public class AvxHmeW extends PluginForDecrypt {
         br = new Browser();
         br.setAllowedResponseCodes(new int[] { 401 });
         // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.se");
+        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhome\\.(?:se|in))", "avxhome.in");
         if (parameter.matches(".*/go/\\d+/.*")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);

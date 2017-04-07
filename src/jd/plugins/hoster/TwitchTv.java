@@ -36,6 +36,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -53,6 +54,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -90,13 +92,14 @@ public class TwitchTv extends PluginForHost {
 
     private String              dllink                    = null;
 
-    private Browser             ajax                      = null;
-
-    private void ajaxSubmitForm(final Form form) throws Exception {
-        ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.submitForm(form);
+    private Browser ajaxSubmitForm(final Form form) throws Exception {
+        final Browser ret = br.cloneBrowser();
+        ret.setAllowedResponseCodes(new int[] { 400 });
+        final Request request = ret.createFormRequest(form);
+        request.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ret.getPage(request);
+        return ret;
     }
 
     @Override
@@ -530,7 +533,7 @@ public class TwitchTv extends PluginForHost {
     private static Object       ctrlLock    = new Object();
 
     @SuppressWarnings("unchecked")
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (accountLock) {
             try {
                 // Load cookies
@@ -540,7 +543,8 @@ public class TwitchTv extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                boolean login = true;
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -548,48 +552,82 @@ public class TwitchTv extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        br.setFollowRedirects(true);
+                        br.getPage("https://www.twitch.tv");
+                        final Form logout = br.getFormbyAction("/logout");
+                        if (logout != null) {
+                            login = false;
+                        } else if (force) {
+                            br.clearCookies(getHost());
+                        } else {
+                            return;
+                        }
                     }
                 }
-                br.setFollowRedirects(true);
-                // they don't allow requests to home page to handshake with https.. very poor.
-                br.getPage("https://www.twitch.tv/user/login_popup");
-                // two iframes. one signup, one login.
-                final String[] iframes = br.getRegex("<iframe [^>]*src\\s*=\\s*(\"|')(.*?)\\1").getColumn(1);
-                if (iframes == null) {
-                    throwError();
-                }
-                for (String iframe : iframes) {
-                    iframe = Encoding.htmlOnlyDecode(iframe);
-                    if (StringUtils.containsIgnoreCase(iframe, "/authentications/new") || StringUtils.containsIgnoreCase(iframe, "username=")) {
-                        br.getPage(iframe);
-                        break;
-                    }
-                }
-                // form time!
-                final Form f = br.getFormbyProperty("id", "loginForm");
-                if (f == null) {
-                    throwError();
-                }
-                // NOTE: form can contain recaptchav2, even though js is loaded on the auth, the div isn't present only in new user iframe
-                // <div class="g-recaptcha" data-sitekey="6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX"></div>
-                f.put("username", Encoding.urlEncode(account.getUser()));
-                f.put("password", Encoding.urlEncode(account.getPass()));
-                // json now!
-                ajaxSubmitForm(f);
-                // correct will redirect, with no cookies until following redirect; incorrect has error message && no cookies.
-                final String redirect = PluginJSonUtils.getJsonValue(ajax, "redirect");
-                if (redirect != null) {
-                    // not with json headers
-                    br.getPage(redirect);
-                } else {
-                    // this will be errors...
-                    // {"message":"Incorrect username or password.","captcha":"false","errors":["Incorrect username or password."]}
-                    // if (br.getCookie(MAINPAGE, "persistent") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (login) {
+                    br.setFollowRedirects(true);
+                    // they don't allow requests to home page to handshake with https.. very poor.
+                    boolean recaptcha = false;
+                    int round = 0;
+                    while (true) {
+                        if (++round > 5) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        br.setRequest(null);
+                        br.getPage("https://www.twitch.tv/user/login_popup");
+                        // two iframes. one signup, one login.
+                        final String[] iframes = br.getRegex("<iframe [^>]*src\\s*=\\s*(\"|')(.*?)\\1").getColumn(1);
+                        if (iframes == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        for (String iframe : iframes) {
+                            iframe = Encoding.htmlOnlyDecode(iframe);
+                            if (StringUtils.containsIgnoreCase(iframe, "/authentications/new") || StringUtils.containsIgnoreCase(iframe, "username=")) {
+                                br.getPage(iframe);
+                                break;
+                            }
+                        }
+                        // form time!
+                        final Form f = br.getFormbyProperty("id", "loginForm");
+                        if (f == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (recaptcha) {
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
+                            final DownloadLink odl = this.getDownloadLink();
+                            this.setDownloadLink(dummyLink);
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX").getToken();
+                            if (odl != null) {
+                                this.setDownloadLink(odl);
+                            }
+                            f.put("captcha", Encoding.urlEncode(recaptchaV2Response));
+                        }
+                        f.put("username", Encoding.urlEncode(account.getUser()));
+                        f.put("password", Encoding.urlEncode(account.getPass()));
+                        // json now!
+                        final Browser ajax = ajaxSubmitForm(f);
+                        // correct will redirect, with no cookies until following redirect; incorrect has error message && no cookies.
+                        final String redirect = PluginJSonUtils.getJsonValue(ajax, "redirect");
+                        if (redirect != null) {
+                            // not with json headers
+                            ajax.getPage(redirect);
+                            br = ajax;
+                            break;
+                        } else {
+                            final String captcha = PluginJSonUtils.getJsonValue(ajax, "captcha");
+                            final String message = PluginJSonUtils.getJsonValue(ajax, "message");
+                            if ("Please complete the CAPTCHA correctly.".equals(message) || "true".equals(captcha)) {
+                                recaptcha = true;
+                                continue;
+                            }
+                            if ("Incorrect username or password.".equals(message)) {
+                                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                } else {
+                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                }
+                            }
+                        }
                     }
                 }
                 // Save cookies
@@ -608,23 +646,10 @@ public class TwitchTv extends PluginForHost {
         }
     }
 
-    private static void throwError() throws PluginException {
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);

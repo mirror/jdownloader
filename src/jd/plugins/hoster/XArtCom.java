@@ -281,7 +281,7 @@ public class XArtCom extends PluginForHost {
                 rememberLogin.setMethod(MethodType.POST);
                 rememberLogin.setAction(lbr.getURL("/includes/ajax_process.php").toString());
                 rememberLogin.put("action", "remember_login");
-                final PostRequest loginRequest = new PostRequest(rememberLogin);
+                final PostRequest loginRequest = new PostRequest(rememberLogin.getAction());
                 loginRequest.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 loginRequest.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 loginRequest.getHeaders().put("Accept-Charset", null);
