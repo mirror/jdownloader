@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -56,14 +56,8 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(?:www\\.)?ForDevsToPlayWith\\.com/(?:embed\\-)?[a-z0-9]{12}" })
-public class XFileSharingProBasic extends antiDDoSForHost {
-
-    // DELETE THIS, after making plugin!
-    @Override
-    public Boolean siteTesterDisabled() {
-        return Boolean.TRUE;
-    }
+@HostPlugin(revision = "$Revision: 36359 $", interfaceVersion = 3, names = { "drfile.net" }, urls = { "https?://(?:www\\.)?drfile\\.net/(?:embed\\-)?[a-z0-9]{12}" })
+public class DrfileNet extends antiDDoSForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String  HTML_PASSWORDPROTECTED             = "<br><b>Passwor(d|t):</b> <input";
@@ -71,11 +65,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                        = "http://ForDevsToPlayWith.com";
+    private static final String  COOKIE_HOST                        = "http://drfile.net";
     private static final String  NICE_HOST                          = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                  = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                            = "(ForDevsToPlayWith\\.com)";
+    private static final String  DOMAINS                            = "(drfile\\.net)";
 
     /* Errormessages inside URLs */
     private static final String  URL_ERROR_PREMIUMONLY              = "/?op=login&redirect=";
@@ -105,7 +99,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Scan in html code for filesize? Disable this if a website either does not contain any filesize information in its html or it only
      * contains misleading information such as fake texts.
      */
-    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = true;
+    private final boolean        ENABLE_HTML_FILESIZE_CHECK         = false;
 
     /* Pre-Download waittime stuff */
     private final boolean        WAITFORCED                         = false;
@@ -134,19 +128,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private String               passCode                           = null;
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload       = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                            = new AtomicInteger(1);
     private static Object        LOCK                               = new Object();
 
     /**
-     * DEV NOTES XfileSharingProBasic Version 2.7.3.6<br />
+     * DEV NOTES XfileSharingProBasic Version 2.7.3.5<br />
      * mods:<br />
-     * limit-info:<br />
+     * limit-info: 2017-04-07: Premium untested, set FREE account limits<br />
      * General maintenance mode information: If an XFS website is in FULL maintenance mode (e.g. not only one url is in maintenance mode but
      * ALL) it is usually impossible to get any filename/filesize/status information!<br />
      * protocol: no https<br />
-     * captchatype: null 4dignum solvemedia reCaptchaV1 reCaptchaV2<br />
+     * captchatype: 2017-04-07: null<br />
      * other:<br />
      */
 
@@ -156,17 +150,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String fuid = getFUIDFromURL(link);
         /* link cleanup, prefer https if possible */
         final String protocol = correctProtocol("https://");
-        final String corrected_downloadurl = buildDownloadURL(fuid);
+        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             link.setContentUrl(url_embed);
         }
         link.setUrlDownload(corrected_downloadurl);
-    }
-
-    private String buildDownloadURL(final String fuid) {
-        return String.format("%s%s/%s", correctProtocol("https://"), this.getHost(), fuid);
     }
 
     @Override
@@ -184,9 +174,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public DrfileNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -434,7 +424,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, PROPERTY_DLLINK_FREE);
+        doFree(downloadLink, false, 1, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -1365,7 +1355,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             /* Perform linkcheck after logging in */
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, PROPERTY_DLLINK_ACCOUNT_FREE);
+            doFree(downloadLink, false, 1, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
             String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
@@ -1391,7 +1381,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 checkResponseCodeErrors(dl.getConnection());
                 logger.warning("The final dllink seems not to be a file!");

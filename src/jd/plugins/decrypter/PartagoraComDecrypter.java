@@ -32,31 +32,21 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.com" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.(?:es|com)/.+" })
-public class CopiapopComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partagora.com" }, urls = { "https?://(?:www\\.)?partagora\\.com/.+" })
+public class PartagoraComDecrypter extends PluginForDecrypt {
 
-    public CopiapopComDecrypter(PluginWrapper wrapper) {
+    public PartagoraComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private String fixCryptedLink(final String input) {
-        return input.replace("copiapop.es/", "copiapop.com/");
+        return input;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = fixCryptedLink(param.toString());
+        final String parameter = fixCryptedLink(param.toString());
         br.getPage(parameter);
-        final String server = new Regex(parameter, "(http://[a-z0-9]+\\.copiapop\\.es/)").getMatch(0);
-        if (server != null) {
-            /* Find normal links of online viewable doc links */
-            parameter = br.getRegex("\"(http://copiapop\\.com/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
-            if (parameter == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.getPage(parameter);
-        }
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("class=\"tiles_container\"|id=\"fileDetails\"")) {
@@ -65,26 +55,17 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        /* Password protected link --> Not yet supported --> And this code is not yet tested either :D */
-        // if (br.containsHTML(">Digite senha:</label>")) {
-        // final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new
-        // Random().nextInt(1000000));
-        // dl.setFinalFileName(parameter);
-        // dl.setProperty("mainlink", parameter);
-        // dl.setProperty("offline", true);
-        // decryptedLinks.add(dl);
-        // return decryptedLinks;
-        // }
 
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
-            String filename = br.getRegex("<span>Gratis:</span>([^<>\"]*?)<").getMatch(0);
-            final String filesize = br.getRegex("class=\"file_size\">([^<>\"]*?)<").getMatch(0);
+            String filename = br.getRegex("<span>(?:Gratis|Gratuit):</span>([^<>\"]*?)<").getMatch(0);
+            String filesize = br.getRegex("class=\"file_size\">([^<>\"]*?)<").getMatch(0);
             final String fid = br.getRegex("name=\"fileId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
             if (filename == null || filesize == null || fid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            filesize = fixFilesize(filesize);
             filename = Encoding.htmlDecode(filename).trim();
             final DownloadLink dl = createDownloadLink(fid, filename, parameter);
 
@@ -150,6 +131,7 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
                         break;
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
+                    filesize = fixFilesize(filesize);
                     filename = Encoding.htmlDecode(filename).trim();
 
                     final DownloadLink dl = createDownloadLink(fid, filename, parameter);
@@ -177,7 +159,7 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
     }
 
     public DownloadLink createDownloadLink(final String fid, final String filename, final String main_url) {
-        final DownloadLink dl = super.createDownloadlink("http://copiapopdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+        final DownloadLink dl = super.createDownloadlink("http://partagoradecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
         dl.setProperty("plain_filename", filename);
         dl.setProperty("plain_fid", fid);
@@ -186,6 +168,12 @@ public class CopiapopComDecrypter extends PluginForDecrypt {
         dl.setName(filename);
 
         return dl;
+    }
+
+    private String fixFilesize(final String input) {
+        String output = input.replace("GO", "GB");
+        output = input.replace("MO", "MB");
+        return output;
     }
 
     @Override
