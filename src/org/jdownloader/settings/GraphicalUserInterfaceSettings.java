@@ -8,7 +8,9 @@ import java.util.HashMap;
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
 import org.appwork.storage.config.annotations.ConfigEntryKeywords;
+import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntArrayValue;
@@ -21,6 +23,9 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.translate._GUI;
@@ -29,6 +34,16 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
+
+    public static class CustomIsConfigViewVisible extends AbstractCustomValueGetter<Boolean> {
+        @Override
+        public Boolean getValue(KeyHandler<Boolean> keyHandler, Boolean value) {
+            if (CrossSystem.isMac() && Application.getJavaVersion() < Application.JAVA17) {
+                return Boolean.TRUE;
+            }
+            return value;
+        }
+    }
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
@@ -148,6 +163,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isColoredIconsForDisabledHosterColumnEnabled();
 
     @DefaultBooleanValue(false)
+    @CustomValueGetter(CustomIsConfigViewVisible.class)
     boolean isConfigViewVisible();
 
     @DefaultBooleanValue(true)

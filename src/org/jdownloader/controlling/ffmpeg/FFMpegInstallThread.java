@@ -8,7 +8,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.os.MacOsXVersion;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.updatev2.UpdateController;
 
 public class FFMpegInstallThread extends Thread {
@@ -119,7 +119,7 @@ public class FFMpegInstallThread extends Thread {
             }
         } else if (CrossSystem.isMac()) {
             // different ffmpeg version for 10.6-
-            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID() || !CrossSystem.is64BitOperatingSystem()) {
+            if (!CrossSystem.getOS().isMinimum(OperatingSystem.MAC_SNOW_LEOPOARD) || !CrossSystem.is64BitOperatingSystem()) {
                 return Application.getResource("tools/mac/ffmpeg_10.5.x-/" + name);
             } else {
                 return Application.getResource("tools/mac/ffmpeg_10.6+/" + name);
@@ -160,7 +160,7 @@ public class FFMpegInstallThread extends Thread {
     public static String getFFmpegExtensionName() {
         switch (CrossSystem.getOSFamily()) {
         case MAC:
-            if (CrossSystem.getMacOSVersion() < MacOsXVersion.MAC_OSX_10p6_SNOW_LEOPARD.getVersionID() || !CrossSystem.is64BitOperatingSystem()) {
+            if (!CrossSystem.getOS().isMinimum(OperatingSystem.MAC_SNOW_LEOPOARD) || !CrossSystem.is64BitOperatingSystem()) {
                 return FFMPEG_10_5_X;
             } else {
                 return FFMPEG_10_6;
