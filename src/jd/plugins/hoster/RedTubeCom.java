@@ -91,6 +91,9 @@ public class RedTubeCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dllink = br.getRegex("source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
+        if (dllink != null && dllink.contains("&amp;")) {
+            dllink = dllink.replace("&amp;", "&");
+        }
         if (dllink == null) {
             dllink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
             if (dllink == null) {
@@ -112,8 +115,8 @@ public class RedTubeCom extends PluginForHost {
                                     link.setDownloadSize(br.getHttpConnection().getLongContentLength());
                                     break;
                                 } else if (quality == "240") {
-                                        server_issues = true;
-                                    }
+                                    server_issues = true;
+                                }
                             } finally {
                                 try {
                                     con.disconnect();
