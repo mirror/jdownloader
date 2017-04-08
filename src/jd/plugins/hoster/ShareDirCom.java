@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -38,9 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sharedir.com" }, urls = { "https?://dl\\.sharedir\\.com/\\d+/" })
 public class ShareDirCom extends PluginForHost {
@@ -142,17 +142,17 @@ public class ShareDirCom extends PluginForHost {
         prepBr(this.br);
         final AccountInfo ac = new AccountInfo();
         this.login(account, false);
-        if (!this.br.getURL().contains("get_acc_type")) {
+        if (br.getURL() == null || !this.br.getURL().contains("get_acc_type")) {
             safeAPIRequest(API_BASE + "?get_acc_type", account, null);
         }
         final String acctype;
         if ("0".equals(this.br.toString().trim())) {
             ac.setTrafficMax(default_free_account_traffic_max);
             account.setType(AccountType.FREE);
-            acctype = "Registered (free) account";
+            acctype = "Free Account";
         } else {
             account.setType(AccountType.PREMIUM);
-            acctype = "Premium account";
+            acctype = "Premium Account";
         }
         safeAPIRequest(API_BASE + "?get_traffic_left", account, null);
         ac.setTrafficLeft(Long.parseLong(br.toString().trim()) * 1024);
