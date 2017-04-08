@@ -118,6 +118,7 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         link.setUrlDownload(COOKIE_HOST + "/" + fid);
+        link.setContentUrl(COOKIE_HOST + "/embed-" + fid + "-640x360.html");
     }
 
     @Override
