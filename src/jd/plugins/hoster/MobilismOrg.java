@@ -23,6 +23,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,10 +43,7 @@ import jd.plugins.LinkInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import jd.plugins.components.UnavailableHost;
 
 /**
  *
@@ -56,31 +57,31 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 public class MobilismOrg extends antiDDoSForHost {
 
     /* Tags: Script vinaget.us */
-    private static final String                            DOMAIN               = "http://mblservices.org";
-    private static final String                            NICE_HOST            = "mobilism.org";
-    private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
+    private static final String                                       DOMAIN               = "http://mblservices.org";
+    private static final String                                       NICE_HOST            = "mobilism.org";
+    private static final String                                       NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                                       NORESUME             = NICE_HOSTproperty + "NORESUME";
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap   = new HashMap<Account, HashMap<String, UnavailableHost>>();
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Boolean>                hostResumeMap        = new HashMap<String, Boolean>();
+    private static HashMap<String, Boolean>                           hostResumeMap        = new HashMap<String, Boolean>();
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Integer>                hostMaxchunksMap     = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>                           hostMaxchunksMap     = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
-    private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>                           hostMaxdlsMap        = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
-    private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
+    private static HashMap<String, AtomicInteger>                     hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
 
     /* Last updated: 31.03.15 */
-    private static final int                               defaultMAXDOWNLOADS  = 20;
-    private static final int                               defaultMAXCHUNKS     = 0;
-    private static final boolean                           defaultRESUME        = true;
+    private static final int                                          defaultMAXDOWNLOADS  = 20;
+    private static final int                                          defaultMAXCHUNKS     = 0;
+    private static final boolean                                      defaultRESUME        = true;
 
-    private static Object                                  CTRLLOCK             = new Object();
-    private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
-    private Account                                        currAcc              = null;
-    private DownloadLink                                   currDownloadLink     = null;
-    private static Object                                  LOCK                 = new Object();
+    private static Object                                             CTRLLOCK             = new Object();
+    private static AtomicInteger                                      maxPrem              = new AtomicInteger(1);
+    private Account                                                   currAcc              = null;
+    private DownloadLink                                              currDownloadLink     = null;
+    private static Object                                             LOCK                 = new Object();
 
     @SuppressWarnings("deprecation")
     public MobilismOrg(PluginWrapper wrapper) {
@@ -222,12 +223,29 @@ public class MobilismOrg extends antiDDoSForHost {
         final boolean forceNewLinkGeneration = true;
 
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
+            UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(null);
+                    }
+                }
+            }
+            unavailableMap = hostUnavailableMap.get(account);
+            nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -275,6 +293,16 @@ public class MobilismOrg extends antiDDoSForHost {
             submitForm(d2);
             final Form d3 = br.getFormbyAction("/amember/downloader/downloader/app/index.php");
             if (d3 == null) {
+                // instead of d3 form you can get errors outputs directly from there scripts. for example rapidgator an premium cookie could
+                // not be found
+                // <div id="mesg" width="100%" align="center">Processing. Remain patient.</div><div align="center"><span
+                // class='htmlerror'><b>Login Error: Cannot find 'user__' cookie.</b></span>
+                final boolean header = br.containsHTML("<div id=\"mesg\" width=\"100%\" align=\"center\">.*?</div>");
+                final String error = br.getRegex("<span class='htmlerror'><b>(.*?</b></span>").getMatch(0);
+                if (header && error != null) {
+                    // server side issues...
+                    handleErrorRetries("multihoster_issue", 2, 10 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             submitForm(d3);
@@ -337,7 +365,7 @@ public class MobilismOrg extends antiDDoSForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime);
+            tempUnavailableHoster(disableTime, error);
         }
     }
 
@@ -447,18 +475,18 @@ public class MobilismOrg extends antiDDoSForHost {
         }
     }
 
-    private void tempUnavailableHoster(final long timeout) throws PluginException {
+    private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
+        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
+                unavailableMap = new HashMap<String, UnavailableHost>();
                 hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), nue);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
