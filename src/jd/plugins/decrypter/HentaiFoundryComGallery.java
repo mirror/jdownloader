@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,8 +35,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hentai-foundry.com" }, urls = { "http://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+(?:/scraps)?(?:/\\d+)?" })
 public class HentaiFoundryComGallery extends PluginForDecrypt {
@@ -79,7 +79,7 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                 return null;
             }
             for (String link : links) {
-                String title = new Regex(link, "thumbTitle\"><[^<>]*?>([^<>]*?)<").getMatch(0);
+                String title = new Regex(link, "thumbTitle\"><[^<>]*?>(.*?)</a>").getMatch(0);
                 final String url = new Regex(link, "\"(/pictures/user/[A-Za-z0-9\\-_]+/\\d+[^<>\"]*?)\"").getMatch(0);
                 if (title == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
