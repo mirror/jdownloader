@@ -382,6 +382,11 @@ public class MobilismOrg extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         getPage(url);
+        // here is free account check
+        // url(/amember/downloader/manual/) will redirect, /amember/no-access/folder/id/4?url=/amember/downloader/manual/?
+        if (br.getURL().contains("/amember/no-access/") && br.containsHTML("<title>Access Denied</title>")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         final HashSet<String> supported = new HashSet<String>();
         String[] supportedHosts = br.getRegex("td>\\-([A-Za-z0-9\\-\\.]+)").getColumn(0);
         if (supportedHosts != null) {
