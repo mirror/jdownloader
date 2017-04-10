@@ -1,13 +1,8 @@
 package jd.controlling.linkcrawler;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 
 public class LinkCrawlerRuleStorable extends LinkCrawlerRule implements Storable {
-
-    public static void main(String[] args) {
-        System.out.println(JSonStorage.toString(new LinkCrawlerRuleStorable()));
-    }
 
     public LinkCrawlerRuleStorable(/* Storable */) {
         super();

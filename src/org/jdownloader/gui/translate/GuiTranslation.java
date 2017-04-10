@@ -2683,6 +2683,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "do nothing" })
     String GUISettings_GUISettings_newlinks_nothing();
 
+    @Default(lngs = { "en" }, values = { "switch to linkgrabber" })
+    String GUISettings_GUISettings_newlinks_switch();
+
     @Default(lngs = { "en" }, values = { "show linkgrabber in front of all other windows" })
     String GUISettings_GUISettings_newlinks_front();
 

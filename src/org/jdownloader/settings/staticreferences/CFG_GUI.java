@@ -280,11 +280,6 @@ public class CFG_GUI {
 
     public static final EnumKeyHandler                                 MAC_DOCK_PROGRESS_DISPLAY                               = SH.getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
 
-    /**
-     * If enabled, JDownloader GUI switch to Linkgrabber Tab when new links are added
-     **/
-    public static final BooleanKeyHandler                              SWITCH_TO_LINKGRABBER_TAB_ON_NEW_LINKS_ADDED_ENABLED    = SH.getKeyHandler("SwitchToLinkgrabberTabOnNewLinksAddedEnabled", BooleanKeyHandler.class);
-
     public static final BooleanKeyHandler                              SPECIAL_DEAL_OBOOM_DIALOG_VISIBLE_ON_STARTUP            = SH.getKeyHandler("SpecialDealOboomDialogVisibleOnStartup", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_LINK_COUNT_VISIBLE              = SH.getKeyHandler("OverviewPanelDownloadLinkCountVisible", BooleanKeyHandler.class);
