@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -311,6 +312,23 @@ public class PornHubCom extends PluginForHost {
                 /* 2017-02-07: seems they have seperated into multiple vars to block automated download tools. */
                 var_player_quality_dp = br.getRegex("var player_quality_(1080|720|480|360|240)p[^=]*?=\\s*('|\")(https?://.*?)\\2\\s*;").getMatches();
                 matchPlaces = new int[] { 0, 2 };
+            }
+            if (var_player_quality_dp == null || var_player_quality_dp.length == 0) {
+                String fvjs = br.getRegex("javascript\">\\s*(var flashvars[^;]+;)").getMatch(0);
+                Pattern p = Pattern.compile("^\\s*?(var.*?var qualityItems_[\\d]* =.*?)$", Pattern.MULTILINE);
+                String qualityItems = br.getRegex(p).getMatch(0);
+                if (qualityItems != null) {
+                    String[][] qs = new Regex(qualityItems, "var (quality_([^=]+?)p)=").getMatches();
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    engine.eval(fvjs);
+                    engine.eval(qualityItems);
+                    for (int i = 0; i < qs.length; i++) {
+                        String r = engine.get(qs[i][0]).toString();
+                        qualities.put(qs[i][1], r);
+                    }
+                    return qualities;
+                }
             }
             /*
              * Check if we have links - if not, the video might not have any official downloadlinks available or our previous code failed
