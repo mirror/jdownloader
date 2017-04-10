@@ -67,16 +67,16 @@ public class PixivNet extends PluginForDecrypt {
             /* Decrypt gallery */
             br.getPage(jd.plugins.hoster.PixivNet.createGalleryUrl(lid));
             String[] links;
-            if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple\\-image submission<")) {
+            if (this.br.containsHTML("指定されたIDは複数枚投稿ではありません|t a multiple-image submission<")) {
                 /* Not multiple urls --> Switch to single-url view */
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
-                links = br.getRegex("data\\-illust\\-id=\"\\d+\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
+                links = br.getRegex("data-illust-id=\"\\d+\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
                 if (links.length == 0) {
-                    links = this.br.getRegex("data\\-title=\"registerImage\"><img src=\"(http[^<>\"\\']+)\"").getColumn(0);
+                    links = this.br.getRegex("data-title=\"registerImage\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
                 }
                 if (links.length == 0) {
-                    links = this.br.getRegex("data\\-src=\"(http[^<>\"]+)\"[^>]+class=\"original\\-image\"").getColumn(0);
+                    links = this.br.getRegex("data-src=\"(http[^<>\"]+)\"[^>]+class=\"original-image\"").getColumn(0);
                 }
                 if (links.length == 0) {
                     links = this.br.getRegex("pixiv\\.context\\.ugokuIllustData\\s*=\\s*\\{\\s*\"src\"\\s*:\\s*\"(https?.*?)\"").getColumn(0);
@@ -99,7 +99,7 @@ public class PixivNet extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
-                links = br.getRegex("data\\-filter=\"manga\\-image\" data\\-src=\"(http[^<>\"\\']+)\"").getColumn(0);
+                links = br.getRegex("data-filter=\"manga-image\" data-src=\"(http[^<>\"']+)\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -109,7 +109,7 @@ public class PixivNet extends PluginForDecrypt {
             int counter = 1;
             for (String singleLink : links) {
                 singleLink = singleLink.replaceAll("\\\\", "");
-                String filename = lid + (fpName != null ? fpName : fpName) + "_" + df.format(counter);
+                String filename = lid + (fpName != null ? fpName : "") + "_" + df.format(counter);
                 final String ext = getFileNameExtensionFromString(singleLink, jd.plugins.hoster.PixivNet.default_extension);
                 filename += ext;
 
@@ -126,7 +126,7 @@ public class PixivNet extends PluginForDecrypt {
         } else {
             /* Decrypt user */
             br.getPage(parameter);
-            fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
+            fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?)(?:\\s*\\[pixiv\\])?\">").getMatch(0);
             if (isOffline(this.br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
@@ -134,7 +134,7 @@ public class PixivNet extends PluginForDecrypt {
                 logger.info("Account required to crawl this particular content");
                 return decryptedLinks;
             }
-            // final String total_numberof_items = this.br.getRegex("class=\"count\\-badge\">(\\d+) results").getMatch(0);
+            // final String total_numberof_items = this.br.getRegex("class=\"count-badge\">(\\d+) results").getMatch(0);
             int numberofitems_found_on_current_page = 0;
             final int max_numbeofitems_per_page = 20;
             int page = 0;
