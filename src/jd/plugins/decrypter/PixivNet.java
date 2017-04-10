@@ -71,6 +71,9 @@ public class PixivNet extends PluginForDecrypt {
                 /* Not multiple urls --> Switch to single-url view */
                 br.getPage(jd.plugins.hoster.PixivNet.createSingleImageUrl(lid));
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)(?:\\[pixiv\\])?\">").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                }
                 links = br.getRegex("data-illust-id=\"\\d+\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
                 if (links.length == 0) {
                     links = this.br.getRegex("data-title=\"registerImage\"><img src=\"(http[^<>\"']+)\"").getColumn(0);
@@ -99,11 +102,22 @@ public class PixivNet extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)(?:\\[pixiv\\])?\">").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                }
                 links = br.getRegex("data-filter=\"manga-image\" data-src=\"(http[^<>\"']+)\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
+            }
+            if (fpName != null) {
+                if (!fpName.startsWith("「")) {
+                    fpName = "「" + fpName;
+                }
+                if (!fpName.endsWith("」")) {
+                    fpName += "」";
+                }
             }
             final DecimalFormat df = new DecimalFormat("000");
             int counter = 1;
@@ -127,6 +141,9 @@ public class PixivNet extends PluginForDecrypt {
             /* Decrypt user */
             br.getPage(parameter);
             fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?)(?:\\s*\\[pixiv\\])?\">").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            }
             if (isOffline(this.br)) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;

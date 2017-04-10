@@ -30,6 +30,13 @@ import javax.swing.Icon;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
@@ -67,13 +74,6 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
 
 public class GUISettings extends AbstractConfigPanel implements StateUpdateListener {
 
@@ -573,7 +573,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         focus.addStateUpdateListener(this);
         addPair(_GUI.T.GUISettings_GUISettings_dialog_focus(), null, focus);
 
-        linkgrabberfocus = new ComboBox<NewLinksInLinkgrabberAction>(new NewLinksInLinkgrabberAction[] { NewLinksInLinkgrabberAction.NOTHING, NewLinksInLinkgrabberAction.TO_FRONT, NewLinksInLinkgrabberAction.FOCUS }, new String[] { _GUI.T.GUISettings_GUISettings_newlinks_nothing(), _GUI.T.GUISettings_GUISettings_newlinks_front(), _GUI.T.GUISettings_GUISettings_newlinks_focus() });
+        linkgrabberfocus = new ComboBox<NewLinksInLinkgrabberAction>(new NewLinksInLinkgrabberAction[] { NewLinksInLinkgrabberAction.NOTHING, NewLinksInLinkgrabberAction.SWITCH, NewLinksInLinkgrabberAction.TO_FRONT, NewLinksInLinkgrabberAction.FOCUS }, new String[] { _GUI.T.GUISettings_GUISettings_newlinks_nothing(), _GUI.T.GUISettings_GUISettings_newlinks_switch(), _GUI.T.GUISettings_GUISettings_newlinks_front(), _GUI.T.GUISettings_GUISettings_newlinks_focus() });
         linkgrabberfocus.addStateUpdateListener(this);
         addPair(_GUI.T.GUISettings_GUISettings_dialog_linkgrabber_on_new_links(), null, linkgrabberfocus);
 

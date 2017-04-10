@@ -20,7 +20,6 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -174,14 +173,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
     boolean isFilterHighlightEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @LookUpKeys({ "linkgrabberhighlighonnewlinksenabled" })
-    @DescriptionForConfigEntry("If enabled, JDownloader GUI switch to Linkgrabber Tab when new links are added")
-    boolean isSwitchToLinkgrabberTabOnNewLinksAddedEnabled();
-
-    public void setSwitchToLinkgrabberTabOnNewLinksAddedEnabled(boolean b);
 
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the DownloadPanel Overview panel ")
@@ -695,13 +686,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setNewDialogFrameState(FrameState state);
 
     public static enum NewLinksInLinkgrabberAction {
+        SWITCH,
         NOTHING,
         TO_FRONT,
         FOCUS
     }
 
     @AboutConfig
-    @DefaultEnumValue("NOTHING")
+    @DefaultEnumValue("SWITCH")
     NewLinksInLinkgrabberAction getNewLinksAction();
 
     void setNewLinksAction(NewLinksInLinkgrabberAction action);

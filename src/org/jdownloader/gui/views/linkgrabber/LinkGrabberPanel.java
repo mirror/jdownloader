@@ -114,19 +114,19 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     @Override
                     protected void runInEDT() {
                         try {
-                            System.out.println("Highlight");
-                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) {
-                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
-                            }
-
                             switch (CFG_GUI.CFG.getNewLinksAction()) {
+                            case SWITCH:
+                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+                                break;
                             case FOCUS:
+                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
                                 JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
                                 break;
                             case NOTHING:
                                 JDGui.getInstance().flashTaskbar();
-                                return;
+                                break;
                             case TO_FRONT:
+                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
                                 JDGui.getInstance().setFrameState(FrameState.TO_FRONT);
                                 break;
                             }
@@ -139,7 +139,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public boolean isThisListenerEnabled() {
-                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled() || CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
+                return CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
             }
 
             @Override

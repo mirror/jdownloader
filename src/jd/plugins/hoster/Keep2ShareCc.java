@@ -244,8 +244,8 @@ public class Keep2ShareCc extends K2SApi {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This file is no longer available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = getFileNameNew2017();
-        final String filesize = getFileSizeNew2017();
+        final String filename = getFileName();
+        final String filesize = getFileSize();
 
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename.trim()));
