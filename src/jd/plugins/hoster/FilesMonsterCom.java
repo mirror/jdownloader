@@ -22,6 +22,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,12 +51,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -474,7 +474,7 @@ public class FilesMonsterCom extends PluginForHost {
             login(account, true);
         }
         // needed because of cached login and we need to have a browser containing html to regex against!
-        if (br.getURL() == null || !br.getURL().matches("https?://[^/]*filesmoster\\.com/?")) {
+        if (br.getURL() == null || !br.getURL().matches("https?://[^/]*filesmonster\\.com/?")) {
             br.getPage("https://filesmonster.com/");
         }
         ai.setUnlimitedTraffic();
@@ -495,6 +495,9 @@ public class FilesMonsterCom extends PluginForHost {
             expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
             if (expireTimeStamp <= 0) {
                 expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
+                if (expireTimeStamp <= 0) {
+                    expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MMM dd, yyyy", Locale.ENGLISH);
+                }
             }
         }
         boolean isFree = true;
@@ -507,10 +510,10 @@ public class FilesMonsterCom extends PluginForHost {
                 trafficUpdate(ai, account);
             } catch (IOException e) {
             }
-            ai.setStatus("Valid Premium Account");
+            ai.setStatus("Premium Account");
             return ai;
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Expired Premium Account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Expired Account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
