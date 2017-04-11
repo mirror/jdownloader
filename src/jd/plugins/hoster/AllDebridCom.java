@@ -311,10 +311,19 @@ public class AllDebridCom extends antiDDoSForHost {
         getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&json=true");
         final String genlink = PluginJSonUtils.getJsonValue(br, "link");
         // todo: fix this, as json now old error handling will be wrong -raztok20160906
-        if (genlink != null && "banned".equalsIgnoreCase(genlink.trim())) {
-            // account is banned
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account is banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
-
+        if (genlink != null) {
+            if ("banned".equalsIgnoreCase(genlink.trim())) {
+                // account is banned
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account is banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (genlink.endsWith("alldebrid_server_not_allowed.txt")) {
+                // they show ip banned in this fashion now, confirmed with admin/support. -raztoki20170310
+                /*
+                 * {"link":"http:\/\/www.alldebrid.com\/alldebrid_server_not_allowed.txt","host":"uploadedto","filename":"Ip not allowed."
+                 * ,"icon":"\/lib\/images\/hosts\/uploadedto.png","streaming":[],"nb":0,"error":"","paws":false}
+                 */
+                statuscode = 1;
+                handleAPIErrors(br);
+            }
         }
         if (genlink == null || !genlink.matches("https?://.+")) {
             logger.severe("Error: " + genlink);
@@ -419,9 +428,9 @@ public class AllDebridCom extends antiDDoSForHost {
             case 1:
                 /* No email entered --> Should never happen as we validate user-input before -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nVPN/proxy entdeckt - Account gesperrt!";
+                    statusMessage = "\r\nDedicated Server/VPN/proxy entdeckt - Account gesperrt!";
                 } else {
-                    statusMessage = "\r\nDedicated server detected, account disabled!";
+                    statusMessage = "\r\nDedicated Server/VPN/Proxy detected, account disabled!";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 2:
