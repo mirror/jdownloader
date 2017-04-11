@@ -113,7 +113,8 @@ public class SunexenusCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
+        int max = maxFree.get();
+        return max > 3 ? 3 : max;
     }
 
     @Override
