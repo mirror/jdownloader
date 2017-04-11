@@ -545,6 +545,7 @@ GUISettings_GUISettings_framestate_os_default=prema specifikacijama %s1
 GUISettings_GUISettings_newlinks_focus=prikaži grabilac linkova ispred svih ostalih prozora
 GUISettings_GUISettings_newlinks_front=Prikaži grabilac linkova iznad ostalih prozora
 GUISettings_GUISettings_newlinks_nothing=ne radi ništa
+GUISettings_GUISettings_newlinks_switch=preklopi na grabilac linkova
 GUISettings_GUISettings_object_frames=Upravljanje Prozorima
 GUISettings_GUISettings_object_frames_description=Da li su vam ikada dosađivali Dijalozi koji iskaču, Prozori koji se pojavljuju, Captcha Dijalozi koji kradu fokus od istalih Prozora ili bilo šta drugo vezano za Windows-e ili fokus? Da? Žao nam je! Molimo da prihvatite sljedeće opcije kao naše izvinjenje-\r\n.
 GUISettings_GUISettings_object_urls=Prikaz adrese download linka.
