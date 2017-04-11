@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?chan\\.sankakucomplex\\.com/post/show/\\d+" })
 public class SankakucomplexCom extends antiDDoSForHost {
 
@@ -43,7 +43,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".jpg";
 
-    private String              DLLINK            = null;
+    private String              dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -72,27 +72,30 @@ public class SankakucomplexCom extends antiDDoSForHost {
         br.setCookie("https://chan.sankakucomplex.com/", "hide_resized_notice", "1");
         br.setCookie("https://chan.sankakucomplex.com/", "blacklisted_tags", "");
         getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404: Page Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK != null) {
-                DLLINK = "https:" + DLLINK;
+        dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            dllink = br.getRegex("<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">Save this file").getMatch(0);
+            }
+            if (dllink != null) {
+                dllink = "https:" + dllink;
             }
         }
-        if (filename == null || DLLINK == null) {
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = new Regex(DLLINK, "[a-z0-9]+(\\.[a-z]+)\\?\\d+$").getMatch(0);
+        String ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)\\?\\d+$").getMatch(0);
         if (ext == null) {
-            ext = getFileNameExtensionFromString(DLLINK, default_Extension);
+            ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -108,7 +111,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = openConnection(br2, dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -117,7 +120,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -145,7 +148,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* Disable chunks as we only download small files */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
