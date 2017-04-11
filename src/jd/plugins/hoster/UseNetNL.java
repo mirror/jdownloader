@@ -46,7 +46,7 @@ public class UseNetNL extends UseNet {
         try {
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://en.usenet.nl/unf/memberarea/obj/user/usShowUpgrade.cfm?sLangToken=ENG");
+                br.getPage("https://en.usenet.nl/unf/memberarea/obj/user/usShowUpgrade.cfm");
                 final Form login = br.getFormbyProperty("id", "login-modal-form");
                 if (br.getCookie(getHost(), "SNUUID") == null || login != null) {
                     br.getCookies(getHost()).clear();
@@ -85,8 +85,9 @@ public class UseNetNL extends UseNet {
                 } else if (br.getCookie(getHost(), "SNUUID") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getPage("https://en.usenet.nl/unf/memberarea/obj/user/usShowUpgrade.cfm?sLangToken=ENG");
+                br.getPage("https://en.usenet.nl/unf/memberarea/obj/user/usShowUpgrade.cfm");
             }
+            br.getPage("?sLangToken=ENG");
             account.saveCookies(br.getCookies(getHost()), "");
             final String currentDownloadVolume = br.getRegex("Current download volume\\s*<br />\\s*([0-9\\. GBMT]+)").getMatch(0);
             final String currentPlan = br.getRegex("My usenet.nl plan:</td>\\s*<td>\\s*(.*?)\\s*</td>").getMatch(0);

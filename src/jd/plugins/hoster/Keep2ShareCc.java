@@ -433,6 +433,7 @@ public class Keep2ShareCc extends K2SApi {
                 }
             }
             logger.info("dllink = " + dllink);
+            shareCookies();
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -802,29 +803,30 @@ public class Keep2ShareCc extends K2SApi {
                             }
                         }
                     }
-                }
-                logger.info("dllink = " + dllink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-                if (!isValidDownloadConnection(dl.getConnection())) {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
-                    if (br.containsHTML("Download of file will start in")) {
-                        dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
-                    } else {
-                        dllink = null;
-                    }
-                    if (dllink == null) {
-                        logger.warning("The final dllink seems not to be a file!");
-                        handleGeneralServerErrors(account, link);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    logger.info("dllink = " + dllink);
+                    shareCookies();
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
                     if (!isValidDownloadConnection(dl.getConnection())) {
                         dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                        logger.warning("The final dllink seems not to be a file!");
                         br.followConnection();
-                        handleGeneralServerErrors(account, link);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (br.containsHTML("Download of file will start in")) {
+                            dllink = br.getRegex("document\\.location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
+                        } else {
+                            dllink = null;
+                        }
+                        if (dllink == null) {
+                            logger.warning("The final dllink seems not to be a file!");
+                            handleGeneralServerErrors(account, link);
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+                        if (!isValidDownloadConnection(dl.getConnection())) {
+                            dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
+                            logger.warning("The final dllink seems not to be a file!");
+                            br.followConnection();
+                            handleGeneralServerErrors(account, link);
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
                 // add download slot
@@ -836,6 +838,19 @@ public class Keep2ShareCc extends K2SApi {
                     // remove download slot
                     controlSlot(-1, account);
                 }
+            }
+        }
+    }
+
+    // share cookies between keep2share.cc and k2s.cc domain
+    private void shareCookies() {
+        final Cookies keep2ShareCookies = br.getCookies("http://keep2share.cc");
+        if (keep2ShareCookies != null && !keep2ShareCookies.isEmpty()) {
+            br.setCookies("http://k2s.cc", keep2ShareCookies);
+        } else {
+            final Cookies k2s = br.getCookies("http://k2s.cc");
+            if (k2s != null && !k2s.isEmpty()) {
+                br.setCookies("http://keep2share.cc", keep2ShareCookies);
             }
         }
     }
