@@ -17,13 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,12 +27,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://rtbf\\.bedecrypted/\\d+" }) 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://rtbf\\.bedecrypted/\\d+" })
 public class RtbfBe extends PluginForHost {
 
     public RtbfBe(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @Override
@@ -50,31 +53,14 @@ public class RtbfBe extends PluginForHost {
         return -1;
     }
 
-    /** Settings stuff */
-    private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
-
-    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution,
-             * audioCodec, audioBitrate
-             */
-            /*
-             * We could also add audio- and videobitrate but from my tests they
-             * looked quite variable so we prefer not to use wrong information
-             * here as it will be used for the filenames later too!
-             */
-            put("download", new String[] { "AVC", null, "???x???", "AAC LC", null });
-            put("high", new String[] { "AVC", "800 kbps", "720x400", "AAC LC", "128 kbps" });
-            put("medium", new String[] { "AVC", "400 kbps", "640x360", "AAC LC", "77 kbps" });
-            put("low", new String[] { "AVC", "200 kbps", "400x200", "AAC LC", "77 kbps" });
-        }
-    });
-
-    private String                                dllink         = null;
+    private String  dllink               = null;
+    private boolean server_issues        = false;
+    private boolean possibly_geo_blocked = false;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, SkipReasonException, InterruptedException {
+        server_issues = false;
+        possibly_geo_blocked = false;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         dllink = downloadLink.getStringProperty("directlink", null);
@@ -85,33 +71,64 @@ public class RtbfBe extends PluginForHost {
         }
 
         downloadLink.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+
+        if (dllink.contains("m3u8")) {
+            checkFFProbe(downloadLink, "Download a HLS Stream");
+            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (streamInfo == null) {
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                server_issues = true;
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (estimatedSize > 0) {
+                    downloadLink.setDownloadSize(estimatedSize);
+                }
             }
-        } finally {
+        } else {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = this.br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    possibly_geo_blocked = con.getResponseCode() == 403;
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+        if (possibly_geo_blocked) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+        } else if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dllink.contains("m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
     }
 
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
@@ -123,46 +140,107 @@ public class RtbfBe extends PluginForHost {
         return "JDownloader's rtbf.be plugin helps downloading videoclips from rtbf.be.";
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
-        final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
-        while (it.hasNext()) {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
-             */
-            String usertext = "Load ";
-            final Entry<String, String[]> videntry = it.next();
-            final String internalname = videntry.getKey();
-            final String[] vidinfo = videntry.getValue();
-            final String videoCodec = vidinfo[0];
-            final String videoBitrate = vidinfo[1];
-            final String videoResolution = vidinfo[2];
-            final String audioCodec = vidinfo[3];
-            final String audioBitrate = vidinfo[4];
-            if (videoCodec != null) {
-                usertext += videoCodec + " ";
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return RtbfBeConfigInterface.class;
+    }
+
+    public static interface RtbfBeConfigInterface extends PluginConfigInterface {
+
+        public static class TRANSLATION {
+
+            public String getFastLinkcheckEnabled_label() {
+                return _JDT.T.lit_enable_fast_linkcheck();
             }
-            if (videoBitrate != null) {
-                usertext += videoBitrate + " ";
+
+            public String getGrabBESTEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality();
             }
-            if (videoResolution != null) {
-                usertext += videoResolution + " ";
+
+            public String getOnlyBestVideoQualityOfSelectedQualitiesEnabled_label() {
+                return _JDT.T.lit_add_only_the_best_video_quality_within_user_selected_formats();
             }
-            if (audioCodec != null || audioBitrate != null) {
-                usertext += "with audio ";
-                if (audioCodec != null) {
-                    usertext += audioCodec + " ";
-                }
-                if (audioBitrate != null) {
-                    usertext += audioBitrate;
-                }
+
+            public String getAddUnknownQualitiesEnabled_label() {
+                return _JDT.T.lit_add_unknown_formats();
             }
-            if (usertext.endsWith(" ")) {
-                usertext = usertext.substring(0, usertext.lastIndexOf(" "));
-            }
-            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_" + internalname, usertext).setDefaultValue(true);
-            getConfig().addEntry(vidcfg);
         }
+
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        @DefaultBooleanValue(true)
+        @Order(9)
+        boolean isFastLinkcheckEnabled();
+
+        void setFastLinkcheckEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isGrabBESTEnabled();
+
+        void setGrabBESTEnabled(boolean b);
+
+        @AboutConfig
+        @DefaultBooleanValue(false)
+        @Order(21)
+        boolean isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
+
+        void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
+
+        // @DefaultBooleanValue(true)
+        // @Order(21)
+        // boolean isAddUnknownQualitiesEnabled();
+        //
+        // void setAddUnknownQualitiesEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(30)
+        boolean isGrabHLS200pVideoEnabled();
+
+        void setGrabHLS200pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(40)
+        boolean isGrabHLS480pVideoEnabled();
+
+        void setGrabHLS480pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(70)
+        boolean isGrabHLS570pVideoEnabled();
+
+        void setGrabHLS570pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(80)
+        boolean isGrabHLS720pVideoEnabled();
+
+        void setGrabHLS720pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(80)
+        boolean isGrabHLS1080pVideoEnabled();
+
+        void setGrabHLS1080pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(90)
+        boolean isGrabHTTP200pVideoEnabled();
+
+        void setGrabHTTP200pVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(100)
+        boolean isGrabHTTP480VideoEnabled();
+
+        void setGrabHTTP480VideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(110)
+        boolean isGrabHTTP720VideoEnabled();
+
+        void setGrabHTTP720VideoEnabled(boolean b);
+
     }
 
     @Override

@@ -124,7 +124,6 @@ public class MyMailRu extends PluginForHost {
             // link.getLinkStatus().setStatusText("Private video");
             // return AvailableStatus.TRUE;
             // }
-            br.setFollowRedirects(false);
             /* Without these Headers, API will return response code 400 */
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -137,7 +136,7 @@ public class MyMailRu extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getPage("http://my.mail.ru/" + videourlpart + "/ajax?ajax_call=1&func_name=video.get_item&mna=&mnb=&arg_id=" + videoID + "&_=" + System.currentTimeMillis());
+            br.getPage("https://my.mail.ru/" + videourlpart + "/ajax?ajax_call=1&func_name=video.get_item&mna=&mnb=&arg_id=" + videoID + "&_=" + System.currentTimeMillis());
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             if (br.containsHTML(html_private)) {
                 logger.info("Video is private or offline");

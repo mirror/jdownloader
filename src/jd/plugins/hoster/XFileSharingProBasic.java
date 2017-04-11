@@ -1062,7 +1062,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      *
-     * @version 0.2
+     * @version 0.3
      * @author raztoki
      */
     private void fixFilename(final DownloadLink downloadLink) {
