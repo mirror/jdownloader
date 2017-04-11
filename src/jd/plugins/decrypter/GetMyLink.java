@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -28,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.encoding.Base64;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -42,6 +44,35 @@ public class GetMyLink extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String fuid = new Regex(parameter, "(f=|html/)(.+)").getMatch(1);
+        if (fuid != null) {
+            try {
+                final String crypted = Base64.decodeToString(fuid);
+                final StringBuilder sb = new StringBuilder();
+                for (int index = 0; index < crypted.length(); index++) {
+                    char ch = crypted.charAt(index);
+                    if (ch >= 'a' && ch <= 'z') {
+                        sb.append((char) ('z' - (ch - 'a')));
+                    } else if (ch >= 'A' && ch <= 'Z') {
+                        sb.append((char) ('Z' - (ch - 'A')));
+                    } else if (ch >= '0' && ch <= '9') {
+                        sb.append(ch);
+                    } else if (ch == ':') {
+                        sb.append(':');
+                    } else if (ch == '$') {
+                        sb.append('/');
+                    } else if (ch == '+') {
+                        sb.append('.');
+                    } else {
+                        sb.append(ch);
+                    }
+                }
+                final URL url = new URL(sb.toString());
+                decryptedLinks.add(createDownloadlink(url.toExternalForm()));
+                return decryptedLinks;
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
+            }
+        }
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(fuid)) {
