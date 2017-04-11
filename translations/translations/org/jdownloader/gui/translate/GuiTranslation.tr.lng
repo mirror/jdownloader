@@ -545,6 +545,7 @@ GUISettings_GUISettings_framestate_os_default=%s1 özeliklerine göre göster
 GUISettings_GUISettings_newlinks_focus=bağlantı yakalayıcıyı tüm diğer pencerelerin önünde göster ve etkin pencere yap
 GUISettings_GUISettings_newlinks_front=bağlantı yakalayıcıyı tüm diğer pencerelerin önünde göster
 GUISettings_GUISettings_newlinks_nothing=hiçbir şey yapma
+GUISettings_GUISettings_newlinks_switch=bağlantı yakalayıcıya değiştir
 GUISettings_GUISettings_object_frames=Pencere Yönetimi
 GUISettings_GUISettings_object_frames_description=İleti Açılır Penceresi, öne gelen Pencereler, diğer Pencerelerin etkinliğini alan Captcha İletileri ya da başka bir Pencere veya ilgili etkin pencere tarafından hiç rahatsız edildiniz mi? Evet mi? Üzgünüz! Lütfen aşağıdaki seçenekleri özürümüz olarak kabul edin.
 GUISettings_GUISettings_object_urls=İndirme bağlantısı adresi görüntüleme
