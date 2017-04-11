@@ -127,10 +127,15 @@ public class VideoMediasetIt extends PluginForHost {
             filename = date_formatted + "_video_mediaset_it_" + filename;
         }
         /** New way, thx to: http://userscripts.org/scripts/review/151516 */
-        // E.g. original request:
-        // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=123456&format=json&callback=jQuery5456457_45747847&_=36747457
-        // http://cdnsel01.mediaset.net/GetCdn.aspx?format=json&streamid=702133
-        br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?format=json&treamid=" + streamID);
+        br.getPage("http://www.video.mediaset.it/player/js/mediaset/Configuration.js");
+        final String var_CDN_SELECTOR_URL = this.br.getRegex("var CDN_SELECTOR_URL = (.*?);").getMatch(0);
+        if (var_CDN_SELECTOR_URL != null && var_CDN_SELECTOR_URL.contains("mediaset.net")) {
+            /* For new content */
+            br.getPage(String.format("http://cdnsel01.mediaset.net/GetCdn.aspx?format=json&streamid=%s", streamID));
+        } else {
+            /* For older content */
+            br.getPage(String.format("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?format=json&streamid=%s", streamID));
+        }
         final String videoList = br.getRegex("\"videoList\":\\[(.*?)\\]").getMatch(0);
         if (videoList == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

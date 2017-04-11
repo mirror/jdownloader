@@ -99,6 +99,7 @@ public class ImgUrCom extends PluginForHost {
         dllink = link.getStringProperty("directlink", null);
         dl_IMPOSSIBLE_SERVER_ISSUE = false;
         /* Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API! */
+        String filename_formatted = null;
         if (dllink == null || link.getLongProperty("decryptedfilesize", -1) == -1 || link.getStringProperty("decryptedfinalfilename", null) == null || getFiletype(link) == null) {
             prepBRAPI(this.br);
             boolean api_failed = false;
@@ -135,6 +136,7 @@ public class ImgUrCom extends PluginForHost {
                 if (apiResponse == null || apiResponse[3] == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                filename_formatted = getFormattedFilename(link);
                 dllink = apiResponse[3];
                 long size = -1;
                 if (apiResponse[1] != null) {
@@ -146,7 +148,6 @@ public class ImgUrCom extends PluginForHost {
                 }
                 link.setProperty("filetype", apiResponse[0]);
                 link.setProperty("decryptedfinalfilename", apiResponse[2]);
-                link.setFinalFileName(apiResponse[2]);
                 /*
                  * Note that for pictures/especially GIFs over 20 MB, the "link" value will only contain a link which leads to a preview or
                  * low quality version of the picture. This is why we need a little workaround for this case (works from 19.5++ MB).
@@ -182,10 +183,10 @@ public class ImgUrCom extends PluginForHost {
                 if (apiResponse == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                filename_formatted = getFormattedFilename(link);
                 final String fileType = apiResponse[0];
                 link.setProperty("filetype", fileType);
                 link.setProperty("decryptedfinalfilename", apiResponse[2]);
-                link.setFinalFileName(apiResponse[2]);
                 long size = -1;
                 if (apiResponse[1] != null) {
                     size = Long.valueOf(apiResponse[1]);
@@ -211,6 +212,13 @@ public class ImgUrCom extends PluginForHost {
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (filename_formatted != null) {
+            if (start_DL) {
+                link.setFinalFileName(filename_formatted);
+            } else {
+                link.setName(filename_formatted);
+            }
         }
         if (!start_DL && link.getVerifiedFileSize() == -1) {
             /*

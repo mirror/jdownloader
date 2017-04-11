@@ -128,6 +128,7 @@ public class RedTubeCom extends PluginForHost {
                 }
             }
             if (dllink == null && br.containsHTML("<source src=\"\" type=\"video/mp4\">")) {
+                /* 2017-03-11 */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (dllink == null) {
