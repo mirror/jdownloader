@@ -44,8 +44,8 @@ public class PicstateCom extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".jpg";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final boolean free_resume       = false;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
     private String               dllink            = null;
