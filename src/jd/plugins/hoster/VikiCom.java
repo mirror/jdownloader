@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 2, names = { "viki.com" }, urls = { "http://(www\\.)?viki\\.(com|mx|jp)/videos/\\d+v" })
+@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 2, names = { "viki.com" }, urls = { "https?://(www\\.)?viki\\.(com|mx|jp)/videos/\\d+v" })
 public class VikiCom extends PluginForHost {
 
     public VikiCom(PluginWrapper wrapper) {
@@ -50,12 +50,12 @@ public class VikiCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.viki.com/terms_of_use";
+        return "https://www.viki.com/terms_of_use";
     }
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.viki.com/videos/" + getVID(link));
+        link.setUrlDownload("https://www.viki.com/videos/" + getVID(link));
     }
 
     /** Thanks for the html5 idea guys: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/viki.py */
@@ -87,7 +87,7 @@ public class VikiCom extends PluginForHost {
         if (br.containsHTML("\"geo\":true")) {
             geoblocked = true;
         } else {
-            br.getPage("http://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
+            br.getPage("https://www.viki.com/player5_fragment/" + vid + "?action=show&controller=videos");
             geoblocked = this.br.containsHTML("Sorry, this content is( currently)? not available in your region|\"geo\":true");
         }
         if (geoblocked) {
@@ -105,6 +105,12 @@ public class VikiCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         dllink = br.getRegex("<source type=\"video/mp4\" src=\"(https?://[^<>\"]*?)\">").getMatch(0);
+        final String idpart = this.br.getMatch("oster=\"httpss?://[^/]+/videos/\\d+v/[^_]+_(\\d+)_");
+        if (idpart != null) {
+            /* Thx: https://github.com/dknlght/dkodi/blob/master/plugin.video.viki/plugin.video.viki-1.1.44.zip */
+            /* 2017-03-11 - also possible for: 360p, 480p */
+            dllink = String.format("http://content.viki.com/%s/%s_high_720p_%s.mp4", vid, vid, idpart);
+        }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);

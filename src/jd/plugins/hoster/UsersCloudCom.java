@@ -28,11 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -57,6 +52,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userscloud.com" }, urls = { "https?://(www\\.)?userscloud\\.com/(embed\\-)?[a-z0-9]{12}" })
 public class UsersCloudCom extends PluginForHost {
@@ -302,7 +302,7 @@ public class UsersCloudCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings({ "unused", "deprecation" })
+    @SuppressWarnings({ "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -508,7 +508,11 @@ public class UsersCloudCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
             }
             logger.warning("The final dllink seems not to be a file!");
@@ -1109,7 +1113,6 @@ public class UsersCloudCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
