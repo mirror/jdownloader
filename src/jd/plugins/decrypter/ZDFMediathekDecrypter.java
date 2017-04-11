@@ -489,7 +489,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 this.br.getPage(uri);
                                 final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
                                 for (final HlsContainer hlscontainer : allHlsContainers) {
-                                    final String width_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
+                                    final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
                                     final String resolution = hlscontainer.getResolution();
                                     final_download_url = hlscontainer.getDownloadurl();
                                     ext = hlscontainer.getFileExtension().replace(".", "");
@@ -505,7 +505,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                         highestHlsDownload = dl;
                                     }
                                     setDownloadlinkProperties(dl, date_formatted, final_filename, type, linkid);
-                                    all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, width_for_quality_selection), dl);
+                                    all_found_downloadlinks.put(String.format(quality_selector_string, protocol, ext, height_for_quality_selection), dl);
                                 }
                                 /* Set this so we do not crawl this particular hls master again next round. */
                                 highestHlsMasterValue = hlsMasterValueTemp;

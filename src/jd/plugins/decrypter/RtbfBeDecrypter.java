@@ -17,11 +17,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -32,9 +35,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/detail_[a-z0-9}\\-_]+\\?id=\\d+" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/.+\\?id=\\d+" })
 public class RtbfBeDecrypter extends PluginForDecrypt {
 
     public RtbfBeDecrypter(PluginWrapper wrapper) {
@@ -42,21 +49,23 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
+    private static final String FAST_LINKCHECK      = "FAST_LINKCHECK";
+
+    /* Important: Keep this updated & keep this in order: Highest --> Lowest */
+    private final List<String>  all_known_qualities = Arrays.asList("hls_mp4_1080", "hls_mp4_720", "http_mp4_720", "hls_mp4_570", "hls_mp4_480", "http_mp4_480", "hls_mp4_200", "http_mp4_200", "hls_mp4_360", "http_webm_high", "hls_mp4_270", "http_mp4_high", "http_webm_low", "hls_mp4_170", "http_mp4_low", "hls_aac_0");
+
+    private boolean             fastLinkcheck       = false;
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        /* Load sister-host plugin */
-        JDUtilities.getPluginForHost(this.getHost());
+        final RtbfBeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface.class);
         final String parameter = param.toString();
         final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.RtbfBe.formats;
         final String decryptedhost = "http://" + this.getHost() + "decrypted/";
         String date_formatted = null;
 
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
+        fastLinkcheck = cfg.isFastLinkcheckEnabled();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
@@ -113,63 +122,193 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
 
-        final String[][] qualities = { { "download", "downloadUrl" }, { "high", "high" }, { "medium", "web" }, { "low", "mobile" } };
-        for (final String[] qualityinfo : qualities) {
-            final String qualityCfg = qualityinfo[0];
-            final String qualityJson = qualityinfo[1];
-            final String qualityDllink = PluginJSonUtils.getJsonValue(video_json, qualityJson);
-            if (qualityDllink != null && formats.containsKey(qualityCfg) && cfg.getBooleanProperty("ALLOW_" + qualityCfg, true)) {
-                final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String[] vidinfo = formats.get(qualityCfg);
-                String filename = title + "_" + getFormatString(vidinfo);
-                filename += ".mp4";
+        /* Quality selection */
+        HashMap<String, DownloadLink> all_selected_downloadlinks = new HashMap<String, DownloadLink>();
+        List<String> all_selected_qualities = new ArrayList<String>();
+        final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
+        final boolean grabBEST = cfg.isGrabBESTEnabled();
+        final boolean grabBESTWithinSelected = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
 
-                dl.setContentUrl(parameter);
-                dl.setLinkID(fid + getFormatString(vidinfo));
-                dl._setFilePackage(fp);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("directlink", qualityDllink);
-                dl.setProperty("directfilename", filename);
-                dl.setFinalFileName(filename);
-                if (fastLinkcheck) {
-                    dl.setAvailable(true);
+        final boolean grabHls200 = cfg.isGrabHLS200pVideoEnabled();
+        final boolean grabHls480 = cfg.isGrabHLS480pVideoEnabled();
+        final boolean grabHls570 = cfg.isGrabHLS570pVideoEnabled();
+        final boolean grabHls720 = cfg.isGrabHLS720pVideoEnabled();
+        final boolean grabHls1080 = cfg.isGrabHLS1080pVideoEnabled();
+
+        if (grabHls200) {
+            all_selected_qualities.add("hls_mp4_200");
+        }
+        if (grabHls480) {
+            all_selected_qualities.add("hls_mp4_480");
+        }
+        if (grabHls570) {
+            all_selected_qualities.add("hls_mp4_570");
+        }
+        if (grabHls720) {
+            all_selected_qualities.add("hls_mp4_720");
+        }
+        if (grabHls1080) {
+            all_selected_qualities.add("hls_mp4_1080");
+        }
+
+        final boolean grabHttp200 = cfg.isGrabHTTP200pVideoEnabled();
+        final boolean grabHttp480 = cfg.isGrabHTTP480VideoEnabled();
+        final boolean grabHttp720 = cfg.isGrabHTTP720VideoEnabled();
+
+        if (grabHttp200) {
+            all_selected_qualities.add("http_mp4_200");
+        }
+        if (grabHttp480) {
+            all_selected_qualities.add("http_mp4_480");
+        }
+        if (grabHttp720) {
+            all_selected_qualities.add("http_mp4_720");
+        }
+
+        final boolean grab_hls = grabBEST || grabHls200 || grabHls480 || grabHls570 || grabHls720 || grabHls1080;
+
+        /* "url" = usually highest == 720p --> Leave that out as we have it already */
+        final String[] qualities = { "mobile", "web", "high" };
+        String protocol = "http";
+        final String linkid_format = "%s_%s_%s";
+        final String format_filename = "%s_%s_%sp.mp4";
+        DownloadLink dl = null;
+        /* Add http qualities */
+        for (final String quality_json_string : qualities) {
+            final String finallink = PluginJSonUtils.getJsonValue(video_json, quality_json_string);
+            if (!StringUtils.isEmpty(finallink)) {
+                final String height = new Regex(finallink, "(\\d+)p\\.mp4").getMatch(0);
+                if (height == null) {
+                    /* Skip invalid findings. */
+                    continue;
                 }
-                decryptedLinks.add(dl);
+                final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(height));
+                dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                final String filename = String.format(format_filename, title, protocol, height);
+                final String linkid = String.format(linkid_format, fid, protocol, height_for_quality_selection);
+
+                setDownloadlinkProperties(dl, parameter, date_formatted, filename, linkid, finallink);
+                all_found_downloadlinks.put("http_mp4_" + height_for_quality_selection, dl);
             }
         }
+
+        /* Add hls qualities if wanted. */
+        protocol = "hls";
+        final String hls_master = PluginJSonUtils.getJsonValue(video_json, "urlHls");
+        DownloadLink best_hls_quality = null;
+        long highestHlsBandwidth = 0;
+        if (!StringUtils.isEmpty(hls_master) && grab_hls) {
+            this.br.getPage(hls_master);
+            final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
+            for (final HlsContainer hlscontainer : allHlsContainers) {
+                final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
+                final String finallink = hlscontainer.getDownloadurl();
+                final String linkid = String.format(linkid_format, fid, protocol, height_for_quality_selection);
+                final String filename = String.format(format_filename, title, protocol, Integer.toString(hlscontainer.getHeight()));
+                dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
+                    /*
+                     * While adding the URLs, let's find the BEST quality url. In case we need it later we will already know which one is
+                     * the BEST.
+                     */
+                    highestHlsBandwidth = hlscontainer.getBandwidth();
+                    best_hls_quality = dl;
+                }
+                setDownloadlinkProperties(dl, parameter, date_formatted, filename, linkid, finallink);
+                all_found_downloadlinks.put("hls_mp4_" + height_for_quality_selection, dl);
+            }
+        }
+
+        if (grabBEST) {
+            decryptedLinks.add(best_hls_quality);
+        } else {
+            for (final String selected_quality : all_selected_qualities) {
+                final DownloadLink selected_downloadlink = all_found_downloadlinks.get(selected_quality);
+                if (selected_downloadlink != null) {
+                    all_selected_downloadlinks.put(selected_quality, selected_downloadlink);
+                }
+            }
+
+            if (grabBESTWithinSelected) {
+                all_selected_downloadlinks = findBESTInsideGivenMap(all_selected_downloadlinks);
+            }
+
+            if (all_selected_downloadlinks.isEmpty()) {
+                /* Errorhandling */
+                all_selected_downloadlinks = all_found_downloadlinks;
+            }
+            /* Finally add selected URLs */
+            final Iterator<Entry<String, DownloadLink>> it = all_selected_downloadlinks.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, DownloadLink> entry = it.next();
+                decryptedLinks.add(entry.getValue());
+            }
+        }
+
         if (decryptedLinks.size() == 0) {
-            logger.info("None of the selected formats were found or none were selected, decrypting done...");
+            logger.info("No formats were found, decrypting done...");
             return decryptedLinks;
         }
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
-    private String getFormatString(final String[] formatinfo) {
-        String formatString = "";
-        final String videoCodec = formatinfo[0];
-        final String videoBitrate = formatinfo[1];
-        final String videoResolution = formatinfo[2];
-        final String audioCodec = formatinfo[3];
-        final String audioBitrate = formatinfo[4];
-        if (videoCodec != null) {
-            formatString += videoCodec + "_";
+    /**
+     * Given width may not always be exactly what we have in our quality selection but we need an exact value to make the user selection
+     * work properly!
+     */
+    private String getHeightForQualitySelection(final int height) {
+        final String heightselect;
+        if (height > 0 && height <= 300) {
+            heightselect = "200";
+        } else if (height > 300 && height <= 400) {
+            heightselect = "360";
+        } else if (height > 400 && height <= 500) {
+            heightselect = "480";
+        } else if (height > 500 && height <= 600) {
+            heightselect = "570";
+        } else if (height > 600 && height <= 800) {
+            heightselect = "720";
+        } else if (height > 800 && height <= 1200) {
+            heightselect = "1080";
+        } else {
+            /* Either unknown quality or audio (0x0) */
+            heightselect = Integer.toString(height);
         }
-        if (videoResolution != null) {
-            formatString += videoResolution + "_";
+        return heightselect;
+    }
+
+    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
+        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
+        DownloadLink keep = null;
+        if (bestMap.size() > 0) {
+            for (final String quality : all_known_qualities) {
+                keep = bestMap.get(quality);
+                if (keep != null) {
+                    newMap.put(quality, keep);
+                    break;
+                }
+            }
         }
-        if (videoBitrate != null) {
-            formatString += videoBitrate + "_";
+
+        if (newMap.isEmpty()) {
+            /* Failover in case of bad user selection or general failure! */
+            newMap = bestMap;
         }
-        if (audioCodec != null) {
-            formatString += audioCodec + "_";
+
+        return newMap;
+    }
+
+    private void setDownloadlinkProperties(final DownloadLink dl, final String main_url, final String date_formatted, final String final_filename, final String linkid, final String finallink) {
+        dl.setFinalFileName(final_filename);
+        dl.setLinkID(linkid);
+        dl.setProperty("date", date_formatted);
+        dl.setProperty("directfilename", final_filename);
+        dl.setProperty("directlink", finallink);
+        dl.setContentUrl(main_url);
+        if (fastLinkcheck) {
+            dl.setAvailable(true);
         }
-        if (audioBitrate != null) {
-            formatString += audioBitrate;
-        }
-        if (formatString.endsWith("_")) {
-            formatString = formatString.substring(0, formatString.lastIndexOf("_"));
-        }
-        return formatString;
     }
 
     /**
