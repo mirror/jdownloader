@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10000 $", interfaceVersion = 3, names = { "stocporn.com" }, urls = { "http?://stocporn.com/[a-zA-Z0-9\\\\-]+.html/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stocporn.com" }, urls = { "http?://stocporn.com/[a-zA-Z0-9\\\\-]+.html/" })
 public class StcPrnCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

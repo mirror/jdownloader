@@ -11,7 +11,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "retro.sx" }, urls = { "https?://(?:www\\.)?retro\\.sx/rest/\\d+/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "retro.sx" }, urls = { "https?://(?:www\\.)?retro\\.sx/rest/\\d+/\\d+" })
 public class RetroSx extends PluginForHost {
 
     public RetroSx(PluginWrapper wrapper) {

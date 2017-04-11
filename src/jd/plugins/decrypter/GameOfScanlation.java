@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 32651 $", interfaceVersion = 3, names = { "gameofscanlation.moe" }, urls = { "https?://(www\\.)?gameofscanlation\\.moe/(projects/[^/]+/|threads/[^/]+)chapter(-?\\d+(-\\d+)?)?\\.\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gameofscanlation.moe" }, urls = { "https?://(www\\.)?gameofscanlation\\.moe/(projects/[^/]+/|threads/[^/]+)chapter(-?\\d+(-\\d+)?)?\\.\\d+" })
 public class GameOfScanlation extends PluginForDecrypt {
 
     public GameOfScanlation(PluginWrapper wrapper) {

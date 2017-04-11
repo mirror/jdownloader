@@ -18,7 +18,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" }) public class UseNetEwekaNl extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" }) public class UseNetEwekaNl extends UseNet {
     public UseNetEwekaNl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.eweka.nl/en/usenet_toegang/specificaties/");

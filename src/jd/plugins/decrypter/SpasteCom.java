@@ -46,7 +46,7 @@ import jd.plugins.PluginException;
  * @version raz_Template-pastebin-201508200000
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "spaste.com" }, urls = { "https?://(?:www\\.)?spaste\\.com/(?:(?:site/checkPasteUrl|p/)\\?c=[a-zA-Z0-9]{10}|s/[a-zA-Z0-9]{6})" })
 public class SpasteCom extends antiDDoSForDecrypt {
 
     public SpasteCom(PluginWrapper wrapper) {

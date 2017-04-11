@@ -37,7 +37,7 @@ import jd.plugins.components.PluginJSonUtils;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animegg.org" }, urls = { "http://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" })
 public class AnimeggOrg extends antiDDoSForHost {
 
     // raztoki embed video player template.

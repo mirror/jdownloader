@@ -45,7 +45,7 @@ import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.logging.LogController;
 
-@HostPlugin(revision = "$Revision: 28758 $", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "21members.com" }, urls = { "http://21members\\.com/dummy/file/\\d+" }) 
 public class TwentyOneMembersCom extends PluginForHost {
 
     private final String LOGIN_ERROR_REGEX = "<ul.*?class=\"loginErrors\".*?>.*?<li class=\"warning\">(.+?)</li>";

@@ -60,7 +60,7 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32094 $", interfaceVersion = 3, names = { "click.tf", "ssh.tf" }, urls = { "http://click\\.tf/[a-zA-Z0-9]{8,}(/.+)?", "http://ssh\\.tf/[a-zA-Z0-9]{8,}(/.+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "click.tf", "ssh.tf" }, urls = { "http://click\\.tf/[a-zA-Z0-9]{8,}(/.+)?", "http://ssh\\.tf/[a-zA-Z0-9]{8,}(/.+)?" }) 
 public class ClkTf extends PluginForDecrypt {
 
     public ClkTf(PluginWrapper wrapper) {

@@ -10,7 +10,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 34675 $", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/[a-z0-9\\-]+(/\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/[a-z0-9\\-]+(/\\d+)?" })
 public class BurningCamelCom extends PluginForDecrypt {
 
     public BurningCamelCom(PluginWrapper wrapper) {

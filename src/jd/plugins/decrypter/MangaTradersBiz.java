@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 26023 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-\\d+\\-page\\-\\d+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)?mangatraders\\.(biz|org)/series/\\w+|https?://(?:www\\.)?mangatraders\\.biz/read\\-online/[A-Za-z0-9\\-_]+chapter\\-\\d+\\-page\\-\\d+\\.html" })
 public class MangaTradersBiz extends PluginForDecrypt {
 
     private PluginForHost plugin = null;

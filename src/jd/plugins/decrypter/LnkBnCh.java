@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "linkbun.ch" }, urls = { "https?://(?:www\\.)?linkbun\\.ch/(?-i)[a-z0-9]{4,5}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkbun.ch" }, urls = { "https?://(?:www\\.)?linkbun\\.ch/(?-i)[a-z0-9]{4,5}" }) 
 public class LnkBnCh extends antiDDoSForDecrypt {
 
     public LnkBnCh(PluginWrapper wrapper) {

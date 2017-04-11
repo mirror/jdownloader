@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 28943 $", interfaceVersion = 2, names = { "oshoworld.com" }, urls = { "https?://(?:www\\.)?oshoworlddecrypted\\.com/[^/]+/.*?\\.asp\\?album_id=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oshoworld.com" }, urls = { "https?://(?:www\\.)?oshoworlddecrypted\\.com/[^/]+/.*?\\.asp\\?album_id=\\d+" }) 
 public class OshoWorldCom extends PluginForHost {
 
     public OshoWorldCom(PluginWrapper wrapper) {

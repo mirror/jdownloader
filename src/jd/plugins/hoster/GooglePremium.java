@@ -13,7 +13,7 @@ import org.jdownloader.plugins.components.google.GoogleAccountConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
-@HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "recaptcha.google.com" }, urls = { "google://.+" }) public class GooglePremium extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "recaptcha.google.com" }, urls = { "google://.+" }) public class GooglePremium extends PluginForHost {
 
     @Override
     public Boolean siteTesterDisabled() {

@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ReggaeWorldCrewNet;
 
-@DecrypterPlugin(revision = "$Revision: 31871 $", interfaceVersion = 3, names = { "reggaeworldcrew.net" }, urls = { "https?://(www\\.)?reggaeworldcrew\\.net/foro/.*" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reggaeworldcrew.net" }, urls = { "https?://(www\\.)?reggaeworldcrew\\.net/foro/.*" }) 
 public class RggwrldcrwNet extends PluginForDecrypt {
 
     public RggwrldcrwNet(PluginWrapper wrapper) {

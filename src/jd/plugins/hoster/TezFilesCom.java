@@ -49,7 +49,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:www\\.)?tezfiles\\.com/f(ile)?/[a-z0-9]{13,}" })
 public class TezFilesCom extends K2SApi {
 
     private final String MAINPAGE = "http://tezfiles.com";

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 25939 $", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+.*?\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+.*?\\.html" }) 
 public class CrackedCom extends PluginForDecrypt {
 
     public CrackedCom(PluginWrapper wrapper) {

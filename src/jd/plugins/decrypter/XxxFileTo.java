@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "xfull.net" }, urls = { "http://(?:www\\.)?(?:xfull\\.net|xxxfile\\.to|x3\\.to)/download/clips(?:_[sh]d)?/[a-z0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xfull.net" }, urls = { "http://(?:www\\.)?(?:xfull\\.net|xxxfile\\.to|x3\\.to)/download/clips(?:_[sh]d)?/[a-z0-9\\-]+\\.html" }) 
 public class XxxFileTo extends PluginForDecrypt {
 
     /**

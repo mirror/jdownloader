@@ -33,7 +33,7 @@ import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 35421 $", interfaceVersion = 3, names = { "f4m" }, urls = { "f4ms?://.+?(\\.f4m?(\\?.+)?|$)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "f4ms?://.+?(\\.f4m?(\\?.+)?|$)" })
 public class GenericF4M extends PluginForHost {
 
     public GenericF4M(PluginWrapper wrapper) {

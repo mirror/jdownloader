@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision: 33180 $", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "https?://(?:www\\.)?pornsexwank\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsexwank.com" }, urls = { "https?://(?:www\\.)?pornsexwank\\.com/[A-Za-z0-9\\-_]+\\-\\d+\\.html" }) 
 public class PornsexwankCom extends PornEmbedParser {
 
     public PornsexwankCom(PluginWrapper wrapper) {

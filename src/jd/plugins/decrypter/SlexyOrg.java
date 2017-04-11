@@ -14,7 +14,7 @@ import org.jdownloader.plugins.components.config.SlexyOrgPluginConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision: 36286 $", interfaceVersion = 2, names = { "slexy.org" }, urls = { "http://(www\\.)?slexy\\.org/(?:view|raw)/[0-9A-Za-z]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slexy.org" }, urls = { "http://(www\\.)?slexy\\.org/(?:view|raw)/[0-9A-Za-z]+" })
 public class SlexyOrg extends PluginForDecrypt {
 
     public SlexyOrg(PluginWrapper wrapper) {

@@ -17,7 +17,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision: 35284 $", interfaceVersion = 3, names = { "oracle.com" }, urls = { "(https?://updates\\.oracle\\.com/Orion/Services/download/.*?\\?aru=\\d+&patch_file=(.+)|https?://.*?oracle\\.com/.*?download\\?fileName=.*?&token=.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oracle.com" }, urls = { "(https?://updates\\.oracle\\.com/Orion/Services/download/.*?\\?aru=\\d+&patch_file=(.+)|https?://.*?oracle\\.com/.*?download\\?fileName=.*?&token=.+)" })
 public class OracleCom extends PluginForHost {
 
     public OracleCom(PluginWrapper wrapper) {

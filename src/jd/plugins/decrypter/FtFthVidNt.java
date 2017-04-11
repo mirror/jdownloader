@@ -43,7 +43,7 @@ import org.jdownloader.scripting.envjs.XHRResponse;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 32430 $", interfaceVersion = 2, names = { "footfetishvideos.net" }, urls = { "https?://(?:www\\.)?footfetishvideos\\.net/(?:file/[a-z0-9]{14}|[^/\\s]+-siterip/?)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "footfetishvideos.net" }, urls = { "https?://(?:www\\.)?footfetishvideos\\.net/(?:file/[a-z0-9]{14}|[^/\\s]+-siterip/?)" }) 
 public class FtFthVidNt extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")

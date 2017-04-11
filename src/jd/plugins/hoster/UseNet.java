@@ -42,7 +42,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" })
 public class UseNet extends PluginForHost {
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);

@@ -35,7 +35,7 @@ import org.jdownloader.controlling.PasswordUtils;
  * @version raz_Template-pastebin-201503051556
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "pastee.org" }, urls = { "https?://(?:www\\.)?pastee.org/[a-z0-9]{5}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastee.org" }, urls = { "https?://(?:www\\.)?pastee.org/[a-z0-9]{5}" }) 
 public class PasteeOrg extends PluginForDecrypt {
 
     public PasteeOrg(PluginWrapper wrapper) {

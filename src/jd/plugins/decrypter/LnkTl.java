@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision: 27628 $", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.tl" }, urls = { "http://(www\\.)?link\\.tl/(?!advertising)[A-Za-z0-9\\-]+" })
 public class LnkTl extends antiDDoSForDecrypt {
 
     public LnkTl(PluginWrapper wrapper) {

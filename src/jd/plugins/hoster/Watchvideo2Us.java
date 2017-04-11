@@ -51,7 +51,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 33180 $", interfaceVersion = 3, names = { "watchvideo2.us" }, urls = { "https?://(www\\.)?watchvideo2\\.us/(?:embed\\-)?[a-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "watchvideo2.us" }, urls = { "https?://(www\\.)?watchvideo2\\.us/(?:embed\\-)?[a-z0-9]{12}" })
 public class Watchvideo2Us extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */

@@ -36,7 +36,7 @@ import org.appwork.utils.StringUtils;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 31344 $", interfaceVersion = 3, names = { "safelinkconverter.com" },
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safelinkconverter.com" },
 
 urls = { "https?://(?:\\w+\\.)?(?:safelinkconverter\\.com/(?:index\\.php|review\\.php|noadsense\\.php|decrypt(?:-2)?/)?|safelinkreview\\.com/[a-z]{2}/\\w+/)\\?(?:.*?&)?id=([a-zA-Z0-9_/\\+\\=\\-%]+)[^\\s%]*" }
 

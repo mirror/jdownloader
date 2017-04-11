@@ -29,7 +29,7 @@ import org.jdownloader.gui.dialog.AskForPasswordDialog;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xsusenet.com" }, urls = { "" })
 public class XSUseNetCom extends UseNet {
     public XSUseNetCom(PluginWrapper wrapper) {
         super(wrapper);

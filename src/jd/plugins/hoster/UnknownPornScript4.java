@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "mygirlfriendporn.com", "pornyeah.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mygirlfriendporn.com", "pornyeah.com", "bondagebox.com", "fetishbox.com", "luxuretv.com", "homemoviestube.com", "watchgfporn.com" }, urls = { "https?://(?:www\\.)?mygirlfriendporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?bondagebox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?fetishbox\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "http://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?watchgfporn\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
 
     public UnknownPornScript4(PluginWrapper wrapper) {

@@ -74,7 +74,7 @@ import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 32094 $", interfaceVersion = 3, names = { "videonest.net" }, urls = { "https?://(www\\.)?videonest\\.net/((vid)?embed-)?[a-z0-9]{12}" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videonest.net" }, urls = { "https?://(www\\.)?videonest\\.net/((vid)?embed-)?[a-z0-9]{12}" }) 
 @SuppressWarnings("deprecation")
 public class VideoNestNet extends PluginForHost {
     // Site Setters

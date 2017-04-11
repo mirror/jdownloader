@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 28691 $", interfaceVersion = 3, names = { "sigmatv.com" }, urls = { "https?://(?:www\\.)?sigmatv\\.com/shows/[^/]+/episodes/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sigmatv.com" }, urls = { "https?://(?:www\\.)?sigmatv\\.com/shows/[^/]+/episodes/\\d+" })
 public class SigmatvCom extends PluginForHost {
 
     public SigmatvCom(PluginWrapper wrapper) {

@@ -25,7 +25,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision: 36130 $", interfaceVersion = 2, names = { "premiumlinkgenerator.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "premiumlinkgenerator.com" }, urls = { "" })
 public class PremiumLinkGeneratorCom extends antiDDoSForHost {
 
     public PremiumLinkGeneratorCom(PluginWrapper wrapper) {

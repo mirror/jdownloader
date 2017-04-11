@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussy\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussy\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" }) 
 public class OkpussyComDecrypter extends PornEmbedParser {
 
     public OkpussyComDecrypter(PluginWrapper wrapper) {

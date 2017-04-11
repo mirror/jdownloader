@@ -21,7 +21,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "hitnews.com" }, urls = { "" }) public class HitNewsCom extends UseNet {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitnews.com" }, urls = { "" }) public class HitNewsCom extends UseNet {
     public HitNewsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://member.hitnews.com/signup.php");

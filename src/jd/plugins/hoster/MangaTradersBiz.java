@@ -42,7 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.cryptojs.CryptoJS;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision: 25467 $", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)*?mangatraders\\.(biz|org)/downloadlink/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangatraders.biz" }, urls = { "https?://(?:www\\.)*?mangatraders\\.(biz|org)/downloadlink/[A-Za-z0-9]+" })
 public class MangaTradersBiz extends antiDDoSForHost {
 
     private boolean      weAreAlreadyLoggedIn = false;

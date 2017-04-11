@@ -35,7 +35,7 @@ import jd.plugins.FilePackage;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 28714 $", interfaceVersion = 2, names = { "dancehallworld.net" }, urls = { "https?://(\\w*\\.)?dancehallworld\\.net/\\d{4}/\\d{1,2}/[\\w\\-]+/" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dancehallworld.net" }, urls = { "https?://(\\w*\\.)?dancehallworld\\.net/\\d{4}/\\d{1,2}/[\\w\\-]+/" }) 
 public class DncHllWldNt extends antiDDoSForDecrypt {
 
     public DncHllWldNt(PluginWrapper wrapper) {

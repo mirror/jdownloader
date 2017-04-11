@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.logging2.LogInterface;
 
-@HostPlugin(revision = "$Revision: 30971 $", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trinimixzone.com" }, urls = { "" }) 
 public class TrinimixzoneCom extends PluginForHost {
 
     public TrinimixzoneCom(PluginWrapper wrapper) {

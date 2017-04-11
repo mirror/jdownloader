@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 28230 $", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/folder/([a-z0-9\\-]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/folder/([a-z0-9\\-]+)" }) 
 public class BlockFilestoreCom extends PluginForDecrypt {
 
     public BlockFilestoreCom(PluginWrapper wrapper) {

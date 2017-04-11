@@ -21,7 +21,7 @@ import jd.plugins.components.NZBSAXHandler;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|\\?[^\\s<>\"']*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|\\?[^\\s<>\"']*)" })
 public class GenericNZBDecrypter extends PluginForDecrypt {
 
     @Override

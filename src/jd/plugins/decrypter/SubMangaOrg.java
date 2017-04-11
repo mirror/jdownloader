@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision: 31522 $", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(?:www\\.)?submanga\\.org/(leer/[a-zA-Z0-9]+-\\d+\\.html|r/[a-z]+/[a-z]+/\\d+/\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(?:www\\.)?submanga\\.org/(leer/[a-zA-Z0-9]+-\\d+\\.html|r/[a-z]+/[a-z]+/\\d+/\\d+)" }) 
 public class SubMangaOrg extends antiDDoSForDecrypt {
 
     public SubMangaOrg(PluginWrapper wrapper) {

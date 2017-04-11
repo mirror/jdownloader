@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 29854 $", interfaceVersion = 2, names = { "nfo.scene-rls.com" }, urls = { "http://(?:www\\.)?nfo\\.scene-rls\\.com/view/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nfo.scene-rls.com" }, urls = { "http://(?:www\\.)?nfo\\.scene-rls\\.com/view/\\d+" }) 
 public class NfScRlCm extends PluginForDecrypt {
 
     public NfScRlCm(PluginWrapper wrapper) {

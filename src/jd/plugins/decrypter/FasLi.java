@@ -39,7 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 32370 $", interfaceVersion = 3, names = { "fas.li" }, urls = { "https?://(?:www\\.)?fas\\.li/(?:go/)?[A-Za-z0-9]{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fas.li" }, urls = { "https?://(?:www\\.)?fas\\.li/(?:go/)?[A-Za-z0-9]{4,}" })
 public class FasLi extends antiDDoSForDecrypt {
 
     public FasLi(PluginWrapper wrapper) {

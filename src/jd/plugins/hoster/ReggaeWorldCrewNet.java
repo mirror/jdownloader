@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.logging2.LogInterface;
 
-@HostPlugin(revision = "$Revision: 30971 $", interfaceVersion = 3, names = { "reggaeworldcrew.net" }, urls = { "" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reggaeworldcrew.net" }, urls = { "" }) 
 public class ReggaeWorldCrewNet extends PluginForHost {
 
     public ReggaeWorldCrewNet(PluginWrapper wrapper) {

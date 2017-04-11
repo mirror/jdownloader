@@ -34,7 +34,7 @@ import org.appwork.utils.StringUtils;
  *
  * @author raztoki
  */
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "gavitex.com" }, urls = { "https?://(?:www\\.)?gavitex\\.com/share/(?-i)([a-z0-9]{9})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gavitex.com" }, urls = { "https?://(?:www\\.)?gavitex\\.com/share/(?-i)([a-z0-9]{9})" })
 public class GavitexCom extends PluginForHost {
 
     public GavitexCom(PluginWrapper wrapper) {

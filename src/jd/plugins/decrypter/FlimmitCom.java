@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 29087 $", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://(?:www\\.)?flimmit\\.com/(?:catalog/product/view/id/|video/stream/play/(?:product_id/|order_item/))(\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://(?:www\\.)?flimmit\\.com/(?:catalog/product/view/id/|video/stream/play/(?:product_id/|order_item/))(\\d+)" }) 
 public class FlimmitCom extends PluginForDecrypt {
 
     public FlimmitCom(PluginWrapper wrapper) {

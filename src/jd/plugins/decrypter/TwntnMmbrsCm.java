@@ -34,7 +34,7 @@ import jd.plugins.hoster.TwentyOneMembersCom;
 
 import org.appwork.uio.UIOManager;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "21members.com" }, urls = { "http://(www\\.)?21members\\.com/members/scene/(info|photos)/\\d+/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "21members.com" }, urls = { "http://(www\\.)?21members\\.com/members/scene/(info|photos)/\\d+/.+" }) 
 public class TwntnMmbrsCm extends PluginForDecrypt {
 
     public TwntnMmbrsCm(PluginWrapper wrapper) {

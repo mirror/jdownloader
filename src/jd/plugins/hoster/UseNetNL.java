@@ -22,7 +22,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
-@HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 3, names = { "usenet.nl" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenet.nl" }, urls = { "" })
 public class UseNetNL extends UseNet {
     public UseNetNL(PluginWrapper wrapper) {
         super(wrapper);
